@@ -1,0 +1,553 @@
+# HG changeset patch
+# Parent 246f833bbeeffa57133f710ae1a43f78d8081547
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 307830 - MathML "invalid-markup" message should be localizable. r=karlt
+
+diff --git a/content/base/public/nsContentUtils.h b/content/base/public/nsContentUtils.h
+--- a/content/base/public/nsContentUtils.h
++++ b/content/base/public/nsContentUtils.h
+@@ -799,16 +799,19 @@ public:
+     eXUL_PROPERTIES,
+     eLAYOUT_PROPERTIES,
+     eFORMS_PROPERTIES,
+     ePRINTING_PROPERTIES,
+     eDOM_PROPERTIES,
+ #ifdef MOZ_SVG
+     eSVG_PROPERTIES,
+ #endif
++#ifdef MOZ_MATHML
++    eMATHML_PROPERTIES,
++#endif
+     eBRAND_PROPERTIES,
+     eCOMMON_DIALOG_PROPERTIES,
+     PropertiesFile_COUNT
+   };
+   static nsresult ReportToConsole(PropertiesFile aFile,
+                                   const char *aMessageName,
+                                   const PRUnichar **aParams,
+                                   PRUint32 aParamsLength,
+diff --git a/content/base/src/nsContentUtils.cpp b/content/base/src/nsContentUtils.cpp
+--- a/content/base/src/nsContentUtils.cpp
++++ b/content/base/src/nsContentUtils.cpp
+@@ -2959,16 +2959,19 @@ static const char gPropertiesFiles[nsCon
+   "chrome://global/locale/xul.properties",
+   "chrome://global/locale/layout_errors.properties",
+   "chrome://global/locale/layout/HtmlForm.properties",
+   "chrome://global/locale/printing.properties",
+   "chrome://global/locale/dom/dom.properties",
+ #ifdef MOZ_SVG
+   "chrome://global/locale/svg/svg.properties",
+ #endif
++#ifdef MOZ_MATHML
++  "chrome://global/locale/mathml/mathml.properties",
++#endif
+   "chrome://branding/locale/brand.properties",
+   "chrome://global/locale/commonDialogs.properties"
+ };
+ 
+ /* static */ nsresult
+ nsContentUtils::EnsureStringBundle(PropertiesFile aFile)
+ {
+   if (!sStringBundles[aFile]) {
+diff --git a/dom/locales/en-US/chrome/mathml/mathml.properties b/dom/locales/en-US/chrome/mathml/mathml.properties
+new file mode 100644
+--- /dev/null
++++ b/dom/locales/en-US/chrome/mathml/mathml.properties
+@@ -0,0 +1,45 @@
++# ***** BEGIN LICENSE BLOCK *****
++# Version: MPL 1.1/GPL 2.0/LGPL 2.1
++#
++# The contents of this file are subject to the Mozilla Public License Version
++# 1.1 (the "License"); you may not use this file except in compliance with
++# the License. You may obtain a copy of the License at
++# http://www.mozilla.org/MPL/
++#
++# Software distributed under the License is distributed on an "AS IS" basis,
++# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++# for the specific language governing rights and limitations under the
++# License.
++#
++# The Original Code is Mozilla MathML Project.
++#
++# The Initial Developer of the Original Code is
++# Frederic Wang.
++# Portions created by the Initial Developer are Copyright (C) 2010
++# the Initial Developer. All Rights Reserved.
++#
++# Contributor(s):
++#    Frederic Wang <fred.wang@free.fr> (original author)
++#
++# Alternatively, the contents of this file may be used under the terms of
++# either the GNU General Public License Version 2 or later (the "GPL"), or
++# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++# in which case the provisions of the GPL or the LGPL are applicable instead
++# of those above. If you wish to allow use of your version of this file only
++# under the terms of either the GPL or the LGPL, and not to allow others to
++# use your version of this file under the terms of the MPL, indicate your
++# decision by deleting the provisions above and replace them with the notice
++# and other provisions required by the GPL or the LGPL. If you do not delete
++# the provisions above, a recipient may use your version of this file under
++# the terms of any one of the MPL, the GPL or the LGPL.
++#
++# ***** END LICENSE BLOCK *****
++
++invalid_markup=invalid-markup
++
++# These are used to display an alert box to warn users when MathML fonts
++# are not installed on their system. The list of missing fonts will be
++# substituted in argument %1$S (see a screenshot in bug 128139).
++# XXXfred This alert box is currently disabled.
++mathfont_missing_dialog_title=Missing MathML Fonts
++mathfont_missing_dialog_message=To properly display the MathML on this page you need to install the following fonts:\n%1$S.\n\n\nFor further information see:\nhttp://www.mozilla.org/projects/mathml/fonts
+diff --git a/dom/locales/jar.mn b/dom/locales/jar.mn
+--- a/dom/locales/jar.mn
++++ b/dom/locales/jar.mn
+@@ -14,16 +14,19 @@
+   locale/@AB_CD@/global/global-strres.properties               (%chrome/global-strres.properties)
+   locale/@AB_CD@/global/plugins.properties                     (%chrome/plugins.properties)
+   locale/@AB_CD@/global/nsWebBrowserPersist.properties         (%chrome/nsWebBrowserPersist.properties)
+   locale/@AB_CD@/global/xslt/xslt.properties                   (%chrome/xslt/xslt.properties)
+   locale/@AB_CD@/global/dom/dom.properties                     (%chrome/dom/dom.properties)
+ #ifdef MOZ_SVG
+   locale/@AB_CD@/global/svg/svg.properties                     (%chrome/svg/svg.properties)
+ #endif
++#ifdef MOZ_MATHML
++  locale/@AB_CD@/global/mathml/mathml.properties               (%chrome/mathml/mathml.properties)
++#endif
+   locale/@AB_CD@/global/layout/MediaDocument.properties        (%chrome/layout/MediaDocument.properties)
+   locale/@AB_CD@/global/layout/xmlparser.properties            (%chrome/layout/xmlparser.properties)
+   locale/@AB_CD@/global/layout/HtmlForm.properties             (%chrome/layout/HtmlForm.properties)
+   locale/@AB_CD@/global/security/caps.properties               (%chrome/security/caps.properties)
+   locale/@AB_CD@/global/xml/prettyprint.dtd                    (%chrome/xml/prettyprint.dtd)
+   locale/@AB_CD@/global-platform/win/accessible.properties     (%chrome/accessibility/win/accessible.properties)
+   locale/@AB_CD@/global-platform/mac/accessible.properties     (%chrome/accessibility/mac/accessible.properties)
+   locale/@AB_CD@/global-platform/unix/accessible.properties    (%chrome/accessibility/unix/accessible.properties)
+diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
+--- a/layout/mathml/mathfont.properties
++++ b/layout/mathml/mathfont.properties
+@@ -32,26 +32,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-##LOCALIZATION NOTE:
+-# These are used to display an alert box to warn users when MathML fonts
+-# are not installed on their system. The list of missing fonts will be
+-# substituted in argument %1$S (see a screenshot in bug 128139).
+-mathfont_missing_dialog_title = Missing MathML Fonts
+-mathfont_missing_dialog_message = To properly display the MathML on this page you need to install the following fonts:\n%1$S.\n\n\nFor further information see:\nhttp://www.mozilla.org/projects/mathml/fonts
+-
+-##LOCALIZATION NOTE:
+-# Do not translate anything else in this file
+-
+ # List of fonts that have corresponding properties files containing special
+ # glyph tables for stretching MathML characters.  See the documentation at the
+ # end of this file for details on the setup of the property file associated to
+ # each font.  Do not include the Unicode table in this list.
+ 
+ %ifdef XP_WIN
+ font.mathfont-glyph-tables = STIXNonUnicode, STIXSize1, Standard Symbols L, Symbol
+ %else
+diff --git a/layout/mathml/mathfontCMEX10.properties b/layout/mathml/mathfontCMEX10.properties
+--- a/layout/mathml/mathfontCMEX10.properties
++++ b/layout/mathml/mathfontCMEX10.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = CMEX10
+ 
+ # There is a nebulous entanglement between the parts of stretchy chars in
+ # TeX fonts. The convention used here is to enlist horizontal stretchy chars
+ # in the property file of cmsy, and enlist vertical stretchy chars in the
+ # property file of cmex. Exception: composite chars like under/over brace
+diff --git a/layout/mathml/mathfontCMSY10.properties b/layout/mathml/mathfontCMSY10.properties
+--- a/layout/mathml/mathfontCMSY10.properties
++++ b/layout/mathml/mathfontCMSY10.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = CMSY10
+ 
+ # There is a nebulous entanglement between the parts of stretchy chars in
+ # TeX fonts. The convention used here is to enlist horizontal stretchy chars
+ # in the property file of cmsy, and enlist vertical stretchy chars in the
+ # property file of cmex. Exception: composite chars like under/over brace
+diff --git a/layout/mathml/mathfontMTExtra.properties b/layout/mathml/mathfontMTExtra.properties
+--- a/layout/mathml/mathfontMTExtra.properties
++++ b/layout/mathml/mathfontMTExtra.properties
+@@ -29,19 +29,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = MT Extra
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \uF613 = \uEC00\uEC01\uEC02\uEC03\uF613
+ \uF612 = \uEC04\uEC05\uEC06\uEC03\uF612
+ #disable for now as they appear too small and don't align properly at default font-size
+diff --git a/layout/mathml/mathfontMath1.properties b/layout/mathml/mathfontMath1.properties
+--- a/layout/mathml/mathfontMath1.properties
++++ b/layout/mathml/mathfontMath1.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = Math1
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \u0028 = \uF8FF\uFFFD\uF8FF\uF8FF\u0028 # (
+ \u0029 = \uF8FF\uFFFD\uF8FF\uF8FF\u0029 # )
+ \u005B = \uF8FF\uFFFD\uF8FF\uF8FF\u005B # [
+diff --git a/layout/mathml/mathfontMath2.properties b/layout/mathml/mathfontMath2.properties
+--- a/layout/mathml/mathfontMath2.properties
++++ b/layout/mathml/mathfontMath2.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = Math2
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \u0028 = \uF8FF\uFFFD\uF8FF\uF8FF\u0028\uF8FF\uF8FF\uF8FF # (
+ \u0029 = \uF8FF\uFFFD\uF8FF\uF8FF\u0029\uF8FF\uF8FF\uF8FF # )
+ \u002F = \uFFFD\uFFFD\uFFFD\uFFFD\u002F\uF8FF\uF8FF\uF8FF # /
+diff --git a/layout/mathml/mathfontMath4.properties b/layout/mathml/mathfontMath4.properties
+--- a/layout/mathml/mathfontMath4.properties
++++ b/layout/mathml/mathfontMath4.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with the indicated mathfont.
+ mathfont = Math4
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\u02C7\uF8FF\uF8FF\uF8FF # Hacek, caron
+ \u0302 = \uFFFD\uFFFD\uFFFD\uFFFD\u0302\uF8FF\uF8FF\uF8FF # Hat
+ \u2190 = \u2190\uFFFD\uFFFD\uF8FF\u2190 # LeftArrow, larr, leftarrow
+diff --git a/layout/mathml/mathfontPUA.properties b/layout/mathml/mathfontPUA.properties
+--- a/layout/mathml/mathfontPUA.properties
++++ b/layout/mathml/mathfontPUA.properties
+@@ -30,19 +30,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all MathML assignments to the PUA (the
+ # Unicode's Private Use Area 0xE000-0xF8FF). The file is automatically
+ # updated by the Perl script encode.pl when processing new MathFont
+ # Encoding Tables. Other additions can be made by hand editing.
+ # The comments with '>' are *significant*. They guide the Perl
+ # script in its automatic processing.
+ # See also http://www.mozilla.org/projects/mathml/fonts/encoding/
+ 
+diff --git a/layout/mathml/mathfontSTIXNonUnicode.properties b/layout/mathml/mathfontSTIXNonUnicode.properties
+--- a/layout/mathml/mathfontSTIXNonUnicode.properties
++++ b/layout/mathml/mathfontSTIXNonUnicode.properties
+@@ -32,19 +32,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of some stretchy MathML chars that
+ # can be rendered with STIXNonUnicode.
+ 
+ external.1 = STIXGeneral
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ # E0B4 stix-arrow hookleft
+ # E0B5 stix-arrow hookright
+diff --git a/layout/mathml/mathfontSTIXSize1.properties b/layout/mathml/mathfontSTIXSize1.properties
+--- a/layout/mathml/mathfontSTIXSize1.properties
++++ b/layout/mathml/mathfontSTIXSize1.properties
+@@ -32,19 +32,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of some stretchy MathML chars that
+ # can be rendered with STIXSize* set of fonts,
+ # with some help from STIXNonUnicode.
+ 
+ external.1 = STIXNonUnicode
+ external.2 = STIXSize2
+ external.3 = STIXSize3
+ external.4 = STIXSize4
+diff --git a/layout/mathml/mathfontStandardSymbolsL.properties b/layout/mathml/mathfontStandardSymbolsL.properties
+--- a/layout/mathml/mathfontStandardSymbolsL.properties
++++ b/layout/mathml/mathfontStandardSymbolsL.properties
+@@ -31,19 +31,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered with Standard Symbols L.
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \u0028 = \uF8EB\uFFFD\uF8ED\uF8EC\u0028 # (
+ \u0029 = \uF8F6\uFFFD\uF8F8\uF8F7\u0029 # )
+ \u005B = \uF8EE\uFFFD\uF8F0\uF8EF\u005B # [
+ \u005D = \uF8F9\uFFFD\uF8FB\uF8FA\u005D # ]
+diff --git a/layout/mathml/mathfontSymbol.properties b/layout/mathml/mathfontSymbol.properties
+--- a/layout/mathml/mathfontSymbol.properties
++++ b/layout/mathml/mathfontSymbol.properties
+@@ -31,19 +31,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that can be
+ # rendered with Monotype's Symbol font.
+ #
+ # This file should normally only be installed on MS Windows systems as other
+ # platforms have different fonts with the same family name but different
+ # character codes.
+ mathfont = Symbol
+ 
+diff --git a/layout/mathml/mathfontUnicode.properties b/layout/mathml/mathfontUnicode.properties
+--- a/layout/mathml/mathfontUnicode.properties
++++ b/layout/mathml/mathfontUnicode.properties
+@@ -32,19 +32,16 @@
+ # use your version of this file under the terms of the MPL, indicate your
+ # decision by deleting the provisions above and replace them with the notice
+ # and other provisions required by the GPL or the LGPL. If you do not delete
+ # the provisions above, a recipient may use your version of this file under
+ # the terms of any one of the MPL, the GPL or the LGPL.
+ #
+ # ***** END LICENSE BLOCK *****
+ 
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+ # This file contains the list of all stretchy MathML chars that
+ # can be rendered using only Unicode code points.
+ 
+ #        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+ \u0028 = \u239B\uFFFD\u239D\u239C\u0028 # (
+ \u0029 = \u239E\uFFFD\u23A0\u239F\u0029 # )
+ \u005B = \u23A1\uFFFD\u23A3\u23A2\u005B # [
+ \u005D = \u23A4\uFFFD\u23A6\u23A5\u005D # ]
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -64,17 +64,17 @@
+ #include "nsIDeviceContext.h"
+ #include "nsCSSRendering.h"
+ #include "prprf.h"         // For PR_snprintf()
+ 
+ #if ALERT_MISSING_FONTS
+ #include "nsIDOMWindow.h"
+ #include "nsINonBlockingAlertService.h"
+ #include "nsIWindowWatcher.h"
+-#include "nsIStringBundle.h"
++#include "nsContentUtils.h"
+ #endif
+ #include "nsDisplayList.h"
+ 
+ #include "nsMathMLOperators.h"
+ #include "nsMathMLChar.h"
+ 
+ //#define SHOW_BORDERS 1
+ //#define NOISY_SEARCH 1
+@@ -150,30 +150,24 @@ CheckFontExistence(nsPresContext* aPresC
+ }
+ 
+ #if ALERT_MISSING_FONTS
+ // alert the user if some of the needed MathML fonts are not installed.
+ // it is non-modal (i.e., it doesn't wait for input from the user)
+ static void
+ AlertMissingFonts(nsString& aMissingFonts)
+ {
+-  nsCOMPtr<nsIStringBundleService> sbs(do_GetService(NS_STRINGBUNDLE_CONTRACTID));
+-  if (!sbs)
+-    return;
+-
+-  nsCOMPtr<nsIStringBundle> sb;
+-  sbs->CreateBundle("resource://gre/res/fonts/mathfont.properties", getter_AddRefs(sb));
+-  if (!sb)
+-    return;
+-
+   nsXPIDLString title, message;
+   const PRUnichar* strings[] = { aMissingFonts.get() };
+-  sb->GetStringFromName(NS_LITERAL_STRING("mathfont_missing_dialog_title").get(), getter_Copies(title));
+-  sb->FormatStringFromName(NS_LITERAL_STRING("mathfont_missing_dialog_message").get(),
+-                           strings, 1, getter_Copies(message));
++  nsContentUtils::GetLocalizedString(nsContentUtils::eMATHML_PROPERTIES,
++                                     "mathfont_missing_dialog_title",
++                                     title);
++  nsContentUtils::GetLocalizedString(nsContentUtils::eMATHML_PROPERTIES,
++                                     "mathfont_missing_dialog_message",
++                                     message);
+ 
+   nsCOMPtr<nsIWindowWatcher> wwatch(do_GetService(NS_WINDOWWATCHER_CONTRACTID));
+   if (!wwatch)
+     return;
+ 
+   nsCOMPtr<nsIDOMWindow> parent;
+   wwatch->GetActiveWindow(getter_AddRefs(parent));
+   nsresult rv;
+diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
+--- a/layout/mathml/nsMathMLContainerFrame.cpp
++++ b/layout/mathml/nsMathMLContainerFrame.cpp
+@@ -61,16 +61,18 @@
+ #include "nsMathMLParts.h"
+ #include "nsMathMLContainerFrame.h"
+ #include "nsAutoPtr.h"
+ #include "nsStyleSet.h"
+ #include "nsDisplayList.h"
+ #include "nsCSSFrameConstructor.h"
+ #include "nsIReflowCallback.h"
+ 
++#include "nsContentUtils.h"
++
+ using namespace mozilla;
+ 
+ //
+ // nsMathMLContainerFrame implementation
+ //
+ 
+ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLContainerFrame)
+ 
+@@ -92,17 +94,19 @@ nsMathMLContainerFrame::ReflowError(nsIR
+   mEmbellishData.flags = 0;
+   mPresentationData.flags = NS_MATHML_ERROR;
+ 
+   ///////////////
+   // Set font
+   nsLayoutUtils::SetFontFromStyle(&aRenderingContext, GetStyleContext());
+ 
+   // bounding metrics
+-  nsAutoString errorMsg; errorMsg.AssignLiteral("invalid-markup");
++  nsXPIDLString errorMsg;
++  nsContentUtils::GetLocalizedString(nsContentUtils::eMATHML_PROPERTIES,
++                                     "invalid_markup", errorMsg);
+   rv = aRenderingContext.GetBoundingMetrics(errorMsg.get(),
+                                             PRUint32(errorMsg.Length()),
+                                             mBoundingMetrics);
+   if (NS_FAILED(rv)) {
+     NS_WARNING("GetBoundingMetrics failed");
+     aDesiredSize.width = aDesiredSize.height = 0;
+     aDesiredSize.ascent = 0;
+     return NS_OK;
+@@ -151,17 +155,19 @@ void nsDisplayMathMLError::Paint(nsDispl
+   aCtx->FillRect(nsRect(pt, mFrame->GetSize()));
+   aCtx->SetColor(NS_RGB(255,255,255));
+ 
+   nscoord ascent;
+   nsCOMPtr<nsIFontMetrics> fm;
+   aCtx->GetFontMetrics(*getter_AddRefs(fm));
+   fm->GetMaxAscent(ascent);
+ 
+-  nsAutoString errorMsg; errorMsg.AssignLiteral("invalid-markup");
++  nsXPIDLString errorMsg;
++  nsContentUtils::GetLocalizedString(nsContentUtils::eMATHML_PROPERTIES,
++                                     "invalid_markup", errorMsg);
+   aCtx->DrawString(errorMsg.get(), PRUint32(errorMsg.Length()), pt.x, pt.y+ascent);
+ }
+ 
+ /* /////////////
+  * nsIMathMLFrame - support methods for stretchy elements
+  * =============================================================================
+  */
+ 

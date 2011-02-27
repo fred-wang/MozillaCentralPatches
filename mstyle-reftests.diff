@@ -1,0 +1,1063 @@
+# HG changeset patch
+# Parent 15a3cd0384e5ca8b0b49ccaa6008270196d7dc22
+# User Frédéric Wang <fred.wang@free.fr>
+Add reftests for mstyle (bug 569125). r=karlt
+
+diff --git a/layout/reftests/mathml/mstyle-1-ref.xhtml b/layout/reftests/mathml/mstyle-1-ref.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-1-ref.xhtml
+@@ -0,0 +1,131 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mfenced: open, close, separators </td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mfenced open="[" close="]" separators=";">
++              <mn>1</mn>
++              <mn>2</mn>
++            </mfenced>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>ms: lquote, rquote</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <ms lquote="(" rquote=")">text</ms>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>menclose: notation</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <menclose notation="box">
++              <mtext>menclose</mtext>
++            </menclose>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: bevelled, linethickness</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mfrac bevelled="true" linethickness="thick">
++              <mi>a</mi>
++              <mi>b</mi>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: numalign</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mfrac numalign="right">
++              <mn>1</mn>
++              <mn>234</mn>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: denomalign</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mfrac denomalign="right">
++              <mn>123</mn>
++              <mn>4</mn>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mmultiscripts: subscriptshift, superscriptshift </td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mmultiscripts subscriptshift="1em" superscriptshift="1em">
++              <mi>a</mi>
++              <mi>b</mi>
++              <mi>c</mi>
++              <mprescripts/>
++              <mi>e</mi>
++              <mi>f</mi>
++            </mmultiscripts>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msubsup: subscriptshift, superscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <msubsup subscriptshift="1em" superscriptshift="1em">
++              <mi>a</mi>
++              <mi>b</mi>
++              <mi>c</mi>
++            </msubsup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msub: subscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <msub subscriptshift="1em">
++              <mi>a</mi>
++              <mi>b</mi>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msup: superscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <msup superscriptshift="1em">
++              <mi>a</mi>
++              <mi>b</mi>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-1.xhtml b/layout/reftests/mathml/mstyle-1.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-1.xhtml
+@@ -0,0 +1,131 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mfenced: open, close, separators </td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle open="[" close="]" separators=";">
++            <mfenced>
++              <mn>1</mn>
++              <mn>2</mn>
++            </mfenced>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>ms: lquote, rquote</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle lquote="(" rquote=")">
++            <ms>text</ms>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>menclose: notation</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle notation="box">
++            <menclose>
++              <mtext>menclose</mtext>
++            </menclose>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: bevelled, linethickness</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle bevelled="true" linethickness="thick">
++            <mfrac>
++              <mi>a</mi>
++              <mi>b</mi>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: numalign</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle numalign="right">
++            <mfrac>
++              <mn>1</mn>
++              <mn>234</mn>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mfrac: denomalign</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle denomalign="right">
++            <mfrac>
++              <mn>123</mn>
++              <mn>4</mn>
++            </mfrac>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mmultiscripts: subscriptshift, superscriptshift </td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle subscriptshift="1em" superscriptshift="1em">
++            <mmultiscripts>
++              <mi>a</mi>
++              <mi>b</mi>
++              <mi>c</mi>
++              <mprescripts/>
++              <mi>e</mi>
++              <mi>f</mi>
++            </mmultiscripts>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msubsup: subscriptshift, superscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle subscriptshift="1em" superscriptshift="1em">
++            <msubsup>
++              <mi>a</mi>
++              <mi>b</mi>
++              <mi>c</mi>
++            </msubsup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msub: subscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle subscriptshift="1em">
++            <msub>
++              <mi>a</mi>
++              <mi>b</mi>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>msup: superscriptshift</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle superscriptshift="1em">
++            <msup>
++              <mi>a</mi>
++              <mi>b</mi>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-2-ref.xhtml b/layout/reftests/mathml/mstyle-2-ref.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-2-ref.xhtml
+@@ -0,0 +1,150 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mpadded: width</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute width on mstyle does not apply to mpadded -->
++          <mstyle>
++            <mtext>_</mtext>
++            <mpadded/> <!-- width="1em" -->
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: lspace</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute lspace on mstyle does not apply to mpadded -->
++          <mstyle>
++            <mtext>_</mtext>
++            <mpadded/> <!-- lspace="1em" -->
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: height</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute height on mstyle does not apply to mpadded -->
++          <mstyle>
++            <msup>
++              <mrow>
++                <mtext>_</mtext>
++                <mpadded/> <!-- height="1em" -->
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: depth</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute depth on mstyle does not apply to mpadded -->
++          <mstyle>
++            <msub>
++              <mrow>
++                <mtext>_</mtext>
++                <mpadded/> <!-- depth="1em" -->
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: width</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mtext>_</mtext>
++            <mspace width="1em"/>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: height</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <msup>
++              <mrow>
++                <mtext>_</mtext>
++                <mspace height="1em"/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: depth</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <msub>
++              <mrow>
++                <mtext>_</mtext>
++                <mspace depth="1em"/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <!-- maction actiontype cannot be set on mstyle -->
++    <tr>
++      <td>maction: selection</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <maction actiontype="toggle" selection="2">
++              <mn>1</mn>
++              <mn>2</mn>
++            </maction>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mtable: align</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute align on mstyle does not apply to mtable -->
++          <mstyle>
++            <mrow>
++              <mtext>_</mtext>
++              <mtable> <!-- align="baseline" -->
++                <mtr>
++                  <mtd>
++                    <mtext>&#x2015;</mtext>
++                  </mtd>
++                </mtr>
++                <mtr>
++                  <mtd>
++                    <mtext>&#x2015;</mtext>
++                  </mtd>
++                </mtr>
++              </mtable>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-2.xhtml b/layout/reftests/mathml/mstyle-2.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-2.xhtml
+@@ -0,0 +1,150 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mpadded: width</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- mpadded does not use attributes of mstyle -->
++          <mstyle width="1em">
++            <mtext>_</mtext>
++            <mpadded/>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: lspace</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- mpadded does not use attributes of mstyle -->
++          <mstyle lspace="1em">
++            <mtext>_</mtext>
++            <mpadded/>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: height</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- mpadded does not use attributes of mstyle -->
++          <mstyle height="1em">
++            <msup>
++              <mrow>
++                <mtext>_</mtext>
++                <mpadded/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mpadded: depth</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- mpadded does not use attributes of mstyle -->
++          <mstyle depth="1em">
++            <msub>
++              <mrow>
++                <mtext>_</mtext>
++                <mpadded/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: width</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle width="1em">
++            <mtext>_</mtext>
++            <mspace/>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: height</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle height="1em">
++            <msup>
++              <mrow>
++                <mtext>_</mtext>
++                <mspace/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msup>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mspace: depth</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle depth="1em">
++            <msub>
++              <mrow>
++                <mtext>_</mtext>
++                <mspace/>
++                <mtext>_</mtext>
++              </mrow>
++              <mtext>_</mtext>
++            </msub>
++          </mstyle>
++        </math></td>
++    </tr>
++    <!-- maction actiontype cannot be set on mstyle -->
++    <tr>
++      <td>maction: selection</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle selection="2">
++            <maction actiontype="toggle">
++              <mn>1</mn>
++              <mn>2</mn>
++            </maction>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mtable: align</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- attribute align on mstyle does not apply to mtable -->
++          <mstyle align="baseline">
++            <mrow>
++              <mtext>_</mtext>
++              <mtable>
++                <mtr>
++                  <mtd>
++                    <mtext>&#x2015;</mtext>
++                  </mtd>
++                </mtr>
++                <mtr>
++                  <mtd>
++                    <mtext>&#x2015;</mtext>
++                  </mtd>
++                </mtr>
++              </mtable>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-3-ref.xhtml b/layout/reftests/mathml/mstyle-3-ref.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-3-ref.xhtml
+@@ -0,0 +1,133 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mo: form</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mrow>
++              <!-- We assume that the infix/postfix forms of _ do -->
++              <!-- not have the same lspace/rspace values in the operator dictionary -->
++              <mtext>_</mtext>
++              <mo form="postfix">_</mo>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: lspace, rspace</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mrow>
++              <!-- We assume that the infix form of _ has -->
++              <!-- nonzero lspace/rspace values in the operator dictionary -->
++              <mtext>_</mtext>
++              <mo lspace="0" rspace="0">_</mo>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: stretchy</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mover>
++              <!-- We assume that the arrow has stretchy=true in the operator dictionary -->
++              <mtext>abcd</mtext>
++              <mo stretchy="false">&#x2192;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: accent</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mover>
++              <!-- We assume &#x23de; has accent=true in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo accent="false">&#x23de;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: maxsize</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mo maxsize="1">(</mo>
++            <mspace height="3em"/>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: minsize</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mo minsize="3">(</mo>
++            <mspace height="1em"/>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: symmetric</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- We assume that ( has symmetric=true in the operator dictionary -->
++          <mstyle>
++            <mtext>_</mtext>
++            <mo symmetric="false" minsize="2">(</mo>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: movablelimits</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- We assume that &#x2211; has movablelimits=true in the operator dictionary -->
++          <mstyle>
++            <munderover>
++              <mo movablelimits="false">&#x2211;</mo>
++              <mi>a</mi>
++              <mi>b</mi>
++            </munderover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: largeop</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
++          <!-- We assume that &#x2211; has largeop=true in the operator dictionary -->
++          <mstyle>
++            <mo largeop="false">&#x2211;</mo>
++          </mstyle>
++        </math></td>
++    </tr>
++    <!-- 
++            fence: This attribute generally has no direct effect on the visual rendering.
++            separator: This attribute generally has no direct effect on the visual rendering.
++      -->
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-3.xhtml b/layout/reftests/mathml/mstyle-3.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-3.xhtml
+@@ -0,0 +1,133 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mo: form</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle form="postfix">
++            <mrow>
++              <!-- We assume that the infix/postfix forms of _ do -->
++              <!-- not have the same lspace/rspace values in the operator dictionary -->
++              <mtext>_</mtext>
++              <mo>_</mo>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: lspace, rspace</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle lspace="0" rspace="0">
++            <mrow>
++              <!-- We assume that the infix form of _ has -->
++              <!-- nonzero lspace/rspace values in the operator dictionary -->
++              <mtext>_</mtext>
++              <mo>_</mo>
++              <mtext>_</mtext>
++            </mrow>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: stretchy</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle stretchy="false">
++            <mover>
++              <!-- We assume that the arrow has stretchy=true in the operator dictionary -->
++              <mtext>abcd</mtext>
++              <mo>&#x2192;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: accent</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle accent="false">
++            <mover>
++              <!-- We assume &#x23de; has accent=true in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23de;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: maxsize</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle maxsize="1">
++            <mo>(</mo>
++            <mspace height="3em"/>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: minsize</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle minsize="3">
++            <mo>(</mo>
++            <mspace height="1em"/>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: symmetric</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- We assume that ( has symmetric=true in the operator dictionary -->
++          <mstyle symmetric="false">
++            <mtext>_</mtext>
++            <mo minsize="2">(</mo>
++            <mtext>_</mtext>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: movablelimits</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <!-- We assume that &#x2211; has movablelimits=true in the operator dictionary -->
++          <mstyle movablelimits="false">
++            <munderover>
++              <mo>&#x2211;</mo>
++              <mi>a</mi>
++              <mi>b</mi>
++            </munderover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mo: largeop</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
++          <!-- We assume that &#x2211; has largeop=true in the operator dictionary -->
++          <mstyle largeop="false">
++            <mo>&#x2211;</mo>
++          </mstyle>
++        </math></td>
++    </tr>
++    <!-- 
++            fence: This attribute generally has no direct effect on the visual rendering.
++            separator: This attribute generally has no direct effect on the visual rendering.
++      -->
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-4-ref.xhtml b/layout/reftests/mathml/mstyle-4-ref.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-4-ref.xhtml
+@@ -0,0 +1,83 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mover: accent</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <mover accent="false">
++              <!-- We assume &#x23de; is accent in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23de;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>munder: accentunder</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <munder accentunder="false">
++              <!-- We assume &#x23df; is accent in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23df;</mo>
++            </munder>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>munderover: accent, accentunder</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle>
++            <munderover accent="false" accentunder="false">
++              <!-- We assume &#x23de; and &#x23df; are accents in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23df;</mo>
++              <mo>&#x23de;</mo>
++            </munderover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mi: mathvariant</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mstyle><mi mathvariant="normal">a</mi><mi mathvariant="normal">bb</mi></mstyle><mo>,</mo>
++        <mstyle><mi mathvariant="bold">a</mi><mi mathvariant="bold">bb</mi></mstyle><mo>,</mo>
++        <mstyle><mi mathvariant="italic">a</mi><mi mathvariant="italic">bb</mi></mstyle>
++      </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/mstyle-4.xhtml b/layout/reftests/mathml/mstyle-4.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mstyle-4.xhtml
+@@ -0,0 +1,83 @@
++<?xml version="1.0" encoding="us-ascii"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <meta http-equiv="content-type"
++  content="application/xhtml+xml; charset=us-ascii" />
++  <title>Test mstyle</title>
++  <style type="text/css">
++    table { width: 100%;  border-collapse: collapse; }
++    td { border: solid black 1px; }
++  </style>
++</head>
++
++<body>
++
++<table>
++  <tbody>
++    <tr>
++      <td>mover: accent</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle accent="false">
++            <mover>
++              <!-- We assume &#x23de; is accent in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23de;</mo>
++            </mover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>munder: accentunder</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle accentunder="false">
++            <munder>
++              <!-- We assume &#x23df; is accent in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23df;</mo>
++            </munder>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>munderover: accent, accentunder</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++          <mstyle accent="false" accentunder="false">
++            <munderover>
++              <!-- We assume &#x23de; and &#x23df; are accents in the operator dictionary -->
++              <mrow>
++                <mi>x</mi>
++                <mo>+</mo>
++                <mi>y</mi>
++                <mo>+</mo>
++                <mi>z</mi>
++              </mrow>
++              <mo>&#x23df;</mo>
++              <mo>&#x23de;</mo>
++            </munderover>
++          </mstyle>
++        </math></td>
++    </tr>
++    <tr>
++      <td>mi: mathvariant</td>
++      <td><math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mstyle mathvariant="normal"><mi>a</mi><mi>bb</mi></mstyle><mo>,</mo>
++        <mstyle mathvariant="bold"><mi>a</mi><mi>bb</mi></mstyle><mo>,</mo>
++        <mstyle mathvariant="italic"><mi>a</mi><mi>bb</mi></mstyle>
++      </math></td>
++    </tr>
++  </tbody>
++</table>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -25,16 +25,20 @@
+ != mathcolor-1.xml mathcolor-1-ref.xml
+ != mathcolor-2.xml mathcolor-2-ref.xml
+ != mathcolor-3.xml mathcolor-3-ref.xml
+ == mathcolor-4.xml mathcolor-4-ref.xml
+ != mathbackground-1.xml mathbackground-1-ref.xml
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
+ == mathbackground-4.xml mathbackground-4-ref.xml
++== mstyle-1.xhtml mstyle-1-ref.xhtml
++== mstyle-2.xhtml mstyle-2-ref.xhtml
++== mstyle-3.xhtml mstyle-3-ref.xhtml
++== mstyle-4.xhtml mstyle-4-ref.xhtml
+ == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
+ != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
+ == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
+ != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
+ != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ != link-1.xhtml link-ref.xhtml
+ != link-2.xhtml link-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml

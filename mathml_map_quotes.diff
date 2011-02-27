@@ -1,0 +1,336 @@
+# HG changeset patch
+# Parent 55636036d0c78315bf2d7dfc46814746ba580287
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 560100 - Map MathML attributes lquote/rquote to style
+
+diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
+--- a/content/mathml/content/src/nsMathMLElement.cpp
++++ b/content/mathml/content/src/nsMathMLElement.cpp
+@@ -123,16 +123,22 @@ nsMathMLElement::ParseAttribute(PRInt32 
+ static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
+   { &nsGkAtoms::mathsize_ },
+   { &nsGkAtoms::fontsize_ },
+   { &nsGkAtoms::color },
+   { &nsGkAtoms::fontfamily_ },
+   { nsnull }
+ };
+ 
++static nsGenericElement::MappedAttributeEntry sMsStyles[] = {
++  { &nsGkAtoms::lquote_ },
++  { &nsGkAtoms::rquote_ },
++  { nsnull }
++};
++
+ static nsGenericElement::MappedAttributeEntry sEnvironmentStyles[] = {
+   { &nsGkAtoms::scriptlevel_ },
+   { &nsGkAtoms::scriptminsize_ },
+   { &nsGkAtoms::scriptsizemultiplier_ },
+   { &nsGkAtoms::background },
+   { nsnull }
+ };
+ 
+@@ -144,32 +150,43 @@ static nsGenericElement::MappedAttribute
+ 
+ PRBool
+ nsMathMLElement::IsAttributeMapped(const nsIAtom* aAttribute) const
+ {
+   static const MappedAttributeEntry* const tokenMap[] = {
+     sTokenStyles,
+     sCommonPresStyles
+   };
++  static const MappedAttributeEntry* const msMap[] = {
++    sMsStyles,
++    sTokenStyles,
++    sCommonPresStyles
++  };
+   static const MappedAttributeEntry* const mstyleMap[] = {
+     sTokenStyles,
+     sEnvironmentStyles,
+     sCommonPresStyles
+   };
+   static const MappedAttributeEntry* const commonPresMap[] = {
+     sCommonPresStyles
+   };
+-  
++
+   // We don't support mglyph (yet).
+   nsIAtom* tag = Tag();
+-  if (tag == nsGkAtoms::ms_ || tag == nsGkAtoms::mi_ ||
++  if (tag == nsGkAtoms::mi_ ||
+       tag == nsGkAtoms::mn_ || tag == nsGkAtoms::mo_ ||
+       tag == nsGkAtoms::mtext_ || tag == nsGkAtoms::mspace_)
+     return FindAttributeDependence(aAttribute, tokenMap,
+                                    NS_ARRAY_LENGTH(tokenMap));
++
++  if (tag == nsGkAtoms::ms_) {
++    return FindAttributeDependence(aAttribute, msMap,
++                                   NS_ARRAY_LENGTH(msMap));
++  }
++
+   if (tag == nsGkAtoms::mstyle_)
+     return FindAttributeDependence(aAttribute, mstyleMap,
+                                    NS_ARRAY_LENGTH(mstyleMap));
+ 
+   if (tag == nsGkAtoms::maction_ ||
+       tag == nsGkAtoms::maligngroup_ ||
+       tag == nsGkAtoms::malignmark_ ||
+       tag == nsGkAtoms::math ||
+@@ -427,16 +444,36 @@ nsMathMLElement::MapMathMLAttributesInto
+       value = aAttributes->GetAttr(nsGkAtoms::color);
+     }
+     nscolor color;
+     if (value && value->GetColorValue(color) &&
+         aData->mColorData->mColor.GetUnit() == eCSSUnit_Null) {
+       aData->mColorData->mColor.SetColorValue(color);
+     }
+   }
++
++  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Quotes)) {
++    const nsAttrValue* lquote = aAttributes->GetAttr(nsGkAtoms::lquote_);
++    const nsAttrValue* rquote = aAttributes->GetAttr(nsGkAtoms::rquote_);
++    PRBool hasLeftQuote = lquote && lquote->Type() == nsAttrValue::eString;
++    PRBool hasRightQuote = rquote && rquote->Type() == nsAttrValue::eString;
++    if (hasLeftQuote || hasRightQuote) {
++      nsCSSValuePairList* quotes = aData->mContentData->mQuotes;
++      if (!quotes &&
++          (quotes = aData->mContentData->mQuotes = new nsCSSValuePairList())) {
++        const nsString quote(NS_LITERAL_STRING("\""));
++        quotes->mXValue.SetStringValue(hasLeftQuote ?
++                                       lquote->GetStringValue() : quote,
++                                       eCSSUnit_String);
++        quotes->mYValue.SetStringValue(hasRightQuote ?
++                                       rquote->GetStringValue() : quote,
++                                       eCSSUnit_String);
++      }
++    }
++  }
+ }
+ 
+ NS_IMPL_ELEMENT_CLONE(nsMathMLElement)
+ 
+ PRInt32
+ nsMathMLElement::IntrinsicState() const
+ {
+   return nsMathMLElementBase::IntrinsicState() |
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -188,16 +188,17 @@ math[display="inline"] {
+ }
+ 
+ /**************************************************************************/
+ /* tags with generated content                                            */
+ /**************************************************************************/
+ 
+ ms {
+   display: inline;
++  quotes: '"' '"';
+ }
+ ms:before {
+   content: open-quote;
+ }
+ ms:after {
+   content: close-quote;
+ }
+ 
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -138,17 +138,16 @@ NS_IMETHODIMP
+ nsMathMLTokenFrame::SetInitialChildList(nsIAtom*        aListName,
+                                         nsFrameList&    aChildList)
+ {
+   // First, let the base class do its work
+   nsresult rv = nsMathMLContainerFrame::SetInitialChildList(aListName, aChildList);
+   if (NS_FAILED(rv))
+     return rv;
+ 
+-  SetQuotes(PR_FALSE);
+   ProcessTextData();
+   return rv;
+ }
+ 
+ nsresult
+ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
+                            nsHTMLReflowMetrics&     aDesiredSize,
+                            const nsHTMLReflowState& aReflowState,
+@@ -248,30 +247,16 @@ nsMathMLTokenFrame::MarkIntrinsicWidthsD
+ {
+   // this could be called due to changes in the nsTextFrame beneath us
+   // when something changed in the text content. So re-process our text
+   ProcessTextData();
+ 
+   nsMathMLContainerFrame::MarkIntrinsicWidthsDirty();
+ }
+ 
+-NS_IMETHODIMP
+-nsMathMLTokenFrame::AttributeChanged(PRInt32         aNameSpaceID,
+-                                     nsIAtom*        aAttribute,
+-                                     PRInt32         aModType)
+-{
+-  if (nsGkAtoms::lquote_ == aAttribute ||
+-      nsGkAtoms::rquote_ == aAttribute) {
+-    SetQuotes(PR_TRUE);
+-  }
+-
+-  return nsMathMLContainerFrame::
+-         AttributeChanged(aNameSpaceID, aAttribute, aModType);
+-}
+-
+ void
+ nsMathMLTokenFrame::ProcessTextData()
+ {
+   // see if the style changes from normal to italic or vice-versa
+   if (!SetTextStyle())
+     return;
+ 
+   // explicitly request a re-resolve to pick up the change of style
+@@ -365,60 +350,8 @@ nsMathMLTokenFrame::SetTextStyle()
+                                   fontstyle, eCaseMatters)) {
+     mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::_moz_math_fontstyle_,
+                       fontstyle, PR_FALSE);
+     return PR_TRUE;
+   }
+ 
+   return PR_FALSE;
+ }
+-
+-///////////////////////////////////////////////////////////////////////////
+-// For <ms>, it is assumed that the mathml.css file contains two rules:
+-// ms:before { content: open-quote; }
+-// ms:after { content: close-quote; }
+-// With these two rules, the frame construction code will
+-// create inline frames that contain text frames which themselves
+-// contain the text content of the quotes.
+-// So the main idea in this code is to see if there are lquote and 
+-// rquote attributes. If these are there, we ovewrite the default
+-// quotes in the text frames.
+-// XXX this is somewhat bogus, we probably should map lquote and rquote
+-// to 'content' style rules
+-//
+-// But what if the mathml.css file wasn't loaded? 
+-// We also check that we are not relying on null pointers...
+-
+-static void
+-SetQuote(nsIFrame* aFrame, nsString& aValue, PRBool aNotify)
+-{
+-  if (!aFrame)
+-    return;
+-
+-  nsIFrame* textFrame = aFrame->GetFirstChild(nsnull);
+-  if (!textFrame)
+-    return;
+-
+-  nsIContent* quoteContent = textFrame->GetContent();
+-  if (!quoteContent->IsNodeOfType(nsINode::eTEXT))
+-    return;
+-
+-  quoteContent->SetText(aValue, aNotify);
+-}
+-
+-void
+-nsMathMLTokenFrame::SetQuotes(PRBool aNotify)
+-{
+-  if (mContent->Tag() != nsGkAtoms::ms_)
+-    return;
+-
+-  nsAutoString value;
+-  // lquote
+-  if (GetAttribute(mContent, mPresentationData.mstyle,
+-                   nsGkAtoms::lquote_, value)) {
+-    SetQuote(nsLayoutUtils::GetBeforeFrame(this), value, aNotify);
+-  }
+-  // rquote
+-  if (GetAttribute(mContent, mPresentationData.mstyle,
+-                   nsGkAtoms::rquote_, value)) {
+-    SetQuote(nsLayoutUtils::GetAfterFrame(this), value, aNotify);
+-  }
+-}
+diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFrame.h
+--- a/layout/mathml/nsMathMLTokenFrame.h
++++ b/layout/mathml/nsMathMLTokenFrame.h
+@@ -71,21 +71,16 @@ public:
+ 
+   virtual nsresult
+   Place(nsIRenderingContext& aRenderingContext,
+         PRBool               aPlaceOrigin,
+         nsHTMLReflowMetrics& aDesiredSize);
+ 
+   virtual void MarkIntrinsicWidthsDirty();
+ 
+-  NS_IMETHOD
+-  AttributeChanged(PRInt32         aNameSpaceID,
+-                   nsIAtom*        aAttribute,
+-                   PRInt32         aModType);
+-
+   virtual nsresult
+   ChildListChanged(PRInt32 aModType)
+   {
+     ProcessTextData();
+     return nsMathMLContainerFrame::ChildListChanged(aModType);
+   }
+ 
+ protected:
+diff --git a/layout/reftests/mathml/quotes-1-ref.xhtml b/layout/reftests/mathml/quotes-1-ref.xhtml
+--- a/layout/reftests/mathml/quotes-1-ref.xhtml
++++ b/layout/reftests/mathml/quotes-1-ref.xhtml
+@@ -2,14 +2,17 @@
+ <head>
+ <style type="text/css">
+ body { font-family:sans-serif; }
+ p { height:2em; }
+ </style>
+ </head>
+ <body>
+ <p>:L_R</p>
+-<p>:L_&#x201D;</p>
+-<p>:&#x201C;_R</p>
+-<p>:L_&#x201D;</p>
+-<p>:&#x201C;_R</p>
++<p>:L_"</p>
++<p>:"_R</p>
++<p>:L_"</p>
++<p>:"_R</p>
++<p>:"_"</p>
++<p>:"_"</p>
++<p>:"_"</p>
+ </body>
+ </html>
+diff --git a/layout/reftests/mathml/quotes-1.xhtml b/layout/reftests/mathml/quotes-1.xhtml
+--- a/layout/reftests/mathml/quotes-1.xhtml
++++ b/layout/reftests/mathml/quotes-1.xhtml
+@@ -6,24 +6,34 @@ p { height:2em; }
+ </style>
+ </head>
+ <body>
+ <p>:<ms xmlns="http://www.w3.org/1998/Math/MathML" lquote="L" rquote="R">_</ms></p>
+ <p>:<ms id="m1" xmlns="http://www.w3.org/1998/Math/MathML">_</ms></p>
+ <p>:<ms id="m2" xmlns="http://www.w3.org/1998/Math/MathML">_</ms></p>
+ <p>:<ms id="m3" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_">_</ms></p>
+ <p>:<ms id="m4" xmlns="http://www.w3.org/1998/Math/MathML" rquote="_">_</ms></p>
++<p>:<ms id="m5" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_" rquote="_">_</ms></p>
++<p>:<ms id="m6" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_">_</ms></p>
++<p>:<ms id="m7" xmlns="http://www.w3.org/1998/Math/MathML" rquote="_">_</ms></p>
+ <script>
+ function doTest() {
+   var m1 = document.getElementById("m1");
+   m1.setAttribute("lquote", "L");
+   var m2 = document.getElementById("m2");
+   m2.setAttribute("rquote", "R");
+   var m3 = document.getElementById("m3");
+   m3.setAttribute("lquote", "L");
+   var m4 = document.getElementById("m4");
+   m4.setAttribute("rquote", "R");
++  var m5 = document.getElementById("m5");
++  m5.removeAttribute("lquote");
++  m5.removeAttribute("rquote");
++  var m6 = document.getElementById("m6");
++  m6.removeAttribute("lquote");
++  var m7 = document.getElementById("m7");
++  m7.removeAttribute("rquote");
+   document.documentElement.removeAttribute('class');
+ }
+ window.addEventListener("MozReftestInvalidate", doTest, false);
+ </script>
+ </body>
+ </html>

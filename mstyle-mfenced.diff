@@ -1,0 +1,28 @@
+# HG changeset patch
+# Parent 05cd7407613f3e55fb1beba38dd7957cd18b3a89
+# User Frédéric Wang <fred.wang@free.fr>
+Support for attribute "open", "close" and "separators" on mstyle (bug 569125). r=karlt
+
+diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
+--- a/layout/mathml/nsMathMLmfencedFrame.cpp
++++ b/layout/mathml/nsMathMLmfencedFrame.cpp
+@@ -70,16 +70,19 @@ nsMathMLmfencedFrame::~nsMathMLmfencedFr
+ NS_IMETHODIMP
+ nsMathMLmfencedFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ 
+   mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+ 
++  RemoveFencesAndSeparators();
++  CreateFencesAndSeparators(PresContext());
++
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmfencedFrame::SetInitialChildList(nsIAtom*        aListName,
+                                           nsFrameList&    aChildList)
+ {
+   // First, let the base class do its work

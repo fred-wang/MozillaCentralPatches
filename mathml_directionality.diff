@@ -1,0 +1,668 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Date 1262541153 -3600
+# Node ID 7f8941c192349709b7fcaaf465c915d507d75979
+# Parent 2b7e7f3d4606449d44122f9266b5a0a0240aa2a1
+Add a directionality flag on MathML frames (bug 534963). r=karlt
+
+diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
+--- a/layout/mathml/nsIMathMLFrame.h
++++ b/layout/mathml/nsIMathMLFrame.h
+@@ -171,24 +171,25 @@ public:
+ 
+   NS_IMETHOD
+   InheritAutomaticData(nsIFrame* aParent) = 0;
+ 
+   NS_IMETHOD
+   TransmitAutomaticData() = 0;
+ 
+  /* UpdatePresentationData :
+-  * Updates the frame's displaystyle and compression flags. The displaystyle
+-  * flag of an environment gets updated according to the MathML specification.
++  * Updates the frame's displaystyle, directionality and compression flags. The
++  * displaystyle and directionality flags of an environment get updated
++  * according to the MathML specification.
+   * A frame becomes "compressed" (or "cramped") according to TeX rendering
+   * rules (TeXBook, Ch.17, p.140-141).
+   *
+-  * Note that <mstyle> is the only tag which allows to set
+-  * <mstyle displaystyle="true|false">
+-  * Therefore <mstyle> has its own peculiar version of this method.
++  * Note that using an attribute to specify displaystyle/directionality is
++  * allowed for a small set of elements (e.g. <mstyle>). Therefore these
++  * elements have their own peculiar version of this method.
+   *
+   * @param aFlagsValues [in]
+   *        The new values (e.g., display, compress) that are going to be
+   *        updated.
+   *
+   * @param aWhichFlags [in]
+   *        The flags that are relevant to this call. Since not all calls
+   *        are meant to update all flags at once, aWhichFlags is used
+@@ -200,24 +201,24 @@ public:
+   *        setting their desired values in aFlagsValues, it is possible to
+   *        update some flags in the frame, leaving the other flags unchanged.
+   */
+   NS_IMETHOD
+   UpdatePresentationData(PRUint32        aFlagsValues,
+                          PRUint32        aWhichFlags) = 0;
+ 
+  /* UpdatePresentationDataFromChildAt :
+-  * Sets displaystyle and compression flags on the whole tree. For child frames
+-  * at aFirstIndex up to aLastIndex, this method sets their displaystyle and
+-  * compression flags. The update is propagated down the subtrees of each of
+-  * these child frames. 
++  * Sets displaystyle, directionality and compression flags on the whole tree.
++  * For child frames at aFirstIndex up to aLastIndex, this method sets their
++  * displaystyle, directionality and compression flags. The update is
++  * propagated down the subtrees of each of these child frames. 
+   *
+-  * Note that <mstyle> is the only tag which allows
+-  * <mstyle displaystyle="true|false">
+-  * Therefore <mstyle> has its own peculiar version of this method.
++  * Note that using an attribute to specify displaystyle/directionality is
++  * allowed for a small set of elements (e.g. <mstyle>). Therefore these
++  * elements have their own peculiar version of this method.
+   *
+   * @param aFirstIndex [in]
+   *        Index of the first child from where the update is propagated.
+   *
+   * @param aLastIndex [in]
+   *        Index of the last child where to stop the update.
+   *        A value of -1 means up to last existing child.
+   *
+@@ -325,16 +326,22 @@ struct nsPresentationData {
+ // This bit is set if the frame has the explicit attribute
+ // displaystyle="true" or "false". It is only relevant to <mstyle> and <mtable>
+ // because they are the only tags where the attribute is allowed by the spec.
+ #define NS_MATHML_EXPLICIT_DISPLAYSTYLE               0x00000020U
+ 
+ // This bit is set if the frame is "space-like", as defined by the spec.
+ #define NS_MATHML_SPACE_LIKE                          0x00000040U
+ 
++// This bit is set if the directionality of the frame is right-to-left
++#define NS_MATHML_RTL                                 0x00000080U
++
++// This bit is set if the frame has an explicit dir attribute
++#define NS_MATHML_EXPLICIT_DIRECTIONALITY             0x00000100U
++
+ // This bit is set when the frame cannot be formatted due to an
+ // error (e.g., invalid markup such as a <msup> without an overscript).
+ // When set, a visual feedback will be provided to the user.
+ #define NS_MATHML_ERROR                               0x80000000U
+ 
+ // a bit used for debug
+ #define NS_MATHML_STRETCH_DONE                        0x20000000U
+ 
+@@ -359,16 +366,23 @@ struct nsPresentationData {
+   (NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY == ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY))
+ 
+ #define NS_MATHML_HAS_EXPLICIT_DISPLAYSTYLE(_flags) \
+   (NS_MATHML_EXPLICIT_DISPLAYSTYLE == ((_flags) & NS_MATHML_EXPLICIT_DISPLAYSTYLE))
+ 
+ #define NS_MATHML_IS_SPACE_LIKE(_flags) \
+   (NS_MATHML_SPACE_LIKE == ((_flags) & NS_MATHML_SPACE_LIKE))
+ 
++#define NS_MATHML_IS_RTL(_flags) \
++  (NS_MATHML_RTL == ((_flags) & NS_MATHML_RTL))
++
++#define NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(_flags) \
++  (NS_MATHML_EXPLICIT_DIRECTIONALITY == \
++   ((_flags) & NS_MATHML_EXPLICIT_DIRECTIONALITY))
++
+ #define NS_MATHML_HAS_ERROR(_flags) \
+   (NS_MATHML_ERROR == ((_flags) & NS_MATHML_ERROR))
+ 
+ #define NS_MATHML_STRETCH_WAS_DONE(_flags) \
+   (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))
+ 
+ #define NS_MATHML_PAINT_BOUNDING_METRICS(_flags) \
+   (NS_MATHML_SHOW_BOUNDING_METRICS == ((_flags) & NS_MATHML_SHOW_BOUNDING_METRICS))
+diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
+--- a/layout/mathml/nsMathMLFrame.cpp
++++ b/layout/mathml/nsMathMLFrame.cpp
+@@ -16,16 +16,17 @@
+  *
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -94,16 +95,50 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
+   case 1:
+     aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+     aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
+     break;
+   }
+   // no reset if the attr isn't found. so be sure to call it on inherited flags
+ }
+ 
++// snippet of code used by the tags where the dir attribute is allowed.
++/* static */ void
++nsMathMLFrame::FindAttrDirectionality(nsIContent*         aContent,
++                                      nsPresentationData& aPresentationData)
++{
++  NS_ASSERTION(aContent->Tag() == nsGkAtoms::math ||
++               aContent->Tag() == nsGkAtoms::mi_ ||
++               aContent->Tag() == nsGkAtoms::mn_ ||
++               aContent->Tag() == nsGkAtoms::mo_ ||
++               aContent->Tag() == nsGkAtoms::mtext_ ||
++               aContent->Tag() == nsGkAtoms::mspace_ ||
++               aContent->Tag() == nsGkAtoms::ms_ ||
++               aContent->Tag() == nsGkAtoms::mstyle_ ||
++               aContent->Tag() == nsGkAtoms::mrow_, "bad caller");
++
++  static nsIContent::AttrValuesArray strings[] =
++    {&nsGkAtoms::ltr, &nsGkAtoms::rtl, nsnull};
++
++  // see if the explicit dir attribute is there
++  switch (aContent->FindAttrValueIn(kNameSpaceID_None,
++                                    nsGkAtoms::dir, strings, eCaseMatters))
++    {
++    case 0:
++      aPresentationData.flags &= ~NS_MATHML_RTL;
++      aPresentationData.flags |= NS_MATHML_EXPLICIT_DIRECTIONALITY;
++      break;
++    case 1:
++      aPresentationData.flags |= NS_MATHML_RTL;
++      aPresentationData.flags |= NS_MATHML_EXPLICIT_DIRECTIONALITY;
++      break;
++    }
++  // no reset if the attr isn't found. so be sure to call it on inherited flags
++}
++
+ NS_IMETHODIMP
+ nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent) 
+ {
+   mEmbellishData.flags = 0;
+   mEmbellishData.coreFrame = nsnull;
+   mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+   mEmbellishData.leftSpace = 0;
+   mEmbellishData.rightSpace = 0;
+@@ -114,16 +149,19 @@ nsMathMLFrame::InheritAutomaticData(nsIF
+ 
+   // by default, just inherit the display of our parent
+   nsPresentationData parentData;
+   GetPresentationDataFrom(aParent, parentData);
+   mPresentationData.mstyle = parentData.mstyle;
+   if (NS_MATHML_IS_DISPLAYSTYLE(parentData.flags)) {
+     mPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+   }
++  if (NS_MATHML_IS_RTL(parentData.flags)) {
++    mPresentationData.flags |= NS_MATHML_RTL;
++  }
+ 
+ #if defined(NS_DEBUG) && defined(SHOW_BOUNDING_BOX)
+   mPresentationData.flags |= NS_MATHML_SHOW_BOUNDING_METRICS;
+ #endif
+ 
+   return NS_OK;
+ }
+ 
+@@ -131,19 +169,26 @@ NS_IMETHODIMP
+ nsMathMLFrame::UpdatePresentationData(PRUint32        aFlagsValues,
+                                       PRUint32        aWhichFlags)
+ {
+   // update flags that are relevant to this call
+   if (NS_MATHML_IS_DISPLAYSTYLE(aWhichFlags)) {
+     // updating the displaystyle flag is allowed
+     if (NS_MATHML_IS_DISPLAYSTYLE(aFlagsValues)) {
+       mPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
++    } else {
++      mPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
+     }
+-    else {
+-      mPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
++  }
++  if (NS_MATHML_IS_RTL(aWhichFlags)) {
++    // updating the directionality flag is allowed
++    if (NS_MATHML_IS_RTL(aFlagsValues)) {
++      mPresentationData.flags |= NS_MATHML_RTL;
++    } else {
++      mPresentationData.flags &= ~NS_MATHML_RTL;
+     }
+   }
+   if (NS_MATHML_IS_COMPRESSED(aWhichFlags)) {
+     // updating the compression flag is allowed
+     if (NS_MATHML_IS_COMPRESSED(aFlagsValues)) {
+       // 'compressed' means 'prime' style in App. G, TeXbook
+       mPresentationData.flags |= NS_MATHML_COMPRESSED;
+     }
+@@ -226,16 +271,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
+     if (!content)
+       break;
+ 
+     if (content->Tag() == nsGkAtoms::math) {
+       const nsStyleDisplay* display = frame->GetStyleDisplay();
+       if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK) {
+         aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+       }
++      FindAttrDirectionality(content, aPresentationData);
+       aPresentationData.mstyle = frame;
+       break;
+     }
+     frame = frame->GetParent();
+   }
+   NS_WARN_IF_FALSE(frame && frame->GetContent(),
+                    "bad MathML markup - could not find the top <math> element");
+ }
+diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
+--- a/layout/mathml/nsMathMLFrame.h
++++ b/layout/mathml/nsMathMLFrame.h
+@@ -16,16 +16,17 @@
+  *
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -160,16 +161,21 @@ public:
+                           nsPresentationData& aPresentationData,
+                           PRBool              aClimbTree = PR_TRUE);
+ 
+   // helper used by <mstyle> and <mtable> to see if they have a displaystyle attribute 
+   static void
+   FindAttrDisplaystyle(nsIContent*         aContent,
+                        nsPresentationData& aPresentationData);
+ 
++  // helper used to see if an element has a dir attribute 
++  static void
++  FindAttrDirectionality(nsIContent*         aContent,
++                         nsPresentationData& aPresentationData);
++
+   // helper to check if a content has an attribute. If content is nsnull or if
+   // the attribute is not there, check if the attribute is on the mstyle hierarchy
+   // @return PR_TRUE  --if attribute exists
+   //         PR_FALSE --if attribute doesn't exist
+   static PRBool
+   GetAttribute(nsIContent* aContent,
+                nsIFrame*   aMathMLmstyleFrame,          
+                nsIAtom*    aAttributeAtom,
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -17,16 +17,17 @@
+  * The Initial Developer of the Original Code is
+  * The University of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  * 
+  * Contributor(s): 
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either the GNU General Public License Version 2 or later (the "GPL"), or
+  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -55,16 +56,60 @@ NS_NewMathMLTokenFrame(nsIPresShell* aPr
+ }
+ 
+ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLTokenFrame)
+ 
+ nsMathMLTokenFrame::~nsMathMLTokenFrame()
+ {
+ }
+ 
++NS_IMETHODIMP
++nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
++{
++  // let the base class get the default from our parent
++  nsMathMLContainerFrame::InheritAutomaticData(aParent);
++
++  // see if the directionality attribute is there
++  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++
++  return NS_OK;
++}
++
++NS_IMETHODIMP
++nsMathMLTokenFrame::UpdatePresentationData(PRUint32 aFlagsValues,
++                                           PRUint32 aWhichFlags)
++{
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++  
++  return nsMathMLContainerFrame::UpdatePresentationData(aFlagsValues,
++                                                        aWhichFlags);
++}
++
++NS_IMETHODIMP
++nsMathMLTokenFrame::UpdatePresentationDataFromChildAt(PRInt32  aFirstIndex,
++                                                      PRInt32  aLastIndex,
++                                                      PRUint32 aFlagsValues,
++                                                      PRUint32 aWhichFlags)
++{
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++
++  // let the base class worry about the update
++  return nsMathMLContainerFrame::
++    UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex, aFlagsValues,
++                                      aWhichFlags); 
++}
++
+ eMathMLFrameType
+ nsMathMLTokenFrame::GetMathMLFrameType()
+ {
+   // treat everything other than <mi> as ordinary...
+   if (mContent->Tag() != nsGkAtoms::mi_) {
+     return eMathMLFrameType_Ordinary;
+   }
+ 
+diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFrame.h
+--- a/layout/mathml/nsMathMLTokenFrame.h
++++ b/layout/mathml/nsMathMLTokenFrame.h
+@@ -16,16 +16,17 @@
+  *
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -57,16 +58,29 @@ public:
+     // The REC defines the following elements to be space-like:
+     // * an mtext, mspace, maligngroup, or malignmark element;
+     if (mContent->Tag() == nsGkAtoms::mtext_) {
+       mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
+     }
+     return NS_OK;
+   }
+ 
++  NS_IMETHOD
++  InheritAutomaticData(nsIFrame* aParent);
++
++  NS_IMETHOD
++  UpdatePresentationData(PRUint32 aFlagsValues,
++                         PRUint32 aWhichFlags);
++  
++  NS_IMETHOD
++  UpdatePresentationDataFromChildAt(PRInt32  aFirstIndex,
++                                    PRInt32  aLastIndex,
++                                    PRUint32 aFlagsValues,
++                                    PRUint32 aWhichFlags);
++
+   virtual eMathMLFrameType GetMathMLFrameType();
+ 
+   NS_IMETHOD
+   Init(nsIContent*      aContent,
+        nsIFrame*        aParent,
+        nsIFrame*        aPrevInFlow);
+ 
+   NS_IMETHOD
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -931,16 +931,19 @@ nsMathMLmoFrame::Stretch(nsIRenderingCon
+ 
+ NS_IMETHODIMP
+ nsMathMLmoFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // retain our native direction, it only changes if our text content changes
+   nsStretchDirection direction = mEmbellishData.direction;
+   nsMathMLTokenFrame::InheritAutomaticData(aParent);
+   mEmbellishData.direction = direction;
++
++  // see if the directionality attribute is there
++  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmoFrame::TransmitAutomaticData()
+ {
+   // this will cause us to re-sync our flags from scratch
+   // but our returned 'form' is still not final (bug 133429), it will
+diff --git a/layout/mathml/nsMathMLmrowFrame.cpp b/layout/mathml/nsMathMLmrowFrame.cpp
+--- a/layout/mathml/nsMathMLmrowFrame.cpp
++++ b/layout/mathml/nsMathMLmrowFrame.cpp
+@@ -17,16 +17,17 @@
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -66,20 +67,55 @@ nsMathMLmrowFrame::~nsMathMLmrowFrame()
+ NS_IMETHODIMP
+ nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ 
+   mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+ 
++  // see if the directionality attribute is there
++  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
++nsMathMLmrowFrame::UpdatePresentationData(PRUint32 aFlagsValues,
++                                          PRUint32 aWhichFlags)
++{
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++  
++  return nsMathMLContainerFrame::UpdatePresentationData(aFlagsValues,
++                                                        aWhichFlags);
++}
++
++NS_IMETHODIMP
++nsMathMLmrowFrame::UpdatePresentationDataFromChildAt(PRInt32  aFirstIndex,
++                                                     PRInt32  aLastIndex,
++                                                     PRUint32 aFlagsValues,
++                                                     PRUint32 aWhichFlags)
++{
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++
++  // let the base class worry about the update
++  return nsMathMLContainerFrame::
++    UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex, aFlagsValues,
++                                      aWhichFlags); 
++}
++
++NS_IMETHODIMP
+ nsMathMLmrowFrame::AttributeChanged(PRInt32  aNameSpaceID,
+                                     nsIAtom* aAttribute,
+                                     PRInt32  aModType)
+ {
+   // Special for <mtable>: In the frame construction code, we also use
+   // this frame class as a wrapper for mtable. Hence, we should pass the
+   // notification to the real mtable
+   if (mContent->Tag() == nsGkAtoms::mtable_) {
+diff --git a/layout/mathml/nsMathMLmrowFrame.h b/layout/mathml/nsMathMLmrowFrame.h
+--- a/layout/mathml/nsMathMLmrowFrame.h
++++ b/layout/mathml/nsMathMLmrowFrame.h
+@@ -17,16 +17,17 @@
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -61,16 +62,26 @@ public:
+   NS_IMETHOD
+   InheritAutomaticData(nsIFrame* aParent);
+ 
+   NS_IMETHOD
+   TransmitAutomaticData() {
+     return TransmitAutomaticDataForMrowLikeElement();
+   }
+ 
++  NS_IMETHOD
++  UpdatePresentationData(PRUint32 aFlagsValues,
++                         PRUint32 aWhichFlags);
++  
++  NS_IMETHOD
++  UpdatePresentationDataFromChildAt(PRInt32  aFirstIndex,
++                                    PRInt32  aLastIndex,
++                                    PRUint32 aFlagsValues,
++                                    PRUint32 aWhichFlags);
++
+ protected:
+   nsMathMLmrowFrame(nsStyleContext* aContext) : nsMathMLContainerFrame(aContext) {}
+   virtual ~nsMathMLmrowFrame();
+ 
+   virtual PRIntn GetSkipSides() const { return 0; }
+ };
+ 
+ #endif /* nsMathMLmrowFrame_h___ */
+diff --git a/layout/mathml/nsMathMLmstyleFrame.cpp b/layout/mathml/nsMathMLmstyleFrame.cpp
+--- a/layout/mathml/nsMathMLmstyleFrame.cpp
++++ b/layout/mathml/nsMathMLmstyleFrame.cpp
+@@ -17,16 +17,17 @@
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -73,16 +74,19 @@ nsMathMLmstyleFrame::InheritAutomaticDat
+ 
+   // sync with our current state
+   mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+   mPresentationData.mstyle = this;
+ 
+   // see if the displaystyle attribute is there
+   nsMathMLFrame::FindAttrDisplaystyle(mContent, mPresentationData);
+ 
++  // see if the directionality attribute is there
++  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmstyleFrame::TransmitAutomaticData()
+ {
+   return TransmitAutomaticDataForMrowLikeElement();
+ }
+@@ -95,31 +99,43 @@ nsMathMLmstyleFrame::UpdatePresentationD
+                                             PRUint32        aWhichFlags)
+ {
+   if (NS_MATHML_HAS_EXPLICIT_DISPLAYSTYLE(mPresentationData.flags)) {
+     // our current state takes precedence, disallow updating the displastyle
+     aWhichFlags &= ~NS_MATHML_DISPLAYSTYLE;
+     aFlagsValues &= ~NS_MATHML_DISPLAYSTYLE;
+   }
+ 
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++
+   return nsMathMLContainerFrame::UpdatePresentationData(aFlagsValues, aWhichFlags);
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmstyleFrame::UpdatePresentationDataFromChildAt(PRInt32         aFirstIndex,
+                                                        PRInt32         aLastIndex,
+                                                        PRUint32        aFlagsValues,
+                                                        PRUint32        aWhichFlags)
+ {
+   if (NS_MATHML_HAS_EXPLICIT_DISPLAYSTYLE(mPresentationData.flags)) {
+     // our current state takes precedence, disallow updating the displastyle
+     aWhichFlags &= ~NS_MATHML_DISPLAYSTYLE;
+     aFlagsValues &= ~NS_MATHML_DISPLAYSTYLE;
+   }
+ 
++  if (NS_MATHML_HAS_EXPLICIT_DIRECTIONALITY(mPresentationData.flags)) {
++    // our current state takes precedence, disallow updating the directionality
++    aWhichFlags &= ~NS_MATHML_RTL;
++    aFlagsValues &= ~NS_MATHML_RTL;
++  }
++
+   // let the base class worry about the update
+   return
+     nsMathMLContainerFrame::UpdatePresentationDataFromChildAt(
+       aFirstIndex, aLastIndex, aFlagsValues, aWhichFlags); 
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmstyleFrame::AttributeChanged(PRInt32         aNameSpaceID,

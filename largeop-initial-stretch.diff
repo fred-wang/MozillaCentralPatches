@@ -1,0 +1,87 @@
+# HG changeset patch
+# Parent 4553f20090137b5f7104467b19931411d5b22a4e
+# User Frédéric Wang <fred.wang@free.fr>
+Set the base size of a largeop to its largeoponly size (bug 584332). r=karlt
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -860,16 +860,18 @@ nsMathMLChar::SetData(nsPresContext* aPr
+   if (!gInitialized) {
+     InitGlobals(aPresContext);
+   }
+   mData = aData;
+   // some assumptions until proven otherwise
+   // note that mGlyph is not initialized
+   mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
+   mBoundingMetrics.Clear();
++  mBoundingMetrics.ascent = 1000;
++  mBoundingMetrics.descent = 1000;
+   mGlyphTable = nsnull;
+   // check if stretching is applicable ...
+   if (gGlyphTableList && (1 == mData.Length())) {
+     mDirection = nsMathMLOperators::GetStretchyDirection(mData);
+     // default tentative table (not the one that is necessarily going
+     // to be used)
+     mGlyphTable = gGlyphTableList->GetGlyphTableFor(aPresContext, this);
+   }
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -653,16 +653,17 @@ nsMathMLmoFrame::Stretch(nsIRenderingCon
+ 
+   // Operators that are stretchy, or those that are to be centered
+   // to cater for fonts that are not math-aware, are handled by the MathMLChar
+   // ('form' is reset if stretch fails -- i.e., we don't bother to stretch next time)
+   PRBool useMathMLChar = UseMathMLChar();
+ 
+   nsBoundingMetrics charSize;
+   nsBoundingMetrics container = aDesiredStretchSize.mBoundingMetrics;
++  printf("height3=%d\n", mBoundingMetrics.ascent + mBoundingMetrics.descent);
+   PRBool isVertical = PR_FALSE;
+ 
+   if (((aStretchDirection == NS_STRETCH_DIRECTION_VERTICAL) ||
+        (aStretchDirection == NS_STRETCH_DIRECTION_DEFAULT))  &&
+       (mEmbellishData.direction == NS_STRETCH_DIRECTION_VERTICAL)) {
+     isVertical = PR_TRUE;
+   }
+ 
+@@ -955,16 +956,38 @@ nsMathMLmoFrame::Reflow(nsPresContext*  
+                         nsHTMLReflowMetrics&     aDesiredSize,
+                         const nsHTMLReflowState& aReflowState,
+                         nsReflowStatus&          aStatus)
+ {
+   // certain values use units that depend on our style context, so
+   // it is safer to just process the whole lot here
+   ProcessOperatorData();
+ 
++  // for largeop the base size is the largeoponly size
++  // if (NS_MATHML_OPERATOR_IS_LARGEOP(mFlags)) {
++  //   printf("height1=%d\n", aDesiredSize.height);
++  //   nsIRenderingContext& renderingContext = *aReflowState.rendContext;
++  //   nsBoundingMetrics targetSize = aDesiredSize.mBoundingMetrics;
++  //   targetSize.ascent = nscoord_MAX;
++  //   targetSize.descent = 0;
++  //   nsBoundingMetrics charSize;
++  //   PRUint32 stretchHint = GetStretchHint(mFlags, mPresentationData, PR_TRUE);
++  //   stretchHint &= ~NS_STRETCH_VARIABLE_MASK;
++  //   mMathMLChar.Stretch(aPresContext, renderingContext,
++  //                       NS_STRETCH_DIRECTION_DEFAULT,
++  //                       targetSize, charSize,
++  //                       stretchHint);
++  //   mBoundingMetrics = charSize;
++  //   aDesiredSize.width = charSize.leftBearing + charSize.rightBearing;
++  //   aDesiredSize.height = charSize.ascent + charSize.descent;
++  //   aDesiredSize.ascent = charSize.ascent;
++  //   aDesiredSize.mBoundingMetrics = charSize;
++  //   printf("height2=%d\n", aDesiredSize.height);
++  // }
++
+   // play safe by not passing invisible operators to the font subsystem because
+   // some platforms risk selecting strange glyphs for them and give bad inter-space
+   if (NS_MATHML_OPERATOR_IS_INVISIBLE(mFlags)) {
+     // return empty space for now, but this is not yet final since there
+     // can be lspace and rspace attributes that reclaim some room.
+     // These will be dealt with later in Stretch().
+     aDesiredSize.width = 0;
+     aDesiredSize.height = 0;

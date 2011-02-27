@@ -1,0 +1,753 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Date 1262686951 -3600
+# Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
+# Parent dc68f8fd9558cb8ed12d5ff490ac9e6adca03133
+Overall Directionality of formulas (bug 534963). r=karlt
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -448,8 +448,24 @@ semantics > :not(:first-child) {
+ /* all other cases can be described using regular CSS, so we do it this way because it's
+    more efficient and less code */
+ mroot > :not(:first-child) { -moz-script-level:+2; }
+ 
+ msub > :not(:first-child),
+ msup > :not(:first-child),
+ msubsup > :not(:first-child),
+ mmultiscripts > :not(:first-child) { -moz-script-level:+1; }
++
++/*****************************************/
++/* Controlling directionality            */
++/*****************************************/
++
++math[dir="rtl"], mstyle[dir="rtl"], mrow[dir="rtl"],
++mi[dir="rtl"], mn[dir="rtl"], mo[dir="rtl"],
++mtext[dir="rtl"], mspace[dir="rtl"], ms[dir="rtl"] {
++    direction: rtl;
++}
++
++math[dir="ltr"], mstyle[dir="ltr"], mrow[dir="ltr"],
++mi[dir="ltr"], mn[dir="ltr"], mo[dir="ltr"],
++mtext[dir="ltr"], mspace[dir="ltr"], ms[dir="ltr"] {
++    direction: ltr;
++}
+diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
+--- a/layout/mathml/nsMathMLContainerFrame.cpp
++++ b/layout/mathml/nsMathMLContainerFrame.cpp
+@@ -1310,29 +1310,31 @@ nsMathMLContainerFrame::Place(nsIRenderi
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   //////////////////
+   // Place Children
+ 
+   if (aPlaceOrigin) {
+-    PositionRowChildFrames(0, aDesiredSize.ascent);
++    PositionRowChildFrames(aDesiredSize.width, 0, aDesiredSize.ascent);
+   }
+ 
+   return NS_OK;
+ }
+ 
+ void
+-nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
++nsMathMLContainerFrame::PositionRowChildFrames(nscoord aParentWidth,
++                                               nscoord aOffsetX,
+                                                nscoord aBaseline)
+ {
+   RowChildFrameIterator child(this);
+   while (child.Frame()) {
+-    nscoord dx = aOffsetX + child.X();
++    nscoord dx = MirrorIfRTL(aParentWidth, child.ReflowMetrics().width,
++                             aOffsetX + child.X());
+     nscoord dy = aBaseline - child.Ascent();
+     FinishReflowChild(child.Frame(), PresContext(), nsnull,
+                       child.ReflowMetrics(), dx, dy, 0);
+     ++child;
+   }
+ }
+ 
+ class ForceReflow : public nsIReflowCallback {
+diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLContainerFrame.h
+--- a/layout/mathml/nsMathMLContainerFrame.h
++++ b/layout/mathml/nsMathMLContainerFrame.h
+@@ -193,16 +193,24 @@ public:
+   //        to re-layout its children using ReLayoutChildren(mParent);
+   //        Therefore, there is an overhead here in that our siblings are re-laid
+   //        too (e.g., this happens with <mstyle>, <munder>, <mover>, <munderover>). 
+   NS_IMETHOD
+   AttributeChanged(PRInt32         aNameSpaceID,
+                    nsIAtom*        aAttribute,
+                    PRInt32         aModType);
+ 
++  // helper function to apply mirroring to a horizontal coordinate, if needed.
++  nscoord
++  MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth, nscoord aChildLeft)
++  {
++    return (NS_MATHML_IS_RTL(mPresentationData.flags) ?
++            aParentWidth - aChildWidth - aChildLeft : aChildLeft);
++  }
++
+   // --------------------------------------------------------------------------
+   // Additional methods 
+ 
+ protected:
+   /* Place :
+    * This method is used to measure or position child frames and other
+    * elements.  It may be called any number of times with aPlaceOrigin
+    * false to measure, and the final call of the Reflow process before
+@@ -367,17 +375,18 @@ public:
+   static nsresult
+   ReLayoutChildren(nsIFrame* aParentFrame);
+ 
+ protected:
+   // Helper method which positions child frames as an <mrow> on given baseline
+   // y = aBaseline starting from x = aOffsetX, calling FinishReflowChild()
+   // on the frames.
+   void
+-  PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
++  PositionRowChildFrames(nscoord aParentWidth,
++                         nscoord aOffsetX, nscoord aBaseline);
+ 
+   // A variant on FinishAndStoreOverflow() that uses the union of child
+   // overflows, the frame bounds, and mBoundingMetrics to set and store the
+   // overflow.
+   void GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics);
+ 
+   /**
+    * Call DidReflow() if the NS_FRAME_IN_REFLOW frame bit is set on aFirst and
+diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
+--- a/layout/mathml/nsMathMLmencloseFrame.cpp
++++ b/layout/mathml/nsMathMLmencloseFrame.cpp
+@@ -243,17 +243,18 @@ nsMathMLmencloseFrame::BuildDisplayList(
+   mencloseRect.x = mencloseRect.y = 0;
+ 
+   if (IsToDraw(NOTATION_RADICAL)) {
+     rv = mMathMLChar[mRadicalCharIndex].Display(aBuilder, this, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
+     nsRect rect;
+     mMathMLChar[mRadicalCharIndex].GetRect(rect);
+-    rect.MoveBy(rect.width, 0);
++    rect.MoveBy(NS_MATHML_IS_RTL(mPresentationData.flags) ?
++                -mContentWidth : rect.width, 0);
+     rect.SizeTo(mContentWidth, mRuleThickness);
+     rv = DisplayBar(aBuilder, this, rect, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_LONGDIV)) {
+     rv = mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+@@ -520,38 +521,41 @@ nsMathMLmencloseFrame::PlaceInternal(nsI
+       mBoundingMetrics.descent = NS_MAX(mBoundingMetrics.descent,
+                                         longdivDescent);
+     }
+   }
+ 
+   ///////////////
+   // radical notation:
+   if (IsToDraw(NOTATION_RADICAL)) {
++    nscoord &dx =
++      NS_MATHML_IS_RTL(mPresentationData.flags) ? dx_right : dx_left;
++    
+     if (aWidthOnly) {
+       nscoord radical_width = mMathMLChar[mRadicalCharIndex].
+         GetMaxWidth(PresContext(), aRenderingContext);
+       
+       // Update horizontal parameters
+-      dx_left = NS_MAX(dx_left, radical_width);
++      dx = NS_MAX(dx, radical_width);
+     } else {
+       // Stretch the radical symbol to the appropriate height if it is not
+       // big enough.
+       nsBoundingMetrics contSize = bmBase;
+       contSize.ascent = mRuleThickness;
+       contSize.descent = bmBase.ascent + bmBase.descent + psi;
+ 
+       // height(radical) should be >= height(base) + psi + mRuleThickness
+       mMathMLChar[mRadicalCharIndex].Stretch(PresContext(), aRenderingContext,
+                                              NS_STRETCH_DIRECTION_VERTICAL,
+                                              contSize, bmRadicalChar,
+                                              NS_STRETCH_LARGER);
+       mMathMLChar[mRadicalCharIndex].GetBoundingMetrics(bmRadicalChar);
+ 
+       // Update horizontal parameters
+-      dx_left = NS_MAX(dx_left, bmRadicalChar.width);
++      dx = NS_MAX(dx, bmRadicalChar.width);
+ 
+       // Update vertical parameters
+       radicalAscent = bmBase.ascent + psi + mRuleThickness;
+       radicalDescent = NS_MAX(bmBase.descent,
+                               (bmRadicalChar.ascent + bmRadicalChar.descent -
+                                radicalAscent));
+ 
+       mBoundingMetrics.ascent = NS_MAX(mBoundingMetrics.ascent,
+@@ -655,30 +659,36 @@ nsMathMLmencloseFrame::PlaceInternal(nsI
+       mMathMLChar[mLongDivCharIndex].SetRect(nsRect(dx_left -
+                                                     bmLongdivChar.width,
+                                                     aDesiredSize.ascent -
+                                                     longdivAscent,
+                                                     bmLongdivChar.width,
+                                                     bmLongdivChar.ascent +
+                                                     bmLongdivChar.descent));
+ 
+-    if (IsToDraw(NOTATION_RADICAL))
+-      mMathMLChar[mRadicalCharIndex].SetRect(nsRect(dx_left -
+-                                                    bmRadicalChar.width,
++    if (IsToDraw(NOTATION_RADICAL)) {
++      nscoord dx = NS_MATHML_IS_RTL(mPresentationData.flags) ?
++        dx_left + bmBase.width : dx_left - bmRadicalChar.width;
++
++      mMathMLChar[mRadicalCharIndex].SetRect(nsRect(dx,
+                                                     aDesiredSize.ascent -
+                                                     radicalAscent,
+                                                     bmRadicalChar.width,
+                                                     bmRadicalChar.ascent +
+                                                     bmRadicalChar.descent));
++    }
+ 
+     mContentWidth = bmBase.width;
+ 
+     //////////////////
+     // Finish reflowing child frames
+-    PositionRowChildFrames(dx_left, aDesiredSize.ascent);
++    PositionRowChildFrames(aDesiredSize.width,
++                           NS_MATHML_IS_RTL(mPresentationData.flags) ?
++                           dx_right : dx_left,
++                           aDesiredSize.ascent);
+   }
+ 
+   return NS_OK;
+ }
+ 
+ nscoord
+ nsMathMLmencloseFrame::FixInterFrameSpacing(nsHTMLReflowMetrics& aDesiredSize)
+ {
+diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
+--- a/layout/mathml/nsMathMLmfencedFrame.cpp
++++ b/layout/mathml/nsMathMLmfencedFrame.cpp
+@@ -381,48 +381,66 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+   //////////////////
+   // Adjust the origins of each child.
+   // and update our bounding metrics
+ 
+   i = 0;
+   nscoord dx = 0;
+   nsBoundingMetrics bm;
+   PRBool firstTime = PR_TRUE;
+-  if (mOpenChar) {
+-    PlaceChar(mOpenChar, ascent, bm, dx);
++  nsMathMLChar *leftChar, *rightChar;
++  PRBool isRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
++  if (isRTL) {
++    leftChar = mCloseChar;
++    rightChar = mOpenChar;
++  } else {
++    leftChar = mOpenChar;
++    rightChar = mCloseChar;
++  }
++
++  if (leftChar) {
++    PlaceChar(leftChar, ascent, bm, dx);
+     aDesiredSize.mBoundingMetrics = bm;
+     firstTime = PR_FALSE;
+   }
+ 
+-  childFrame = firstChild;
++  if (isRTL)
++    childFrame = this->GetLastChild(nsnull);
++  else
++    childFrame = firstChild;
++
+   while (childFrame) {
+     nsHTMLReflowMetrics childSize;
+     GetReflowAndBoundingMetricsFor(childFrame, childSize, bm);
+     if (firstTime) {
+       firstTime = PR_FALSE;
+       aDesiredSize.mBoundingMetrics  = bm;
+     }
+     else  
+       aDesiredSize.mBoundingMetrics += bm;
+ 
+     FinishReflowChild(childFrame, aPresContext, nsnull, childSize, 
+                       dx, ascent - childSize.ascent, 0);
+     dx += childSize.width;
+ 
+     if (i < mSeparatorsCount) {
+-      PlaceChar(&mSeparatorsChar[i], ascent, bm, dx);
++      PlaceChar(&mSeparatorsChar[isRTL ? mSeparatorsCount - 1 - i : i],
++                ascent, bm, dx);
+       aDesiredSize.mBoundingMetrics += bm;
+     }
+     i++;
+ 
+-    childFrame = childFrame->GetNextSibling();
++    if (isRTL)
++      childFrame = childFrame->GetPrevSibling();
++    else
++      childFrame = childFrame->GetNextSibling();
+   }
+ 
+-  if (mCloseChar) {
+-    PlaceChar(mCloseChar, ascent, bm, dx);
++  if (rightChar) {
++    PlaceChar(rightChar, ascent, bm, dx);
+     if (firstTime)
+       aDesiredSize.mBoundingMetrics  = bm;
+     else  
+       aDesiredSize.mBoundingMetrics += bm;
+   }
+ 
+   aDesiredSize.width = aDesiredSize.mBoundingMetrics.width;
+   aDesiredSize.height = ascent + descent;
+diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
+--- a/layout/mathml/nsMathMLmfracFrame.cpp
++++ b/layout/mathml/nsMathMLmfracFrame.cpp
+@@ -522,28 +522,36 @@ nsMathMLmfracFrame::PlaceInternal(nsIRen
+       mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
+     aDesiredSize.width = mBoundingMetrics.width;
+     aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+     mReference.x = 0;
+     mReference.y = aDesiredSize.ascent;
+     
+     if (aPlaceOrigin) {
+-      FinishReflowChild(frameNum, presContext, nsnull, sizeNum,
+-                        leftSpace,
+-                        aDesiredSize.ascent - numShift - sizeNum.ascent, 0);
++      nscoord dx, dy;
+ 
+-      mLineRect.SetRect(leftSpace + bmNum.width,
+-                        aDesiredSize.ascent - mBoundingMetrics.ascent,
+-                        mLineRect.width,
+-                        aDesiredSize.height - 2 * padding);
++      // place numerator
++      dx = MirrorIfRTL(aDesiredSize.width, sizeNum.width,
++                       leftSpace);
++      dy = aDesiredSize.ascent - numShift - sizeNum.ascent;
++      FinishReflowChild(frameNum, presContext, nsnull, sizeNum, dx, dy, 0);
+ 
+-      FinishReflowChild(frameDen, presContext, nsnull, sizeDen,
+-                        leftSpace + bmNum.width + mLineRect.width,
+-                        aDesiredSize.ascent + denShift - sizeDen.ascent, 0);
++      // place the fraction bar
++      dx = MirrorIfRTL(aDesiredSize.width, mLineRect.width,
++                       leftSpace + bmNum.width);
++      dy = aDesiredSize.ascent - mBoundingMetrics.ascent;
++      mLineRect.SetRect(dx, dy,
++                        mLineRect.width, aDesiredSize.height - 2 * padding);
++
++      // place denominator
++      dx = MirrorIfRTL(aDesiredSize.width, sizeDen.width,
++                       leftSpace + bmNum.width + mLineRect.width);
++      dy = aDesiredSize.ascent + denShift - sizeDen.ascent;
++      FinishReflowChild(frameDen, presContext, nsnull, sizeDen, dx, dy, 0);
+     }
+ 
+   }
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+@@ -582,59 +590,71 @@ nsMathMLmfracFrame::UpdatePresentationDa
+     UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
+                                       aFlagsValues, aFlagsToUpdate);
+ }
+ 
+ class nsDisplayMathMLSlash : public nsDisplayItem {
+ public:
+   nsDisplayMathMLSlash(nsDisplayListBuilder* aBuilder,
+                        nsIFrame* aFrame, const nsRect& aRect,
+-                       nscoord aThickness)
+-    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness) {
++                       nscoord aThickness, PRBool aRTL)
++    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness), mRTL(aRTL) {
+     MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
+   }
+ #ifdef NS_BUILD_REFCNT_LOGGING
+   virtual ~nsDisplayMathMLSlash() {
+     MOZ_COUNT_DTOR(nsDisplayMathMLSlash);
+   }
+ #endif
+ 
+   virtual void Paint(nsDisplayListBuilder* aBuilder, nsIRenderingContext* aCtx);
+   NS_DISPLAY_DECL_NAME("MathMLSlash", TYPE_MATHML_SLASH)
+ 
+ private:
+   nsRect    mRect;
+   nscoord   mThickness;
++  PRBool    mRTL;
+ };
+ 
+ void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
+                                  nsIRenderingContext* aCtx)
+ {
+   // get the gfxRect
+   nsPresContext* presContext = mFrame->PresContext();
+   gfxRect rect = presContext->AppUnitsToGfxUnits(mRect + ToReferenceFrame());
+   
+   // paint with the current text color
+   aCtx->SetColor(mFrame->GetStyleColor()->mColor);
+  
+   // draw the slash as a parallelogram 
+   gfxContext *gfxCtx = aCtx->ThebesContext();
+   gfxSize delta = gfxSize(presContext->AppUnitsToGfxUnits(mThickness), 0);
+   gfxCtx->NewPath();
+-  gfxCtx->MoveTo(rect.BottomLeft());
+-  gfxCtx->LineTo(rect.BottomLeft() + delta);
+-  gfxCtx->LineTo(rect.TopRight());
+-  gfxCtx->LineTo(rect.TopRight() - delta);
++
++  if (mRTL) {
++    gfxCtx->MoveTo(rect.TopLeft());
++    gfxCtx->LineTo(rect.TopLeft() + delta);
++    gfxCtx->LineTo(rect.BottomRight());
++    gfxCtx->LineTo(rect.BottomRight() - delta);
++  } else {
++    gfxCtx->MoveTo(rect.BottomLeft());
++    gfxCtx->LineTo(rect.BottomLeft() + delta);
++    gfxCtx->LineTo(rect.TopRight());
++    gfxCtx->LineTo(rect.TopRight() - delta);
++  }
++
+   gfxCtx->ClosePath();
+   gfxCtx->Fill();
+ }
+ 
+ nsresult
+ nsMathMLmfracFrame::DisplaySlash(nsDisplayListBuilder* aBuilder,
+                                  nsIFrame* aFrame, const nsRect& aRect,
+                                  nscoord aThickness,
+                                  const nsDisplayListSet& aLists) {
+   if (!aFrame->GetStyleVisibility()->IsVisible() || aRect.IsEmpty())
+     return NS_OK;
+   
++  PRBool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
++
+   return aLists.Content()->AppendNewToTop(new (aBuilder)
+-      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
++      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
+ }
+diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+--- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
++++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+@@ -415,17 +415,21 @@ nsMathMLmmultiscriptsFrame::Place(nsIRen
+ 
+     count = 0;
+     childFrame = mprescriptsFrame;
+     do {
+       if (!childFrame) { // end of prescripts,
+         // place the base ...
+         childFrame = baseFrame;
+         dy = aDesiredSize.ascent - baseSize.ascent;
+-        FinishReflowChild (baseFrame, PresContext(), nsnull, baseSize, dx, dy, 0);
++        FinishReflowChild (baseFrame, PresContext(), nsnull, baseSize,
++                           MirrorIfRTL(aDesiredSize.width,
++                                       baseSize.width,
++                                       dx),
++                           dy, 0);
+         dx += bmBase.width + italicCorrection;
+       }
+       else if (mprescriptsFrame != childFrame) {
+         // process each sup/sub pair
+         if (0 == count) {
+           subScriptFrame = childFrame;
+           count = 1;
+         }
+@@ -438,23 +442,31 @@ nsMathMLmmultiscriptsFrame::Place(nsIRen
+           GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize, bmSubScript);
+           GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize, bmSupScript);
+ 
+           // center w.r.t. largest width
+           width = NS_MAX(subScriptSize.width, supScriptSize.width);
+ 
+           dy = aDesiredSize.ascent - subScriptSize.ascent +
+             maxSubScriptShift;
+-          FinishReflowChild (subScriptFrame, PresContext(), nsnull, subScriptSize,
+-                             dx + (width-subScriptSize.width)/2, dy, 0);
++          FinishReflowChild (subScriptFrame, PresContext(), nsnull,
++                             subScriptSize,
++                             MirrorIfRTL(aDesiredSize.width,
++                                         subScriptSize.width,
++                                         dx + (width-subScriptSize.width)/2),
++                             dy, 0);
+ 
+           dy = aDesiredSize.ascent - supScriptSize.ascent -
+             maxSupScriptShift;
+-          FinishReflowChild (supScriptFrame, PresContext(), nsnull, supScriptSize,
+-                             dx + (width-supScriptSize.width)/2, dy, 0);
++          FinishReflowChild (supScriptFrame, PresContext(), nsnull,
++                             supScriptSize,
++                             MirrorIfRTL(aDesiredSize.width,
++                                         supScriptSize.width,
++                                         dx + (width-supScriptSize.width)/2),
++                             dy, 0);
+ 
+           dx += width + scriptSpace;
+         }
+       }
+       childFrame = childFrame->GetNextSibling();
+     } while (mprescriptsFrame != childFrame);
+   }
+ 
+diff --git a/layout/mathml/nsMathMLmoverFrame.cpp b/layout/mathml/nsMathMLmoverFrame.cpp
+--- a/layout/mathml/nsMathMLmoverFrame.cpp
++++ b/layout/mathml/nsMathMLmoverFrame.cpp
+@@ -394,17 +394,19 @@ nsMathMLmoverFrame::Place(nsIRenderingCo
+   aDesiredSize.width = mBoundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   if (aPlaceOrigin) {
+     // place base
++    dxBase = MirrorIfRTL(aDesiredSize.width, baseSize.width, dxBase);
+     nscoord dy = aDesiredSize.ascent - baseSize.ascent;
+     FinishReflowChild (baseFrame, PresContext(), nsnull, baseSize, dxBase, dy, 0);
+     // place overscript
++    dxOver = MirrorIfRTL(aDesiredSize.width, overSize.width, dxOver);
+     dy = aDesiredSize.ascent - 
+       mBoundingMetrics.ascent + bmOver.ascent - overSize.ascent;
+     FinishReflowChild (overFrame, PresContext(), nsnull, overSize, dxOver, dy, 0);
+   }
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
+--- a/layout/mathml/nsMathMLmpaddedFrame.cpp
++++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
+@@ -466,13 +466,13 @@ nsMathMLmpaddedFrame::Place(nsIRendering
+   aDesiredSize.height += dy + depth - mBoundingMetrics.descent;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   if (aPlaceOrigin) {
+     // Finish reflowing child frames, positioning their origins.
+-    PositionRowChildFrames(dx, aDesiredSize.ascent);
++    PositionRowChildFrames(aDesiredSize.width, dx, aDesiredSize.ascent);
+   }
+ 
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
+--- a/layout/mathml/nsMathMLmrootFrame.cpp
++++ b/layout/mathml/nsMathMLmrootFrame.cpp
+@@ -354,45 +354,51 @@ nsMathMLmrootFrame::Reflow(nsPresContext
+     nscoord descent = aDesiredSize.height - aDesiredSize.ascent;
+     aDesiredSize.ascent = mBoundingMetrics.ascent + leading;
+     aDesiredSize.height = aDesiredSize.ascent + descent;
+   }
+ 
+   nscoord dxIndex, dxSqr;
+   GetRadicalXOffsets(bmIndex.width, bmSqr.width, fm, &dxIndex, &dxSqr);
+ 
+-  // place the index
+-  nscoord dx = dxIndex;
+-  nscoord dy = aDesiredSize.ascent - (indexRaisedAscent + indexSize.ascent - bmIndex.ascent);
+-  FinishReflowChild(indexFrame, aPresContext, nsnull, indexSize, dx, dy, 0);
+-
+-  // place the radical symbol and the radical bar
+-  dx = dxSqr;
+-  dy = indexClearance + leading; // leave a leading at the top
+-  mSqrChar.SetRect(nsRect(dx, dy, bmSqr.width, bmSqr.ascent + bmSqr.descent));
+-  dx += bmSqr.width;
+-  mBarRect.SetRect(dx, dy, bmBase.width, ruleThickness);
+-
+-  // place the base
+-  dy = aDesiredSize.ascent - baseSize.ascent;
+-  FinishReflowChild(baseFrame, aPresContext, nsnull, baseSize, dx, dy, 0);
+-
+-  mReference.x = 0;
+-  mReference.y = aDesiredSize.ascent;
+-
+-  mBoundingMetrics.width = dx + bmBase.width;
++  mBoundingMetrics.width = dxSqr + bmSqr.width + bmBase.width;
+   mBoundingMetrics.leftBearing = 
+     NS_MIN(dxIndex + bmIndex.leftBearing, dxSqr + bmSqr.leftBearing);
+-  mBoundingMetrics.rightBearing = dx +
++  mBoundingMetrics.rightBearing = dxSqr + bmSqr.width +
+     NS_MAX(bmBase.width, bmBase.rightBearing);
+ 
+   aDesiredSize.width = mBoundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+   GatherAndStoreOverflow(&aDesiredSize);
+ 
++  // place the index
++  nscoord dx = dxIndex;
++  nscoord dy = aDesiredSize.ascent - (indexRaisedAscent + indexSize.ascent - bmIndex.ascent);
++  FinishReflowChild(indexFrame, aPresContext, nsnull, indexSize,
++                    MirrorIfRTL(aDesiredSize.width, indexSize.width, dx),
++                    dy, 0);
++
++  // place the radical symbol and the radical bar
++  dx = dxSqr;
++  dy = indexClearance + leading; // leave a leading at the top
++  mSqrChar.SetRect(nsRect(MirrorIfRTL(aDesiredSize.width, bmSqr.width, dx),
++                          dy, bmSqr.width, bmSqr.ascent + bmSqr.descent));
++  dx += bmSqr.width;
++  mBarRect.SetRect(MirrorIfRTL(aDesiredSize.width, bmBase.width, dx),
++                   dy, bmBase.width, ruleThickness);
++
++  // place the base
++  dy = aDesiredSize.ascent - baseSize.ascent;
++  FinishReflowChild(baseFrame, aPresContext, nsnull, baseSize,
++                    MirrorIfRTL(aDesiredSize.width, baseSize.width, dx),
++                    dy, 0);
++
++  mReference.x = 0;
++  mReference.y = aDesiredSize.ascent;
++
+   aStatus = NS_FRAME_COMPLETE;
+   NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+   return NS_OK;
+ }
+ 
+ /* virtual */ nscoord
+ nsMathMLmrootFrame::GetIntrinsicWidth(nsIRenderingContext* aRenderingContext)
+ {
+diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFrame.cpp
+--- a/layout/mathml/nsMathMLmsubFrame.cpp
++++ b/layout/mathml/nsMathMLmsubFrame.cpp
+@@ -200,18 +200,20 @@ nsMathMLmsubFrame::PlaceSubScript (nsPre
+   aDesiredSize.width = boundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = boundingMetrics;
+ 
+   aFrame->SetReference(nsPoint(0, aDesiredSize.ascent));
+ 
+   if (aPlaceOrigin) {
+     nscoord dx, dy;
+     // now place the base ...
+-    dx = 0; dy = aDesiredSize.ascent - baseSize.ascent;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, baseSize.width, 0);
++    dy = aDesiredSize.ascent - baseSize.ascent;
+     FinishReflowChild (baseFrame, aPresContext, nsnull, baseSize, dx, dy, 0);
+     // ... and subscript
+-    dx = bmBase.width; 
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, subScriptSize.width,
++                             bmBase.width); 
+     dy = aDesiredSize.ascent - (subScriptSize.ascent - actualSubScriptShift);
+     FinishReflowChild (subScriptFrame, aPresContext, nsnull, subScriptSize, dx, dy, 0);
+   }
+ 
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsubsupFrame.cpp
+--- a/layout/mathml/nsMathMLmsubsupFrame.cpp
++++ b/layout/mathml/nsMathMLmsubsupFrame.cpp
+@@ -334,25 +334,28 @@ nsMathMLmsubsupFrame::PlaceSubSupScript(
+   aDesiredSize.width = boundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = boundingMetrics;
+ 
+   aFrame->SetReference(nsPoint(0, aDesiredSize.ascent));
+ 
+   if (aPlaceOrigin) {
+     nscoord dx, dy;
+     // now place the base ...
+-    dx = 0; dy = aDesiredSize.ascent - baseSize.ascent;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, baseSize.width, 0);
++    dy = aDesiredSize.ascent - baseSize.ascent;
+     FinishReflowChild(baseFrame, aPresContext, nsnull,
+                       baseSize, dx, dy, 0);
+     // ... and subscript
+-    dx = bmBase.width;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, subScriptSize.width,
++                             bmBase.width);
+     dy = aDesiredSize.ascent - (subScriptSize.ascent - subScriptShift);
+     FinishReflowChild(subScriptFrame, aPresContext, nsnull,
+                       subScriptSize, dx, dy, 0);
+     // ... and the superscript
+-    dx = bmBase.width + italicCorrection;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, supScriptSize.width,
++                             bmBase.width + italicCorrection);
+     dy = aDesiredSize.ascent - (supScriptSize.ascent + supScriptShift);
+     FinishReflowChild(supScriptFrame, aPresContext, nsnull,
+                       supScriptSize, dx, dy, 0);
+   }
+ 
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFrame.cpp
+--- a/layout/mathml/nsMathMLmsupFrame.cpp
++++ b/layout/mathml/nsMathMLmsupFrame.cpp
+@@ -238,18 +238,20 @@ nsMathMLmsupFrame::PlaceSuperScript(nsPr
+   aDesiredSize.width = boundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = boundingMetrics;
+ 
+   aFrame->SetReference(nsPoint(0, aDesiredSize.ascent));
+ 
+   if (aPlaceOrigin) {
+     nscoord dx, dy;
+     // now place the base ...
+-    dx = 0; dy = aDesiredSize.ascent - baseSize.ascent;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, baseSize.width, 0);
++    dy = aDesiredSize.ascent - baseSize.ascent;
+     FinishReflowChild (baseFrame, aPresContext, nsnull, baseSize, dx, dy, 0);
+     // ... and supscript
+-    dx = bmBase.width + italicCorrection;
++    dx = aFrame->MirrorIfRTL(aDesiredSize.width, supScriptSize.width,
++                             bmBase.width + italicCorrection);
+     dy = aDesiredSize.ascent - (supScriptSize.ascent + actualSupScriptShift);
+     FinishReflowChild (supScriptFrame, aPresContext, nsnull, supScriptSize, dx, dy, 0);
+   }
+ 
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmunderFrame.cpp b/layout/mathml/nsMathMLmunderFrame.cpp
+--- a/layout/mathml/nsMathMLmunderFrame.cpp
++++ b/layout/mathml/nsMathMLmunderFrame.cpp
+@@ -354,19 +354,21 @@ nsMathMLmunderFrame::Place(nsIRenderingC
+              underSize.height - underSize.ascent);
+   aDesiredSize.width = mBoundingMetrics.width;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   if (aPlaceOrigin) {
++    // place base
++    dxBase = MirrorIfRTL(aDesiredSize.width, baseSize.width, dxBase);
+     nscoord dy = 0;
+-    // place base
+     FinishReflowChild(baseFrame, PresContext(), nsnull, baseSize, dxBase, dy, 0);
+     // place underscript
++    dxUnder = MirrorIfRTL(aDesiredSize.width, underSize.width, dxUnder);
+     dy = aDesiredSize.ascent + mBoundingMetrics.descent - bmUnder.descent - underSize.ascent;
+     FinishReflowChild(underFrame, PresContext(), nsnull, underSize, dxUnder, dy, 0);
+   }
+ 
+   return NS_OK;
+ }
+ 
+diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
+--- a/layout/mathml/nsMathMLmunderoverFrame.cpp
++++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
+@@ -476,19 +476,22 @@ nsMathMLmunderoverFrame::Place(nsIRender
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   if (aPlaceOrigin) {
+     nscoord dy;
+     // place overscript
++    dxOver = MirrorIfRTL(aDesiredSize.width, overSize.width, dxOver);
+     dy = aDesiredSize.ascent - mBoundingMetrics.ascent + bmOver.ascent - overSize.ascent;
+     FinishReflowChild (overFrame, PresContext(), nsnull, overSize, dxOver, dy, 0);
+     // place base
++    dxBase = MirrorIfRTL(aDesiredSize.width, baseSize.width, dxBase);
+     dy = aDesiredSize.ascent - baseSize.ascent;
+     FinishReflowChild (baseFrame, PresContext(), nsnull, baseSize, dxBase, dy, 0);
+     // place underscript
++    dxUnder = MirrorIfRTL(aDesiredSize.width, underSize.width, dxUnder);
+     dy = aDesiredSize.ascent + mBoundingMetrics.descent - bmUnder.descent - underSize.ascent;
+     FinishReflowChild (underFrame, PresContext(), nsnull, underSize, dxUnder, dy, 0);
+   }
+   return NS_OK;
+ }

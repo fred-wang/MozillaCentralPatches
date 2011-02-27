@@ -1,0 +1,135 @@
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1782,16 +1782,50 @@ nsMathMLChar::StretchInternal(nsPresCont
+         mScaleX *= scale;
+         aDesiredStretchSize.leftBearing *= scale;
+         aDesiredStretchSize.rightBearing *= scale;
+         aDesiredStretchSize.width *= scale;
+       }
+     }
+   }
+ 
++  // Update rotation parameter and bounding metrics
++  if (mRotationAngle) {
++    if (!maxWidth) {
++      nscoord cx, cy, x1, x2, x3, x4, y1, y2, y3, y4;
++
++      // 1-------2
++      // |   c   |
++      // 3-------4
++      x1 = x3 = aDesiredStretchSize.leftBearing;
++      x2 = x4 = aDesiredStretchSize.rightBearing;
++      y1 = y2 = aDesiredStretchSize.ascent;
++      y3 = y4 = -aDesiredStretchSize.descent;
++      cx = (x1 + x2) / 2; cy = (y1 + y2) / 2;
++      
++      RotatePoint(x1, y1, cx, cy, mRotationAngle);
++      RotatePoint(x2, y2, cx, cy, mRotationAngle);
++      RotatePoint(x3, y3, cx, cy, mRotationAngle);
++      RotatePoint(x4, y4, cx, cy, mRotationAngle);
++      
++      aDesiredStretchSize.leftBearing =
++        NS_MIN(NS_MIN(x1, x2), NS_MIN(x3, x4));
++      
++      aDesiredStretchSize.rightBearing =
++        NS_MAX(NS_MAX(x1, x2), NS_MAX(x3, x4));
++      
++      aDesiredStretchSize.descent =
++        -NS_MIN(NS_MIN(y1, y2), NS_MIN(y3, y4));
++      
++      aDesiredStretchSize.ascent =
++        NS_MAX(NS_MAX(y1, y2), NS_MAX(y3, y4));
++    }
++    
++    aDesiredStretchSize.width *= abs(cos(mRotationAngle));
++  }
+   return NS_OK;
+ }
+ 
+ nsresult
+ nsMathMLChar::Stretch(nsPresContext*           aPresContext,
+                       nsIRenderingContext&     aRenderingContext,
+                       nsStretchDirection       aStretchDirection,
+                       const nsBoundingMetrics& aContainerSize,
+@@ -2131,16 +2165,21 @@ void
+ nsMathMLChar::ApplyTransforms(nsIRenderingContext& aRenderingContext, nsRect &r)
+ {
+   nscoord dx = r.width / 2;
+   nscoord dy = r.height / 2;
+   
+   // move the origin to the center of the rectangle
+   aRenderingContext.Translate(r.x + dx, r.y + dy);
+ 
++  // rotate char
++  gfxContext *thebesContext = aRenderingContext.ThebesContext();
++  if (thebesContext)
++    thebesContext->Rotate(mRotationAngle);
++
+   // scale char
+   aRenderingContext.Scale(mMirrored ? -mScaleX : mScaleX, mScaleY);
+   dx /= mScaleX; dy /= mScaleY;
+ 
+   // move to the top left corner of the rectangle
+   aRenderingContext.Translate(-dx, -dy);
+ 
+   // update the bounding rectangle
+diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
+--- a/layout/mathml/nsMathMLChar.h
++++ b/layout/mathml/nsMathMLChar.h
+@@ -102,16 +102,17 @@ public:
+   // constructor and destructor
+   nsMathMLChar(nsMathMLChar* aParent = nsnull) {
+     MOZ_COUNT_CTOR(nsMathMLChar);
+     mStyleContext = nsnull;
+     mSibling = nsnull;
+     mParent = aParent;
+     mTrueAscent = 0;
+     mScaleX = mScaleY = 1.0;
++    mRotationAngle = 0.0;
+     mMirrored = PR_FALSE;
+   }
+ 
+   ~nsMathMLChar() { // not a virtual destructor: this class is not intended to be subclassed
+     MOZ_COUNT_DTOR(nsMathMLChar);
+     // there is only one style context owned by the "root" char
+     // and it may be used by child chars as well
+     if (!mParent && mStyleContext) { // only the "root" need to release it
+@@ -248,16 +249,17 @@ private:
+   nsGlyphTable*      mGlyphTable;
+   nsGlyphCode        mGlyph;
+   // mFamily is non-empty when the family for the current size is different
+   // from the family in the nsStyleContext.
+   nsString           mFamily;
+ 
+   // These variables are used to draw a scaled char
+   float              mScaleX, mScaleY;
++  float              mRotationAngle;
+   nscoord            mTrueAscent;
+   PRPackedBool       mMirrored;
+ 
+   class StretchEnumContext;
+   friend class StretchEnumContext;
+ 
+   // helper methods
+   nsresult
+@@ -291,11 +293,19 @@ private:
+                     nsIRenderingContext& aRenderingContext,
+                     nsFont&              aFont,
+                     nsStyleContext*      aStyleContext,
+                     nsGlyphTable*        aGlyphTable,
+                     nsRect&              aRect);
+ 
+   void
+   ApplyTransforms(nsIRenderingContext& aRenderingContext, nsRect &r);
++
++  void
++  RotatePoint(nscoord& x, nscoord& y,
++              nscoord cx, nscoord cy, float theta) {
++    float oldx = x - cx, oldy = y - cx;
++    x = (cos(theta) * oldx - sin(theta) * oldy) + cx;
++    y = (sin(theta) * oldx + cos(theta) * oldy) + cy;
++  }
+ };
+ 
+ #endif /* nsMathMLChar_h___ */

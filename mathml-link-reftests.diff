@@ -1,0 +1,67 @@
+# HG changeset patch
+# Parent cb40ca4c311187d660c177df12ecd92d5a4f2649
+# Reftests for bug 427990
+
+diff --git a/layout/reftests/mathml/link-1.xhtml b/layout/reftests/mathml/link-1.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/link-1.xhtml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <title>Test XLink</title>
++</head>
++<body>
++  <math xmlns="http://www.w3.org/1998/Math/MathML"
++	xmlns:xlink="http://www.w3.org/1999/xlink">
++    <mtext xlink:type="simple" xlink:href="www.mozilla.org">MathML Link</mtext>
++  </math>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/link-2.xhtml b/layout/reftests/mathml/link-2.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/link-2.xhtml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="utf-8"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <title>Test href link</title>
++</head>
++<body>
++  <math xmlns="http://www.w3.org/1998/Math/MathML">
++    <mtext href="www.mozilla.org">MathML Link</mtext>
++  </math>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/link-ref.xhtml b/layout/reftests/mathml/link-ref.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/link-ref.xhtml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="utf-8"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <title>Test link</title>
++</head>
++<body>
++  <math xmlns="http://www.w3.org/1998/Math/MathML">
++    <mtext>MathML Link</mtext>
++  </math>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -30,8 +30,10 @@
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
+ == mathbackground-4.xml mathbackground-4-ref.xml
+ == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
+ != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
+ == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
+ != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
+ != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
++!= link-1.xhtml link-ref.xhtml
++!= link-2.xhtml link-ref.xhtml

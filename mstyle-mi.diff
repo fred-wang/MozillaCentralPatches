@@ -1,0 +1,80 @@
+# HG changeset patch
+# Parent 78c8c74ef333b1061f9cbb806a80560e5a45f885
+# User Frédéric Wang <fred.wang@free.fr>
+mathvariant on mstyle not applied to mi (bug 569125). r=karlt
+
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -63,16 +63,17 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ 
+   SetQuotes(PR_TRUE);
++  ProcessTextData();
+ 
+   // see if the directionality attribute is there
+   nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+@@ -111,25 +112,25 @@ eMathMLFrameType
+ nsMathMLTokenFrame::GetMathMLFrameType()
+ {
+   // treat everything other than <mi> as ordinary...
+   if (mContent->Tag() != nsGkAtoms::mi_) {
+     return eMathMLFrameType_Ordinary;
+   }
+ 
+   // for <mi>, distinguish between italic and upright...
+-  // Don't use nsMathMLFrame::GetAttribute for mathvariant or fontstyle as
+-  // default values are not inherited.
+   nsAutoString style;
+   // mathvariant overrides fontstyle
+   // http://www.w3.org/TR/2003/REC-MathML2-20031021/chapter3.html#presm.deprecatt
+   mContent->GetAttr(kNameSpaceID_None,
+                     nsGkAtoms::_moz_math_fontstyle_, style) ||
+-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::mathvariant_, style) ||
+-    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::fontstyle_, style);
++    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::mathvariant_,
++                 style) ||
++    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::fontstyle_,
++                 style);
+ 
+   if (style.EqualsLiteral("italic") || style.EqualsLiteral("bold-italic") ||
+       style.EqualsLiteral("script") || style.EqualsLiteral("bold-script") ||
+       style.EqualsLiteral("sans-serif-italic") ||
+       style.EqualsLiteral("sans-serif-bold-italic")) {
+     return eMathMLFrameType_ItalicIdentifier;
+   }
+   else if(style.EqualsLiteral("invariant")) {
+@@ -375,18 +376,21 @@ nsMathMLTokenFrame::SetTextStyle()
+     (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
+   if (isSingleCharacter &&
+       nsMathMLOperators::LookupInvariantChar(data) != eMATHVARIANT_NONE) {
+     // bug 65951 - a non-stylable character has its own intrinsic appearance
+     fontstyle.AssignLiteral("invariant");
+   }
+   else {
+     // Attributes override the default behavior.
+-    if (!(mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::mathvariant_) ||
+-          mContent->HasAttr(kNameSpaceID_None, nsGkAtoms::fontstyle_))) {
++    nsAutoString value;
++    if (!(GetAttribute(mContent, mPresentationData.mstyle,
++                       nsGkAtoms::mathvariant_, value) ||
++          GetAttribute(mContent, mPresentationData.mstyle,
++                       nsGkAtoms::fontstyle_, value))) {
+       if (!isSingleCharacter) {
+         fontstyle.AssignLiteral("normal");
+       }
+       else if (length == 1 && // BMP
+                !nsMathMLOperators::
+                 TransformVariantChar(data[0], eMATHVARIANT_italic).
+                 Equals(data)) {
+         // Transformation exists.  Try to make the BMP character look like the

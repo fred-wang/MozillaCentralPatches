@@ -1,0 +1,80 @@
+# HG changeset patch
+# Parent 2ecdfefa5ef4e16edbcf12d9ed18d873f5e93c46
+# User Frédéric Wang <fred.wang@free.fr>
+# updateOperatorDictionary.pl: add private data "mirrorable" (bug 534970).
+
+diff --git a/layout/mathml/updateOperatorDictionary.pl b/layout/mathml/updateOperatorDictionary.pl
+--- a/layout/mathml/updateOperatorDictionary.pl
++++ b/layout/mathml/updateOperatorDictionary.pl
+@@ -78,16 +78,17 @@ if ($ARGV[0] eq "compare" && $#ARGV == 1
+ #      7   | separator
+ #      8   | accent
+ #      9   | fence
+ #     10   | symmetric
+ #     11   | priority
+ #     12   | linebreakstyle
+ #     13   | direction
+ #     14   | integral
++#     15   | mirrorable
+ 
+ # 1) build %moz_hash from $MOZ_DICTIONARY
+ 
+ print "loading $MOZ_DICTIONARY...\n";
+ open($file, $MOZ_DICTIONARY) || die ("Couldn't open $MOZ_DICTIONARY!");
+ 
+ print "building dictionary...\n";
+ while (<$file>) {
+@@ -111,16 +112,17 @@ while (<$file>) {
+     $value[8] = (m/^(.*)accent(.*)$/);
+     $value[9] = (m/^(.*)fence(.*)$/);
+     $value[10] = (m/^(.*)symmetric(.*)$/);
+     $value[11] = ""; # we don't store "priority" in our dictionary
+     $value[12] = ""; # we don't store "linebreakstyle" in our dictionary
+     if (m/^(.*)direction:([a-z]*)(.*)$/) { $value[13] = $2; }
+     else { $value[13] = ""; }
+     $value[14] = (m/^(.*)integral(.*)$/);
++    $value[15] = (m/^(.*)mirrorable(.*)$/);
+ 
+     # 1.3) save the key and value
+     $moz_hash{$key} = [ @value ];
+ }
+ 
+ close($file);
+ 
+ ################################################################################
+@@ -297,16 +299,17 @@ for ($i = 0; $i < $n; $i++) {
+     $value[9] = (m/^(.*)fence(.*)$/);
+     $value[10] = (m/^(.*)symmetric(.*)$/);
+     $value[11] = $entry->getAttribute("priority");
+     $value[12] = $entry->getAttribute("linebreakstyle");
+ 
+     # not stored in the WG dictionary
+     $value[13] = ""; # direction
+     $value[14] = ""; # integral
++    $value[15] = ""; # mirrorable
+ 
+     # 3.3) save the key and value
+     push(@wg_keys, $key);
+     $wg_hash{$key} = [ @value ];
+ }
+ $doc->dispose;
+ @wg_keys = reverse(@wg_keys);
+ 
+@@ -433,16 +436,17 @@ sub generateCommon {
+ sub completeCommon {
+     # helper to add key and private data to generateCommon
+     my($entry, $key, @v_moz, @v_wg) = @_;
+     
+     $entry = "$key = $entry";
+ 
+     if ($v_moz[13]) { $entry = "$entry direction:$v_moz[13]"; }
+     if ($v_moz[14]) { $entry = "$entry integral"; }
++    if ($v_moz[15]) { $entry = "$entry mirrorable"; }
+ 
+     if ($v_moz[0]) {
+         # keep our previous comment
+         $entry = "$entry # $v_moz[0]";
+     } else {
+         # otherwise use the description given by the WG
+         $entry = "$entry # $v_wg[0]";
+     }

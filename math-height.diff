@@ -1,0 +1,192 @@
+# HG changeset patch
+# Parent 6c5ddff69cb54988a29c6d89ba55db11b86a4438
+
+diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
+--- a/layout/base/nsCSSFrameConstructor.cpp
++++ b/layout/base/nsCSSFrameConstructor.cpp
+@@ -4393,16 +4393,19 @@ nsCSSFrameConstructor::FindDisplayData(c
+     // find them if we need to.
+     // XXXbz the "quickly" part is a bald-faced lie!
+     { NS_STYLE_DISPLAY_INLINE,
+       FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
+                        &nsCSSFrameConstructor::ConstructInline) },
+     { NS_STYLE_DISPLAY_MARKER,
+       FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
+                        &nsCSSFrameConstructor::ConstructInline) },
++    { NS_STYLE_DISPLAY_MATH_INLINE,
++      FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
++                       &nsCSSFrameConstructor::ConstructInline) },
+     { NS_STYLE_DISPLAY_TABLE,
+       FULL_CTOR_FCDATA(0, &nsCSSFrameConstructor::ConstructTable) },
+     { NS_STYLE_DISPLAY_INLINE_TABLE,
+       FULL_CTOR_FCDATA(0, &nsCSSFrameConstructor::ConstructTable) },
+     { NS_STYLE_DISPLAY_TABLE_CAPTION,
+       FCDATA_DECL(FCDATA_IS_TABLE_PART | FCDATA_ALLOW_BLOCK_STYLES |
+                   FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_SKIP_ABSPOS_PUSH |
+                   FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable),
+diff --git a/layout/base/nsStyleConsts.h b/layout/base/nsStyleConsts.h
+--- a/layout/base/nsStyleConsts.h
++++ b/layout/base/nsStyleConsts.h
+@@ -396,16 +396,20 @@ static inline mozilla::css::Side operato
+ #define NS_STYLE_DISPLAY_GRID_GROUP             22
+ #define NS_STYLE_DISPLAY_GRID_LINE              23
+ #define NS_STYLE_DISPLAY_STACK                  24
+ #define NS_STYLE_DISPLAY_INLINE_STACK           25
+ #define NS_STYLE_DISPLAY_DECK                   26
+ #define NS_STYLE_DISPLAY_POPUP                  27
+ #define NS_STYLE_DISPLAY_GROUPBOX               28
+ #endif
++#ifdef MOZ_MATHML
++#define NS_STYLE_DISPLAY_MATH_BLOCK             34
++#define NS_STYLE_DISPLAY_MATH_INLINE            35
++#endif
+ 
+ // See nsStyleDisplay
+ #define NS_STYLE_FLOAT_NONE                     0
+ #define NS_STYLE_FLOAT_LEFT                     1
+ #define NS_STYLE_FLOAT_RIGHT                    2
+ 
+ // See nsStyleFont
+ // We should eventually stop using the NS_STYLE_* variants here.
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -46,29 +46,29 @@
+ /* <math> - outermost math element                                        */
+ /* Put Cambria before Cambria Math as Cambria Math has neither bold nor   */
+ /* italic.                                                                */
+ /**************************************************************************/
+ 
+ math {
+   direction: ltr;
+   unicode-bidi: embed;
+-  display: inline;
++  display: -moz-math-inline;
+   font-size: inherit;
+   font-style: normal;
+   font-family: STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+   text-rendering: optimizeLegibility;
+   -moz-float-edge: margin-box;
+ }
+ math[mode="display"], math[display="block"] {
+-  display: block;
++  display: -moz-math-block;
+   text-align: -moz-center;
+ }
+ math[display="inline"] {
+-  display: inline;
++  display: -moz-math-inline;
+ }
+ 
+ /**************************************************************************/
+ /* Style switching during frame construction depending on the context of <mi>:
+    These rules are not used when mathvariant or fontstyle is specified
+    explicitly. 
+ /**************************************************************************/
+ 
+diff --git a/layout/style/nsCSSKeywordList.h b/layout/style/nsCSSKeywordList.h
+--- a/layout/style/nsCSSKeywordList.h
++++ b/layout/style/nsCSSKeywordList.h
+@@ -139,16 +139,20 @@ CSS_KEY(-moz-mac-focusring, _moz_mac_foc
+ CSS_KEY(-moz-mac-menuselect, _moz_mac_menuselect)
+ CSS_KEY(-moz-mac-menushadow, _moz_mac_menushadow)
+ CSS_KEY(-moz-mac-menutextdisable, _moz_mac_menutextdisable)
+ CSS_KEY(-moz-mac-menutextselect, _moz_mac_menutextselect)
+ CSS_KEY(-moz-mac-disabledtoolbartext, _moz_mac_disabledtoolbartext)
+ CSS_KEY(-moz-mac-secondaryhighlight, _moz_mac_secondaryhighlight)
+ CSS_KEY(-moz-malayalam, _moz_malayalam)
+ CSS_KEY(-moz-marker, _moz_marker) // Disabled because not supported correctly.
++#ifdef MOZ_MATHML
++CSS_KEY(-moz-math-block, _moz_math_block)
++CSS_KEY(-moz-math-inline, _moz_math_inline)
++#endif
+ CSS_KEY(-moz-max-content, _moz_max_content)
+ CSS_KEY(-moz-menuhover, _moz_menuhover)
+ CSS_KEY(-moz-menuhovertext, _moz_menuhovertext)
+ CSS_KEY(-moz-menubartext, _moz_menubartext)
+ CSS_KEY(-moz-menubarhovertext, _moz_menubarhovertext)
+ CSS_KEY(-moz-middle-with-baseline, _moz_middle_with_baseline)
+ CSS_KEY(-moz-min-content, _moz_min_content)
+ CSS_KEY(-moz-myanmar, _moz_myanmar)
+diff --git a/layout/style/nsCSSProps.cpp b/layout/style/nsCSSProps.cpp
+--- a/layout/style/nsCSSProps.cpp
++++ b/layout/style/nsCSSProps.cpp
+@@ -828,16 +828,18 @@ const PRInt32 nsCSSProps::kDisplayKTable
+   eCSSKeyword_none,               NS_STYLE_DISPLAY_NONE,
+   eCSSKeyword_inline,             NS_STYLE_DISPLAY_INLINE,
+   eCSSKeyword_block,              NS_STYLE_DISPLAY_BLOCK,
+   eCSSKeyword_inline_block,       NS_STYLE_DISPLAY_INLINE_BLOCK,
+   eCSSKeyword_list_item,          NS_STYLE_DISPLAY_LIST_ITEM,
+   eCSSKeyword__moz_run_in,        NS_STYLE_DISPLAY_RUN_IN,
+   eCSSKeyword__moz_compact,       NS_STYLE_DISPLAY_COMPACT,
+   eCSSKeyword__moz_marker,        NS_STYLE_DISPLAY_MARKER,
++  eCSSKeyword__moz_math_block,    NS_STYLE_DISPLAY_MATH_BLOCK,
++  eCSSKeyword__moz_math_inline,   NS_STYLE_DISPLAY_MATH_INLINE,
+   eCSSKeyword_table,              NS_STYLE_DISPLAY_TABLE,
+   eCSSKeyword_inline_table,       NS_STYLE_DISPLAY_INLINE_TABLE,
+   eCSSKeyword_table_row_group,    NS_STYLE_DISPLAY_TABLE_ROW_GROUP,
+   eCSSKeyword_table_header_group, NS_STYLE_DISPLAY_TABLE_HEADER_GROUP,
+   eCSSKeyword_table_footer_group, NS_STYLE_DISPLAY_TABLE_FOOTER_GROUP,
+   eCSSKeyword_table_row,          NS_STYLE_DISPLAY_TABLE_ROW,
+   eCSSKeyword_table_column_group, NS_STYLE_DISPLAY_TABLE_COLUMN_GROUP,
+   eCSSKeyword_table_column,       NS_STYLE_DISPLAY_TABLE_COLUMN,
+diff --git a/layout/style/nsStyleStruct.h b/layout/style/nsStyleStruct.h
+--- a/layout/style/nsStyleStruct.h
++++ b/layout/style/nsStyleStruct.h
+@@ -1391,31 +1391,34 @@ struct nsStyleDisplay {
+   // a list due to another property being longer.
+   PRUint32 mTransitionTimingFunctionCount,
+            mTransitionDurationCount,
+            mTransitionDelayCount,
+            mTransitionPropertyCount;
+ 
+   PRBool IsBlockInside() const {
+     return NS_STYLE_DISPLAY_BLOCK == mDisplay ||
++           NS_STYLE_DISPLAY_MATH_BLOCK == mDisplay ||
+            NS_STYLE_DISPLAY_LIST_ITEM == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_BLOCK == mDisplay;
+     // Should TABLE_CELL and TABLE_CAPTION go here?  They have
+     // block frames nested inside of them.
+     // (But please audit all callers before changing.)
+   }
+ 
+   PRBool IsBlockOutside() const {
+     return NS_STYLE_DISPLAY_BLOCK == mDisplay ||
++           NS_STYLE_DISPLAY_MATH_BLOCK == mDisplay ||
+            NS_STYLE_DISPLAY_LIST_ITEM == mDisplay ||
+            NS_STYLE_DISPLAY_TABLE == mDisplay;
+   }
+ 
+   PRBool IsInlineOutside() const {
+     return NS_STYLE_DISPLAY_INLINE == mDisplay ||
++           NS_STYLE_DISPLAY_MATH_INLINE == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_BLOCK == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_TABLE == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_BOX == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_GRID == mDisplay ||
+            NS_STYLE_DISPLAY_INLINE_STACK == mDisplay;
+   }
+ 
+   PRBool IsFloating() const {
+diff --git a/layout/style/test/property_database.js b/layout/style/test/property_database.js
+--- a/layout/style/test/property_database.js
++++ b/layout/style/test/property_database.js
+@@ -1686,17 +1686,17 @@ var gCSSProperties = {
+ 	},
+ 	"display": {
+ 		domProp: "display",
+ 		inherited: false,
+ 		type: CSS_TYPE_LONGHAND,
+ 		initial_values: [ "inline" ],
+ 		/* XXX none will really mess with other properties */
+ 		prerequisites: { "float": "none", "position": "static" },
+-		other_values: [ "block", "list-item", "inline-block", "table", "inline-table", "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-column-group", "table-column", "table-cell", "table-caption", "none" ],
++		other_values: [ "block", "list-item", "inline-block", "table", "inline-table", "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-column-group", "table-column", "table-cell", "table-caption", "-moz-math-block", "-moz-math-inline", "none" ],
+ 		invalid_values: []
+ 	},
+ 	"elevation": {
+ 		domProp: "elevation",
+ 		inherited: true,
+ 		backend_only: true,
+ 		type: CSS_TYPE_LONGHAND,
+ 		initial_values: [ "level", "0deg" ],

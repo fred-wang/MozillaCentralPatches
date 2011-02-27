@@ -1,0 +1,97 @@
+diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
+--- a/layout/mathml/nsMathMLmspaceFrame.cpp
++++ b/layout/mathml/nsMathMLmspaceFrame.cpp
+@@ -114,16 +114,31 @@ nsMathMLmspaceFrame::ProcessAttributes(n
+                value);
+   if (!value.IsEmpty()) {
+     if ((ParseNumericValue(value, cssValue) ||
+          ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue)) &&
+          cssValue.IsLengthUnit()) {
+       mDepth = CalcLength(aPresContext, mStyleContext, cssValue);
+     }
+   }
++
++  // linebreak
++  mLineBreak = LINEBREAK_AUTO;
++  GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::linebreak_,
++               value);
++  if (!value.IsEmpty()) {
++    if (value.EqualsLiteral("newline"))
++      mLineBreak = LINEBREAK_NEWLINE;
++    else if (value.EqualsLiteral("nobreak"))
++      mLineBreak = LINEBREAK_NOBREAK;
++    else if (value.EqualsLiteral("goodbreak"))
++      mLineBreak = LINEBREAK_GOODBREAK;
++    else if (value.EqualsLiteral("badbreak"))
++      mLineBreak = LINEBREAK_BADBREAK;
++  }
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmspaceFrame::Reflow(nsPresContext*          aPresContext,
+                             nsHTMLReflowMetrics&     aDesiredSize,
+                             const nsHTMLReflowState& aReflowState,
+                             nsReflowStatus&          aStatus)
+ {
+@@ -139,10 +154,14 @@ nsMathMLmspaceFrame::Reflow(nsPresContex
+   aDesiredSize.ascent = mHeight;
+   aDesiredSize.width = mWidth;
+   aDesiredSize.height = aDesiredSize.ascent + mDepth;
+   // Also return our bounding metrics
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   aStatus = NS_FRAME_COMPLETE;
+   NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
++
++  if (mLineBreak == LINEBREAK_NEWLINE)
++    aStatus = NS_INLINE_LINE_BREAK_AFTER(aStatus);
++
+   return NS_OK;
+ }
+diff --git a/layout/mathml/nsMathMLmspaceFrame.h b/layout/mathml/nsMathMLmspaceFrame.h
+--- a/layout/mathml/nsMathMLmspaceFrame.h
++++ b/layout/mathml/nsMathMLmspaceFrame.h
+@@ -41,16 +41,25 @@
+ 
+ #include "nsCOMPtr.h"
+ #include "nsMathMLContainerFrame.h"
+ 
+ //
+ // <mspace> -- space
+ //
+ 
++enum nsMspaceLineBreak
++  {
++    LINEBREAK_AUTO,
++    LINEBREAK_NEWLINE,
++    LINEBREAK_NOBREAK,
++    LINEBREAK_GOODBREAK,
++    LINEBREAK_BADBREAK
++  };
++
+ class nsMathMLmspaceFrame : public nsMathMLContainerFrame {
+ public:
+   NS_DECL_FRAMEARENA_HELPERS
+ 
+   friend nsIFrame* NS_NewMathMLmspaceFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ 
+   virtual PRBool IsLeaf() const;
+ 
+@@ -65,15 +74,16 @@ protected:
+   virtual ~nsMathMLmspaceFrame();
+   
+   virtual PRIntn GetSkipSides() const { return 0; }
+ 
+ private:
+   nscoord mWidth;
+   nscoord mHeight;
+   nscoord mDepth;
+-
++  nsMspaceLineBreak mLineBreak;
++ 
+   // helper method to initialize our member data
+   void 
+   ProcessAttributes(nsPresContext* aPresContext);
+ };
+ 
+ #endif /* nsMathMLmspaceFrame_h___ */

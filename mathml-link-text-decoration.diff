@@ -1,0 +1,32 @@
+# HG changeset patch
+# Parent e88d199af24599dd1fcc4f07af204afe922f7cf1
+# User Frédéric Wang <fred.wang@free.fr>
+# Do not underline MathML links (bug 504324)
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -95,16 +95,23 @@ math[display="inline"] {
+ }
+ /* A style-invariant character preserves its own style */
+ [_moz-math-font-style="invariant"] {
+   font-style: normal;
+   font-weight: normal;
+ }
+ 
+ /**************************************************************************/
++/* Links                                                                  */
++/**************************************************************************/
++:-moz-any-link {
++  text-decoration: none !important;
++}
++
++/**************************************************************************/
+ /* attributes common to all tags                                          */
+ /**************************************************************************/
+ 
+ /* deprecated attributes from MathML 1.0 */
+ 
+ /* fontstyle */
+ [fontstyle="normal"] {
+   font-style: normal;

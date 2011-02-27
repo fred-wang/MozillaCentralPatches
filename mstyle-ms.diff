@@ -1,0 +1,27 @@
+# HG changeset patch
+# Parent 92808df329cfbb90864fa33755aa20febfe2be28
+# User Frédéric Wang <fred.wang@free.fr>
+Support for attribute "lquote" and "rquote" on mstyle (bug 569125). r=karlt
+
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -62,16 +62,18 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ 
++  SetQuotes(PR_TRUE);
++
+   // see if the directionality attribute is there
+   nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::UpdatePresentationData(PRUint32 aFlagsValues,

@@ -1,0 +1,84 @@
+# HG changeset patch
+# Parent 4cdfc4a916a3ee29f1bd0504df585c5ff0724d65
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 407439 - Support for Asana Math font in MathML (add in pref). r=karlt
+
+diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
+--- a/modules/libpref/src/init/all.js
++++ b/modules/libpref/src/init/all.js
+@@ -982,17 +982,17 @@ pref("intl.locale.matchOS",             
+ pref("intl.fallbackCharsetList.ISO-8859-1", "windows-1252");
+ pref("font.language.group",                 "chrome://global/locale/intl.properties");
+ 
+ // these locales have right-to-left UI
+ pref("intl.uidirection.ar", "rtl");
+ pref("intl.uidirection.he", "rtl");
+ pref("intl.uidirection.fa", "rtl");
+ 
+-pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Standard Symbols L, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
+ 
+ // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
+ // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
+ pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
+ 
+ pref("images.dither", "auto");
+ pref("security.directory",              "");
+ 
+@@ -1668,17 +1668,17 @@ pref("font.default.zh-TW", "sans-serif")
+ pref("font.size.variable.zh-TW", 16);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 16);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+ // We have special support for Monotype Symbol on Windows.
+-pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+ 
+ // cleartype settings - false implies default system settings 
+ 
+ // use cleartype rendering for downloadable fonts (win xp only)
+ pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
+ 
+ // use cleartype rendering for all fonts always (win xp only)
+ pref("gfx.font_rendering.cleartype.always_use_for_content", false);
+@@ -2153,17 +2153,17 @@ pref("font.default.zh-TW", "sans-serif")
+ pref("font.size.variable.zh-TW", 15);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 15);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+ // Apple's Symbol is Unicode so use it
+-pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+ 
+ // individual font faces to be treated as independent families
+ // names are Postscript names of each face
+ pref("font.single-face-list", "Osaka-Mono");
+ 
+ // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
+ // names are canonical family names (typically English names)
+ pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
+@@ -2197,17 +2197,17 @@ pref("mousewheel.system_scroll_override_
+ #endif
+ 
+ #ifdef XP_OS2
+ 
+ pref("ui.key.menuAccessKeyFocuses", true);
+ 
+ pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
+ 
+-pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, DejaVu Sans");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
+ 
+ // Languages only need lists if we have a default that might not be available.
+ // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
+ // maps them to Times New Roman and Helvetica, respectively. Those fonts and
+ // Courier are available on OS/2 by default.
+ 
+ pref("font.name.serif.ar", "Tms Rmn");
+ pref("font.name.sans-serif.ar", "Helv");

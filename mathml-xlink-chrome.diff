@@ -1,0 +1,114 @@
+# HG changeset patch
+# Parent 0ad37a1a0ff2b2edac5dbeee31bd4b7ca552e885
+# User Frédéric Wang <fred.wang@free.fr>
+Restore XLink on MathML elements and implement MathML 3 href - part 2 (bug 427990)
+
+diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
+--- a/browser/base/content/browser.js
++++ b/browser/base/content/browser.js
+@@ -5045,22 +5045,27 @@ function hrefAndLinkNodeForClickEvent(ev
+   let node = event.target;
+   while (node && !isHTMLLink(node)) {
+     node = node.parentNode;
+   }
+ 
+   if (node)
+     return [node.href, node];
+ 
+-  // If there is no linkNode, try simple XLink.
++  // If there is no linkNode, try MathML link or simple XLink.
++  const NS_MathML = "http://www.w3.org/1998/Math/MathML";
+   let href, baseURI;
+   node = event.target;
+   while (node) {
+     if (node.nodeType == Node.ELEMENT_NODE) {
+-      href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
++      if (node.namespaceURI == NS_MathML && node.hasAttribute("href")) {
++        href = node.getAttribute("href");
++      } else {
++        href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
++      }
+       if (href)
+         baseURI = node.baseURI;
+     }
+     node = node.parentNode;
+   }
+ 
+   // In case of XLink, we don't return the node we got href from since
+   // callers expect <a>-like elements.
+diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsContextMenu.js
+--- a/browser/base/content/nsContextMenu.js
++++ b/browser/base/content/nsContextMenu.js
+@@ -531,26 +531,28 @@ nsContextMenu.prototype = {
+           }
+         }
+       }
+     }
+ 
+     // Second, bubble out, looking for items of interest that can have childen.
+     // Always pick the innermost link, background image, etc.
+     const XMLNS = "http://www.w3.org/XML/1998/namespace";
++    const NS_MathML = "http://www.w3.org/1998/Math/MathML";
+     var elem = this.target;
+     while (elem) {
+       if (elem.nodeType == Node.ELEMENT_NODE) {
+         // Link?
+         if (!this.onLink &&
+             // Be consistent with what hrefAndLinkNodeForClickEvent
+             // does in browser.js
+              ((elem instanceof HTMLAnchorElement && elem.href) ||
+               (elem instanceof HTMLAreaElement && elem.href) ||
+               elem instanceof HTMLLinkElement ||
++              (elem.namespaceURI == NS_MathML && elem.hasAttribute("href")) ||
+               elem.getAttributeNS("http://www.w3.org/1999/xlink", "type") == "simple")) {
+ 
+           // Target is a link or a descendant of a link.
+           this.onLink = true;
+ 
+           // Remember corresponding element.
+           this.link = elem;
+           this.linkURL = this.getLinkURL();
+@@ -579,17 +581,16 @@ nsContextMenu.prototype = {
+           }
+         }
+       }
+ 
+       elem = elem.parentNode;
+     }
+ 
+     // See if the user clicked on MathML
+-    const NS_MathML = "http://www.w3.org/1998/Math/MathML";
+     if ((this.target.nodeType == Node.TEXT_NODE &&
+          this.target.parentNode.namespaceURI == NS_MathML)
+          || (this.target.namespaceURI == NS_MathML))
+       this.onMathML = true;
+ 
+     // See if the user clicked in a frame.
+     var docDefaultView = this.target.ownerDocument.defaultView;
+     if (docDefaultView != docDefaultView.top)
+@@ -1133,18 +1134,23 @@ nsContextMenu.prototype = {
+   },
+ 
+   // Generate fully qualified URL for clicked-on link.
+   getLinkURL: function() {
+     var href = this.link.href;  
+     if (href)
+       return href;
+ 
+-    href = this.link.getAttributeNS("http://www.w3.org/1999/xlink",
+-                                    "href");
++    // MathML href
++    href = this.link.getAttribute("href");
++    if (!href) {
++      // XLink href
++      href = this.link.getAttributeNS("http://www.w3.org/1999/xlink",
++                                      "href");
++    }
+ 
+     if (!href || !href.match(/\S/)) {
+       // Without this we try to save as the current doc,
+       // for example, HTML case also throws if empty
+       throw "Empty href";
+     }
+ 
+     return makeURLAbsolute(this.link.baseURI, href);

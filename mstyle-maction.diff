@@ -1,0 +1,28 @@
+# HG changeset patch
+# Parent bd43ac291e74ace82ae3202d46dfa1be00c8d7c7
+# User Frédéric Wang <fred.wang@free.fr>
+Support for attribute "selected" on mstyle (bug 569125). r=karlt
+
+diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmactionFrame.cpp
+--- a/layout/mathml/nsMathMLmactionFrame.cpp
++++ b/layout/mathml/nsMathMLmactionFrame.cpp
+@@ -195,17 +195,18 @@ nsMathMLmactionFrame::ChildListChanged(P
+ 
+ // return the frame whose number is given by the attribute selection="number"
+ nsIFrame* 
+ nsMathMLmactionFrame::GetSelectedFrame()
+ {
+   nsAutoString value;
+   PRInt32 selection; 
+ 
+-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::selection_, value);
++  (GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::selection_,
++                value));
+   if (!value.IsEmpty()) {
+     PRInt32 errorCode;
+     selection = value.ToInteger(&errorCode);
+     if (NS_FAILED(errorCode)) 
+       selection = 1;
+   }
+   else selection = 1; // default is first frame
+ 
