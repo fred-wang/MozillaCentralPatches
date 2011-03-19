@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 24c7059d0dff15a7ab5f05bc7c452cb69c15513a
+# Parent 3df8c6db6854004f820183816040ec5c152ca80f
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 21479 - Embellished operators - add rules for mstyle, mphantom, mpadded and mrow. r=karlt
 
@@ -105,7 +105,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -1454,16 +1455,75 @@ nsMathMLContainerFrame::DidReflowChildre
+@@ -1460,16 +1461,75 @@ nsMathMLContainerFrame::DidReflowChildre
          DidReflowChildren(grandchild, nsnull);
  
        frame->DidReflow(frame->PresContext(), nsnull,
@@ -512,434 +512,823 @@ diff --git a/layout/mathml/nsMathMLmstyleFrame.cpp b/layout/mathml/nsMathMLmstyl
  NS_IMETHODIMP
  nsMathMLmstyleFrame::UpdatePresentationData(PRUint32        aFlagsValues,
                                              PRUint32        aWhichFlags)
-diff --git a/layout/reftests/mathml/embellished-op-1-ref.xhtml b/layout/reftests/mathml/embellished-op-1-ref.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-1-1-ref.html b/layout/reftests/mathml/embellished-op-1-1-ref.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-1-ref.xhtml
-@@ -0,0 +1,56 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-1-1-ref.html
+@@ -0,0 +1,20 @@
++<html>
 +  <head>
-+    <title>embellished operators: maction, mrow, mstyle, mpadded and mphantom</title>
++    <title>embellished operators 1: maction</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- maction whose selected child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <maction actiontype="toggle" selection="2"><mo stretchy="false">&#xaf;</mo><mo stretchy="false">&#xaf;</mo></maction>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- mrow whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mstyle whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mstyle><mo stretchy="false">&#xaf;</mo></mstyle>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mpadded whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mpadded><mo stretchy="false">&#xaf;</mo></mpadded>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mphantom whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mphantom><mo stretchy="false">&#xaf;</mo></mphantom><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- maction whose selected child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <maction actiontype="toggle" selection="2">
++            <mo stretchy="false">&#xaf;</mo>
++            <mo stretchy="false">&#xaf;</mo>
++          </maction>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-1.xhtml b/layout/reftests/mathml/embellished-op-1.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-1-1.html b/layout/reftests/mathml/embellished-op-1-1.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-1.xhtml
-@@ -0,0 +1,56 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-1-1.html
+@@ -0,0 +1,20 @@
++<html>
 +  <head>
-+    <title>embellished operators: maction, mrow, mstyle, mpadded and mphantom</title>
++    <title>embellished operators 1: maction</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- maction whose selected child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <maction actiontype="toggle" selection="2"><mo stretchy="false">&#xaf;</mo><mo>&#xaf;</mo></maction>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- mrow whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mstyle whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mstyle><mo>&#xaf;</mo></mstyle>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mpadded whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mpadded><mo>&#xaf;</mo></mpadded>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- mphantom whose child is embellished op -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mphantom><mo>&#xaf;</mo></mphantom><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- maction whose selected child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <maction actiontype="toggle" selection="2">
++            <mo stretchy="false">&#xaf;</mo>
++            <mo>&#xaf;</mo>
++          </maction>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-2-ref.xhtml b/layout/reftests/mathml/embellished-op-2-ref.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-1-2-ref.html b/layout/reftests/mathml/embellished-op-1-2-ref.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-2-ref.xhtml
-@@ -0,0 +1,46 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-1-2-ref.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mrow</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mrow whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo stretchy="false">&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-2.html b/layout/reftests/mathml/embellished-op-1-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-2.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mrow</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mrow whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-3-ref.html b/layout/reftests/mathml/embellished-op-1-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-3-ref.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mstyle</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mstyle whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mstyle><mo stretchy="false">&#xaf;</mo></mstyle>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-3.html b/layout/reftests/mathml/embellished-op-1-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-3.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mstyle</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mstyle whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mstyle><mo>&#xaf;</mo></mstyle>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-4-ref.html b/layout/reftests/mathml/embellished-op-1-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-4-ref.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mpadded</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mpadded whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mpadded><mo stretchy="false">&#xaf;</mo></mpadded>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-4.html b/layout/reftests/mathml/embellished-op-1-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-4.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 1: mpadded</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mpadded whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mpadded><mo>&#xaf;</mo></mpadded>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-5-ref.html b/layout/reftests/mathml/embellished-op-1-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-5-ref.html
+@@ -0,0 +1,21 @@
++<html>
++  <head>
++    <title>embellished operators 1: mphantom</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mphantom whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mtext>g</mtext>
++            <mphantom><mo stretchy="false">&#xaf;</mo></mphantom>
++            <mtext>h</mtext>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-1-5.html b/layout/reftests/mathml/embellished-op-1-5.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-1-5.html
+@@ -0,0 +1,21 @@
++<html>
++  <head>
++    <title>embellished operators 1: mphantom</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- mphantom whose child is embellished op -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mtext>g</mtext>
++            <mphantom><mo>&#xaf;</mo></mphantom>
++            <mtext>h</mtext>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-2-1-ref.html b/layout/reftests/mathml/embellished-op-2-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-2-1-ref.html
+@@ -0,0 +1,17 @@
++<html>
 +  <head>
 +    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- first child space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- last child space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo stretchy="false">&#xaf;</mo><mtext>g</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- first and last children space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mo stretchy="false">&#xaf;</mo><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- many space-like children -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mspace/><mtext>g</mtext><mspace/><mo stretchy="false">&#xaf;</mo><mspace/><mspace/><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- first child space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mtext>g</mtext><mo stretchy="false">&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-2.xhtml b/layout/reftests/mathml/embellished-op-2.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-2-1.html b/layout/reftests/mathml/embellished-op-2-1.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-2.xhtml
-@@ -0,0 +1,46 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-2-1.html
+@@ -0,0 +1,17 @@
++<html>
 +  <head>
 +    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- first child space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- last child space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo>&#xaf;</mo><mtext>g</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- first and last children space-like -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mtext>g</mtext><mo>&#xaf;</mo><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- many space-like children -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mspace/><mtext>g</mtext><mspace/><mo>&#xaf;</mo><mspace/><mspace/><mtext>h</mtext></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- first child space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mtext>g</mtext><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-3-ref.xhtml b/layout/reftests/mathml/embellished-op-3-ref.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-2-2-ref.html b/layout/reftests/mathml/embellished-op-2-2-ref.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-3-ref.xhtml
-@@ -0,0 +1,56 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-2-2-ref.html
+@@ -0,0 +1,17 @@
++<html>
 +  <head>
-+    <title>embellished operators: maction and mrow-like as space-like children</title>
++    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- space-like maction -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><maction actiontype="toggle" selection="2"><mi>g</mi><mspace/></maction><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- space-like mrow -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mrow><mspace/></mrow><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mstyle -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mstyle><mspace/></mstyle><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mpadded -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mphantom><mspace/></mphantom><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mphantom -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mphantom><mspace/></mphantom><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- last child space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo stretchy="false">&#xaf;</mo><mtext>g</mtext></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-3.xhtml b/layout/reftests/mathml/embellished-op-3.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-2-2.html b/layout/reftests/mathml/embellished-op-2-2.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-3.xhtml
-@@ -0,0 +1,56 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-2-2.html
+@@ -0,0 +1,17 @@
++<html>
 +  <head>
-+    <title>embellished operators: maction and mrow-like as space-like children</title>
++    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- space-like maction -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><maction actiontype="toggle" selection="2"><mi>g</mi><mspace/></maction><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
 +
-+  <div>
-+    <!-- space-like mrow -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mrow><mspace/></mrow><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mstyle -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mstyle><mspace/></mstyle><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mpadded -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mphantom><mspace/></mphantom><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+
-+  <div>
-+    <!-- space-like mphantom -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mphantom><mspace/></mphantom><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++  <body>
++    <div>
++      <!-- last child space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo>&#xaf;</mo><mtext>g</mtext></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-4-ref.xhtml b/layout/reftests/mathml/embellished-op-4-ref.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-2-3-ref.html b/layout/reftests/mathml/embellished-op-2-3-ref.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-4-ref.xhtml
-@@ -0,0 +1,34 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-2-3-ref.html
+@@ -0,0 +1,21 @@
++<html>
 +  <head>
-+    <title>embellished operators: some non-space-like children</title>
++    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- two embellished operators -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo stretchy="false">&#xaf;</mo><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+  <div>
-+    <!-- a non-space-like child before-->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mi>g</mi><mo stretchy="false">&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+  <div>
-+    <!-- a non-space-like child after-->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo stretchy="false">&#xaf;</mo><mi>g</mi></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++
++  <body>
++    <div>
++      <!-- first and last children space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mtext>g</mtext>
++            <mo stretchy="false">&#xaf;</mo>
++            <mtext>h</mtext>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
-diff --git a/layout/reftests/mathml/embellished-op-4.xhtml b/layout/reftests/mathml/embellished-op-4.xhtml
+diff --git a/layout/reftests/mathml/embellished-op-2-3.html b/layout/reftests/mathml/embellished-op-2-3.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/embellished-op-4.xhtml
-@@ -0,0 +1,34 @@
-+<html xmlns="http://www.w3.org/1999/xhtml">
++++ b/layout/reftests/mathml/embellished-op-2-3.html
+@@ -0,0 +1,17 @@
++<html>
 +  <head>
-+    <title>embellished operators: some non-space-like children</title>
++    <title>embellished operators: ignore space-like children</title>
 +  </head>
-+<body>
-+  <div>
-+    <!-- two embellished operators -->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo>&#xaf;</mo><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+  <div>
-+    <!-- a non-space-like child before-->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mi>g</mi><mo>&#xaf;</mo></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+  <div>
-+    <!-- a non-space-like child after-->
-+    <math xmlns="http://www.w3.org/1998/Math/MathML">
-+      <mover>
-+        <mtext>abcdef</mtext>
-+        <mrow><mo>&#xaf;</mo><mi>g</mi></mrow>
-+      </mover>
-+    </math>
-+  </div>
-+</body>
++
++  <body>
++    <div>
++      <!-- first and last children space-like -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mtext>g</mtext><mo>&#xaf;</mo><mtext>h</mtext></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-2-4-ref.html b/layout/reftests/mathml/embellished-op-2-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-2-4-ref.html
+@@ -0,0 +1,25 @@
++<html>
++  <head>
++    <title>embellished operators: ignore space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- many space-like children -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mspace/>
++            <mtext>g</mtext>
++            <mspace/>
++            <mo stretchy="false">&#xaf;</mo>
++            <mspace/>
++            <mspace/>
++            <mtext>h</mtext>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-2-4.html b/layout/reftests/mathml/embellished-op-2-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-2-4.html
+@@ -0,0 +1,25 @@
++<html>
++  <head>
++    <title>embellished operators: ignore space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- many space-like children -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mspace/>
++            <mtext>g</mtext>
++            <mspace/>
++            <mo>&#xaf;</mo>
++            <mspace/>
++            <mspace/>
++            <mtext>h</mtext>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-1-ref.html b/layout/reftests/mathml/embellished-op-3-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-1-ref.html
+@@ -0,0 +1,24 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like maction -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <maction actiontype="toggle" selection="2">
++              <mi>g</mi>
++              <mspace/>
++            </maction>
++            <mo stretchy="false">&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-1.html b/layout/reftests/mathml/embellished-op-3-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-1.html
+@@ -0,0 +1,24 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like maction -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <maction actiontype="toggle" selection="2">
++              <mi>g</mi>
++              <mspace/>
++            </maction>
++            <mo>&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-2-ref.html b/layout/reftests/mathml/embellished-op-3-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-2-ref.html
+@@ -0,0 +1,18 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mrow -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mrow><mspace/></mrow><mo stretchy="false">&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-2.html b/layout/reftests/mathml/embellished-op-3-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-2.html
+@@ -0,0 +1,18 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mrow -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mrow><mspace/></mrow><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-3-ref.html b/layout/reftests/mathml/embellished-op-3-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-3-ref.html
+@@ -0,0 +1,20 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mstyle -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mstyle><mspace/></mstyle><mo stretchy="false">&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-3.html b/layout/reftests/mathml/embellished-op-3-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-3.html
+@@ -0,0 +1,18 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mstyle -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mstyle><mspace/></mstyle><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-4-ref.html b/layout/reftests/mathml/embellished-op-3-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-4-ref.html
+@@ -0,0 +1,20 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mpadded -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mphantom><mspace/></mphantom><mo stretchy="false">&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-4.html b/layout/reftests/mathml/embellished-op-3-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-4.html
+@@ -0,0 +1,18 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mpadded -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mphantom><mspace/></mphantom><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-5-ref.html b/layout/reftests/mathml/embellished-op-3-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-5-ref.html
+@@ -0,0 +1,20 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mphantom -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mphantom><mspace/></mphantom><mo stretchy="false">&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-3-5.html b/layout/reftests/mathml/embellished-op-3-5.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-3-5.html
+@@ -0,0 +1,18 @@
++<html>
++  <head>
++    <title>embellished operators: maction and mrow-like as space-like children
++    </title>
++  </head>
++
++  <body>
++    <div>
++      <!-- space-like mphantom -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mphantom><mspace/></mphantom><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-1-ref.html b/layout/reftests/mathml/embellished-op-4-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-1-ref.html
+@@ -0,0 +1,20 @@
++<html>
++  <head>
++    <title>embellished operators 4-1: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- two embellished operators -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow>
++            <mo stretchy="false">&#xaf;</mo>
++            <mo stretchy="false">&#xaf;</mo>
++          </mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-1.html b/layout/reftests/mathml/embellished-op-4-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-1.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 4-1: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- two embellished operators -->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo>&#xaf;</mo><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-2-ref.html b/layout/reftests/mathml/embellished-op-4-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-2-ref.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 4-2: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- a non-space-like child before-->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mi>g</mi><mo stretchy="false">&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-2.html b/layout/reftests/mathml/embellished-op-4-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-2.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 4-2: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- a non-space-like child before-->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mi>g</mi><mo>&#xaf;</mo></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-3-ref.html b/layout/reftests/mathml/embellished-op-4-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-3-ref.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 4-3: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- a non-space-like child after-->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo stretchy="false">&#xaf;</mo><mi>g</mi></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-4-3.html b/layout/reftests/mathml/embellished-op-4-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-4-3.html
+@@ -0,0 +1,17 @@
++<html>
++  <head>
++    <title>embellished operators 4-3: some non-space-like children</title>
++  </head>
++
++  <body>
++    <div>
++      <!-- a non-space-like child after-->
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mover>
++          <mtext>abcdef</mtext>
++          <mrow><mo>&#xaf;</mo><mi>g</mi></mrow>
++        </mover>
++      </math>
++    </div>
++  </body>
 +</html>
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -4,8 +4,12 @@
+@@ -16,16 +16,33 @@
  == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
  != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
  == overbar-width-1.xhtml overbar-width-1-ref.xhtml
@@ -948,7 +1337,28 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == table-width-1.xhtml table-width-1-ref.xhtml
  == underbar-width-1.xhtml underbar-width-1-ref.xhtml
  == mathml-type-supported.xhtml mathml-type-supported-ref.xml
-+!= embellished-op-1.xhtml embellished-op-1-ref.xhtml
-+!= embellished-op-2.xhtml embellished-op-2-ref.xhtml
-+!= embellished-op-3.xhtml embellished-op-3-ref.xhtml
-+== embellished-op-4.xhtml embellished-op-4-ref.xhtml
++!= embellished-op-1-1.html embellished-op-1-1-ref.html
++!= embellished-op-1-2.html embellished-op-1-2-ref.html
++!= embellished-op-1-3.html embellished-op-1-3-ref.html
++!= embellished-op-1-4.html embellished-op-1-4-ref.html
++!= embellished-op-1-5.html embellished-op-1-5-ref.html
++!= embellished-op-2-1.html embellished-op-2-1-ref.html
++!= embellished-op-2-2.html embellished-op-2-2-ref.html
++!= embellished-op-2-3.html embellished-op-2-3-ref.html
++!= embellished-op-2-4.html embellished-op-2-4-ref.html
++!= embellished-op-3-1.html embellished-op-3-1-ref.html
++!= embellished-op-3-2.html embellished-op-3-2-ref.html
++!= embellished-op-3-3.html embellished-op-3-3-ref.html
++!= embellished-op-3-4.html embellished-op-3-4-ref.html
++!= embellished-op-3-5.html embellished-op-3-5-ref.html
++== embellished-op-4-1.html embellished-op-4-1-ref.html
++== embellished-op-4-2.html embellished-op-4-2-ref.html
++== embellished-op-4-3.html embellished-op-4-3-ref.html
+ == semantics-1.xhtml semantics-1-ref.xhtml
+ != mathcolor-1.xml mathcolor-1-ref.xml
+ != mathcolor-2.xml mathcolor-2-ref.xml
+ != mathcolor-3.xml mathcolor-3-ref.xml
+ == mathcolor-4.xml mathcolor-4-ref.xml
+ != mathbackground-1.xml mathbackground-1-ref.xml
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
