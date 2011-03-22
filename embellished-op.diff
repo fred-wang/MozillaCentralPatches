@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 3df8c6db6854004f820183816040ec5c152ca80f
+# Parent 2801200a6cf52a03fd91905ba5dfb362c6e5b451
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 21479 - Embellished operators - add rules for mstyle, mphantom, mpadded and mrow. r=karlt
 
@@ -105,7 +105,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -1460,16 +1461,75 @@ nsMathMLContainerFrame::DidReflowChildre
+@@ -1460,16 +1461,90 @@ nsMathMLContainerFrame::DidReflowChildre
          DidReflowChildren(grandchild, nsnull);
  
        frame->DidReflow(frame->PresContext(), nsnull,
@@ -116,7 +116,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
  
 +// helper used by mstyle, mphantom, mpadded and mrow in their implementations
 +// of TransmitAutomaticData().
-+NS_IMETHODIMP
++nsresult
 +nsMathMLContainerFrame::TransmitAutomaticDataForMrowLikeElement()
 +{
 +  //
@@ -170,6 +170,21 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
 +    }
 +  }
 +
++  if (childFrame || !embellishedOpFound) {
++    // The element is not embellished operator
++    mPresentationData.baseFrame = nsnull;
++    mEmbellishData.flags = 0;
++    mEmbellishData.coreFrame = nsnull;
++    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
++    mEmbellishData.leftSpace = 0;
++    mEmbellishData.rightSpace = 0;
++  }
++
++  if (childFrame || embellishedOpFound) {
++    // The element is not space-like
++      mPresentationData.flags &= ~NS_MATHML_SPACE_LIKE;
++  }
++
 +  return NS_OK;
 +}
 +
@@ -202,29 +217,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -89,16 +90,21 @@ public:
-                                     PRUint32        aFlagsValues,
-                                     PRUint32        aFlagsToUpdate)
-   {
-     PropagatePresentationDataFromChildAt(this, aFirstIndex, aLastIndex,
-       aFlagsValues, aFlagsToUpdate);
-     return NS_OK;
-   }
-   
-+  PRBool
-+  IsSpaceLike() {
-+    return NS_MATHML_IS_SPACE_LIKE(mPresentationData.flags);
-+  }
-+
-   // helper to set the "increment script level" flag on the element belonging
-   // to a child frame given by aChildIndex.
-   // When this flag is set, the style system will increment the scriptlevel
-   // for the child element. This is needed for situations where the style system
-   // cannot itself determine the scriptlevel (mfrac, munder, mover, munderover).
-   // This should be called during reflow. We set the flag and if it changed,
-   // we request appropriate restyling and also queue a post-reflow callback
-   // to ensure that restyle and reflow happens immediately after the current
-@@ -251,16 +257,21 @@ protected:
+@@ -251,16 +252,21 @@ protected:
    // helper to get the preferred size that a container frame should use to fire
    // the stretch on its stretchy child frames.
    void
@@ -235,7 +228,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
  
 +  // helper used by mstyle, mphantom, mpadded and mrow in their implementation
 +  // of TransmitAutomaticData() to determine whether they are space-like.
-+  NS_IMETHOD
++  nsresult
 +  TransmitAutomaticDataForMrowLikeElement();
 +
  public:
@@ -249,7 +242,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -54,16 +54,18 @@
+@@ -54,16 +54,21 @@
  class nsMathMLChar;
  
  // Concrete base class with default methods that derived MathML frames can override
@@ -258,7 +251,10 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
  
    // nsIMathMLFrame ---
  
-+  virtual PRBool IsSpaceLike() { return PR_FALSE; }
++  virtual PRBool
++  IsSpaceLike() {
++    return NS_MATHML_IS_SPACE_LIKE(mPresentationData.flags);
++  }
 +
    NS_IMETHOD
    GetBoundingMetrics(nsBoundingMetrics& aBoundingMetrics) {
@@ -301,7 +297,7 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFra
 diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmactionFrame.cpp
 --- a/layout/mathml/nsMathMLmactionFrame.cpp
 +++ b/layout/mathml/nsMathMLmactionFrame.cpp
-@@ -157,16 +157,35 @@ nsMathMLmactionFrame::Init(nsIContent*  
+@@ -157,16 +157,37 @@ nsMathMLmactionFrame::Init(nsIContent*  
        }
      }
    }
@@ -318,6 +314,8 @@ diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmact
 +  nsIMathMLFrame* mathMLFrame = do_QueryFrame(mSelectedFrame);
 +  if (mathMLFrame && mathMLFrame->IsSpaceLike()) {
 +    mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
++  } else {
++    mPresentationData.flags &= ~NS_MATHML_SPACE_LIKE;
 +  }
 +
 +  // The REC defines the following element to be an embellished operator:
@@ -337,7 +335,7 @@ diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmact
    mSelection = 0;
    mSelectedFrame = nsnull;
    GetSelectedFrame();
-@@ -212,21 +231,16 @@ nsMathMLmactionFrame::GetSelectedFrame()
+@@ -212,21 +233,16 @@ nsMathMLmactionFrame::GetSelectedFrame()
    }
    // cater for invalid user-supplied selection
    if (selection > count || selection < 1) 
@@ -1325,10 +1323,81 @@ new file mode 100644
 +    </div>
 +  </body>
 +</html>
+diff --git a/layout/reftests/mathml/embellished-op-5-1.html b/layout/reftests/mathml/embellished-op-5-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-5-1.html
+@@ -0,0 +1,21 @@
++<html>
++  <head>
++    <title>embellished operators 5: vertical stretchy operator</title>
++  </head>
++
++  <body>
++    <div>
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mrow>
++          <mrow>
++            <msub>
++              <mo>|</mo>
++              <mspace/>
++            </msub>
++          </mrow>
++          <mspace height="30px" depth="30px"/>
++        </mrow>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-5-2.html b/layout/reftests/mathml/embellished-op-5-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-5-2.html
+@@ -0,0 +1,19 @@
++<html>
++  <head>
++    <title>embellished operators 5: vertical stretchy operator</title>
++  </head>
++
++  <body>
++    <div>
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mrow>
++          <msub>
++            <mo>|</mo>
++            <mspace/>
++          </msub>
++          <mspace height="30px" depth="30px"/>
++        </mrow>
++      </math>
++    </div>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/embellished-op-5-ref.html b/layout/reftests/mathml/embellished-op-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/embellished-op-5-ref.html
+@@ -0,0 +1,16 @@
++<html>
++  <head>
++    <title>embellished operators 5: vertical stretchy operator</title>
++  </head>
++
++  <body>
++    <div>
++      <math xmlns="http://www.w3.org/1998/Math/MathML">
++        <mrow>
++          <mo>|</mo>
++          <mspace height="30px" depth="30px"/>
++        </mrow>
++      </math>
++    </div>
++  </body>
++</html>
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -16,16 +16,33 @@
+@@ -16,16 +16,35 @@
  == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
  != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
  == overbar-width-1.xhtml overbar-width-1-ref.xhtml
@@ -1354,6 +1423,8 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
 +== embellished-op-4-1.html embellished-op-4-1-ref.html
 +== embellished-op-4-2.html embellished-op-4-2-ref.html
 +== embellished-op-4-3.html embellished-op-4-3-ref.html
++== embellished-op-5-1.html embellished-op-5-ref.html
++== embellished-op-5-2.html embellished-op-5-ref.html
  == semantics-1.xhtml semantics-1-ref.xhtml
  != mathcolor-1.xml mathcolor-1-ref.xml
  != mathcolor-2.xml mathcolor-2-ref.xml
