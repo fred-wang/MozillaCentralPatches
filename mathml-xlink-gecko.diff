@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 426694f41db87062f4c2219712d178ad6e4c768e
+# Parent 0dcc42d38a72969b815e11ff0378d1b72e9e202d
 # User Frédéric Wang <fred.wang@free.fr>
 Restore XLink on MathML elements and implement MathML 3 href - part 1 (bug 427990)
 
@@ -108,7 +108,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
  {
    return !(aFlags & ~eCONTENT);
  }
-@@ -466,8 +495,186 @@ nsMathMLElement::SetIncrementScriptLevel
+@@ -466,8 +495,184 @@ nsMathMLElement::SetIncrementScriptLevel
    nsIDocument* doc = GetCurrentDoc();
    if (!doc)
      return;
@@ -216,9 +216,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +  const nsAttrValue* target = mAttrsAndChildren.GetAttr(nsGkAtoms::target,
 +                                                        kNameSpaceID_XLink);
 +  if (target) {
-+    nsAutoString targetStr;
-+    target->ToString(targetStr); 
-+    aTarget.Assign(targetStr);
++    target->ToString(aTarget);
 +  }
 +
 +  if (aTarget.IsEmpty()) {
@@ -400,7 +398,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/layout/base/nsDocumentViewer.cpp b/layout/base/nsDocumentViewer.cpp
 --- a/layout/base/nsDocumentViewer.cpp
 +++ b/layout/base/nsDocumentViewer.cpp
-@@ -3414,47 +3414,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
+@@ -3410,47 +3410,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
    // find popup node
    nsCOMPtr<nsIDOMNode> node;
    nsresult rv = GetPopupNode(getter_AddRefs(node));
