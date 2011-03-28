@@ -1,0 +1,77 @@
+# HG changeset patch
+# Parent 1c7138d382c23d6040dc11fce9ed0d12adf2d819
+# User Frédéric Wang <fred.wang@free.fr>
+# Update XML Entity Definitions for Characters - rang/lang (bug 603716)
+
+diff --git a/content/base/test/file_xhtmlserializer_2_basic.xhtml b/content/base/test/file_xhtmlserializer_2_basic.xhtml
+--- a/content/base/test/file_xhtmlserializer_2_basic.xhtml
++++ b/content/base/test/file_xhtmlserializer_2_basic.xhtml
+@@ -15,17 +15,17 @@
+ Ù Ú Û Ü Ý Þ ß à á â ã ä å æ ç è é ê 
+ ë ì í î ï ð ñ ò ó ô õ ö ÷ ø ù ú û ü ý 
+ þ ÿ </p>
+ <p>symbols, math.. ƒ Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ
+ Φ Χ Ψ Ω α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς
+ σ τ υ φ χ ψ ω ϑ ϒ ϖ • … ′ ″ ‾ ⁄ ℘ ℑ ℜ
+ ™ ℵ ← ↑ → ↓ ↔ ↵ ⇐ ⇑ ⇒ ⇓ ⇔ ∀ ∂ ∃ ∅ ∇ ∈ ∉
+ ∋ ∏ ∑ − ∗ √ ∝ ∞ ∠ ∧ ∨ ∩ ∪ ∫ ∴ ∼ ≅ ≈ ≠ ≡ ≤ ≥
+-⊂ ⊃ ⊄ ⊆ ⊇ ⊕ ⊗ ⊥ ⋅ ⌈ ⌉ ⌊ ⌋ 〈 〉 ◊ ♠ ♣ ♥ ♦
++⊂ ⊃ ⊄ ⊆ ⊇ ⊕ ⊗ ⊥ ⋅ ⌈ ⌉ ⌊ ⌋ ⟨ ⟩ ◊ ♠ ♣ ♥ ♦
+ </p>
+ <p> others
+ Œ œ Š š Ÿ ˆ ˜       ‌ ‍ ‎ ‏–— ‘ ’
+ ‚“ ” „ † ‡ ‰ ‹ › €
+ </p>
+ 
+ </body>
+ </html>
+\ No newline at end of file
+diff --git a/content/base/test/file_xhtmlserializer_2_latin1.xhtml b/content/base/test/file_xhtmlserializer_2_latin1.xhtml
+--- a/content/base/test/file_xhtmlserializer_2_latin1.xhtml
++++ b/content/base/test/file_xhtmlserializer_2_latin1.xhtml
+@@ -25,17 +25,17 @@
+  &ocirc; &otilde; &ouml; &divide; &oslash; &ugrave; &uacute; &ucirc; 
+ &uuml; &yacute; 
+ &thorn; &yuml; </p>
+ <p>symbols, math.. ƒ Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ
+ Φ Χ Ψ Ω α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς
+ σ τ υ φ χ ψ ω ϑ ϒ ϖ • … ′ ″ ‾ ⁄ ℘ ℑ ℜ
+ ™ ℵ ← ↑ → ↓ ↔ ↵ ⇐ ⇑ ⇒ ⇓ ⇔ ∀ ∂ ∃ ∅ ∇ ∈ ∉
+ ∋ ∏ ∑ − ∗ √ ∝ ∞ ∠ ∧ ∨ ∩ ∪ ∫ ∴ ∼ ≅ ≈ ≠ ≡ ≤ ≥
+-⊂ ⊃ ⊄ ⊆ ⊇ ⊕ ⊗ ⊥ ⋅ ⌈ ⌉ ⌊ ⌋ 〈 〉 ◊ ♠ ♣ ♥ ♦
++⊂ ⊃ ⊄ ⊆ ⊇ ⊕ ⊗ ⊥ ⋅ ⌈ ⌉ ⌊ ⌋ ⟨ ⟩ ◊ ♠ ♣ ♥ ♦
+ </p>
+ <p> others
+ Œ œ Š š Ÿ ˆ ˜       ‌ ‍ ‎ ‏–— ‘ ’
+ ‚“ ” „ † ‡ ‰ ‹ › €
+ </p>
+ 
+ </body>
+ </html>
+\ No newline at end of file
+diff --git a/parser/htmlparser/src/nsHTMLEntityList.h b/parser/htmlparser/src/nsHTMLEntityList.h
+--- a/parser/htmlparser/src/nsHTMLEntityList.h
++++ b/parser/htmlparser/src/nsHTMLEntityList.h
+@@ -267,18 +267,20 @@ HTML_ENTITY(supe, 8839)
+ HTML_ENTITY(oplus, 8853)
+ HTML_ENTITY(otimes, 8855)
+ HTML_ENTITY(perp, 8869)
+ HTML_ENTITY(sdot, 8901)
+ HTML_ENTITY(lceil, 8968)
+ HTML_ENTITY(rceil, 8969)
+ HTML_ENTITY(lfloor, 8970)
+ HTML_ENTITY(rfloor, 8971)
+-HTML_ENTITY(lang, 9001)
+-HTML_ENTITY(rang, 9002)
++// Bug 603716: expansions of &lang; and &rang; have been modified in HTML5.
++// See http://www.w3.org/2003/entities/2007/htmlmathml-f.ent
++HTML_ENTITY(lang, 0x27E8)
++HTML_ENTITY(rang, 0x27E9)
+ HTML_ENTITY(loz, 9674)
+ HTML_ENTITY(spades, 9824)
+ HTML_ENTITY(clubs, 9827)
+ HTML_ENTITY(hearts, 9829)
+ HTML_ENTITY(diams, 9830)
+ 
+ // Markup-significant and internationalization characters
+ // See the HTML4.0 spec for this list in it's DTD form

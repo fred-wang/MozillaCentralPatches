@@ -10,16 +10,8 @@ mathml-xlink-gecko.diff
 mathml-link-text-decoration.diff
 math-as-mstyle.diff
 xml-entity-definitions.diff
+xml-entity-definitions-2.diff
 mstyle-reftests.diff
-uninitialised-value.diff
-op-dictionary-sort.diff
-op-dictionary-new-1.diff
-op-dictionary-space-conflicts.diff
-op-dictionary-new-2.diff
-dictionary-accent-conflicts.diff
-dictionary-conflicts-3.diff
-dictionary-obsolete-1.diff
-embellished-op.diff
 largeop-size1.diff
 stretchy-non-BMP.diff
 asana-math.diff
@@ -27,7 +19,6 @@ asana-math-pref.diff
 mathml_directionality.diff
 mathml_overall_directionality.diff
 mirror_op.diff
-op-dictionary-script-3.diff
 mstyle-maction.diff
 mstyle-mfrac.diff
 mstyle-menclose.diff
