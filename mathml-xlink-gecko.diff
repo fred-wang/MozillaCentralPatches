@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0dcc42d38a72969b815e11ff0378d1b72e9e202d
+# Parent 3262bd9b97f37baa3d5a3f4258788f8e178a6511
 # User Frédéric Wang <fred.wang@free.fr>
 Restore XLink on MathML elements and implement MathML 3 href - part 1 (bug 427990)
 
@@ -108,14 +108,14 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
  {
    return !(aFlags & ~eCONTENT);
  }
-@@ -466,8 +495,184 @@ nsMathMLElement::SetIncrementScriptLevel
+@@ -465,8 +494,184 @@ nsMathMLElement::SetIncrementScriptLevel
+ 
    nsIDocument* doc = GetCurrentDoc();
    if (!doc)
      return;
  
    mozAutoDocUpdate upd(doc, UPDATE_CONTENT_STATE, PR_TRUE);
-   doc->ContentStatesChanged(this, nsnull,
-                             NS_EVENT_STATE_INCREMENT_SCRIPT_LEVEL);
+   doc->ContentStateChanged(this, NS_EVENT_STATE_INCREMENT_SCRIPT_LEVEL);
  }
 +
 +PRBool
@@ -398,7 +398,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/layout/base/nsDocumentViewer.cpp b/layout/base/nsDocumentViewer.cpp
 --- a/layout/base/nsDocumentViewer.cpp
 +++ b/layout/base/nsDocumentViewer.cpp
-@@ -3410,47 +3410,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
+@@ -3406,47 +3406,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
    // find popup node
    nsCOMPtr<nsIDOMNode> node;
    nsresult rv = GetPopupNode(getter_AddRefs(node));
@@ -461,7 +461,7 @@ diff --git a/layout/base/nsDocumentViewer.cpp b/layout/base/nsDocumentViewer.cpp
 diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 --- a/layout/base/nsPresShell.cpp
 +++ b/layout/base/nsPresShell.cpp
-@@ -4338,83 +4338,34 @@ PresShell::GetRectVisibility(nsIFrame* a
+@@ -4328,83 +4328,34 @@ PresShell::GetRectVisibility(nsIFrame* a
  // GetLinkLocation: copy link location to clipboard
  nsresult PresShell::GetLinkLocation(nsIDOMNode* aNode, nsAString& aLocationString) const
  {
