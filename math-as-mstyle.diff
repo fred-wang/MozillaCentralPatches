@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 24f0330968ced0a45d0ea3c2478e5d78117a46a5
+# Parent 7d90da136b2ceddb54972b8b4170f50c96458b2b
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 569124 - Make the math element support the attributes of mstyle. r=karlt
 
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
-@@ -174,24 +174,24 @@ nsMathMLElement::IsAttributeMapped(const
+@@ -160,24 +160,24 @@ nsMathMLElement::IsAttributeMapped(const
    
    // We don't support mglyph (yet).
    nsIAtom* tag = Tag();
@@ -36,7 +36,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -226,16 +226,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
+@@ -225,16 +225,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
      if (!content)
        break;
  
@@ -77,11 +77,11 @@ new file mode 100644
 +
 +<p>
 +  <math xmlns="http://www.w3.org/1998/Math/MathML">
-+    <mstyle scriptlevel="-2">
-+      <mfrac>
-+        <mi>a</mi>
-+        <mi>b</mi>
-+      </mfrac>
++    <mstyle scriptsizemultiplier="1.414">
++      <msup>
++	<mi>x</mi>
++	<mn>2</mn>
++      </msup>
 +    </mstyle>
 +  </math>
 +</p>
@@ -92,7 +92,7 @@ diff --git a/layout/reftests/mathml/math-as-mstyle-1.xhtml b/layout/reftests/mat
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/math-as-mstyle-1.xhtml
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,29 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<html xmlns="http://www.w3.org/1999/xhtml">
 +<head>
@@ -110,11 +110,13 @@ new file mode 100644
 +</p>
 +
 +<p>
-+  <math xmlns="http://www.w3.org/1998/Math/MathML" scriptlevel="-2">
-+    <mfrac>
-+      <mi>a</mi>
-+      <mi>b</mi>
-+    </mfrac>
++  <math xmlns="http://www.w3.org/1998/Math/MathML" scriptsizemultiplier="1.414">
++    <mstyle>
++      <msup>
++	<mi>x</mi>
++	<mn>2</mn>
++      </msup>
++    </mstyle>
 +  </math>
 +</p>
 +
@@ -123,13 +125,13 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -32,8 +32,9 @@
+@@ -49,8 +49,9 @@
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
  == mathbackground-4.xml mathbackground-4-ref.xml
  == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
  != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
  == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
  != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
  != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
- != link-1.xhtml link-ref.xhtml
- != link-2.xhtml link-ref.xhtml
 +== math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml

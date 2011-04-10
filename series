@@ -4,13 +4,11 @@ mathparser-dictionary.diff
 mathparser-simple.diff
 mathparser-itex.diff
 mathparser-tests.diff
+math-as-mstyle.diff
 mathml-link-reftests.diff
 mathml-xlink-chrome.diff
 mathml-xlink-gecko.diff
 mathml-link-text-decoration.diff
-math-as-mstyle.diff
-xml-entity-definitions.diff
-xml-entity-definitions-2.diff
 mstyle-reftests.diff
 largeop-size1.diff
 stretchy-non-BMP.diff
