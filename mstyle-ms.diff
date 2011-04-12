@@ -1,27 +1,59 @@
 # HG changeset patch
-# Parent 92808df329cfbb90864fa33755aa20febfe2be28
+# Parent bb6d5c8592dd5061392e23d8f8d082355b4b3ba7
 # User Frédéric Wang <fred.wang@free.fr>
 Support for attribute "lquote" and "rquote" on mstyle (bug 569125). r=karlt
 
 diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
 --- a/layout/mathml/nsMathMLTokenFrame.cpp
 +++ b/layout/mathml/nsMathMLTokenFrame.cpp
-@@ -62,16 +62,18 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+@@ -55,16 +55,27 @@ NS_NewMathMLTokenFrame(nsIPresShell* aPr
  }
  
- NS_IMETHODIMP
- nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
- {
-   // let the base class get the default from our parent
-   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLTokenFrame)
  
+ nsMathMLTokenFrame::~nsMathMLTokenFrame()
+ {
+ }
+ 
++NS_IMETHODIMP
++nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
++{
++  // let the base class get the default from our parent
++  nsMathMLContainerFrame::InheritAutomaticData(aParent);
++
 +  SetQuotes(PR_TRUE);
 +
-   // see if the directionality attribute is there
-   nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++  return NS_OK;
++}
++
+ eMathMLFrameType
+ nsMathMLTokenFrame::GetMathMLFrameType()
+ {
+   // treat everything other than <mi> as ordinary...
+   if (mContent->Tag() != nsGkAtoms::mi_) {
+     return eMathMLFrameType_Ordinary;
+   }
  
-   return NS_OK;
- }
+diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFrame.h
+--- a/layout/mathml/nsMathMLTokenFrame.h
++++ b/layout/mathml/nsMathMLTokenFrame.h
+@@ -57,16 +57,19 @@ public:
+     // The REC defines the following elements to be space-like:
+     // * an mtext, mspace, maligngroup, or malignmark element;
+     if (mContent->Tag() == nsGkAtoms::mtext_) {
+       mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
+     }
+     return NS_OK;
+   }
  
- NS_IMETHODIMP
- nsMathMLTokenFrame::UpdatePresentationData(PRUint32 aFlagsValues,
++  NS_IMETHOD
++  InheritAutomaticData(nsIFrame* aParent);
++
+   virtual eMathMLFrameType GetMathMLFrameType();
+ 
+   NS_IMETHOD
+   Init(nsIContent*      aContent,
+        nsIFrame*        aParent,
+        nsIFrame*        aPrevInFlow);
+ 
+   NS_IMETHOD

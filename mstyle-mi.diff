@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 78c8c74ef333b1061f9cbb806a80560e5a45f885
+# Parent acad85604a1a0d9b68266d3640c323f552ed0f95
 # User Frédéric Wang <fred.wang@free.fr>
 mathvariant on mstyle not applied to mi (bug 569125). r=karlt
 
 diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
 --- a/layout/mathml/nsMathMLTokenFrame.cpp
 +++ b/layout/mathml/nsMathMLTokenFrame.cpp
-@@ -63,16 +63,17 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+@@ -62,38 +62,39 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
  
  NS_IMETHODIMP
  nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
@@ -17,14 +17,10 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenF
    SetQuotes(PR_TRUE);
 +  ProcessTextData();
  
-   // see if the directionality attribute is there
-   nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
- 
    return NS_OK;
  }
  
- NS_IMETHODIMP
-@@ -111,25 +112,25 @@ eMathMLFrameType
+ eMathMLFrameType
  nsMathMLTokenFrame::GetMathMLFrameType()
  {
    // treat everything other than <mi> as ordinary...
@@ -54,7 +50,7 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenF
      return eMathMLFrameType_ItalicIdentifier;
    }
    else if(style.EqualsLiteral("invariant")) {
-@@ -375,18 +376,21 @@ nsMathMLTokenFrame::SetTextStyle()
+@@ -339,18 +340,21 @@ nsMathMLTokenFrame::SetTextStyle()
      (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
    if (isSingleCharacter &&
        nsMathMLOperators::LookupInvariantChar(data) != eMATHVARIANT_NONE) {

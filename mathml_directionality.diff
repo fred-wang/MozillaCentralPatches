@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262541153 -3600
 # Node ID 7f8941c192349709b7fcaaf465c915d507d75979
-# Parent 2b7e7f3d4606449d44122f9266b5a0a0240aa2a1
+# Parent 0e9d6cca2b0a170456ec7fdc295337405abfb53b
 Add a directionality flag on MathML frames (bug 534963). r=karlt
 
 diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
@@ -139,7 +139,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -94,16 +95,50 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
+@@ -93,16 +94,50 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
    case 1:
      aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
      aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
@@ -190,7 +190,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
    mEmbellishData.leftSpace = 0;
    mEmbellishData.rightSpace = 0;
-@@ -114,16 +149,19 @@ nsMathMLFrame::InheritAutomaticData(nsIF
+@@ -113,16 +148,19 @@ nsMathMLFrame::InheritAutomaticData(nsIF
  
    // by default, just inherit the display of our parent
    nsPresentationData parentData;
@@ -210,7 +210,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
    return NS_OK;
  }
  
-@@ -131,19 +169,26 @@ NS_IMETHODIMP
+@@ -130,19 +168,26 @@ NS_IMETHODIMP
  nsMathMLFrame::UpdatePresentationData(PRUint32        aFlagsValues,
                                        PRUint32        aWhichFlags)
  {
@@ -239,7 +239,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
        // 'compressed' means 'prime' style in App. G, TeXbook
        mPresentationData.flags |= NS_MATHML_COMPRESSED;
      }
-@@ -226,16 +271,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
+@@ -225,16 +270,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
      if (!content)
        break;
  
@@ -278,7 +278,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -160,16 +161,21 @@ public:
+@@ -163,16 +164,21 @@ public:
                            nsPresentationData& aPresentationData,
                            PRBool              aClimbTree = PR_TRUE);
  
@@ -321,27 +321,21 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenF
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -55,16 +56,60 @@ NS_NewMathMLTokenFrame(nsIPresShell* aPr
- }
- 
- NS_IMPL_FRAMEARENA_HELPERS(nsMathMLTokenFrame)
- 
- nsMathMLTokenFrame::~nsMathMLTokenFrame()
+@@ -64,19 +65,54 @@ NS_IMETHODIMP
+ nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
  {
- }
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
  
-+NS_IMETHODIMP
-+nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
-+{
-+  // let the base class get the default from our parent
-+  nsMathMLContainerFrame::InheritAutomaticData(aParent);
-+
+   SetQuotes(PR_TRUE);
+   ProcessTextData();
+ 
 +  // see if the directionality attribute is there
 +  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
 +
-+  return NS_OK;
-+}
-+
+   return NS_OK;
+ }
+ 
 +NS_IMETHODIMP
 +nsMathMLTokenFrame::UpdatePresentationData(PRUint32 aFlagsValues,
 +                                           PRUint32 aWhichFlags)
@@ -403,18 +397,15 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFra
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -57,16 +58,29 @@ public:
-     // The REC defines the following elements to be space-like:
-     // * an mtext, mspace, maligngroup, or malignmark element;
-     if (mContent->Tag() == nsGkAtoms::mtext_) {
+@@ -60,16 +61,26 @@ public:
        mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
      }
      return NS_OK;
    }
  
-+  NS_IMETHOD
-+  InheritAutomaticData(nsIFrame* aParent);
-+
+   NS_IMETHOD
+   InheritAutomaticData(nsIFrame* aParent);
+ 
 +  NS_IMETHOD
 +  UpdatePresentationData(PRUint32 aFlagsValues,
 +                         PRUint32 aWhichFlags);
