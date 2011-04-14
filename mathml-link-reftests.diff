@@ -1,6 +1,6 @@
 # HG changeset patch
-# Parent cb40ca4c311187d660c177df12ecd92d5a4f2649
-# Reftests for bug 427990
+# Parent ee377a1a5e31199df93a1a3bf0e84e7296f7271f
+Reftests for bug 427990
 
 diff --git a/layout/reftests/mathml/link-1.xhtml b/layout/reftests/mathml/link-1.xhtml
 new file mode 100644
@@ -54,8 +54,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -30,8 +30,10 @@
- != mathbackground-2.xml mathbackground-2-ref.xml
+@@ -50,8 +50,10 @@
  != mathbackground-3.xml mathbackground-3-ref.xml
  == mathbackground-4.xml mathbackground-4-ref.xml
  == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
@@ -63,5 +62,6 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
  != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
  != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
 +!= link-1.xhtml link-ref.xhtml
 +!= link-2.xhtml link-ref.xhtml

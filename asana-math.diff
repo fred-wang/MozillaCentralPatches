@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 7bec09955f17a6d3420c39748dd36d155b1298c5
+# Parent 7f2cb769f0551251f53defe3ffccc8f7bf22d6f8
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 407439 - Support for Asana Math font in MathML. r=karlt
 
@@ -27,8 +27,8 @@ diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
 diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
 --- a/layout/mathml/mathfont.properties
 +++ b/layout/mathml/mathfont.properties
-@@ -48,19 +48,19 @@ mathfont_missing_dialog_message = To pro
- # Do not translate anything else in this file
+@@ -41,19 +41,19 @@
+ #  Do not translate anything in this file
  
  # List of fonts that have corresponding properties files containing special
  # glyph tables for stretching MathML characters.  See the documentation at the

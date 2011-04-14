@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 2e5dedff7513b3daca7203b40a71a7858c84b86a
+# Parent b4853955fc754787bf400a6a2f24689f7647895f
 # User Frédéric Wang <fred.wang@free.fr>
 Support for non-BMP stretchy operators (bug 407439). r=karlt
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -73,17 +73,17 @@
+@@ -69,17 +69,17 @@
  #include "nsMathMLOperators.h"
  #include "nsMathMLChar.h"
  
@@ -25,7 +25,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // of stretchy chars. It acts like a table that stores the variants of bigger
  // sizes (if any) and the partial glyphs needed to build extensible symbols.
  // An instance of nsGlyphTable is associated to one primary font. Extra glyphs
-@@ -288,18 +288,18 @@ private:
+@@ -243,18 +243,18 @@ private:
    // that char. For a property line 'key = value' in the MathFont Property File,
    // mCharCache will retain the 'key' -- which is a Unicode point, while mGlyphCache
    // will retain the 'value', which is a consecutive list of nsGlyphCodes, i.e.,
@@ -46,7 +46,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  };
  
  nsGlyphCode
-@@ -351,26 +351,26 @@ nsGlyphTable::ElementAt(nsPresContext* a
+@@ -306,26 +306,26 @@ nsGlyphTable::ElementAt(nsPresContext* a
      nsAutoString value;
      nsresult rv = mGlyphProperties->GetStringProperty(nsDependentCString(key), value);
      if (NS_FAILED(rv)) return kNullGlyph;
@@ -75,7 +75,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  #if 0 // If we want this then the nsGlyphTableList must be declared
        // or the UnicodeTable could be made a global.
        // See if this code point is an *indirect reference* to the Unicode
-@@ -386,33 +386,43 @@ nsGlyphTable::ElementAt(nsPresContext* a
+@@ -341,33 +341,43 @@ nsGlyphTable::ElementAt(nsPresContext* a
          ++i;
          // Need to implement this if we want it:
          // Set (new) code from the value[i] position for (current) code.
@@ -107,7 +107,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
            return kNullGlyph;
          }
          // The char cannot be handled if this font is not installed
-         if (!mFontName[font].Length() || !CheckFontExistence(aPresContext, mFontName[font])) {
+         if (!mFontName[font].Length()) {
            return kNullGlyph;
          }
        }
@@ -120,7 +120,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      mCharCache = uchar;
    }
  
-@@ -430,38 +440,40 @@ nsGlyphTable::ElementAt(nsPresContext* a
+@@ -385,38 +395,40 @@ nsGlyphTable::ElementAt(nsPresContext* a
    PRUint32 length = mGlyphCache.Length();
    if (aChar->mParent) {
      nsMathMLChar* child = aChar->mParent->mSibling;
@@ -169,7 +169,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // this will sync the cache as well ...
    if (!IsComposite(aPresContext, aChar)) return 0;
    // the lists of glyphs of a composite char are space-separated
-@@ -1232,22 +1244,24 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1147,21 +1159,23 @@ nsMathMLChar::StretchEnumContext::TryVar
  #endif
  
    nsGlyphCode ch;
@@ -184,19 +184,18 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                   !font.name.Equals(mChar->mFamily),
                   "glyph table incorrectly set -- duplicate found");
  
-     nsBoundingMetrics bm;
--    nsresult rv = mRenderingContext.GetBoundingMetrics(&ch.code, 1, bm);
-+    nsresult rv = mRenderingContext.GetBoundingMetrics(ch.code,
-+                                                       ch.Length(), bm);
-     if (NS_SUCCEEDED(rv)) {
-       nscoord charSize =
-         isVertical ? bm.ascent + bm.descent
-                    : bm.rightBearing - bm.leftBearing;
+-    nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(&ch.code, 1);
++    nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
++                                                                ch.Length());
+     nscoord charSize =
+       isVertical ? bm.ascent + bm.descent
+       : bm.rightBearing - bm.leftBearing;
  
-       if (largeopOnly ||
-           IsSizeBetter(charSize, bestSize, mTargetSize, mStretchHint)) {
-         mGlyphFound = PR_TRUE;
-@@ -1358,17 +1372,17 @@ nsMathMLChar::StretchEnumContext::TryPar
+     if (largeopOnly ||
+         IsSizeBetter(charSize, bestSize, mTargetSize, mStretchHint)) {
+       mGlyphFound = PR_TRUE;
+       if (maxWidth) {
+@@ -1269,17 +1283,18 @@ nsMathMLChar::StretchEnumContext::TryPar
      if (!ch.Exists()) {
        // Null glue indicates that a rule will be drawn, which can stretch to
        // fill any space.  Leave bounding metrics at 0.
@@ -205,17 +204,18 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      else {
        SetFontFamily(mChar->mStyleContext->PresContext(), mRenderingContext,
                      font, aGlyphTable, ch, aFamily);
--      nsresult rv = mRenderingContext.GetBoundingMetrics(&ch.code, 1, bm);
-+      nsresult rv = mRenderingContext.GetBoundingMetrics(ch.code, ch.Length(), bm);
-       if (NS_FAILED(rv)) {
-         // stop if we failed to compute the bounding metrics of a part.
-         NS_WARNING("GetBoundingMetrics failed");
-         return PR_FALSE; // to next table
-       }
+-      nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(&ch.code, 1);
++      nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
++                                                                  ch.Length());
  
        // TODO: For the generic Unicode table, ideally we should check that the
        // glyphs are actually found and that they each come from the same
-@@ -2178,17 +2192,18 @@ nsMathMLChar::PaintForeground(nsPresCont
+       // font.
+       bmdata[i] = bm;
+       sizedata[i] = isVertical ? bm.ascent + bm.descent
+                                : bm.rightBearing - bm.leftBearing;
+     }
+@@ -2081,17 +2096,18 @@ nsMathMLChar::PaintForeground(nsPresCont
      aRenderingContext.DrawString(mData.get(), len, 0, mUnscaledAscent);
    }
    else {
@@ -235,7 +235,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                          mGlyphTable, r);
        else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection)
          PaintHorizontally(aPresContext, aRenderingContext, theFont, styleContext,
-@@ -2269,17 +2284,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+@@ -2171,17 +2187,17 @@ nsMathMLChar::PaintVertically(nsPresCont
          break;
      }
      // empty slots are filled with the glue if it is not null
@@ -244,17 +244,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      if (ch.Exists()) {
        SetFontFamily(aPresContext, aRenderingContext,
                      aFont, aGlyphTable, ch, mFamily);
--      rv = aRenderingContext.GetBoundingMetrics(&ch.code, 1, bmdata[i]);
-+      rv = aRenderingContext.GetBoundingMetrics(ch.code, ch.Length(), bmdata[i]);
-       if (NS_FAILED(rv)) {
-         NS_WARNING("GetBoundingMetrics failed");
-         return rv;
-       }
+-      bmdata[i] = aRenderingContext.GetBoundingMetrics(&ch.code, 1);
++      bmdata[i] = aRenderingContext.GetBoundingMetrics(ch.code, ch.Length());
      }
      chdata[i] = ch;
      ++i;
    }
-@@ -2358,17 +2373,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+   nscoord dx = aRect.x;
+   nscoord offset[3], start[3], end[3];
+   nsRefPtr<gfxContext> ctx = aRenderingContext.ThebesContext();
+   for (i = 0; i <= bottom; ++i) {
+@@ -2256,17 +2272,17 @@ nsMathMLChar::PaintVertically(nsPresCont
            clipRect.y = start[i];
            clipRect.height = end[i] - start[i];
          }
@@ -273,7 +273,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // fill the gap between top and middle, and between middle and bottom.
    if (!chGlue.Exists()) { // null glue : draw a rule
      // figure out the dimensions of the rule to be drawn :
-@@ -2434,17 +2449,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+@@ -2332,17 +2348,17 @@ nsMathMLChar::PaintVertically(nsPresCont
        aRenderingContext.DrawRect(clipRect);
        {
  #endif
@@ -292,7 +292,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        nscoord height = bm.ascent + bm.descent;
        aRenderingContext.SetColor(NS_RGB(0,255,0));
        aRenderingContext.DrawRect(nsRect(dx, dy-bm.ascent, aRect.width, height));
-@@ -2502,17 +2517,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+@@ -2399,17 +2415,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
          break;
      }
      // empty slots are filled with the glue if it is not null
@@ -301,17 +301,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      if (ch.Exists()) {
        SetFontFamily(aPresContext, aRenderingContext,
                      aFont, aGlyphTable, ch, mFamily);
--      rv = aRenderingContext.GetBoundingMetrics(&ch.code, 1, bmdata[i]);
-+      rv = aRenderingContext.GetBoundingMetrics(ch.code, ch.Length(), bmdata[i]);
-       if (NS_FAILED(rv)) {
-         NS_WARNING("GetBoundingMetrics failed");
-         return rv;
-       }
+-      bmdata[i] = aRenderingContext.GetBoundingMetrics(&ch.code, 1);
++      bmdata[i] = aRenderingContext.GetBoundingMetrics(ch.code, ch.Length());
      }
      chdata[i] = ch;
      ++i;
    }
-@@ -2586,17 +2601,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+   nscoord dy = aRect.y + mBoundingMetrics.ascent;
+   nscoord offset[3], start[3], end[3];
+   nsRefPtr<gfxContext> ctx = aRenderingContext.ThebesContext();
+   for (i = 0; i <= right; ++i) {
+@@ -2479,17 +2495,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
            clipRect.x = start[i];
            clipRect.width = end[i] - start[i];
          }
@@ -330,7 +330,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // fill the gap between left and middle, and between middle and right.
    if (!chGlue.Exists()) { // null glue : draw a rule
      // figure out the dimensions of the rule to be drawn :
-@@ -2661,17 +2676,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+@@ -2554,17 +2570,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
        aRenderingContext.DrawRect(clipRect);
        {
  #endif

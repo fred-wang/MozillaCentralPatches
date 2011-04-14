@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent e88d199af24599dd1fcc4f07af204afe922f7cf1
+# Parent c051f175383978ead0aa7caf1d2d859ef6487729
 # User Frédéric Wang <fred.wang@free.fr>
-# Do not underline MathML links (bug 504324)
+Do not underline MathML links (bug 504324)
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 15a3cd0384e5ca8b0b49ccaa6008270196d7dc22
+# Parent 2334fa9956ab74044a5f9fe598b32a71f2c94544
 # User Frédéric Wang <fred.wang@free.fr>
 Add reftests for mstyle (bug 569125). r=karlt
 
@@ -1040,24 +1040,18 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -25,16 +25,20 @@
- != mathcolor-1.xml mathcolor-1-ref.xml
- != mathcolor-2.xml mathcolor-2-ref.xml
- != mathcolor-3.xml mathcolor-3-ref.xml
- == mathcolor-4.xml mathcolor-4-ref.xml
- != mathbackground-1.xml mathbackground-1-ref.xml
- != mathbackground-2.xml mathbackground-2-ref.xml
+@@ -50,10 +50,14 @@
  != mathbackground-3.xml mathbackground-3-ref.xml
  == mathbackground-4.xml mathbackground-4-ref.xml
-+== mstyle-1.xhtml mstyle-1-ref.xhtml
-+== mstyle-2.xhtml mstyle-2-ref.xhtml
-+== mstyle-3.xhtml mstyle-3-ref.xhtml
-+== mstyle-4.xhtml mstyle-4-ref.xhtml
  == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
  != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
  == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
  != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
  != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
++== mstyle-1.xhtml mstyle-1-ref.xhtml
++== mstyle-2.xhtml mstyle-2-ref.xhtml
++== mstyle-3.xhtml mstyle-3-ref.xhtml
++== mstyle-4.xhtml mstyle-4-ref.xhtml
  != link-1.xhtml link-ref.xhtml
  != link-2.xhtml link-ref.xhtml
- == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml

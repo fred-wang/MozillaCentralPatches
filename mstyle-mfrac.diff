@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 98297eb94583f486a5bce89fc245a8b701ab4823
+# Parent 28c75c10d7202666e6c206cb66e099c5f630dac0
 # User Frédéric Wang <fred.wang@free.fr>
 Support for attribute "bevelled" on mstyle (bug 569125). r=karlt
 
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -74,37 +74,16 @@ NS_NewMathMLmfracFrame(nsIPresShell* aPr
+@@ -73,37 +73,16 @@ NS_NewMathMLmfracFrame(nsIPresShell* aPr
  }
  
  NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
@@ -44,7 +44,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -283,16 +262,21 @@ nsMathMLmfracFrame::PlaceInternal(nsIRen
+@@ -281,16 +260,21 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
    // see if the linethickness attribute is there 
    nsAutoString value;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::linethickness_,
@@ -66,7 +66,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      // container (we fetch values from the core since they may use units that
      // depend on style data, and style changes could have occurred in the
      // core since our last visit there)
-@@ -550,28 +534,16 @@ nsMathMLmfracFrame::PlaceInternal(nsIRen
+@@ -538,28 +522,16 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
      }
  
    }
@@ -118,11 +118,11 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.h b/layout/mathml/nsMathMLmfracFra
 -       nsIFrame*        aPrevInFlow);
 -
    virtual nsresult
-   MeasureForWidth(nsIRenderingContext& aRenderingContext,
+   MeasureForWidth(nsRenderingContext& aRenderingContext,
                    nsHTMLReflowMetrics& aDesiredSize);
  
    virtual nsresult
-   Place(nsIRenderingContext& aRenderingContext,
+   Place(nsRenderingContext& aRenderingContext,
          PRBool               aPlaceOrigin,
          nsHTMLReflowMetrics& aDesiredSize);
 @@ -138,19 +128,16 @@ public:
@@ -137,7 +137,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.h b/layout/mathml/nsMathMLmfracFra
 -  PRBool
 -  IsBevelled();
 -
-   nsresult PlaceInternal(nsIRenderingContext& aRenderingContext,
+   nsresult PlaceInternal(nsRenderingContext& aRenderingContext,
                           PRBool               aPlaceOrigin,
                           nsHTMLReflowMetrics& aDesiredSize,
                           PRBool               aWidthOnly);
