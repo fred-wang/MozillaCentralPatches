@@ -1,13 +1,13 @@
+mathml-link-reftests.diff
+mathml-xlink-chrome.diff
+mathml-xlink-gecko.diff
+mathml-link-text-decoration.diff
 mathparser-base.diff
 mathparser-utils.diff
 mathparser-dictionary.diff
 mathparser-simple.diff
 mathparser-itex.diff
 mathparser-tests.diff
-mathml-link-reftests.diff
-mathml-xlink-chrome.diff
-mathml-xlink-gecko.diff
-mathml-link-text-decoration.diff
 mstyle-maction.diff
 mstyle-mfrac.diff
 mstyle-menclose.diff
@@ -23,6 +23,8 @@ asana-math-pref.diff
 mathml_directionality.diff
 mathml_overall_directionality.diff
 mirror_op.diff
+opdict-bars-quadruple-arrows.diff
+opdict-diagonal-arrows.diff
 test.diff
 math-height.diff
 largeop-initial-stretch.diff

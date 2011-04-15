@@ -1,0 +1,48 @@
+# HG changeset patch
+# Parent 3cf6dcf81cd7fbcb2c10b52893e572dcce58269f
+# User Frédéric Wang <fred.wang@free.fr>
+MathML Operator dictionary: add entries for diagonal arrows (bug 552290). r=karlt
+
+diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
+--- a/layout/mathml/mathfont.properties
++++ b/layout/mathml/mathfont.properties
+@@ -282,16 +282,20 @@ operator.\u21CD.infix = lspace:5 rspace:
+ operator.\u21CE.infix = lspace:5 rspace:5 accent # left right double arrow with stroke
+ operator.\u21CF.infix = lspace:5 rspace:5 accent # rightwards double arrow with stroke
+ operator.\u21D0.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # &DoubleLeftArrow;
+ operator.\u21D1.infix = lspace:5 rspace:5 stretchy direction:vertical # &DoubleUpArrow;
+ operator.\u21D2.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # &Implies; &DoubleRightArrow;
+ operator.\u21D3.infix = lspace:5 rspace:5 stretchy direction:vertical # &DoubleDownArrow;
+ operator.\u21D4.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # &DoubleLeftRightArrow;
+ operator.\u21D5.infix = lspace:5 rspace:5 stretchy direction:vertical # &DoubleUpDownArrow;
++operator.\u21D6.infix = lspace:5 rspace:5 stretchy direction:downdiagonal # north west double arrow
++operator.\u21D7.infix = lspace:5 rspace:5 stretchy direction:updiagonal # north east double arrow
++operator.\u21D8.infix = lspace:5 rspace:5 stretchy direction:downdiagonal # south east double arrow
++operator.\u21D9.infix = lspace:5 rspace:5 stretchy direction:updiagonal # south west double arrow
+ operator.\u21DA.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # leftwards triple arrow
+ operator.\u21DB.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # rightwards triple arrow
+ operator.\u21DC.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # leftwards squiggle arrow
+ operator.\u21DD.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # rightwards squiggle arrow
+ operator.\u21DE.infix = lspace:5 rspace:5 # upwards arrow with double stroke
+ operator.\u21DF.infix = lspace:5 rspace:5 # downwards arrow with double stroke
+ operator.\u21E0.infix = lspace:5 rspace:5 stretchy accent direction:horizontal # leftwards dashed arrow
+ operator.\u21E1.infix = lspace:5 rspace:5 stretchy direction:vertical # upwards dashed arrow
+@@ -699,16 +703,18 @@ operator.\u2918.infix = lspace:5 rspace:
+ operator.\u2919.infix = lspace:5 rspace:5 accent # leftwards arrow-tail
+ operator.\u291A.infix = lspace:5 rspace:5 accent # rightwards arrow-tail
+ operator.\u291B.infix = lspace:5 rspace:5 accent # leftwards double arrow-tail
+ operator.\u291C.infix = lspace:5 rspace:5 accent # rightwards double arrow-tail
+ operator.\u291D.infix = lspace:5 rspace:5 accent # leftwards arrow to black diamond
+ operator.\u291E.infix = lspace:5 rspace:5 accent # rightwards arrow to black diamond
+ operator.\u291F.infix = lspace:5 rspace:5 accent # leftwards arrow from bar to black diamond
+ operator.\u2920.infix = lspace:5 rspace:5 accent # rightwards arrow from bar to black diamond
++operator.\u2921.infix = lspace:5 rspace:5 stretchy direction:downdiagonal # north west and south east arrow
++operator.\u2922.infix = lspace:5 rspace:5 stretchy direction:updiagonal # north east and south west arrow
+ operator.\u2923.infix = lspace:5 rspace:5 # north west arrow with hook
+ operator.\u2924.infix = lspace:5 rspace:5 # north east arrow with hook
+ operator.\u2925.infix = lspace:5 rspace:5 # south east arrow with hook
+ operator.\u2926.infix = lspace:5 rspace:5 # south west arrow with hook
+ operator.\u2927.infix = lspace:5 rspace:5 # north west arrow and north east arrow
+ operator.\u2928.infix = lspace:5 rspace:5 # north east arrow and south east arrow
+ operator.\u2929.infix = lspace:5 rspace:5 # south east arrow and south west arrow
+ operator.\u292A.infix = lspace:5 rspace:5 # south west arrow and north west arrow
