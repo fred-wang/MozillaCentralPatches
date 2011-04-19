@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent fe966d17f623e580289b2833b33188e6826f9c59
+# Parent 06c8a83529486d44ae9ea46559f12c515ddd9503
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -354,7 +354,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -550,59 +558,72 @@ nsMathMLmfracFrame::UpdatePresentationDa
+@@ -550,59 +558,74 @@ nsMathMLmfracFrame::UpdatePresentationDa
      UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
                                        aFlagsValues, aFlagsToUpdate);
  }
@@ -366,6 +366,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 -                       nscoord aThickness)
 -    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness) {
 +                       nscoord aThickness, PRBool aRTL)
++
 +    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness),
 +      mRTL(aRTL) {
      MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
@@ -397,7 +398,8 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
   
    // draw the slash as a parallelogram 
    gfxContext *gfxCtx = aCtx->ThebesContext();
-   gfxSize delta = gfxSize(presContext->AppUnitsToGfxUnits(mThickness), 0);
+   gfxPoint delta = gfxPoint(presContext->AppUnitsToGfxUnits(mThickness), 0);
++
    gfxCtx->NewPath();
 -  gfxCtx->MoveTo(rect.BottomLeft());
 -  gfxCtx->LineTo(rect.BottomLeft() + delta);
@@ -427,9 +429,10 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
                                   const nsDisplayListSet& aLists) {
    if (!aFrame->GetStyleVisibility()->IsVisible() || aRect.IsEmpty())
      return NS_OK;
+-  
 +
 +  PRBool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
-   
++ 
    return aLists.Content()->AppendNewToTop(new (aBuilder)
 -      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
 +      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
