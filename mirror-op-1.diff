@@ -1,192 +1,12 @@
 # HG changeset patch
-# Parent 7f3a7fd2081009b2a4cf1bdf3d5e0c9a1da9582c
+# Parent d787eacab5d9b7e2150ccc64d1ee6f560cf88aaa
 # User Frédéric Wang <fred.wang@free.fr>
-Mirroring of operators for arabic math (Bug 208309)
+Mirroring of operators for arabic math (Bug 208309) - part 1
 
-diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
---- a/layout/mathml/mathfont.properties
-+++ b/layout/mathml/mathfont.properties
-@@ -114,18 +114,18 @@ mathvariant.monospace = A\ud835\ude70B\u
- 
- operator.\u0021.postfix = lspace:1 rspace:0 # !
- operator.\u0021\u0021.postfix = lspace:1 rspace:0 # !!
- operator.\u0021\u003D.infix = lspace:4 rspace:4 # !=
- operator.\u0025.infix = lspace:3 rspace:3 # percent sign
- operator.\u0026.postfix = lspace:0 rspace:0 # &amp;
- operator.\u0026\u0026.infix = lspace:4 rspace:4 # &amp;&amp;
- operator.\u0027.postfix = lspace:0 rspace:0 accent # '
--operator.\u0028.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # (
--operator.\u0029.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # )
-+operator.\u0028.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # (
-+operator.\u0029.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # )
- operator.\u002A.infix = lspace:3 rspace:3 # *
- operator.\u002A\u002A.infix = lspace:1 rspace:1 # **
- operator.\u002A\u003D.infix = lspace:4 rspace:4 # *=
- operator.\u002B.infix = lspace:4 rspace:4 # +
- operator.\u002B.prefix = lspace:0 rspace:1 # +
- operator.\u002B\u002B.postfix = lspace:0 rspace:0 # ++
- operator.\u002B\u003D.infix = lspace:4 rspace:4 # +=
- operator.\u002C.infix = lspace:0 rspace:3 separator # ,
-@@ -147,35 +147,35 @@ operator.\u003C.infix = lspace:5 rspace:
- operator.\u003C\u003D.infix = lspace:5 rspace:5 # &lt;=
- operator.\u003C\u003E.infix = lspace:1 rspace:1 # &lt;>
- operator.\u003D.infix = lspace:5 rspace:5 # =
- operator.\u003D\u003D.infix = lspace:4 rspace:4 # ==
- operator.\u003E.infix = lspace:5 rspace:5 # >
- operator.\u003E\u003D.infix = lspace:5 rspace:5 # >=
- operator.\u003F.infix = lspace:1 rspace:1 # ?
- operator.\u0040.infix = lspace:1 rspace:1 # @
--operator.\u005B.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # [
-+operator.\u005B.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # [
- operator.\u005C.infix = lspace:0 rspace:0 # reverse solidus
--operator.\u005D.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # ]
-+operator.\u005D.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # ]
- operator.\u005E.postfix = lspace:0 rspace:0 stretchy accent direction:horizontal # &Hat; circumflex accent
- operator.\u005E.infix = lspace:1 rspace:1 direction:horizontal # ^
- operator.\u005F.postfix = lspace:0 rspace:0 stretchy accent direction:horizontal # _ low line
- operator.\u005F.infix = lspace:2 rspace:2 stretchy direction:horizontal # _
- operator.\u0060.postfix = lspace:0 rspace:0 accent # &DiacriticalGrave;
--operator.\u007B.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # {
-+operator.\u007B.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # {
- operator.\u007C.infix = lspace:2 rspace:2 stretchy fence symmetric direction:vertical # &VerticalLine; |
- operator.\u007C.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # |
- operator.\u007C.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # |
- operator.\u007C\u007C.infix = lspace:4 rspace:4 direction:vertical # ||
- operator.\u007C\u007C.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # multiple character operator: ||
- operator.\u007C\u007C.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # multiple character operator: ||
- operator.\u007C\u007C\u007C.infix = lspace:2 rspace:2 stretchy fence symmetric direction:vertical # multiple character operator: |||
- operator.\u007C\u007C\u007C.prefix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # multiple character operator: |||
- operator.\u007C\u007C\u007C.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # multiple character operator: |||
--operator.\u007D.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical # }
-+operator.\u007D.postfix = lspace:0 rspace:0 stretchy fence symmetric direction:vertical mirrorable # }
- operator.\u007E.postfix = lspace:0 rspace:0 stretchy accent direction:horizontal # ~ tilde
- operator.\u00A8.postfix = lspace:0 rspace:0 accent # &DoubleDot;
- operator.\u00AC.prefix = lspace:2 rspace:1 # not sign
- operator.\u00AF.postfix = lspace:0 rspace:0 stretchy accent direction:horizontal # &OverBar;
- operator.\u00B0.postfix = lspace:0 rspace:0 # degree sign
- operator.\u00B1.infix = lspace:4 rspace:4 # &PlusMinus;
- operator.\u00B1.prefix = lspace:0 rspace:1 # &PlusMinus;
- operator.\u00B4.postfix = lspace:0 rspace:0 accent # &DiacriticalAcute;
-@@ -335,51 +335,51 @@ operator.\u2208.infix = lspace:5 rspace:
- operator.\u2209.infix = lspace:5 rspace:5 # &NotElement;
- operator.\u220A.infix = lspace:5 rspace:5 # small element of
- operator.\u220B.infix = lspace:5 rspace:5 # &SuchThat; &ReverseElement;
- operator.\u220C.infix = lspace:5 rspace:5 # &NotReverseElement;
- operator.\u220D.infix = lspace:5 rspace:5 # small contains as member
- operator.\u220E.infix = lspace:3 rspace:3 # end of proof
- operator.\u220F.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &Product;
- operator.\u2210.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &Coproduct;
--operator.\u2211.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &Sum;
-+operator.\u2211.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical mirrorable # &Sum;
- operator.\u2212.infix = lspace:4 rspace:4 # official Unicode minus sign
- operator.\u2212.prefix = lspace:0 rspace:1 # official Unicode minus sign
- operator.\u2213.infix = lspace:4 rspace:4 # &MinusPlus;
- operator.\u2213.prefix = lspace:0 rspace:1 # &MinusPlus;
- operator.\u2214.infix = lspace:4 rspace:4 # dot plus
- operator.\u2216.infix = lspace:3 rspace:3 stretchy direction:vertical # &Backslash;
- operator.\u2217.infix = lspace:4 rspace:4 # asterisk operator
- operator.\u2218.infix = lspace:4 rspace:4 # &SmallCircle;
- operator.\u2219.infix = lspace:4 rspace:4 # bullet operator
--operator.\u221A.prefix = lspace:1 rspace:1 stretchy direction:vertical # &Sqrt;
-+operator.\u221A.prefix = lspace:1 rspace:1 stretchy direction:vertical mirrorable # &Sqrt;
- operator.\u221B.prefix = lspace:1 rspace:1 # cube root
- operator.\u221C.prefix = lspace:1 rspace:1 # fourth root
- operator.\u221D.infix = lspace:5 rspace:5 # &Proportional;
- operator.\u221F.infix = lspace:5 rspace:5 # right angle
- operator.\u2220.prefix = lspace:0 rspace:0 # angle
- operator.\u2221.prefix = lspace:0 rspace:0 # measured angle
- operator.\u2222.prefix = lspace:0 rspace:0 # spherical angle
- operator.\u2223.infix = lspace:5 rspace:5 stretchy direction:vertical # &VerticalBar;
- operator.\u2224.infix = lspace:5 rspace:5 # &NotVerticalBar;
- operator.\u2225.infix = lspace:5 rspace:5 stretchy direction:vertical # &DoubleVerticalBar;
- operator.\u2226.infix = lspace:5 rspace:5 # &NotDoubleVerticalBar;
- operator.\u2227.infix = lspace:4 rspace:4 # &wedge;
- operator.\u2228.infix = lspace:4 rspace:4 # &vee;
- operator.\u2229.infix = lspace:4 rspace:4 # &cap;
- operator.\u222A.infix = lspace:4 rspace:4 # &cup;
--operator.\u222B.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &Integral;
--operator.\u222C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # double integral
--operator.\u222D.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # triple integral
--operator.\u222E.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ContourIntegral;
--operator.\u222F.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &DoubleContourIntegral;
--operator.\u2230.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # volume integral
--operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # clockwise integral
--operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ClockwiseContourIntegral;
--operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &CounterClockwiseContourIntegral;
-+operator.\u222B.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &Integral;
-+operator.\u222C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # double integral
-+operator.\u222D.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # triple integral
-+operator.\u222E.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ContourIntegral;
-+operator.\u222F.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &DoubleContourIntegral;
-+operator.\u2230.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # volume integral
-+operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # clockwise integral
-+operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ClockwiseContourIntegral;
-+operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &CounterClockwiseContourIntegral;
- operator.\u2234.infix = lspace:5 rspace:5 # &Therefore;
- operator.\u2235.infix = lspace:5 rspace:5 # &Because;
- operator.\u2236.infix = lspace:5 rspace:5 # ratio
- operator.\u2237.infix = lspace:5 rspace:5 # &Colon; &Proportion;
- operator.\u2238.infix = lspace:4 rspace:4 # dot minus
- operator.\u2239.infix = lspace:5 rspace:5 # excess
- operator.\u223A.infix = lspace:4 rspace:4 # geometric proportion
- operator.\u223B.infix = lspace:5 rspace:5 # homothetic
-@@ -929,34 +929,34 @@ operator.\u2A02.prefix = lspace:1 rspace
- operator.\u2A03.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # n-ary union operator with dot
- operator.\u2A04.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &biguplus;
- operator.\u2A05.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # n-ary square intersection operator
- operator.\u2A06.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &bigsqcup;
- operator.\u2A07.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # two logical and operator
- operator.\u2A08.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # two logical or operator
- operator.\u2A09.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # n-ary times operator
- operator.\u2A0A.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # modulo two sum
--operator.\u2A0B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # summation with integral
--operator.\u2A0C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # quadruple integral operator
--operator.\u2A0D.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # finite part integral
--operator.\u2A0E.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with double stroke
--operator.\u2A0F.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral average with slash
--operator.\u2A10.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # circulation function
--operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # anticlockwise integration
--operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with rectangular path around pole
--operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with semicircular path around pole
--operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration not including the pole
--operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral around a point operator
--operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # quaternion integral operator
--operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with leftwards arrow with hook
--operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with times sign
--operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with intersection
--operator.\u2A1A.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with union
--operator.\u2A1B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with overbar
--operator.\u2A1C.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with underbar
-+operator.\u2A0B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # summation with integral
-+operator.\u2A0C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # quadruple integral operator
-+operator.\u2A0D.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # finite part integral
-+operator.\u2A0E.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with double stroke
-+operator.\u2A0F.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral average with slash
-+operator.\u2A10.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # circulation function
-+operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # anticlockwise integration
-+operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with rectangular path around pole
-+operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with semicircular path around pole
-+operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration not including the pole
-+operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral around a point operator
-+operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # quaternion integral operator
-+operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with leftwards arrow with hook
-+operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with times sign
-+operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with intersection
-+operator.\u2A1A.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with union
-+operator.\u2A1B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with overbar
-+operator.\u2A1C.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with underbar
- operator.\u2A1D.infix = lspace:3 rspace:3 # join
- operator.\u2A1E.infix = lspace:3 rspace:3 # large left triangle operator
- operator.\u2A1F.infix = lspace:3 rspace:3 # z notation schema composition
- operator.\u2A20.infix = lspace:3 rspace:3 # z notation schema piping
- operator.\u2A21.infix = lspace:3 rspace:3 # z notation schema projection
- operator.\u2A22.infix = lspace:4 rspace:4 # plus sign with small circle above
- operator.\u2A23.infix = lspace:4 rspace:4 # plus sign with circumflex accent above
- operator.\u2A24.infix = lspace:4 rspace:4 # plus sign with tilde above
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1709,24 +1709,28 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1708,24 +1708,28 @@ nsMathMLChar::StretchInternal(nsPresCont
  }
  
  nsresult
@@ -216,7 +36,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Record the metrics
    mBoundingMetrics = aDesiredStretchSize;
-@@ -1807,20 +1811,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
+@@ -1806,20 +1810,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
    }
    nscoord dx = 0, dy = 0;
    for (i = 0, child = mSibling; child; child = child->mSibling, i++) {
@@ -239,7 +59,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      }
      child->SetRect(nsRect(dx, dy, childSize.width, childSize.ascent+childSize.descent));
      if (0 == i)
-@@ -2039,18 +2044,23 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -2038,18 +2043,23 @@ nsMathMLChar::Display(nsDisplayListBuild
          nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                        aSelectedRect && !aSelectedRect->IsEmpty()));
  }

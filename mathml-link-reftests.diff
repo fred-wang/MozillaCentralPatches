@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ee377a1a5e31199df93a1a3bf0e84e7296f7271f
+# Parent 7253ba2c9d6bcfb43fb7245986b5406c5f2b4972
 Reftests for bug 427990
 
 diff --git a/layout/reftests/mathml/link-1.xhtml b/layout/reftests/mathml/link-1.xhtml

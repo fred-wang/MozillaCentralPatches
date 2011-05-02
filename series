@@ -22,8 +22,8 @@ asana-math.diff
 asana-math-pref.diff
 mathml_directionality.diff
 mathml_overall_directionality.diff
-mirror_op.diff
-opdict-bars-quadruple-arrows.diff
+mirror-op-1.diff
+mirror-op-2.diff
 opdict-diagonal-arrows.diff
 test.diff
 math-height.diff
