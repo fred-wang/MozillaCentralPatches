@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 3cf6dcf81cd7fbcb2c10b52893e572dcce58269f
+# Parent 6c2c6599f39aabe804bb96572c1f48b94d832738
 # User Frédéric Wang <fred.wang@free.fr>
 MathML Operator dictionary: add entries for diagonal arrows (bug 552290). r=karlt
 

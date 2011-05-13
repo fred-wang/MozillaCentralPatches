@@ -1,21 +1,20 @@
 # HG changeset patch
-# Parent 4cdfc4a916a3ee29f1bd0504df585c5ff0724d65
+# Parent 0cfd49449a31c35bc3f01558c3666387bf062bec
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 407439 - Support for Asana Math font in MathML (add in pref). r=karlt
 
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -982,17 +982,17 @@ pref("intl.locale.matchOS",             
- pref("intl.fallbackCharsetList.ISO-8859-1", "windows-1252");
- pref("font.language.group",                 "chrome://global/locale/intl.properties");
- 
- // these locales have right-to-left UI
- pref("intl.uidirection.ar", "rtl");
- pref("intl.uidirection.he", "rtl");
+@@ -1049,16 +1049,17 @@ pref("intl.uidirection.he", "rtl");
  pref("intl.uidirection.fa", "rtl");
  
--pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Standard Symbols L, DejaVu Sans, Cambria Math");
+ // use en-US hyphenation by default for content tagged with plain lang="en"
+ pref("intl.hyphenation-alias.en", "en-us");
+ // and for other subtags of en-*, if no specific patterns are available
+ pref("intl.hyphenation-alias.en-*", "en-us");
+ 
+ pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Standard Symbols L, DejaVu Sans, Cambria Math");
 +pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
@@ -25,7 +24,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("images.dither", "auto");
  pref("security.directory",              "");
  
-@@ -1668,17 +1668,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -1738,17 +1739,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -44,7 +43,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -2153,17 +2153,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2257,17 +2258,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -63,7 +62,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
-@@ -2197,17 +2197,17 @@ pref("mousewheel.system_scroll_override_
+@@ -2301,17 +2302,17 @@ pref("mousewheel.system_scroll_override_
  #endif
  
  #ifdef XP_OS2
