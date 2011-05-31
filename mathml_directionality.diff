@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262541153 -3600
 # Node ID 7f8941c192349709b7fcaaf465c915d507d75979
-# Parent d22795a05b22c365f208d2ece1ad7152d5c27acc
+# Parent 3405f87b9b7a02d5f6329c4add0262471021e994
 Add a directionality flag on MathML frames (bug 534963). r=karlt
 
 diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
@@ -249,7 +249,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
          aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
        }
 +      FindAttrDirectionality(content, aPresentationData);
-       aPresentationData.mstyle = frame;
+       aPresentationData.mstyle = frame->GetFirstContinuation();
        break;
      }
      frame = frame->GetParent();
