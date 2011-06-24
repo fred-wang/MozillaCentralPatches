@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 3526fe6196bd296d42507571ecedc74d30a65a9f
+# Parent 0ad37a1a0ff2b2edac5dbeee31bd4b7ca552e885
 # User Frédéric Wang <fred.wang@free.fr>
-Restore XLink on MathML elements and implement MathML 3 href - part 2 (bug 427990)
+[MathML3] Add support for href attribute
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -5441,22 +5441,27 @@ function hrefAndLinkNodeForClickEvent(ev
+@@ -5045,22 +5045,27 @@ function hrefAndLinkNodeForClickEvent(ev
    let node = event.target;
    while (node && !isHTMLLink(node)) {
      node = node.parentNode;

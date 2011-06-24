@@ -1,0 +1,34 @@
+# HG changeset patch
+# Parent a00012b85fafa397de29baf770da252985b71f82
+# User Frédéric Wang <fred.wang@free.fr>
+Reftest for bug 534968
+
+diff --git a/layout/reftests/mathml/link-2.xhtml b/layout/reftests/mathml/link-2.xhtml
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/link-2.xhtml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="utf-8"?>
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <title>Test href link</title>
++</head>
++<body>
++  <math xmlns="http://www.w3.org/1998/Math/MathML">
++    <mtext href="www.mozilla.org">MathML Link</mtext>
++  </math>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -58,8 +58,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
+ == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
+ != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
+ != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
+ != link-1.xhtml link-ref.xhtml
++!= link-2.xhtml link-ref.xhtml

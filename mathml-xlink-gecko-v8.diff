@@ -1,8 +1,3 @@
-# HG changeset patch
-# Parent ff3f95a70a7f1b873bfc9e2cdbc07d72eae57abb
-# User Frédéric Wang <fred.wang@free.fr>
-Restore XLink on MathML elements and implement MathML 3 href - part 1 (bug 427990)
-
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
@@ -108,7 +103,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
  {
    return !(aFlags & ~eCONTENT);
  }
-@@ -460,8 +489,184 @@ nsMathMLElement::SetIncrementScriptLevel
+@@ -460,8 +489,190 @@ nsMathMLElement::SetIncrementScriptLevel
    if (aIncrementScriptLevel == mIncrementScriptLevel)
      return;
    mIncrementScriptLevel = aIncrementScriptLevel;
@@ -245,6 +240,12 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +  return Link::GetLinkState();
 +}
 +
++void
++nsMathMLElement::RequestLinkStateUpdate()
++{
++  UpdateLinkState(Link::LinkState());
++}
++
 +already_AddRefed<nsIURI>
 +nsMathMLElement::GetHrefURI() const
 +{
@@ -350,7 +351,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
  
    NS_IMETHOD_(PRBool) IsAttributeMapped(const nsIAtom* aAttribute) const;
    virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
-@@ -84,25 +91,46 @@ public:
+@@ -84,25 +91,47 @@ public:
    };
    static PRBool ParseNumericValue(const nsString& aString,
                                    nsCSSValue&     aCSSValue,
@@ -379,6 +380,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 +  virtual PRBool IsLink(nsIURI** aURI) const;
 +  virtual void GetLinkTarget(nsAString& aTarget);
 +  virtual nsLinkState GetLinkState() const;
++  virtual void RequestLinkStateUpdate();
 +  virtual already_AddRefed<nsIURI> GetHrefURI() const;
 +  nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
 +                   const nsAString& aValue, PRBool aNotify)
@@ -400,7 +402,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/layout/base/nsDocumentViewer.cpp b/layout/base/nsDocumentViewer.cpp
 --- a/layout/base/nsDocumentViewer.cpp
 +++ b/layout/base/nsDocumentViewer.cpp
-@@ -3380,47 +3380,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
+@@ -3405,47 +3405,30 @@ DocumentViewerImpl::GetPopupLinkNode(nsI
    // find popup node
    nsCOMPtr<nsIDOMNode> node;
    nsresult rv = GetPopupNode(getter_AddRefs(node));
@@ -463,7 +465,7 @@ diff --git a/layout/base/nsDocumentViewer.cpp b/layout/base/nsDocumentViewer.cpp
 diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 --- a/layout/base/nsPresShell.cpp
 +++ b/layout/base/nsPresShell.cpp
-@@ -4364,83 +4364,34 @@ PresShell::GetRectVisibility(nsIFrame* a
+@@ -4360,74 +4360,34 @@ PresShell::GetRectVisibility(nsIFrame* a
  // GetLinkLocation: copy link location to clipboard
  nsresult PresShell::GetLinkLocation(nsIDOMNode* aNode, nsAString& aLocationString) const
  {
@@ -514,18 +516,9 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 -            if (!anchorText.IsEmpty()) {
 -              // Resolve the full URI using baseURI property
 -
--              nsAutoString base;
--              nsCOMPtr<nsIDOM3Node> node(do_QueryInterface(aNode,&rv));
--              NS_ENSURE_SUCCESS(rv, rv);
--              node->GetBaseURI(base);
--
--              nsCOMPtr<nsIIOService>
--                ios(do_GetService("@mozilla.org/network/io-service;1", &rv));
--              NS_ENSURE_SUCCESS(rv, rv);
--
--              nsCOMPtr<nsIURI> baseURI;
--              rv = ios->NewURI(NS_ConvertUTF16toUTF8(base),nsnull,nsnull,getter_AddRefs(baseURI));
--              NS_ENSURE_SUCCESS(rv, rv);
+-              nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
+-              NS_ENSURE_TRUE(node, NS_ERROR_UNEXPECTED);
+-              nsCOMPtr<nsIURI> baseURI = node->GetBaseURI();
 -
 -              nsCAutoString spec;
 -              rv = baseURI->Resolve(NS_ConvertUTF16toUTF8(anchorText),spec);

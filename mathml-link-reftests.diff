@@ -1,6 +1,7 @@
 # HG changeset patch
-# Parent ad1fa68dcaf57d3ddaa1cd72518b9aaff99b4669
-Reftests for bug 427990
+# Parent 5736cba8c2f56c7366bc836a752e872f9fd62193
+# User Frédéric Wang <fred.wang@free.fr>
+Reftest for bug 427990
 
 diff --git a/layout/reftests/mathml/link-1.xhtml b/layout/reftests/mathml/link-1.xhtml
 new file mode 100644
@@ -16,22 +17,6 @@ new file mode 100644
 +  <math xmlns="http://www.w3.org/1998/Math/MathML"
 +	xmlns:xlink="http://www.w3.org/1999/xlink">
 +    <mtext xlink:type="simple" xlink:href="www.mozilla.org">MathML Link</mtext>
-+  </math>
-+</body>
-+</html>
-diff --git a/layout/reftests/mathml/link-2.xhtml b/layout/reftests/mathml/link-2.xhtml
-new file mode 100644
---- /dev/null
-+++ b/layout/reftests/mathml/link-2.xhtml
-@@ -0,0 +1,11 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<html xmlns="http://www.w3.org/1999/xhtml">
-+<head>
-+  <title>Test href link</title>
-+</head>
-+<body>
-+  <math xmlns="http://www.w3.org/1998/Math/MathML">
-+    <mtext href="www.mozilla.org">MathML Link</mtext>
 +  </math>
 +</body>
 +</html>
@@ -54,14 +39,13 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -55,8 +55,10 @@
- == mstyle-4.xhtml mstyle-4-ref.xhtml
- fails == mstyle-5.xhtml mstyle-5-ref.xhtml # See bug 569125#c29
+@@ -57,8 +57,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
  == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
  != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
  == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
  != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
  != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
  == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
 +!= link-1.xhtml link-ref.xhtml
-+!= link-2.xhtml link-ref.xhtml
