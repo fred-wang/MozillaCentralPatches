@@ -1,0 +1,334 @@
+# HG changeset patch
+# Parent a854b76de281b9aad58578a75b6105d8eba3a9a0
+# User Jonathan Hage <hage.jonathan@gmail.com>
+Tests mpadded
+
+diff --git a/layout/reftests/mathml/mpadded-1-ref.html b/layout/reftests/mathml/mpadded-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-1-ref.html
+@@ -0,0 +1,50 @@
++<html>
++  <head>
++    <title>Test mpadded</title>
++    <style type="text/css">
++      div#bigsquare1 {
++        position: absolute;
++        width: 100px;
++        height: 100px;
++        background: blue; 	
++      }
++      
++      div#smallsquare1 {
++        position:absolute;
++        width: 20px;
++        height: 20px;
++        left: 20px;
++        top: 10px; 	
++        background: red;
++      }
++      /*left = lpace = 20px;
++	top = heightBig - voffset -heightSmall; */
++      div#bigsquare2 {
++        left: 113px;
++        position: absolute;
++        width: 100px;
++        height: 100px;
++        background: blue;
++      }
++      
++      div#smallsquare2 {
++        position:absolute;
++        width: 20px;
++        height: 20px;
++        left: 20px;
++        top: 60px; 	
++        background: red;
++      }
++      </style>
++  </head>
++  <body>
++    <div id="bigsquare1">
++      <div id="smallsquare1">
++      </div>
++    </div>
++    <div id="bigsquare2">
++      <div id="smallsquare2">
++      </div>
++    </div>
++  </body> 
++<html>
+diff --git a/layout/reftests/mathml/mpadded-1.html b/layout/reftests/mathml/mpadded-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-1.html
+@@ -0,0 +1,24 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="50px" depth="50px"
++	       lspace="20px" voffset="30px">
++	<mpadded mathbackground="red" width="20px" height="10px"
++		 depth="10px">
++	</mpadded>
++      </mpadded>
++    </math>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="50px" depth="50px"
++	       lspace="20px" voffset="-20px">
++	<mpadded mathbackground="red" width="20px" height="10px"
++		 depth="10px">
++	</mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mpadded-2-ref.html b/layout/reftests/mathml/mpadded-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-2-ref.html
+@@ -0,0 +1,30 @@
++<html>
++  <head>
++    <title>Test mpadded</title>
++    <style type="text/css">
++      div#square1 {
++        position: absolute;
++        width: 100px;
++        height: 100px;
++        background: blue; 	
++      }
++   
++      div#square2 {
++        position:absolute;
++        width: 20px;
++        height: 20px;
++        left: 10px; 
++        top: 55px; 	
++        background: red;
++      }   
++      /* left = lspace = 10; 
++         top = heightBig - heightSmall - voffset; */
++      </style>
++  </head>
++  <body>
++    <div id="square1">
++      <div id="square2">
++      </div>
++    </div>
++  </body> 
++<html>
+diff --git a/layout/reftests/mathml/mpadded-2.html b/layout/reftests/mathml/mpadded-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-2.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="50px" depth="50px"
++               lspace="10px" voffset="-15px">
++        <mpadded mathbackground="red" width="20px" height="10px"
++                 depth="10px">
++        </mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mpadded-3-ref.html b/layout/reftests/mathml/mpadded-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-3-ref.html
+@@ -0,0 +1,35 @@
++<html>
++  <head>
++    <title>Test mpadded height depth</title>
++    <style type="text/css">
++      div#bigsquare1 {
++        position: absolute;
++        width: 100px;
++        height: 50px;
++        background: blue; 	
++      }
++      
++      div#smallsquare1 {
++        position:absolute;
++        width: 20px;
++        height: 20px;
++        left: 0px;
++        top: 30px; 	
++        background: red;
++      }
++      /* left = lspace = 10; 
++         top = heightBig - heightSmall - voffset; */
++    </style>
++  </head>
++  <body>
++    <div id="bigsquare1">
++      <div id="smallsquare1">
++      </div>
++    </div>
++
++    <div id="bigsquare2">
++      <div id="smallsquare2">
++      </div>
++    </div>
++  </body> 
++<html>
+diff --git a/layout/reftests/mathml/mpadded-3.html b/layout/reftests/mathml/mpadded-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-3.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded height depth</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="50px" depth="0px"
++	       lspace="0px" voffset="10px">
++	<mpadded mathbackground="red" width="20px" height="10px"
++		 depth="10px">
++	</mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mpadded-4-ref.html b/layout/reftests/mathml/mpadded-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-4-ref.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="3height" depth="3depth"
++	       lspace="3lspace" voffset="10px">
++	<mpadded mathbackground="red" width="20px" height="10px"
++		 depth="10px">
++	</mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mpadded-4.html b/layout/reftests/mathml/mpadded-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-4.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="blue" width="100px" height="3height" depth="3depth"
++	       lspace="0" voffset="10px">
++	<mpadded mathbackground="red" width="20px" height="10px"
++		 depth="10px">
++	</mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mpadded-5-ref.html b/layout/reftests/mathml/mpadded-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-5-ref.html
+@@ -0,0 +1,40 @@
++<html>
++  <head>
++    <title>Test mpadded</title>
++    <style type="text/css">
++      div#square1 {
++        position:absolute;
++        width: 20px;
++        height: 20px;
++        left: -25px;
++        top: 25px; 	
++        background: red;
++      }
++      div#square2 {
++        position: absolute;
++        width: 100px;
++        height: 100px;
++        left: 40px;
++        top:30px;
++        background: blue; 	
++      }
++      
++      div#square3 {
++        position:absolute;
++        width: 200px;
++        height: 200px; 	
++        background: green;
++      }
++      /*left = lspace = 10; 
++        top = heightBig - heightSmall - voffset; */     
++      </style>
++  </head>
++  <body>
++    <div id="square3">
++      <div id="square2">
++	<div id="square1">
++	</div>
++      </div>
++    </div>
++  </body> 
++<html>
+diff --git a/layout/reftests/mathml/mpadded-5.html b/layout/reftests/mathml/mpadded-5.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mpadded-5.html
+@@ -0,0 +1,19 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>Test mpadded</title>
++  </head>
++  <body>
++    <math>
++      <mpadded mathbackground="green" width="200px" height="100px" depth="100px"
++	       lspace="40px" voffset="20px">
++	<mpadded mathbackground="blue" width="100px" height="50px" depth="50px"
++		 lspace="-25px" voffset="15px">
++          <mpadded mathbackground="red" width="20px" height="10px"
++                   depth="10px">
++          </mpadded>
++	</mpadded>
++      </mpadded>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -55,8 +55,13 @@
+ == mstyle-4.xhtml mstyle-4-ref.xhtml
+ fails == mstyle-5.xhtml mstyle-5-ref.xhtml # See bug 569125#c29
+ == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
+ != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
+ == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
+ != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
+ != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
++== mpadded-1.html mpadded-1-ref.html
++== mpadded-2.html mpadded-2-ref.html
++== mpadded-3.html mpadded-3-ref.html
++== mpadded-4.html mpadded-4-ref.html
++== mpadded-5.html mpadded-5-ref.html

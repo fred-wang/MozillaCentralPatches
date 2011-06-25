@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent 06c8a83529486d44ae9ea46559f12c515ddd9503
+# Parent de6fd400114430b00fdb12d8df0f592c075d9b41
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -36,7 +36,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
 --- a/layout/mathml/nsMathMLContainerFrame.cpp
 +++ b/layout/mathml/nsMathMLContainerFrame.cpp
-@@ -1301,29 +1301,31 @@ nsMathMLContainerFrame::Place(nsRenderin
+@@ -1303,29 +1303,31 @@ nsMathMLContainerFrame::Place(nsRenderin
  
    mReference.x = 0;
    mReference.y = aDesiredSize.ascent;
@@ -230,7 +230,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
-@@ -377,48 +377,66 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+@@ -379,48 +379,66 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
    //////////////////
    // Adjust the origins of each child.
    // and update our bounding metrics
@@ -307,7 +307,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -502,28 +502,36 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -496,28 +496,36 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
        mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
      aDesiredSize.width = mBoundingMetrics.width;
      aDesiredSize.mBoundingMetrics = mBoundingMetrics;
@@ -354,7 +354,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -550,59 +558,74 @@ nsMathMLmfracFrame::UpdatePresentationDa
+@@ -544,59 +552,74 @@ nsMathMLmfracFrame::UpdatePresentationDa
      UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
                                        aFlagsValues, aFlagsToUpdate);
  }
@@ -525,8 +525,8 @@ diff --git a/layout/mathml/nsMathMLmoverFrame.cpp b/layout/mathml/nsMathMLmoverF
 diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
 --- a/layout/mathml/nsMathMLmpaddedFrame.cpp
 +++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -464,13 +464,13 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
-   aDesiredSize.height += dy + depth - mBoundingMetrics.descent;
+@@ -473,13 +473,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+   aDesiredSize.height = mBoundingMetrics.ascent + mBoundingMetrics.descent;
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
    mReference.x = 0;
@@ -534,8 +534,9 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
  
    if (aPlaceOrigin) {
      // Finish reflowing child frames, positioning their origins.
--    PositionRowChildFrames(dx, aDesiredSize.ascent);
-+    PositionRowChildFrames(aDesiredSize.width, dx, aDesiredSize.ascent);
+-    PositionRowChildFrames(dx, aDesiredSize.ascent - voffset);
++    PositionRowChildFrames(aDesiredSize.width, dx,
++                           aDesiredSize.ascent - voffset);
    }
  
    return NS_OK;
@@ -706,7 +707,7 @@ diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFra
 diff --git a/layout/mathml/nsMathMLmunderFrame.cpp b/layout/mathml/nsMathMLmunderFrame.cpp
 --- a/layout/mathml/nsMathMLmunderFrame.cpp
 +++ b/layout/mathml/nsMathMLmunderFrame.cpp
-@@ -353,19 +353,21 @@ nsMathMLmunderFrame::Place(nsRenderingCo
+@@ -351,19 +351,21 @@ nsMathMLmunderFrame::Place(nsRenderingCo
               underSize.height - underSize.ascent);
    aDesiredSize.width = mBoundingMetrics.width;
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;

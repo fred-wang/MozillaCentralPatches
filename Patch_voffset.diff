@@ -1,0 +1,93 @@
+# HG changeset patch
+# Parent 1faba7cbc779a203919def0ce4e71a1ea74b03d8
+# User Jonathan Hage <hage.jonathan@gmail.com>
+add support for the voffset attribute part 1
+
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
+--- a/layout/mathml/nsMathMLmpaddedFrame.cpp
++++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
+@@ -88,20 +88,21 @@ nsMathMLmpaddedFrame::InheritAutomaticDa
+ }
+ 
+ void
+ nsMathMLmpaddedFrame::ProcessAttributes()
+ {
+   /*
+   parse the attributes
+ 
+-  width = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | h-unit | namedspace)
+-  height= [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | v-unit)
+-  depth = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | v-unit)
+-  lspace= [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | h-unit)
++  width  = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | h-unit | namedspace)
++  height = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | v-unit | namedspace)
++  depth  = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | v-unit | namedspace)
++  lspace = [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | h-unit | namedspace)
++  voffset= [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | v-unit | namedspace)
+   */
+ 
+   nsAutoString value;
+ 
+   /* The REC says:
+   There is one exceptional element, <mpadded>, whose attributes cannot be 
+   set with <mstyle>. When the attributes width, height and depth are specified
+   on an <mstyle> element, they apply only to the <mspace/> element. Similarly, 
+@@ -132,16 +133,25 @@ nsMathMLmpaddedFrame::ProcessAttributes(
+   }
+ 
+   // lspace
+   mLeftSpaceSign = NS_MATHML_SIGN_INVALID;
+   GetAttribute(mContent, nsnull, nsGkAtoms::lspace_, value);
+   if (!value.IsEmpty()) {
+     ParseAttribute(value, mLeftSpaceSign, mLeftSpace, mLeftSpacePseudoUnit);
+   }
++
++  // voffset
++  mVerticalOffsetSign = NS_MATHML_SIGN_INVALID;
++  GetAttribute(mContent, nsnull, nsGkAtoms::voffset_, value);
++  if (!value.IsEmpty()) {
++    ParseAttribute(value, mVerticalOffsetSign, mVerticalOffset, 
++                   mVerticalOffsetPseudoUnit);
++  }
++  
+ }
+ 
+ // parse an input string in the following format (see bug 148326 for testcases):
+ // [+|-] unsigned-number (% [pseudo-unit] | pseudo-unit | css-unit | namedspace)
+ PRBool
+ nsMathMLmpaddedFrame::ParseAttribute(nsString&   aString,
+                                      PRInt32&    aSign,
+                                      nsCSSValue& aCSSValue,
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.h b/layout/mathml/nsMathMLmpaddedFrame.h
+--- a/layout/mathml/nsMathMLmpaddedFrame.h
++++ b/layout/mathml/nsMathMLmpaddedFrame.h
+@@ -79,26 +79,29 @@ protected:
+   
+   virtual PRIntn GetSkipSides() const { return 0; }
+ 
+ private:
+   nsCSSValue mWidth;
+   nsCSSValue mHeight;
+   nsCSSValue mDepth;
+   nsCSSValue mLeftSpace;
++  nsCSSValue mVerticalOffset;
+ 
+   PRInt32    mWidthSign;
+   PRInt32    mHeightSign;
+   PRInt32    mDepthSign;
+   PRInt32    mLeftSpaceSign;
++  PRInt32    mVerticalOffsetSign;
+ 
+   PRInt32    mWidthPseudoUnit;
+   PRInt32    mHeightPseudoUnit;
+   PRInt32    mDepthPseudoUnit;
+   PRInt32    mLeftSpacePseudoUnit;
++  PRInt32    mVerticalOffsetPseudoUnit;
+ 
+   // helpers to process the attributes
+   void
+   ProcessAttributes();
+ 
+   static PRBool
+   ParseAttribute(nsString&   aString,
+                  PRInt32&    aSign,

@@ -1,0 +1,83 @@
+# HG changeset patch
+# Parent 0ffb2587aae483f4e4729ccccb88da039f1d66de
+# User Jonathan Hage <hage.jonathan@gmail.com>
+add support for the voffset attribute (part 2)
+
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
+--- a/layout/mathml/nsMathMLmpaddedFrame.cpp
++++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
+@@ -406,16 +406,17 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+   // mpadded and surrounding MathML elements is not modified by replacing an
+   // mpadded element with an mrow element with the same content."
+   nscoord lspace = 0;
+   // In MATHML3, "width" will be the bounding box width and "advancewidth" will
+   // refer "to the horizontal distance between the positioning point of the
+   // mpadded and the positioning point for the following content".  MathML2
+   // doesn't make the distinction.
+   nscoord width  = mBoundingMetrics.width;
++  nscoord voffset = 0;
+ 
+   PRInt32 pseudoUnit;
+ 
+   // update width
+   pseudoUnit = (mWidthPseudoUnit == NS_MATHML_PSEUDO_UNIT_ITSELF)
+              ? NS_MATHML_PSEUDO_UNIT_WIDTH : mWidthPseudoUnit;
+   UpdateValue(mWidthSign, pseudoUnit, mWidth,
+               mBoundingMetrics, width);
+@@ -434,47 +435,51 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+ 
+   // update lspace
+   if (mLeftSpacePseudoUnit != NS_MATHML_PSEUDO_UNIT_ITSELF) {
+     pseudoUnit = mLeftSpacePseudoUnit;
+     UpdateValue(mLeftSpaceSign, pseudoUnit, mLeftSpace,
+                 mBoundingMetrics, lspace);
+   }
+ 
++  if (mVerticalOffsetPseudoUnit != NS_MATHML_PSEUDO_UNIT_ITSELF) {
++    pseudoUnit = mVerticalOffsetPseudoUnit;
++    UpdateValue(mVerticalOffsetSign, pseudoUnit, mVerticalOffset,
++                mBoundingMetrics, voffset);
++  }
+   // do the padding now that we have everything
+   // The idea here is to maintain the invariant that <mpadded>...</mpadded> (i.e.,
+   // with no attributes) looks the same as <mrow>...</mrow>. But when there are
+   // attributes, tweak our metrics and move children to achieve the desired visual
+   // effects.
+ 
+   if (mLeftSpaceSign != NS_MATHML_SIGN_INVALID) { // there was padding on the left
+     // dismiss the left italic correction now (so that our parent won't correct us)
+     mBoundingMetrics.leftBearing = 0;
+   }
+ 
+   if (mLeftSpaceSign != NS_MATHML_SIGN_INVALID ||
+       mWidthSign != NS_MATHML_SIGN_INVALID) { // there was padding on the right
+     // dismiss the right italic correction now (so that our parent won't correct us)
+-    mBoundingMetrics.width = NS_MAX(0, lspace + width);
++    mBoundingMetrics.width = width;
+     mBoundingMetrics.rightBearing = mBoundingMetrics.width;
+   }
+ 
+-  nscoord dy = height - mBoundingMetrics.ascent;
+   nscoord dx = lspace;
+ 
+   mBoundingMetrics.ascent = height;
+   mBoundingMetrics.descent = depth;
+ 
+-  aDesiredSize.ascent += dy;
++  aDesiredSize.ascent = mBoundingMetrics.ascent;
+   aDesiredSize.width = mBoundingMetrics.width;
+-  aDesiredSize.height += dy + depth - mBoundingMetrics.descent;
++  aDesiredSize.height = mBoundingMetrics.ascent + mBoundingMetrics.descent;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+   mReference.y = aDesiredSize.ascent;
+ 
+   if (aPlaceOrigin) {
+     // Finish reflowing child frames, positioning their origins.
+-    PositionRowChildFrames(dx, aDesiredSize.ascent);
++    PositionRowChildFrames(dx, aDesiredSize.ascent - voffset);
+   }
+ 
+   return NS_OK;
+ }

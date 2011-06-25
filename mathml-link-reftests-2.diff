@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent a00012b85fafa397de29baf770da252985b71f82
+# Parent 43bab0bb6acd84ef421f665bd48cfc96cc3e6c0c
 # User Frédéric Wang <fred.wang@free.fr>
 Reftest for bug 534968
 
@@ -22,12 +22,12 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -58,8 +58,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
- != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
- == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
- != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
- != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
- == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
+@@ -63,8 +63,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == mpadded-1.html mpadded-1-ref.html
+ == mpadded-2.html mpadded-2-ref.html
+ == mpadded-3.html mpadded-3-ref.html
+ == mpadded-4.html mpadded-4-ref.html
+ == mpadded-5.html mpadded-5-ref.html
  == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
  == mathml-negativespace.html mathml-negativespace-ref.html
  != link-1.xhtml link-ref.xhtml
