@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent de6fd400114430b00fdb12d8df0f592c075d9b41
+# Parent 6ff9e626144c8ff563b3656e2600ecae8708eb23
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -354,7 +354,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -544,59 +552,74 @@ nsMathMLmfracFrame::UpdatePresentationDa
+@@ -544,59 +552,72 @@ nsMathMLmfracFrame::UpdatePresentationDa
      UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
                                        aFlagsValues, aFlagsToUpdate);
  }
@@ -366,7 +366,6 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 -                       nscoord aThickness)
 -    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness) {
 +                       nscoord aThickness, PRBool aRTL)
-+
 +    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness),
 +      mRTL(aRTL) {
      MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
@@ -394,12 +393,11 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
    gfxRect rect = presContext->AppUnitsToGfxUnits(mRect + ToReferenceFrame());
    
    // paint with the current text color
-   aCtx->SetColor(mFrame->GetStyleColor()->mColor);
+   aCtx->SetColor(mFrame->GetVisitedDependentColor(eCSSProperty_color));
   
    // draw the slash as a parallelogram 
    gfxContext *gfxCtx = aCtx->ThebesContext();
    gfxPoint delta = gfxPoint(presContext->AppUnitsToGfxUnits(mThickness), 0);
-+
    gfxCtx->NewPath();
 -  gfxCtx->MoveTo(rect.BottomLeft());
 -  gfxCtx->LineTo(rect.BottomLeft() + delta);
@@ -432,10 +430,10 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 -  
 +
 +  PRBool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
-+ 
++
    return aLists.Content()->AppendNewToTop(new (aBuilder)
 -      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
-+      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
++     nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
  }
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
@@ -525,8 +523,8 @@ diff --git a/layout/mathml/nsMathMLmoverFrame.cpp b/layout/mathml/nsMathMLmoverF
 diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
 --- a/layout/mathml/nsMathMLmpaddedFrame.cpp
 +++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -473,13 +473,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
-   aDesiredSize.height = mBoundingMetrics.ascent + mBoundingMetrics.descent;
+@@ -467,13 +467,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+   mBoundingMetrics.descent = depth;
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
    mReference.x = 0;
