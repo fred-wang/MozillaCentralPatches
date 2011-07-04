@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 0ad37a1a0ff2b2edac5dbeee31bd4b7ca552e885
+# Parent 4ef6446f1b43f819202c1f533af2a4ab13d64499
 # User Frédéric Wang <fred.wang@free.fr>
 [MathML3] Add support for href attribute
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -5045,22 +5045,27 @@ function hrefAndLinkNodeForClickEvent(ev
+@@ -5454,22 +5454,27 @@ function hrefAndLinkNodeForClickEvent(ev
    let node = event.target;
    while (node && !isHTMLLink(node)) {
      node = node.parentNode;
@@ -20,7 +20,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 +  const NS_MathML = "http://www.w3.org/1998/Math/MathML";
    let href, baseURI;
    node = event.target;
-   while (node) {
+   while (node && !href) {
      if (node.nodeType == Node.ELEMENT_NODE) {
 -      href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 +      if (node.namespaceURI == NS_MathML && node.hasAttribute("href")) {

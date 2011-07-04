@@ -11,6 +11,8 @@ mirror-op-1.diff
 mirror-op-2.diff
 mathml-href.diff
 mathml-link-reftests-2.diff
+merge_mover_munder_munderover.diff
+merge_sub_sup_subsup.diff
 ________
 opdict-diagonal-arrows.diff
 mstyle-ms.diff
