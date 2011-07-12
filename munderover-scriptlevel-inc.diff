@@ -1,0 +1,43 @@
+diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
+--- a/layout/mathml/nsMathMLmunderoverFrame.cpp
++++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
+@@ -258,33 +258,37 @@ nsMathMLmunderoverFrame::TransmitAutomat
+      Within overscript, <munderover> always sets displaystyle to "false", 
+      but increments scriptlevel by 1 only when accent is "false".
+  
+      The TeXBook treats 'over' like a superscript, so p.141 or Rule 13a
+      say it shouldn't be compressed. However, The TeXBook says
+      that math accents and \overline change uncramped styles to their
+      cramped counterparts.
+   */
++  PRBool subsupDisplay =
++    NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags)
++    && !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags);
++
+   if (mContent->Tag() == nsGkAtoms::mover_ ||
+       mContent->Tag() == nsGkAtoms::munderover_) {
+     PRUint32 compress = NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)
+       ? NS_MATHML_COMPRESSED : 0;
+     SetIncrementScriptLevel(mContent->Tag() == nsGkAtoms::mover_ ? 1 : 2,
+-                            !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags));
++                            !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags || subsupDisplay));
+     PropagatePresentationDataFor(overscriptFrame,
+                                  ~NS_MATHML_DISPLAYSTYLE | compress,
+                                  NS_MATHML_DISPLAYSTYLE | compress);
+   }
+   /*
+      The TeXBook treats 'under' like a subscript, so p.141 or Rule 13a 
+      say it should be compressed
+   */
+   if (mContent->Tag() == nsGkAtoms::munder_ ||
+       mContent->Tag() == nsGkAtoms::munderover_) {
+-    SetIncrementScriptLevel(1, !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags));
++    SetIncrementScriptLevel(1, !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags || subsupDisplay));
+     PropagatePresentationDataFor(underscriptFrame,
+                                  ~NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED,
+                                  NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED);
+   }
+   return NS_OK;
+ }
+ 
+ /*

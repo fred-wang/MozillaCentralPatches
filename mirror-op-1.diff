@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent d787eacab5d9b7e2150ccc64d1ee6f560cf88aaa
+# Parent b5f3a6a419e122c5cabe49eb11abd2428c0c4922
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1708,24 +1708,28 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1689,24 +1689,28 @@ nsMathMLChar::StretchInternal(nsPresCont
  }
  
  nsresult
@@ -36,7 +36,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Record the metrics
    mBoundingMetrics = aDesiredStretchSize;
-@@ -1806,20 +1810,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
+@@ -1782,20 +1786,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
    }
    nscoord dx = 0, dy = 0;
    for (i = 0, child = mSibling; child; child = child->mSibling, i++) {
@@ -59,7 +59,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      }
      child->SetRect(nsRect(dx, dy, childSize.width, childSize.ascent+childSize.descent));
      if (0 == i)
-@@ -2038,18 +2043,23 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -2014,18 +2019,23 @@ nsMathMLChar::Display(nsDisplayListBuild
          nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                        aSelectedRect && !aSelectedRect->IsEmpty()));
  }
@@ -313,10 +313,10 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
-@@ -355,29 +355,32 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
-     containerSize.ascent = delta + axisHeight;
-     containerSize.descent = delta - axisHeight;
-   }
+@@ -356,29 +356,32 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+                          containerSize.descent + axisHeight);
+   containerSize.ascent = delta + axisHeight;
+   containerSize.descent = delta - axisHeight;
  
    /////////////////
    // opening fence ...
@@ -349,7 +349,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
    i = 0;
    nscoord dx = 0;
    nsBoundingMetrics bm;
-@@ -492,28 +495,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
+@@ -493,28 +496,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
                                   nsMathMLChar*        aMathMLChar,
                                   nsOperatorFlags      aForm,
                                   PRInt32              aScriptLevel,

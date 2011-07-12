@@ -1,0 +1,93 @@
+# HG changeset patch
+# Parent a3378e5810553278b56ffe34d2b6f9bffa9371eb
+# User Frédéric Wang <fred.wang@free.fr>
+Add a reftest to verify the equivalence between munderover with empty scripts and the corresponding mover/munder/mrow constructs.
+
+diff --git a/layout/reftests/mathml/munderover-empty-scripts-ref.html b/layout/reftests/mathml/munderover-empty-scripts-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-empty-scripts-ref.html
+@@ -0,0 +1,34 @@
++<html>
++  <head>
++    <title>Test munderover with empty scripts</title>
++  </head>
++  <body>
++
++    <p>munder / munderover with empty overscript:
++    <math>
++      <munderover style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++        <mtext style="background-color: rgba(0, 255, 0, 0.4);">bbb</mtext>
++        <mspace></mspace>
++      </munderover>
++    </math></p>
++
++    <p>mover / munderover with empty underscript:
++    <math>
++      <munderover style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++        <mspace></mspace>
++        <mtext style="background-color: rgba(0, 255, 0, 0.4);">bbb</mtext>
++      </munderover>
++    </math></p>
++
++    <p>mrow / munder with empty scripts:
++    <math>
++      <munderover style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++        <mspace></mspace>
++        <mspace></mspace>
++      </munderover>
++    </math></p>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munderover-empty-scripts.html b/layout/reftests/mathml/munderover-empty-scripts.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-empty-scripts.html
+@@ -0,0 +1,31 @@
++<html>
++  <head>
++    <title>Test munderover with empty scripts</title>
++  </head>
++  <body>
++
++    <p>munder / munderover with empty overscript:
++    <math>
++      <munder style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++        <mtext style="background-color: rgba(0, 255, 0, 0.4);">bbb</mtext>
++      </munder>
++    </math></p>
++
++    <p>mover / munderover with empty underscript:
++    <math>
++      <mover style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++        <mtext style="background-color: rgba(0, 255, 0, 0.4);">bbb</mtext>
++      </mover>
++    </math></p>
++
++    <p>mrow / munder with empty scripts:
++    <math>
++      <mrow style="background: red;">
++        <mtext style="background-color: rgba(0, 0, 255, 0.4);">AAA</mtext>
++      </mrow>
++    </math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -65,8 +65,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == mpadded-3.html mpadded-3-ref.html
+ == mpadded-4.html mpadded-4-ref.html
+ == mpadded-5.html mpadded-5-ref.html
+ == mpadded-1-2.html mpadded-1-2-ref.html
+ == mpadded-6.html mpadded-6-ref.html
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
+ != link-1.xhtml link-ref.xhtml
++== munderover-empty-scripts.html munderover-empty-scripts-ref.html

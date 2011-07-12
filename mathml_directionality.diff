@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262541153 -3600
 # Node ID 7f8941c192349709b7fcaaf465c915d507d75979
-# Parent 3405f87b9b7a02d5f6329c4add0262471021e994
+# Parent 12a45f229bf5fc4c4ff65d061fde336d24c9f726
 Add a directionality flag on MathML frames (bug 534963). r=karlt
 
 diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
@@ -139,7 +139,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -82,16 +83,50 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
+@@ -83,16 +84,50 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
    case 1:
      aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
      aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
@@ -190,7 +190,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
    mEmbellishData.leftSpace = 0;
    mEmbellishData.rightSpace = 0;
-@@ -102,16 +137,19 @@ nsMathMLFrame::InheritAutomaticData(nsIF
+@@ -103,16 +138,19 @@ nsMathMLFrame::InheritAutomaticData(nsIF
  
    // by default, just inherit the display of our parent
    nsPresentationData parentData;
@@ -210,7 +210,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
    return NS_OK;
  }
  
-@@ -119,19 +157,26 @@ NS_IMETHODIMP
+@@ -120,19 +158,26 @@ NS_IMETHODIMP
  nsMathMLFrame::UpdatePresentationData(PRUint32        aFlagsValues,
                                        PRUint32        aWhichFlags)
  {
@@ -239,8 +239,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
        // 'compressed' means 'prime' style in App. G, TeXbook
        mPresentationData.flags |= NS_MATHML_COMPRESSED;
      }
-@@ -214,16 +259,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
-     if (!content)
+@@ -216,16 +261,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
        break;
  
      if (content->Tag() == nsGkAtoms::math) {
@@ -248,6 +247,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
        if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK) {
          aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
        }
+       FindAttrDisplaystyle(content, aPresentationData);
 +      FindAttrDirectionality(content, aPresentationData);
        aPresentationData.mstyle = frame->GetFirstContinuation();
        break;

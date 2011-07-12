@@ -2,7 +2,7 @@
 # User Boris Zbarsky <bzbarsky@mit.edu>
 # Date 1309371325 14400
 # Node ID 23729bbb8153ee2834bc09f845b59225afc5acd6
-# Parent 3ba159069e63d909c5593cfeaf6e9fa71741b6cf
+# Parent 4e6e3d47c7ccdae873319245172af39ebbba6651
 Bug 667576.  Handle visited colors correctly in MathML.  r=dbaron
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
@@ -30,7 +30,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -508,17 +508,17 @@ public:
+@@ -510,17 +510,17 @@ public:
  private:
    nsRect    mRect;
  };
@@ -105,7 +105,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
  == mathml-negativespace.html mathml-negativespace-ref.html
  != link-1.xhtml link-ref.xhtml
-++== visited-styling.html visited-styling-ref.html
++== visited-styling.html visited-styling-ref.html
 diff --git a/layout/reftests/mathml/visited-styling-ref.html b/layout/reftests/mathml/visited-styling-ref.html
 new file mode 100644
 --- /dev/null

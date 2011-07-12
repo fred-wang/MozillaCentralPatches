@@ -1,0 +1,79 @@
+# HG changeset patch
+# Parent 34e0217724ac1accb1a0c79b5bbe0e80b471146f
+# User Jonathan Hage <hage.jonathan@gmail.com>
+In <munderover accent=true> the scriptlevel of the over child is not
+incremented, even when rendered as a supscript (reftest)
+
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -67,8 +67,9 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == mpadded-5.html mpadded-5-ref.html
+ == mpadded-1-2.html mpadded-1-2-ref.html
+ == mpadded-6.html mpadded-6-ref.html
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
+ != link-1.xhtml link-ref.xhtml
+ == munderover-empty-scripts.html munderover-empty-scripts-ref.html
+ == visited-styling.html visited-styling-ref.html
++== scriptlevel.html scriptlevel-ref.html
+diff --git a/layout/reftests/mathml/scriptlevel-ref.html b/layout/reftests/mathml/scriptlevel-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/scriptlevel-ref.html
+@@ -0,0 +1,25 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test accent/accentunder</title></head>
++  <body>    
++    <math>
++      <munderover>
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++	<mi>b</mi>
++      </munderover>
++    </math>
++    <math>
++      <munder>
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++      </munder>
++    </math>
++    <math>
++      <mover>
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++      </mover>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/scriptlevel.html b/layout/reftests/mathml/scriptlevel.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/scriptlevel.html
+@@ -0,0 +1,25 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test accent/accentunder</title></head>
++  <body>
++    <math>
++      <munderover accentunder="true" accent="true">
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++	<mi>b</mi>
++      </munderover>
++    </math>
++    <math>
++      <munder accentunder="true">
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++      </munder>
++    </math>
++    <math>
++      <mover accent="true">
++	<mo>&#x2211;</mo>
++	<mi>a</mi>
++      </mover>
++    </math>
++  </body>
++</html>

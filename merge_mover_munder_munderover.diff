@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ebd3f49c0758780661a3223a5847a4acec8282cf
+# Parent c2cf489ca9fcbc584ca8bb4345058dec7b2e2616
 # User Jonathan Hage <hage.jonathan@gmail.com>
 Merge nsMathMLmunderFrame and nsMathMLmoverFrame into nsMathMLmunderoverFrame
 
@@ -1053,7 +1053,26 @@ deleted file mode 100644
 diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
 --- a/layout/mathml/nsMathMLmunderoverFrame.cpp
 +++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
-@@ -168,62 +168,82 @@ nsMathMLmunderoverFrame::TransmitAutomat
+@@ -45,16 +45,18 @@
+ #include "nsPresContext.h"
+ #include "nsStyleContext.h"
+ #include "nsStyleConsts.h"
+ #include "nsINameSpaceManager.h"
+ #include "nsRenderingContext.h"
+ 
+ #include "nsMathMLmunderoverFrame.h"
+ #include "nsMathMLmsubsupFrame.h"
++#include "nsMathMLmsupFrame.h"
++#include "nsMathMLmsubFrame.h"
+ 
+ //
+ // <munderover> -- attach an underscript-overscript pair to a base - implementation
+ //
+ 
+ nsIFrame*
+ NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+ {
+@@ -168,62 +170,82 @@ nsMathMLmunderoverFrame::TransmitAutomat
    same manner as described for those elements, with the default
    value of accent depending on overscript and the default value
    of accentunder depending on underscript.
@@ -1164,7 +1183,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
        !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags))
      mPresentationData.flags &= ~NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
  
-@@ -238,32 +258,37 @@ nsMathMLmunderoverFrame::TransmitAutomat
+@@ -238,32 +260,37 @@ nsMathMLmunderoverFrame::TransmitAutomat
       Within overscript, <munderover> always sets displaystyle to "false", 
       but increments scriptlevel by 1 only when accent is "false".
   
@@ -1214,7 +1233,8 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  *  If the base is an operator with movablelimits="true" (or an embellished
     operator whose <mo> element core has movablelimits="true"), and
     displaystyle="false", then underscript and overscript are drawn in
-@@ -283,46 +308,84 @@ i.e.,:
+@@ -282,47 +309,94 @@ i.e.,:
+ */
  
  /* virtual */ nsresult
  nsMathMLmunderoverFrame::Place(nsRenderingContext& aRenderingContext,
@@ -1222,25 +1242,42 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
                                 nsHTMLReflowMetrics& aDesiredSize)
  {
    if ( NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
-       !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags)) {
-+    nsIAtom* Tag;
-+    if (mContent->Tag() == nsGkAtoms::munderover_) {
-+      Tag = nsGkAtoms::msubsup_;
-+    } else if (mContent->Tag() == nsGkAtoms::munder_) {
-+      Tag = nsGkAtoms::msub_;
-+    } else if (mContent->Tag() == nsGkAtoms::mover_) {
-+      Tag = nsGkAtoms::msup_;
-+    }
-     // place like sub-superscript pair
-     return nsMathMLmsubsupFrame::PlaceSubSupScript(PresContext(),
-                                                    aRenderingContext,
-                                                    aPlaceOrigin,
-                                                    aDesiredSize,
+-      !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags)) {
+-    // place like sub-superscript pair
+-    return nsMathMLmsubsupFrame::PlaceSubSupScript(PresContext(),
+-                                                   aRenderingContext,
+-                                                   aPlaceOrigin,
+-                                                   aDesiredSize,
 -                                                   this, 0, 0,
-+                                                   this, Tag, 0, 0,
-                                                    nsPresContext::CSSPointsToAppUnits(0.5f));
+-                                                   nsPresContext::CSSPointsToAppUnits(0.5f));
++       !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags)) {
++    //place like sub sup or subsup
++    if (mContent->Tag() == nsGkAtoms::munderover_) {
++      return nsMathMLmsubsupFrame::PlaceSubSupScript(PresContext(),
++                                                     aRenderingContext,
++                                                     aPlaceOrigin,
++                                                     aDesiredSize,
++                                                     this, 0, 0,
++                                                     nsPresContext::CSSPointsToAppUnits(0.5f));
++    } else if (mContent->Tag() == nsGkAtoms::munder_) {
++      return nsMathMLmsubFrame::PlaceSubScript(PresContext(),
++                                               aRenderingContext,
++                                               aPlaceOrigin,
++                                               aDesiredSize,
++                                               this, 0,
++                                               nsPresContext::CSSPointsToAppUnits(0.5f));
++    } else if (mContent->Tag() == nsGkAtoms::mover_) {
++      return nsMathMLmsupFrame::PlaceSuperScript(PresContext(),
++                                               aRenderingContext,
++                                               aPlaceOrigin,
++                                               aDesiredSize,
++                                               this, 0,
++                                               nsPresContext::CSSPointsToAppUnits(0.5f));
++    }
++    
    }
- 
+-
++  
    ////////////////////////////////////
    // Get the children's desired sizes
  
@@ -1308,7 +1345,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  
    aRenderingContext.SetFont(GetStyleFont()->mFont,
                              PresContext()->GetUserFontSet());
-@@ -477,19 +540,28 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -477,19 +551,28 @@ nsMathMLmunderoverFrame::Place(nsRenderi
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
    mReference.x = 0;

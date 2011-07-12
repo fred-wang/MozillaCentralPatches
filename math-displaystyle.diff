@@ -1,0 +1,49 @@
+--- a/layout/mathml/nsMathMLFrame.cpp	
++++ a/layout/mathml/nsMathMLFrame.cpp	
+@@ -57,24 +57,25 @@ nsMathMLFrame::GetMathMLFrameType()
+   // if it has a prescribed base, fetch the type from there
+   if (mPresentationData.baseFrame)
+     return GetMathMLFrameTypeFor(mPresentationData.baseFrame);
+ 
+   // everything else is treated as ordinary (mapped to 'Ord' in TeX)
+   return eMathMLFrameType_Ordinary;  
+ }
+ 
+-// snippet of code used by <mstyle> and <mtable>, which are the only
+-// two tags where the displaystyle attribute is allowed by the spec.
++// snippet of code used by <mstyle>, <mtable> and <math> which are the only
++// three tags where the displaystyle attribute is allowed by the spec.
+ /* static */ void
+ nsMathMLFrame::FindAttrDisplaystyle(nsIContent*         aContent,
+                                     nsPresentationData& aPresentationData)
+ {
+   NS_ASSERTION(aContent->Tag() == nsGkAtoms::mstyle_ ||
+-               aContent->Tag() == nsGkAtoms::mtable_, "bad caller");
++               aContent->Tag() == nsGkAtoms::mtable_ ||
++               aContent->Tag() == nsGkAtoms::math, "bad caller");
+   static nsIContent::AttrValuesArray strings[] =
+     {&nsGkAtoms::_false, &nsGkAtoms::_true, nsnull};
+   // see if the explicit displaystyle attribute is there
+   switch (aContent->FindAttrValueIn(kNameSpaceID_None,
+     nsGkAtoms::displaystyle_, strings, eCaseMatters)) {
+   case 0:
+     aPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
+     aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
+@@ -214,16 +215,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
+     if (!content)
+       break;
+ 
+     if (content->Tag() == nsGkAtoms::math) {
+       const nsStyleDisplay* display = frame->GetStyleDisplay();
+       if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK) {
+         aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+       }
++      FindAttrDisplaystyle(content, aPresentationData);
+       aPresentationData.mstyle = frame->GetFirstContinuation();
+       break;
+     }
+     frame = frame->GetParent();
+   }
+   NS_WARN_IF_FALSE(frame && frame->GetContent(),
+                    "bad MathML markup - could not find the top <math> element");
+ }
