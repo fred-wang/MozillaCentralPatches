@@ -1,0 +1,150 @@
+# HG changeset patch
+# Parent f882967aa364f7fce77837022930ece50abf7a2d
+# User Jonathan Hage <hage.jonathan@gmail.com>
+munder, mover, munderover: add support for the align
+
+diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
+--- a/layout/mathml/nsMathMLmunderoverFrame.cpp
++++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
+@@ -19,16 +19,17 @@
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Shyjan Mahamud <mahamud@cs.cmu.edu>
+  *   Pierre Phaneuf <pp@ludusdesign.com>
++ *   Jonathan Hage <hage.jonathan@gmail.com>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -515,38 +516,77 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+       overDelta1 += xHeight - bmBase.ascent;
+     }
+     overDelta2 = ruleThickness;
+   }
+   // empty over?
+   if (!(bmOver.ascent + bmOver.descent)) overDelta1 = 0;
+ 
+   nscoord dxBase, dxOver = 0, dxUnder = 0;
++  nsAutoString value_align;
+ 
+   //////////
+   // pass 1, do what <mover> does: attach the overscript on the base
+ 
+   // Ad-hoc - This is to override fonts which have ready-made _accent_
+   // glyphs with negative lbearing and rbearing. We want to position
+   // the overscript ourselves
++  PRBool getattribute =
++    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::align,
++                 value_align);
++
++  enum Align_Attribute {
++    center,
++    left,
++    right
++  } align_position;
++
++  if(getattribute) {
++    if (value_align.EqualsLiteral("right")){
++      align_position = right;
++    } else if (value_align.EqualsLiteral("left")){
++      align_position = left;
++    } else {
++      align_position = center;
++    }
++  } else {
++    align_position = center;
++  }
++  mBoundingMetrics.width = NS_MAX (bmBase.width, bmUnder.width);
++  mBoundingMetrics.width = NS_MAX (mBoundingMetrics.width, bmOver.width);
+   nscoord overWidth = bmOver.width;
+   if (!overWidth && (bmOver.rightBearing - bmOver.leftBearing > 0)) {
+     overWidth = bmOver.rightBearing - bmOver.leftBearing;
+     dxOver = -bmOver.leftBearing;
+   }
+ 
+   if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+-    mBoundingMetrics.width = bmBase.width; 
+-    dxOver += correction + (mBoundingMetrics.width - overWidth)/2;
++    if (align_position == center) {
++      dxOver += correction + (mBoundingMetrics.width - overWidth)/2;
++      dxBase = (mBoundingMetrics.width - bmBase.width)/2;
++    } else if (align_position == left) {
++      dxOver += correction;
++      dxBase = 0;
++    } else {
++      dxOver += correction + (mBoundingMetrics.width - overWidth);
++      dxBase = mBoundingMetrics.width - bmBase.width;
++    }
+   }
+   else {
+-    mBoundingMetrics.width = NS_MAX(bmBase.width, overWidth);
+-    dxOver += correction/2 + (mBoundingMetrics.width - overWidth)/2;
++    if (align_position == center) {
++      dxOver += correction/2 + (mBoundingMetrics.width - overWidth)/2;
++      dxBase = (mBoundingMetrics.width - bmBase.width)/2;
++    } else if (align_position == left) {
++      dxOver += correction/2;
++      dxBase = 0;
++    } else {
++      dxOver += correction/2 + (mBoundingMetrics.width - overWidth);
++      dxBase = mBoundingMetrics.width - bmBase.width;
++    }
+   }
+-  dxBase = (mBoundingMetrics.width - bmBase.width)/2;
+ 
+   mBoundingMetrics.ascent = 
+     bmBase.ascent + overDelta1 + bmOver.ascent + bmOver.descent;
+   mBoundingMetrics.descent = bmBase.descent;
+   mBoundingMetrics.leftBearing = 
+     NS_MIN(dxBase + bmBase.leftBearing, dxOver + bmOver.leftBearing);
+   mBoundingMetrics.rightBearing = 
+     NS_MAX(dxBase + bmBase.rightBearing, dxOver + bmOver.rightBearing);
+@@ -570,20 +610,38 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+   nscoord underWidth = bmUnder.width;
+   if (!underWidth) {
+     underWidth = bmUnder.rightBearing - bmUnder.leftBearing;
+     dxUnder = -bmUnder.leftBearing;
+   }
+ 
+   nscoord maxWidth = NS_MAX(bmAnonymousBase.width, underWidth);
+   if (NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
+-    dxUnder += (maxWidth - underWidth)/2;;
++    if (align_position == center) {
++      dxUnder += (maxWidth - underWidth)/2;
++      dxBase = (mBoundingMetrics.width - bmBase.width)/2;
++    } else if (align_position == left) {
++      dxUnder += 0;
++      dxBase = 0;
++    } else {
++      dxUnder += (mBoundingMetrics.width - underWidth);
++      dxBase = (mBoundingMetrics.width - bmBase.width);
++    }  
+   }
+   else {
+-    dxUnder += -correction/2 + (maxWidth - underWidth)/2;
++    if (align_position == center) {
++      dxUnder += -correction/2 + (maxWidth - underWidth)/2;
++      dxBase = (mBoundingMetrics.width - bmBase.width)/2;
++    } else if (align_position == left) {
++      dxUnder += -correction/2;
++      dxBase = 0;
++    } else {
++      dxUnder += -correction/2 + (mBoundingMetrics.width - underWidth);
++      dxBase = mBoundingMetrics.width - bmBase.width;
++    }  
+   }
+   nscoord dxAnonymousBase = (maxWidth - bmAnonymousBase.width)/2;
+ 
+   // adjust the offsets of the real base and overscript since their
+   // final offsets should be relative to us...
+   dxOver += dxAnonymousBase;
+   dxBase += dxAnonymousBase;
+ 

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 411bdcc59cf0352c06d7c4606cde12308af33898
+# Parent cef1817c3b13bcb5065b721a35dee94a2940e339
 # User Frédéric Wang <fred.wang@free.fr>
 munderover: consider munder vertical metrics during the munder attachment phase instead of the mover attachment phase.
 

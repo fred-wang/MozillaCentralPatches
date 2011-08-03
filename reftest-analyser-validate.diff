@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 414b73876e89df47dc8316850bfe96b51ef0de21
+# Parent b83891a3279fe2c8e0eac95338ec716b3266b193
 # User Frédéric Wang <fred.wang@free.fr>
 Make reftest-analyzer.xhtml validate as XHTML5. r=dbaron
 
@@ -54,26 +54,3 @@ diff --git a/layout/tools/reftest/reftest-analyzer.xhtml b/layout/tools/reftest/
            <feImage id="feimage2" result="img2" xlink:href="#image2" />
            <!-- inv1 and inv2 are the images with RGB inverted -->
            <feComponentTransfer result="inv1" in="img1">
-@@ -571,18 +573,20 @@ function show_pixelinfo(x, y, pix1rgb, p
-           <feFlood result="black" flood-color="black" flood-opacity="0.5" />
-           <feMerge>
-             <feMergeNode in="black" />
-             <feMergeNode in="redhighlight" />
-           </feMerge>
-         </filter>
-       </defs>
-       <g onmousemove="magnify(evt)">
--        <image x="0" y="0" width="100%" height="100%" id="image1" />
--        <image x="0" y="0" width="100%" height="100%" id="image2" />
-+        <image x="0" y="0" width="100%" height="100%" id="image1"
-+               xlink:href="" />
-+        <image x="0" y="0" width="100%" height="100%" id="image2"
-+               xlink:href="" />
-       </g>
-       <rect id="diffrect" filter="url(#showDifferences)" pointer-events="none" x="0" y="0" width="100%" height="100%" />
-     </svg>
-   </div>
- </div>
- 
- </body>
- </html>

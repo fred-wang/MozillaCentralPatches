@@ -1,0 +1,67 @@
+# HG changeset patch
+# Parent 5e06bc75810169c0ff03d70cb384af8bd3053f07
+# User Jonathan Hage <hage.jonathan@gmail.com>
+In <munderover accent=true> the scriptlevel of the over child is not incremented, even when rendered as a supscript
+
+diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
+--- a/layout/mathml/nsMathMLmunderoverFrame.cpp
++++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
+@@ -257,20 +257,24 @@ XXX The winner is the outermost setting 
+       if (value.EqualsLiteral("true")) {
+         mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
+       } else if (value.EqualsLiteral("false")) {
+         mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
+       }
+     }
+   }
+ 
++  PRBool subsupDisplay =
++    NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
++    !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags);
++
+   // disable the stretch-all flag if we are going to act like a superscript
+-  if ( NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
+-      !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags))
++  if (subsupDisplay) {
+     mPresentationData.flags &= ~NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
++  }
+ 
+   // Now transmit any change that we want to our children so that they
+   // can update their mPresentationData structs
+   //---------------------------------------------------------------------
+ 
+   /* The REC says:
+      Within underscript, <munderover> always sets displaystyle to "false",
+      but increments scriptlevel by 1 only when accentunder is "false". 
+@@ -283,28 +287,28 @@ XXX The winner is the outermost setting 
+      that math accents and \overline change uncramped styles to their
+      cramped counterparts.
+   */
+   if (tag == nsGkAtoms::mover_ ||
+       tag == nsGkAtoms::munderover_) {
+     PRUint32 compress = NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)
+       ? NS_MATHML_COMPRESSED : 0;
+     SetIncrementScriptLevel(tag == nsGkAtoms::mover_ ? 1 : 2,
+-                            !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags));
++                            !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags || subsupDisplay));
+     PropagatePresentationDataFor(overscriptFrame,
+                                  ~NS_MATHML_DISPLAYSTYLE | compress,
+                                  NS_MATHML_DISPLAYSTYLE | compress);
+   }
+   /*
+      The TeXBook treats 'under' like a subscript, so p.141 or Rule 13a 
+      say it should be compressed
+   */
+   if (tag == nsGkAtoms::munder_ ||
+       tag == nsGkAtoms::munderover_) {
+-    SetIncrementScriptLevel(1, !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags));
++    SetIncrementScriptLevel(1, !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags || subsupDisplay));
+     PropagatePresentationDataFor(underscriptFrame,
+                                  ~NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED,
+                                  NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED);
+   }
+   return NS_OK;
+ }
+ 
+ /*
+

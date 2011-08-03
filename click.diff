@@ -1,0 +1,272 @@
+# HG changeset patch
+# Parent 51aa502950710b04a1b56a56d19bb0467705e824
+# User Marco Bonardo <mbonardo@mozilla.com>
+
+diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
+--- a/browser/base/content/browser.js
++++ b/browser/base/content/browser.js
+@@ -5432,16 +5432,15 @@ function asyncOpenWebPanel(event)
+  */
+ 
+ /**
+- * Extracts linkNode and href for the current click target.
++ * Extracts linkNode and href for the passed in element.
+  *
+- * @param event
+- *        The click event.
++ * @param aElement
++ *        The element to extract the information from.
+  * @return [href, linkNode].
+  *
+- * @note linkNode will be null if the click wasn't on an anchor
+- *       element (or XLink).
++ * @note linkNode will be null if element wasn't an anchor element.
+  */
+-function hrefAndLinkNodeForClickEvent(event)
++function hrefAndLinkNodeForElement(aElement)
+ {
+   function isHTMLLink(aNode)
+   {
+@@ -5451,7 +5450,7 @@ function hrefAndLinkNodeForClickEvent(ev
+             aNode instanceof HTMLLinkElement);
+   }
+ 
+-  let node = event.target;
++  let node = aElement;
+   while (node && !isHTMLLink(node)) {
+     node = node.parentNode;
+   }
+@@ -5459,12 +5458,18 @@ function hrefAndLinkNodeForClickEvent(ev
+   if (node)
+     return [node.href, node];
+ 
+-  // If there is no linkNode, try simple XLink.
++  // If there is no linkNode, try MathML link or simple XLink.
+   let href, baseURI;
+-  node = event.target;
++  node = aElement;
+   while (node && !href) {
+     if (node.nodeType == Node.ELEMENT_NODE) {
+-      href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
++      // MathML3 allows to define a href attribute, that has priority on XLinks.
++      if (node.namespaceURI == "http://www.w3.org/1998/Math/MathML" &&
++          node.hasAttribute("href")) {
++        href = node.getAttribute("href");
++      } else {
++        href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
++      }
+       if (href)
+         baseURI = node.baseURI;
+     }
+@@ -5490,7 +5495,7 @@ function contentAreaClick(event, isPanel
+   if (!event.isTrusted || event.getPreventDefault() || event.button == 2)
+     return true;
+ 
+-  let [href, linkNode] = hrefAndLinkNodeForClickEvent(event);
++  let [href, linkNode] = hrefAndLinkNodeForElement(event.target);
+   if (!href) {
+     // Not a link, handle middle mouse navigation.
+     if (event.button == 1 &&
+diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsContextMenu.js
+--- a/browser/base/content/nsContextMenu.js
++++ b/browser/base/content/nsContextMenu.js
+@@ -418,6 +418,10 @@ nsContextMenu.prototype = {
+     this.showItem("context-media-sep-commands",  onMedia);
+   },
+ 
++  get onLink() !!this.link,
++  get onMailtoLink() this.linkProtocol === "mailto",
++  get onSaveableLink() this.onLink && this.isLinkSaveable(this.link),
++
+   // Set various context menu attributes based on the state of the world.
+   setTarget: function (aNode, aRangeParent, aRangeOffset) {
+     const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+@@ -439,9 +443,6 @@ nsContextMenu.prototype = {
+     this.onTextInput       = false;
+     this.onKeywordField    = false;
+     this.mediaURL          = "";
+-    this.onLink            = false;
+-    this.onMailtoLink      = false;
+-    this.onSaveableLink    = false;
+     this.link              = null;
+     this.linkURL           = "";
+     this.linkURI           = null;
+@@ -539,25 +540,15 @@ nsContextMenu.prototype = {
+     var elem = this.target;
+     while (elem) {
+       if (elem.nodeType == Node.ELEMENT_NODE) {
+-        // Link?
+-        if (!this.onLink &&
+-            // Be consistent with what hrefAndLinkNodeForClickEvent
+-            // does in browser.js
+-             ((elem instanceof HTMLAnchorElement && elem.href) ||
+-              (elem instanceof HTMLAreaElement && elem.href) ||
+-              elem instanceof HTMLLinkElement ||
+-              elem.getAttributeNS("http://www.w3.org/1999/xlink", "type") == "simple")) {
+-
+-          // Target is a link or a descendant of a link.
+-          this.onLink = true;
+-
+-          // Remember corresponding element.
+-          this.link = elem;
+-          this.linkURL = this.getLinkURL();
+-          this.linkURI = this.getLinkURI();
+-          this.linkProtocol = this.getLinkProtocol();
+-          this.onMailtoLink = (this.linkProtocol == "mailto");
+-          this.onSaveableLink = this.isLinkSaveable( this.link );
++        if (!this.onLink) {
++          let [href, linkNode] = hrefAndLinkNodeForElement(elem);
++          if (href) {
++            // Target is a link or a descendant of a link.
++            this.link = elem;
++            this.linkURL = href;
++            this.linkURI = makeURI(href);
++            this.linkProtocol = this.linkURI.scheme;
++          }
+         }
+ 
+         // Background image?  Don't bother if we've already found a
+@@ -1133,40 +1124,11 @@ nsContextMenu.prototype = {
+   },
+ 
+   // Generate fully qualified URL for clicked-on link.
+-  getLinkURL: function() {
+-    var href = this.link.href;  
+-    if (href)
+-      return href;
++  getLinkURL: function() this.linkURL,
+ 
+-    href = this.link.getAttributeNS("http://www.w3.org/1999/xlink",
+-                                    "href");
++  getLinkURI: function() this.linkURI,
+ 
+-    if (!href || !href.match(/\S/)) {
+-      // Without this we try to save as the current doc,
+-      // for example, HTML case also throws if empty
+-      throw "Empty href";
+-    }
+-
+-    return makeURLAbsolute(this.link.baseURI, href);
+-  },
+-
+-  getLinkURI: function() {
+-    try {
+-      return makeURI(this.linkURL);
+-    }
+-    catch (ex) {
+-     // e.g. empty URL string
+-    }
+-
+-    return null;
+-  },
+-
+-  getLinkProtocol: function() {
+-    if (this.linkURI)
+-      return this.linkURI.scheme; // can be |undefined|
+-
+-    return null;
+-  },
++  getLinkProtocol: function() this.linkProtocol, // can be |undefined|
+ 
+   // Get text of link.
+   linkText: function() {
+diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/base/content/test/browser_contentAreaClick.js
+--- a/browser/base/content/test/browser_contentAreaClick.js
++++ b/browser/base/content/test/browser_contentAreaClick.js
+@@ -53,7 +53,8 @@ let gTests = [
+     setup: function() {},
+     clean: function() {},
+     event: {},
+-    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink" ],
++    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [],
+     preventDefault: false,
+   },
+@@ -64,7 +65,8 @@ let gTests = [
+     clean: function() {},
+     event: { ctrlKey: true,
+              metaKey: true },
+-    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink" ],
++    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
+     preventDefault: true,
+   },
+@@ -88,7 +90,8 @@ let gTests = [
+     clean: function() {},
+     event: { shiftKey: true,
+              altKey: true },
+-    targets: [ "mathxlink", "svgxlink"],
++    targets: [ "mathxlink", "svgxlink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "saveURL" ],
+     preventDefault: true,
+   },
+@@ -98,7 +101,8 @@ let gTests = [
+     setup: function() {},
+     clean: function() {},
+     event: { shiftKey: true },
+-    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink" ],
++    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
+     preventDefault: true,
+   },
+@@ -118,7 +122,8 @@ let gTests = [
+     setup: function() {},
+     clean: function() {},
+     event: { altKey: true },
+-    targets: [ "mathxlink", "svgxlink" ],
++    targets: [ "mathxlink", "svgxlink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "saveURL" ],
+     preventDefault: true,
+   },
+@@ -138,7 +143,8 @@ let gTests = [
+     setup: function() {},
+     clean: function() {},
+     event: { button: 1 },
+-    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink" ],
++    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
+     preventDefault: true,
+   },
+@@ -154,7 +160,8 @@ let gTests = [
+       } catch(ex) {}
+     },
+     event: { button: 1 },
+-    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink" ],
++    targets: [ "commonlink", "mathxlink", "svgxlink", "maplink",
++               "mathhref", "mathhrefnested", "mathxlinkandhref" ],
+     expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
+     preventDefault: true,
+   },
+@@ -259,8 +266,13 @@ let gClickHandler = {
+ function wrapperMethod(aInvokedMethods, aMethodName) {
+   return function () {
+     aInvokedMethods.push(aMethodName);
++
+     // At least getShortcutOrURI requires to return url that is the first param.
+-    return arguments[0];
++    let maybeURL = arguments[0];
++    if (/^http/.test(maybeURL)) {
++      is(maybeURL, "http://mochi.test/moz/", "The correct URL was requested");
++    }
++    return maybeURL;
+   }
+ }
+ 
+@@ -283,7 +295,10 @@ function setupTestBrowserWindow() {
+     '<p><a id="emptylink">Empty link</a></p>' +
+     '<p><math id="mathxlink" xmlns="http://www.w3.org/1998/Math/MathML" xlink:type="simple" xlink:href="http://mochi.test/moz/"><mtext>MathML XLink</mtext></math></p>' +
+     '<p><svg id="svgxlink" xmlns="http://www.w3.org/2000/svg" width="100px" height="50px" version="1.1"><a xlink:type="simple" xlink:href="http://mochi.test/moz/"><text transform="translate(10, 25)">SVG XLink</text></a></svg></p>' +
+-    '<p><map name="map" id="map"><area href="http://mochi.test/moz/" shape="rect" coords="0,0,128,128" /></map><img id="maplink" usemap="#map" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAAABGdBTUEAALGPC%2FxhBQAAAOtJREFUeF7t0IEAAAAAgKD9qRcphAoDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGBgwIAAAT0N51AAAAAASUVORK5CYII%3D"/></p>'
++    '<p><map name="map" id="map"><area href="http://mochi.test/moz/" shape="rect" coords="0,0,128,128" /></map><img id="maplink" usemap="#map" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAAABGdBTUEAALGPC%2FxhBQAAAOtJREFUeF7t0IEAAAAAgKD9qRcphAoDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGBgwIAAAT0N51AAAAAASUVORK5CYII%3D"/></p>' +
++    '<p><math id="mathhref" xmlns="http://www.w3.org/1998/Math/MathML" href="http://mochi.test/moz/"><mtext>MathML href</mtext></math></p>' +
++    '<p><math id="mathhrefnested" xmlns="http://www.w3.org/1998/Math/MathML"><mtext href="http://mochi.test/moz/">MathML href</mtext></math></p>' +
++    '<p><math id="mathxlinkandhref" xmlns="http://www.w3.org/1998/Math/MathML"><mtext xlink:href="http://mochi.test/wrong_link/" href="http://mochi.test/moz/">MathML href</mtext></math></p>'
+   doc.body.appendChild(mainDiv);
+ }
+ 

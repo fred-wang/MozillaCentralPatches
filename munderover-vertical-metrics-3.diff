@@ -1,0 +1,52 @@
+# HG changeset patch
+# Parent aaa05f1cad4ceed2f33f9a1e0482ad4137688992
+# User Frédéric Wang <fred.wang@free.fr>
+munderover: do not add space above/below the over/under script when this one has its dimensions set to zero
+
+diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
+--- a/layout/mathml/nsMathMLmunderoverFrame.cpp
++++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
+@@ -453,17 +453,20 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+     // No corresponding rule in TeXbook - we are on our own here
+     // XXX tune the gap delta between base and underscript 
+ 
+     // Should we use Rule 10 like \underline does?
+     underDelta1 = ruleThickness + onePixel/2;
+     underDelta2 = ruleThickness;
+   }
+   // empty under?
+-  if (!(bmUnder.ascent + bmUnder.descent)) underDelta1 = 0;
++  if (!(bmUnder.ascent + bmUnder.descent)) {
++    underDelta1 = 0;
++    underDelta2 = 0;
++  }
+ 
+   nscoord overDelta1 = 0; // gap between base and overscript
+   nscoord overDelta2 = 0; // extra space above overscript
+ 
+   if (!NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {    
+     // Rule 13a, App. G, TeXbook
+     nscoord bigOpSpacing1, bigOpSpacing3, bigOpSpacing5, dummy; 
+     GetBigOpSpacings (fm, 
+@@ -512,17 +515,20 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+     overDelta1 = ruleThickness + onePixel/2;
+     if (bmBase.ascent < xHeight) { 
+       // also ensure at least x-height above the baseline of the base
+       overDelta1 += xHeight - bmBase.ascent;
+     }
+     overDelta2 = ruleThickness;
+   }
+   // empty over?
+-  if (!(bmOver.ascent + bmOver.descent)) overDelta1 = 0;
++  if (!(bmOver.ascent + bmOver.descent)) {
++    overDelta1 = 0;
++    overDelta2 = 0;
++  }
+ 
+   nscoord dxBase, dxOver = 0, dxUnder = 0;
+   nsAutoString value_align;
+ 
+   //////////
+   // pass 1, do what <mover> does: attach the overscript on the base
+ 
+   // Ad-hoc - This is to override fonts which have ready-made _accent_

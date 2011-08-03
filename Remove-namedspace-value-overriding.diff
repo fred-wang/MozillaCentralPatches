@@ -1,0 +1,702 @@
+# HG changeset patch
+# Parent 3c3a3eebeb8fadf8fe46abd547519d57dafb45c1
+# User Jonathan Hage <hage.jonathan@gmail.com>
+Remove namedspace value overriding
+
+diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
+--- a/content/base/src/nsGkAtomList.h
++++ b/content/base/src/nsGkAtomList.h
+@@ -1577,23 +1577,16 @@ GK_ATOM(msubsup_, "msubsup")
+ GK_ATOM(msup_, "msup")
+ GK_ATOM(mtable_, "mtable")
+ GK_ATOM(mtd_, "mtd")
+ GK_ATOM(mtext_, "mtext")
+ GK_ATOM(mtr_, "mtr")
+ GK_ATOM(munder_, "munder")
+ GK_ATOM(munderover_, "munderover")
+ GK_ATOM(naturalnumbers_, "naturalnumbers")
+-GK_ATOM(negativemediummathspace_, "negativemediummathspace")
+-GK_ATOM(negativethickmathspace_, "negativethickmathspace")
+-GK_ATOM(negativethinmathspace_, "negativethinmathspace")
+-GK_ATOM(negativeverythickmathspace_, "negativeverythickmathspace")
+-GK_ATOM(negativeverythinmathspace_, "negativeverythinmathspace")
+-GK_ATOM(negativeveryverythickmathspace_, "negativeveryverythickmathspace")
+-GK_ATOM(negativeveryverythinmathspace_, "negativeveryverythinmathspace")
+ GK_ATOM(neq_, "neq")
+ GK_ATOM(notanumber_, "notanumber")
+ GK_ATOM(notation_, "notation")
+ GK_ATOM(note_, "note")
+ GK_ATOM(notin_, "notin")
+ GK_ATOM(notprsubset_, "notprsubset")
+ GK_ATOM(notsubset_, "notsubset")
+ GK_ATOM(numalign_, "numalign")
+@@ -1645,29 +1638,23 @@ GK_ATOM(stackalign_, "stackalign")
+ GK_ATOM(stretchy_, "stretchy")
+ GK_ATOM(subscriptshift_, "subscriptshift")
+ GK_ATOM(subset_, "subset")
+ GK_ATOM(superscriptshift_, "superscriptshift")
+ GK_ATOM(symmetric_, "symmetric")
+ GK_ATOM(tanh_, "tanh")
+ GK_ATOM(tan_, "tan")
+ GK_ATOM(tendsto_, "tendsto")
+-GK_ATOM(thickmathspace_, "thickmathspace")
+-GK_ATOM(thinmathspace_, "thinmathspace")
+ GK_ATOM(times_, "times")
+ GK_ATOM(transpose_, "transpose")
+ GK_ATOM(union_, "union")
+ GK_ATOM(uplimit_, "uplimit")
+ GK_ATOM(variance_, "variance")
+ GK_ATOM(vectorproduct_, "vectorproduct")
+ GK_ATOM(vector_, "vector")
+-GK_ATOM(verythickmathspace_, "verythickmathspace")
+-GK_ATOM(verythinmathspace_, "verythinmathspace")
+-GK_ATOM(veryverythickmathspace_, "veryverythickmathspace")
+-GK_ATOM(veryverythinmathspace_, "veryverythinmathspace")
+ GK_ATOM(voffset_, "voffset")
+ GK_ATOM(xref_, "xref")
+ GK_ATOM(math, "math") // the only one without an underscore
+ 
+ #ifndef DISABLE_XFORMS_HOOKS
+ GK_ATOM(avg, "avg")
+ GK_ATOM(booleanFromString, "boolean-from-string")
+ GK_ATOM(countNonEmpty, "count-non-empty")
+diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
+--- a/content/mathml/content/src/nsMathMLElement.cpp
++++ b/content/mathml/content/src/nsMathMLElement.cpp
+@@ -256,20 +256,74 @@ nsMathMLElement::ParseNumericValue(const
+ {
+   nsAutoString str(aString);
+   str.CompressWhitespace(); // aString is const in this code...
+ 
+   PRInt32 stringLength = str.Length();
+   if (!stringLength)
+     return PR_FALSE;
+ 
++  PRInt32 i = 0;
++  if (aFlags & PARSE_ALLOW_NAMEDSPACE) {
++    if (aString.EqualsLiteral("veryverythinmathspace")) {
++      i = 1;
++    }
++    else if (aString.EqualsLiteral("verythinmathspace")) {
++      i = 2;
++    }
++    else if (aString.EqualsLiteral("thinmathspace")) {
++      i = 3;
++    }
++    else if (aString.EqualsLiteral("mediummathspace")) {
++      i = 4;
++    }
++    else if (aString.EqualsLiteral("thickmathspace")) {
++      i = 5;
++    }
++    else if (aString.EqualsLiteral("verythickmathspace")) {
++      i = 6;
++    }
++    else if (aString.EqualsLiteral("veryverythickmathspace")) {
++      i = 7;
++    }
++    else if (aString.EqualsLiteral("negativeveryverythinmathspace")) {
++      i = -1;
++    }
++    else if (aString.EqualsLiteral("negativeverythinmathspace")) {
++      i = -2;
++    }
++    else if (aString.EqualsLiteral("negativethinmathspace")) {
++      i = -3;
++    }
++    else if (aString.EqualsLiteral("negativemediummathspace")) {
++      i = -4;
++    }
++    else if (aString.EqualsLiteral("negativethickmathspace")) {
++      i = -5;
++    }
++    else if (aString.EqualsLiteral("negativeverythickmathspace")) {
++      i = -6;
++    }
++    else if (aString.EqualsLiteral("negativeveryverythickmathspace")) {
++      i = -7;
++    }
++    
++    if (0 != i) { 
++      // fall back to the default value
++      aCSSValue.SetFloatValue(float(i)/float(18), eCSSUnit_EM);
++      return PR_TRUE;
++    } else if (aFlags & ALLOW_MPADDED_SYNTAX) {
++      return PR_FALSE;
++    }
++  }
++  
+   nsAutoString number, unit;
+ 
+   // see if the negative sign is there
+-  PRInt32 i = 0;
++  i = 0;
+   PRUnichar c = str[0];
+   if (c == '-') {
+     number.Append(c);
+     i++;
+ 
+     // skip any space after the negative sign
+     if (i < stringLength && nsCRT::IsAsciiSpace(str[i]))
+       i++;
+diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
+--- a/content/mathml/content/src/nsMathMLElement.h
++++ b/content/mathml/content/src/nsMathMLElement.h
+@@ -82,17 +82,19 @@ public:
+                                 const nsAString& aValue,
+                                 nsAttrValue& aResult);
+ 
+   NS_IMETHOD_(PRBool) IsAttributeMapped(const nsIAtom* aAttribute) const;
+   virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
+ 
+   enum {
+     PARSE_ALLOW_UNITLESS = 0x01, // unitless 0 will be turned into 0px
+-    PARSE_ALLOW_NEGATIVE = 0x02
++    PARSE_ALLOW_NEGATIVE = 0x02,
++    PARSE_ALLOW_NAMEDSPACE = 0x04,
++    ALLOW_MPADDED_SYNTAX = 0x08
+   };
+   static PRBool ParseNumericValue(const nsString& aString,
+                                   nsCSSValue&     aCSSValue,
+                                   PRUint32        aFlags);
+ 
+   static void MapMathMLAttributesInto(const nsMappedAttributes* aAttributes, 
+                                       nsRuleData* aRuleData);
+   
+diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
+--- a/layout/mathml/nsMathMLFrame.cpp
++++ b/layout/mathml/nsMathMLFrame.cpp
+@@ -334,112 +334,16 @@ nsMathMLFrame::CalcLength(nsPresContext*
+     return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
+   }
+ 
+   // MathML doesn't specify other CSS units such as rem or ch
+   NS_ERROR("Unsupported unit");
+   return 0;
+ }
+ 
+-/* static */ PRBool
+-nsMathMLFrame::ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
+-                                    nsString&   aString,
+-                                    nsCSSValue& aCSSValue)
+-{
+-  aCSSValue.Reset();
+-  aString.CompressWhitespace(); //  aString is not a const in this code...
+-  if (!aString.Length()) return PR_FALSE;
+-
+-  // See if it is one of the 'namedspace' (ranging 1/18em...7/18em)
+-  PRInt32 i = 0;
+-  nsIAtom* namedspaceAtom = nsnull;
+-  if (aString.EqualsLiteral("veryverythinmathspace")) {
+-    i = 1;
+-    namedspaceAtom = nsGkAtoms::veryverythinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("verythinmathspace")) {
+-    i = 2;
+-    namedspaceAtom = nsGkAtoms::verythinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("thinmathspace")) {
+-    i = 3;
+-    namedspaceAtom = nsGkAtoms::thinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("mediummathspace")) {
+-    i = 4;
+-    namedspaceAtom = nsGkAtoms::mediummathspace_;
+-  }
+-  else if (aString.EqualsLiteral("thickmathspace")) {
+-    i = 5;
+-    namedspaceAtom = nsGkAtoms::thickmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("verythickmathspace")) {
+-    i = 6;
+-    namedspaceAtom = nsGkAtoms::verythickmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("veryverythickmathspace")) {
+-    i = 7;
+-    namedspaceAtom = nsGkAtoms::veryverythickmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativeveryverythinmathspace")) {
+-    i = -1;
+-    namedspaceAtom = nsGkAtoms::negativeveryverythinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativeverythinmathspace")) {
+-    i = -2;
+-    namedspaceAtom = nsGkAtoms::negativeverythinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativethinmathspace")) {
+-    i = -3;
+-    namedspaceAtom = nsGkAtoms::negativethinmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativemediummathspace")) {
+-    i = -4;
+-    namedspaceAtom = nsGkAtoms::negativemediummathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativethickmathspace")) {
+-    i = -5;
+-    namedspaceAtom = nsGkAtoms::negativethickmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativeverythickmathspace")) {
+-    i = -6;
+-    namedspaceAtom = nsGkAtoms::negativeverythickmathspace_;
+-  }
+-  else if (aString.EqualsLiteral("negativeveryverythickmathspace")) {
+-    i = -7;
+-    namedspaceAtom = nsGkAtoms::negativeveryverythickmathspace_;
+-  }
+-
+-  if (0 != i) {
+-    if (aMathMLmstyleFrame) {
+-      // see if there is a <mstyle> that has overriden the default value
+-      // GetAttribute() will recurse all the way up into the <mstyle> hierarchy
+-      nsAutoString value;
+-      GetAttribute(nsnull, aMathMLmstyleFrame, namedspaceAtom, value);
+-      if (!value.IsEmpty()) {
+-        if (ParseNumericValue(value, aCSSValue) &&
+-            aCSSValue.IsLengthUnit()) {
+-          return PR_TRUE;
+-        }
+-      }
+-    }
+-
+-    // fall back to the default value
+-    aCSSValue.SetFloatValue(float(i)/float(18), eCSSUnit_EM);
+-    return PR_TRUE;
+-  }
+-
+-  return PR_FALSE;
+-}
+-
+-// ================
+-// Utils to map attributes into CSS rules (work-around to bug 69409 which
+-// is not scheduled to be fixed anytime soon)
+-//
+-
+ static const PRInt32 kMathMLversion1 = 1;
+ static const PRInt32 kMathMLversion2 = 2;
+ 
+ struct
+ nsCSSMapping {
+   PRInt32        compatibility;
+   const nsIAtom* attrAtom;
+   const char*    cssProperty;
+diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
+--- a/layout/mathml/nsMathMLFrame.h
++++ b/layout/mathml/nsMathMLFrame.h
+@@ -174,34 +174,22 @@ public:
+   static PRBool
+   GetAttribute(nsIContent* aContent,
+                nsIFrame*   aMathMLmstyleFrame,          
+                nsIAtom*    aAttributeAtom,
+                nsString&   aValue);
+ 
+   // utilities to parse and retrieve numeric values in CSS units
+   // All values are stored in twips.
+-  static PRBool
+-  ParseNumericValue(const nsString& aString,
+-                    nsCSSValue&     aCSSValue) {
+-    return nsMathMLElement::ParseNumericValue(aString, aCSSValue,
+-            nsMathMLElement::PARSE_ALLOW_NEGATIVE |
+-            nsMathMLElement::PARSE_ALLOW_UNITLESS);
+-  }
+ 
+   static nscoord 
+   CalcLength(nsPresContext*   aPresContext,
+              nsStyleContext*   aStyleContext,
+              const nsCSSValue& aCSSValue);
+ 
+-  static PRBool
+-  ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
+-                       nsString&   aString,
+-                       nsCSSValue& aCSSValue);
+-
+   static eMathMLFrameType
+   GetMathMLFrameTypeFor(nsIFrame* aFrame)
+   {
+     if (aFrame->IsFrameOfType(nsIFrame::eMathML)) {
+       nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
+       if (mathMLFrame)
+         return mathMLFrame->GetMathMLFrameType();
+     }
+diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
+--- a/layout/mathml/nsMathMLmfracFrame.cpp
++++ b/layout/mathml/nsMathMLmfracFrame.cpp
+@@ -139,17 +139,19 @@ nsMathMLmfracFrame::CalcLineThickness(ns
+       lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
+       minimumThickness = onePixel * THICK_FRACTION_LINE_MINIMUM_PIXELS;
+       // should visually increase by at least one pixel
+       if (lineThickness < defaultThickness + onePixel)
+         lineThickness = defaultThickness + onePixel;
+     }
+     else { // see if it is a plain number, or a percentage, or a h/v-unit like 1ex, 2px, 1em
+       nsCSSValue cssValue;
+-      if (ParseNumericValue(aThicknessAttribute, cssValue)) {
++      if (nsMathMLElement::ParseNumericValue(aThicknessAttribute, cssValue,
++                                             nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                             nsMathMLElement::PARSE_ALLOW_NEGATIVE)) {
+         nsCSSUnit unit = cssValue.GetUnit();
+         if (eCSSUnit_Number == unit)
+           lineThickness = nscoord(float(defaultThickness) * cssValue.GetFloatValue());
+         else if (eCSSUnit_Percent == unit)
+           lineThickness = nscoord(float(defaultThickness) * cssValue.GetPercentValue());
+         else if (eCSSUnit_Null != unit)
+           lineThickness = CalcLength(aPresContext, aStyleContext, cssValue);
+       }
+diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+--- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
++++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+@@ -121,26 +121,32 @@ nsMathMLmmultiscriptsFrame::ProcessAttri
+   mSupScriptShift = 0;
+ 
+   // check if the subscriptshift attribute is there
+   nsAutoString value;
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::subscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       mSubScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+   // check if the superscriptshift attribute is there
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::superscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       mSupScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+ }
+ 
+ /* virtual */ nsresult
+ nsMathMLmmultiscriptsFrame::Place(nsRenderingContext& aRenderingContext,
+                                   PRBool               aPlaceOrigin,
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -427,36 +427,38 @@ nsMathMLmoFrame::ProcessOperatorData()
+   // we will ignore our default left/right space
+ 
+   // lspace = number h-unit | namedspace
+   nscoord leftSpace = mEmbellishData.leftSpace;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::lspace_,
+                value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) ||
+-        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
+-    {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) {
+       if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
+         leftSpace = 0;
+       else if (cssValue.IsLengthUnit())
+         leftSpace = CalcLength(presContext, mStyleContext, cssValue);
+       mFlags |= NS_MATHML_OPERATOR_LEFTSPACE_ATTR;
+     }
+   }
+ 
+   // rspace = number h-unit | namedspace
+   nscoord rightSpace = mEmbellishData.rightSpace;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::rspace_,
+                value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) ||
+-        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
+-    {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) {
+       if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
+         rightSpace = 0;
+       else if (cssValue.IsLengthUnit())
+         rightSpace = CalcLength(presContext, mStyleContext, cssValue);
+       mFlags |= NS_MATHML_OPERATOR_RIGHTSPACE_ATTR;
+     }
+   }
+ 
+@@ -517,70 +519,76 @@ nsMathMLmoFrame::ProcessOperatorData()
+     mFlags |= NS_MATHML_OPERATOR_SYMMETRIC;
+ 
+   // minsize = number [ v-unit | h-unit ] | namedspace
+   mMinSize = 0.0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::minsize_,
+                value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) ||
+-        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
+-    {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) {
+       nsCSSUnit unit = cssValue.GetUnit();
+       if (eCSSUnit_Number == unit)
+         mMinSize = cssValue.GetFloatValue();
+       else if (eCSSUnit_Percent == unit)
+         mMinSize = cssValue.GetPercentValue();
+       else if (eCSSUnit_Null != unit) {
+         mMinSize = float(CalcLength(presContext, mStyleContext, cssValue));
+         mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
+       }
+ 
+       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+         // see if the multiplicative inheritance should be from <mstyle>
+         GetAttribute(nsnull, mPresentationData.mstyle,
+                      nsGkAtoms::minsize_, value);
+         if (!value.IsEmpty()) {
+-          if (ParseNumericValue(value, cssValue)) {
++          if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                                 nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                                 nsMathMLElement::PARSE_ALLOW_NEGATIVE)) {
+             if (cssValue.IsLengthUnit()) {
+               mMinSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+               mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
+             }
+           }
+         }
+       }
+     }
+   }
+ 
+   // maxsize = number [ v-unit | h-unit ] | namedspace | infinity
+   mMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::maxsize_,
+                value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) ||
+-        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
+-    {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) {
+       nsCSSUnit unit = cssValue.GetUnit();
+       if (eCSSUnit_Number == unit)
+         mMaxSize = cssValue.GetFloatValue();
+       else if (eCSSUnit_Percent == unit)
+         mMaxSize = cssValue.GetPercentValue();
+       else if (eCSSUnit_Null != unit) {
+         mMaxSize = float(CalcLength(presContext, mStyleContext, cssValue));
+         mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
+       }
+ 
+       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+         // see if the multiplicative inheritance should be from <mstyle>
+         GetAttribute(nsnull, mPresentationData.mstyle,
+                      nsGkAtoms::maxsize_, value);
+         if (!value.IsEmpty()) {
+-          if (ParseNumericValue(value, cssValue)) {
++          if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                                 nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                                 nsMathMLElement::PARSE_ALLOW_NEGATIVE)) {
+             if (cssValue.IsLengthUnit()) {
+               mMaxSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+               mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
+             }
+           }
+         }
+       }
+     }
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
+--- a/layout/mathml/nsMathMLmpaddedFrame.cpp
++++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
+@@ -261,28 +261,31 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
+     */
+   }
+   else if (unit.EqualsLiteral("width"))  aPseudoUnit = NS_MATHML_PSEUDO_UNIT_WIDTH;
+   else if (unit.EqualsLiteral("height")) aPseudoUnit = NS_MATHML_PSEUDO_UNIT_HEIGHT;
+   else if (unit.EqualsLiteral("depth"))  aPseudoUnit = NS_MATHML_PSEUDO_UNIT_DEPTH;
+   else if (!gotPercent) { // percentage can only apply to a pseudo-unit
+ 
+     // see if the unit is a named-space
+-    // XXX nsnull in ParseNamedSpacedValue()? don't access mstyle?
+-    if (ParseNamedSpaceValue(nsnull, unit, aCSSValue)) {
++    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE |
++                                           nsMathMLElement::ALLOW_MPADDED_SYNTAX)) {
+       // re-scale properly, and we know that the unit of the named-space is 'em'
+       floatValue *= aCSSValue.GetFloatValue();
+       aCSSValue.SetFloatValue(floatValue, eCSSUnit_EM);
+       aPseudoUnit = NS_MATHML_PSEUDO_UNIT_NAMEDSPACE;
+       return PR_TRUE;
+     }
+ 
+     // see if the input was just a CSS value
+     number.Append(unit); // leave the sign out if it was there
+-    if (ParseNumericValue(number, aCSSValue))
++    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS))
+       return PR_TRUE;
+   }
+ 
+   // if we enter here, we have a number that will act as a multiplier on a pseudo-unit
+   if (aPseudoUnit != NS_MATHML_PSEUDO_UNIT_UNSPECIFIED) {
+     if (gotPercent)
+       aCSSValue.SetPercentValue(floatValue / 100.0f);
+     else
+diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
+--- a/layout/mathml/nsMathMLmspaceFrame.cpp
++++ b/layout/mathml/nsMathMLmspaceFrame.cpp
+@@ -82,43 +82,48 @@ nsMathMLmspaceFrame::ProcessAttributes(n
+   nsAutoString value;
+   nsCSSValue cssValue;
+ 
+   // width 
+   mWidth = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::width,
+                value);
+   if (!value.IsEmpty()) {
+-    if ((ParseNumericValue(value, cssValue) ||
+-         ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue)) &&
+-         cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) {
+       mWidth = CalcLength(aPresContext, mStyleContext, cssValue);
+     }
+   }
+ 
+   // height
+   mHeight = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::height,
+                value);
+   if (!value.IsEmpty()) {
+-    if ((ParseNumericValue(value, cssValue) ||
+-         ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue)) &&
+-         cssValue.IsLengthUnit()) {
++    if ((nsMathMLElement::ParseNumericValue(value, cssValue,
++                                            nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                            nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                            nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) &&
++        cssValue.IsLengthUnit()) {
+       mHeight = CalcLength(aPresContext, mStyleContext, cssValue);
+     }
+   }
+ 
+   // depth
+   mDepth = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::depth_,
+                value);
+   if (!value.IsEmpty()) {
+-    if ((ParseNumericValue(value, cssValue) ||
+-         ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue)) &&
+-         cssValue.IsLengthUnit()) {
++    if ((nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE |
++                                           nsMathMLElement::PARSE_ALLOW_NAMEDSPACE)) &&
++        cssValue.IsLengthUnit()) {
+       mDepth = CalcLength(aPresContext, mStyleContext, cssValue);
+     }
+   }
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmspaceFrame::Reflow(nsPresContext*          aPresContext,
+                             nsHTMLReflowMetrics&     aDesiredSize,
+diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFrame.cpp
+--- a/layout/mathml/nsMathMLmsubFrame.cpp
++++ b/layout/mathml/nsMathMLmsubFrame.cpp
+@@ -91,17 +91,20 @@ nsMathMLmsubFrame::Place (nsRenderingCon
+ 
+   // check if the subscriptshift attribute is there
+   nscoord subScriptShift = 0;
+   nsAutoString value;
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::subscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       subScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+ 
+   return nsMathMLmsubFrame::PlaceSubScript(PresContext(), 
+                                            aRenderingContext,
+                                            aPlaceOrigin,
+                                            aDesiredSize,
+diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsubsupFrame.cpp
+--- a/layout/mathml/nsMathMLmsubsupFrame.cpp
++++ b/layout/mathml/nsMathMLmsubsupFrame.cpp
+@@ -97,27 +97,33 @@ nsMathMLmsubsupFrame::Place(nsRenderingC
+ 
+   // check if the subscriptshift attribute is there
+   nsAutoString value;
+   nscoord subScriptShift = 0;
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::subscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       subScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+   // check if the superscriptshift attribute is there
+   nscoord supScriptShift = 0;
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::superscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       supScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+ 
+   return nsMathMLmsubsupFrame::PlaceSubSupScript(PresContext(),
+                                                  aRenderingContext,
+                                                  aPlaceOrigin,
+                                                  aDesiredSize,
+diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFrame.cpp
+--- a/layout/mathml/nsMathMLmsupFrame.cpp
++++ b/layout/mathml/nsMathMLmsupFrame.cpp
+@@ -91,17 +91,20 @@ nsMathMLmsupFrame::Place(nsRenderingCont
+ 
+   // check if the superscriptshift attribute is there
+   nsAutoString value;
+   nscoord supScriptShift = 0;
+   GetAttribute(mContent, mPresentationData.mstyle,
+                nsGkAtoms::superscriptshift_, value);
+   if (!value.IsEmpty()) {
+     nsCSSValue cssValue;
+-    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::PARSE_ALLOW_UNITLESS |
++                                           nsMathMLElement::PARSE_ALLOW_NEGATIVE) &&
++        cssValue.IsLengthUnit()) {
+       supScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
+     }
+   }
+ 
+   return nsMathMLmsupFrame::PlaceSuperScript(PresContext(), 
+                                              aRenderingContext,
+                                              aPlaceOrigin,
+                                              aDesiredSize,

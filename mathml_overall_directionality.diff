@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent 9b1c143743bf5b7caef9bc62c51db81c77961236
+# Parent 7b5ac551c83a4d5e83a52d373c2856ed685a4ecd
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -230,7 +230,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
-@@ -379,48 +379,66 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+@@ -378,48 +378,66 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
    //////////////////
    // Adjust the origins of each child.
    // and update our bounding metrics
@@ -307,7 +307,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -496,28 +496,36 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -498,28 +498,36 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
        mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
      aDesiredSize.width = mBoundingMetrics.width;
      aDesiredSize.mBoundingMetrics = mBoundingMetrics;
@@ -354,7 +354,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -544,59 +552,72 @@ nsMathMLmfracFrame::UpdatePresentationDa
+@@ -546,59 +554,72 @@ nsMathMLmfracFrame::UpdatePresentationDa
      UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
                                        aFlagsValues, aFlagsToUpdate);
  }
@@ -438,7 +438,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 +++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
-@@ -412,17 +412,21 @@ nsMathMLmmultiscriptsFrame::Place(nsRend
+@@ -418,17 +418,21 @@ nsMathMLmmultiscriptsFrame::Place(nsRend
  
      count = 0;
      childFrame = mprescriptsFrame;
@@ -461,7 +461,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
            subScriptFrame = childFrame;
            count = 1;
          }
-@@ -435,23 +439,31 @@ nsMathMLmmultiscriptsFrame::Place(nsRend
+@@ -441,23 +445,31 @@ nsMathMLmmultiscriptsFrame::Place(nsRend
            GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize, bmSubScript);
            GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize, bmSupScript);
  
@@ -500,7 +500,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
 --- a/layout/mathml/nsMathMLmpaddedFrame.cpp
 +++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -467,13 +467,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+@@ -469,13 +469,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
    mBoundingMetrics.descent = depth;
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
@@ -595,7 +595,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
 diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFrame.cpp
 --- a/layout/mathml/nsMathMLmsubFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubFrame.cpp
-@@ -198,18 +198,20 @@ nsMathMLmsubFrame::PlaceSubScript (nsPre
+@@ -201,18 +201,20 @@ nsMathMLmsubFrame::PlaceSubScript (nsPre
    aDesiredSize.width = boundingMetrics.width;
    aDesiredSize.mBoundingMetrics = boundingMetrics;
  
@@ -621,7 +621,7 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsubsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsubsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubsupFrame.cpp
-@@ -331,25 +331,28 @@ nsMathMLmsubsupFrame::PlaceSubSupScript(
+@@ -337,25 +337,28 @@ nsMathMLmsubsupFrame::PlaceSubSupScript(
    aDesiredSize.width = boundingMetrics.width;
    aDesiredSize.mBoundingMetrics = boundingMetrics;
  
@@ -656,7 +656,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsupFrame.cpp
-@@ -236,18 +236,20 @@ nsMathMLmsupFrame::PlaceSuperScript(nsPr
+@@ -239,18 +239,20 @@ nsMathMLmsupFrame::PlaceSuperScript(nsPr
    aDesiredSize.width = boundingMetrics.width;
    aDesiredSize.mBoundingMetrics = boundingMetrics;
  
@@ -677,38 +677,5 @@ diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFra
      FinishReflowChild (supScriptFrame, aPresContext, nsnull, supScriptSize, dx, dy, 0);
    }
  
-   return NS_OK;
- }
-diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
---- a/layout/mathml/nsMathMLmunderoverFrame.cpp
-+++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
-@@ -563,26 +563,29 @@ nsMathMLmunderoverFrame::Place(nsRenderi
-   mReference.x = 0;
-   mReference.y = aDesiredSize.ascent;
- 
-   if (aPlaceOrigin) {
-     nscoord dy;
-     // place overscript
-     if (mContent->Tag() == nsGkAtoms::mover_ ||
-         mContent->Tag() == nsGkAtoms::munderover_) {
-+      dxOver = MirrorIfRTL(aDesiredSize.width, overSize.width, dxOver);
-       dy = aDesiredSize.ascent - mBoundingMetrics.ascent + bmOver.ascent 
-         - overSize.ascent;
-       FinishReflowChild (overFrame, PresContext(), nsnull, overSize, dxOver, dy, 0);
-     }
-     // place base
-+    dxBase = MirrorIfRTL(aDesiredSize.width, baseSize.width, dxBase);
-     dy = aDesiredSize.ascent - baseSize.ascent;
-     FinishReflowChild (baseFrame, PresContext(), nsnull, baseSize, dxBase, dy, 0);
-     // place underscript
-     if (mContent->Tag() == nsGkAtoms::munder_ ||
-         mContent->Tag() == nsGkAtoms::munderover_) {
-+      dxUnder = MirrorIfRTL(aDesiredSize.width, underSize.width, dxUnder);
-       dy = aDesiredSize.ascent + mBoundingMetrics.descent - bmUnder.descent 
-         - underSize.ascent;
-       FinishReflowChild (underFrame, PresContext(), nsnull, underSize,
-                          dxUnder, dy, 0);
-     }
-   }
    return NS_OK;
  }

@@ -1,0 +1,26 @@
+# HG changeset patch
+# Parent 48dcb60519ace3548452ae848fd45e42bd09d9d5
+# User Frédéric Wang <fred.wang@free.fr>
+maction: transmit automatic data when the selected child changes.
+
+diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmactionFrame.cpp
+--- a/layout/mathml/nsMathMLmactionFrame.cpp
++++ b/layout/mathml/nsMathMLmactionFrame.cpp
+@@ -236,16 +236,17 @@ nsMathMLmactionFrame::GetSelectedFrame()
+     childFrame = childFrame->GetNextSibling();
+   }
+   // cater for invalid user-supplied selection
+   if (selection > count || selection < 1) 
+     selection = 1;
+ 
+   mChildCount = count;
+   mSelection = selection;
++  TransmitAutomaticData();
+ 
+   return mSelectedFrame;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmactionFrame::SetInitialChildList(nsIAtom*        aListName,
+                                           nsFrameList&    aChildList)
+ {

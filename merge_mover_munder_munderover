@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent c2cf489ca9fcbc584ca8bb4345058dec7b2e2616
+# Parent 073393702bb53824061e1da165be4dcf28e5fa1b
 # User Jonathan Hage <hage.jonathan@gmail.com>
 Merge nsMathMLmunderFrame and nsMathMLmoverFrame into nsMathMLmunderoverFrame
 
@@ -1053,7 +1053,7 @@ deleted file mode 100644
 diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLmunderoverFrame.cpp
 --- a/layout/mathml/nsMathMLmunderoverFrame.cpp
 +++ b/layout/mathml/nsMathMLmunderoverFrame.cpp
-@@ -45,16 +45,18 @@
+@@ -45,19 +45,23 @@
  #include "nsPresContext.h"
  #include "nsStyleContext.h"
  #include "nsStyleConsts.h"
@@ -1067,12 +1067,44 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  
  //
  // <munderover> -- attach an underscript-overscript pair to a base - implementation
++// <mover> -- attach an overscript to a base - implementation
++// <munder> -- attach an underscript to a base - implementation
  //
  
  nsIFrame*
  NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
  {
-@@ -168,62 +170,82 @@ nsMathMLmunderoverFrame::TransmitAutomat
+   return new (aPresShell) nsMathMLmunderoverFrame(aContext);
+ }
+ 
+@@ -157,73 +161,109 @@ nsMathMLmunderoverFrame::TransmitAutomat
+ {
+   // At this stage, all our children are in sync and we can fully
+   // resolve our own mEmbellishData struct
+   //---------------------------------------------------------------------
+ 
+   /* 
+   The REC says:
+ 
++  As regards munder (respectively mover) :
++  The default value of accentunder is false, unless underscript
++  is an <mo> element or an embellished operator.  If underscript is 
++  an <mo> element, the value of its accent attribute is used as the
++  default value of accentunder. If underscript is an embellished
++  operator, the accent attribute of the <mo> element at its
++  core is used as the default value. As with all attributes, an
++  explicitly given value overrides the default.
++
++XXX The winner is the outermost setting in conflicting settings like these:
++<munder accentunder='true'>
++  <mi>...</mi>
++  <mo accentunder='false'> ... </mo>
++</munder>
++
++  As regards munderover:
+   The accent and accentunder attributes have the same effect as
+   the attributes with the same names on <mover>  and <munder>, 
+   respectively. Their default values are also computed in the 
    same manner as described for those elements, with the default
    value of accent depending on overscript and the default value
    of accentunder depending on underscript.
@@ -1084,17 +1116,19 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -  if (baseFrame)
 -    underscriptFrame = baseFrame->GetNextSibling();
 -  if (underscriptFrame)
++  nsIAtom* tag = mContent->Tag();
++
 +  if (baseFrame) {
-+    if (mContent->Tag() == nsGkAtoms::munder_ ||
-+        mContent->Tag() == nsGkAtoms::munderover_) {
++    if (tag == nsGkAtoms::munder_ ||
++        tag == nsGkAtoms::munderover_) {
 +      underscriptFrame = baseFrame->GetNextSibling();
-+    }
-+    if (mContent->Tag() == nsGkAtoms::mover_) {
++    } else {
++      NS_ASSERTION(tag == nsGkAtoms::mover_, "mContent->Tag() not recognized");
 +      overscriptFrame = baseFrame->GetNextSibling();
 +    }
 +  }
 +  if (underscriptFrame &&
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++      tag == nsGkAtoms::munderover_) {
      overscriptFrame = underscriptFrame->GetNextSibling();
  
 +  }
@@ -1114,13 +1148,12 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -  else
 -    mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTUNDER;
 +  nsAutoString value;
-+  if (mContent->Tag() == nsGkAtoms::munder_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (tag == nsGkAtoms::munder_ ||
++      tag == nsGkAtoms::munderover_) {
 +    GetEmbellishDataFrom(underscriptFrame, embellishData);
 +    if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
 +      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
-+    }
-+    else {
++    } else {
 +      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTUNDER;
 +    }    
  
@@ -1150,13 +1183,12 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -    mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
 -  else
 -    mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
-+  if (mContent->Tag() == nsGkAtoms::mover_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (tag == nsGkAtoms::mover_ ||
++      tag == nsGkAtoms::munderover_) {
 +    GetEmbellishDataFrom(overscriptFrame, embellishData);
 +    if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
 +      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
-+    }
-+    else {
++    } else {
 +      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
 +    }
  
@@ -1183,7 +1215,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
        !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags))
      mPresentationData.flags &= ~NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
  
-@@ -238,32 +260,37 @@ nsMathMLmunderoverFrame::TransmitAutomat
+@@ -238,32 +278,37 @@ nsMathMLmunderoverFrame::TransmitAutomat
       Within overscript, <munderover> always sets displaystyle to "false", 
       but increments scriptlevel by 1 only when accent is "false".
   
@@ -1199,11 +1231,11 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -    ~NS_MATHML_DISPLAYSTYLE | compress,
 -     NS_MATHML_DISPLAYSTYLE | compress);
 -
-+  if (mContent->Tag() == nsGkAtoms::mover_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (tag == nsGkAtoms::mover_ ||
++      tag == nsGkAtoms::munderover_) {
 +    PRUint32 compress = NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)
 +      ? NS_MATHML_COMPRESSED : 0;
-+    SetIncrementScriptLevel(mContent->Tag() == nsGkAtoms::mover_ ? 1 : 2,
++    SetIncrementScriptLevel(tag == nsGkAtoms::mover_ ? 1 : 2,
 +                            !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags));
 +    PropagatePresentationDataFor(overscriptFrame,
 +                                 ~NS_MATHML_DISPLAYSTYLE | compress,
@@ -1218,8 +1250,8 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -    ~NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED,
 -     NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED);
 -
-+  if (mContent->Tag() == nsGkAtoms::munder_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (tag == nsGkAtoms::munder_ ||
++      tag == nsGkAtoms::munderover_) {
 +    SetIncrementScriptLevel(1, !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags));
 +    PropagatePresentationDataFor(underscriptFrame,
 +                                 ~NS_MATHML_DISPLAYSTYLE | NS_MATHML_COMPRESSED,
@@ -1233,7 +1265,8 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  *  If the base is an operator with movablelimits="true" (or an embellished
     operator whose <mo> element core has movablelimits="true"), and
     displaystyle="false", then underscript and overscript are drawn in
-@@ -282,47 +309,94 @@ i.e.,:
+@@ -281,48 +326,96 @@ i.e.,:
+  }
  */
  
  /* virtual */ nsresult
@@ -1241,6 +1274,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
                                 PRBool               aPlaceOrigin,
                                 nsHTMLReflowMetrics& aDesiredSize)
  {
++  nsIAtom* tag = mContent->Tag();
    if ( NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
 -      !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags)) {
 -    // place like sub-superscript pair
@@ -1252,32 +1286,33 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -                                                   nsPresContext::CSSPointsToAppUnits(0.5f));
 +       !NS_MATHML_IS_DISPLAYSTYLE(mPresentationData.flags)) {
 +    //place like sub sup or subsup
-+    if (mContent->Tag() == nsGkAtoms::munderover_) {
++    nscoord scriptSpace = nsPresContext::CSSPointsToAppUnits(0.5f);
++    if (tag == nsGkAtoms::munderover_) {
 +      return nsMathMLmsubsupFrame::PlaceSubSupScript(PresContext(),
 +                                                     aRenderingContext,
 +                                                     aPlaceOrigin,
 +                                                     aDesiredSize,
 +                                                     this, 0, 0,
-+                                                     nsPresContext::CSSPointsToAppUnits(0.5f));
-+    } else if (mContent->Tag() == nsGkAtoms::munder_) {
++                                                     scriptSpace);
++    } else if (tag == nsGkAtoms::munder_) {
 +      return nsMathMLmsubFrame::PlaceSubScript(PresContext(),
 +                                               aRenderingContext,
 +                                               aPlaceOrigin,
 +                                               aDesiredSize,
 +                                               this, 0,
-+                                               nsPresContext::CSSPointsToAppUnits(0.5f));
-+    } else if (mContent->Tag() == nsGkAtoms::mover_) {
++                                               scriptSpace);
++    } else {
++      NS_ASSERTION(tag == nsGkAtoms::mover_, "mContent->Tag() not recognized");
 +      return nsMathMLmsupFrame::PlaceSuperScript(PresContext(),
-+                                               aRenderingContext,
-+                                               aPlaceOrigin,
-+                                               aDesiredSize,
-+                                               this, 0,
-+                                               nsPresContext::CSSPointsToAppUnits(0.5f));
++                                                 aRenderingContext,
++                                                 aPlaceOrigin,
++                                                 aDesiredSize,
++                                                 this, 0,
++                                                 scriptSpace);
 +    }
 +    
    }
--
-+  
+ 
    ////////////////////////////////////
    // Get the children's desired sizes
  
@@ -1294,33 +1329,33 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 +  underSize.ascent = 0; 
 +  overSize.ascent = 0;
 +  if (baseFrame) {
-+    if (mContent->Tag() == nsGkAtoms::munder_ ||
-+        mContent->Tag() == nsGkAtoms::munderover_) {
++    if (tag == nsGkAtoms::munder_ ||
++        tag == nsGkAtoms::munderover_) {
 +      underFrame = baseFrame->GetNextSibling();
-+    } else if (mContent->Tag() == nsGkAtoms::mover_) {
++    } else if (tag == nsGkAtoms::mover_) {
 +      overFrame = baseFrame->GetNextSibling();
 +    }
 +  }
-+  if (underFrame && mContent->Tag() == nsGkAtoms::munderover_) {
++  if (underFrame && tag == nsGkAtoms::munderover_) {
      overFrame = underFrame->GetNextSibling();
 -  if (!baseFrame || !underFrame || !overFrame || overFrame->GetNextSibling()) {
 -    // report an error, encourage people to get their markups in order
 -    return ReflowError(aRenderingContext, aDesiredSize);
 +  }
 +  
-+  if (mContent->Tag() == nsGkAtoms::munder_) {
++  if (tag == nsGkAtoms::munder_) {
 +    if (!baseFrame || !underFrame || underFrame->GetNextSibling()) {
 +      // report an error, encourage people to get their markups in order
 +      return ReflowError(aRenderingContext, aDesiredSize);
 +    }
 +  }
-+  if (mContent->Tag() == nsGkAtoms::mover_) {
++  if (tag == nsGkAtoms::mover_) {
 +    if (!baseFrame || !overFrame || overFrame->GetNextSibling()) {
 +      // report an error, encourage people to get their markups in order
 +      return ReflowError(aRenderingContext, aDesiredSize);
 +    }
 +  }
-+  if (mContent->Tag() == nsGkAtoms::munderover_) {
++  if (tag == nsGkAtoms::munderover_) {
 +    if (!baseFrame || !underFrame || !overFrame || overFrame->GetNextSibling()) {
 +      // report an error, encourage people to get their markups in order
 +      return ReflowError(aRenderingContext, aDesiredSize);
@@ -1329,12 +1364,10 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
    GetReflowAndBoundingMetricsFor(baseFrame, baseSize, bmBase);
 -  GetReflowAndBoundingMetricsFor(underFrame, underSize, bmUnder);
 -  GetReflowAndBoundingMetricsFor(overFrame, overSize, bmOver);
-+  if (mContent->Tag() == nsGkAtoms::munder_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (underFrame) {
 +    GetReflowAndBoundingMetricsFor(underFrame, underSize, bmUnder);
 +  }
-+  if (mContent->Tag() == nsGkAtoms::mover_ ||
-+      mContent->Tag() == nsGkAtoms::munderover_) {
++  if (overFrame) {
 +    GetReflowAndBoundingMetricsFor(overFrame, overSize, bmOver);
 +  }
  
@@ -1345,7 +1378,55 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  
    aRenderingContext.SetFont(GetStyleFont()->mFont,
                              PresContext()->GetUserFontSet());
-@@ -477,19 +551,28 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -379,18 +472,47 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+     // XXX This is not a TeX rule... 
+     // delta1 (as computed abvove) can become really big when bmOver.descent is
+     // negative,  e.g., if the content is &OverBar. In such case, we use the height
+     if (bmOver.descent < 0)    
+       overDelta1 = NS_MAX(bigOpSpacing1, (bigOpSpacing3 - (bmOver.ascent + bmOver.descent)));
+   }
+   else {
+     // Rule 12, App. G, TeXbook
++    // We are going to modify this rule to make it more general.
++    // The idea behind Rule 12 in the TeXBook is to keep the accent
++    // as close to the base as possible, while ensuring that the
++    // distance between the *baseline* of the accent char and 
++    // the *baseline* of the base is atleast x-height. 
++    // The idea is that for normal use, we would like all the accents
++    // on a line to line up atleast x-height above the baseline 
++    // if possible. 
++    // When the ascent of the base is >= x-height, 
++    // the baseline of the accent char is placed just above the base
++    // (specifically, the baseline of the accent char is placed 
++    // above the baseline of the base by the ascent of the base).
++    // For ease of implementation, 
++    // this assumes that the font-designer designs accents 
++    // in such a way that the bottom of the accent is atleast x-height
++    // above its baseline, otherwise there will be collisions
++    // with the base. Also there should be proper padding between
++    // the bottom of the accent char and its baseline.
++    // The above rule may not be obvious from a first
++    // reading of rule 12 in the TeXBook !!!
++    // The mathml <mover> tag can use accent chars that
++    // do not follow this convention. So we modify TeX's rule 
++    // so that TeX's rule gets subsumed for accents that follow 
++    // TeX's convention,
++    // while also allowing accents that do not follow the convention :
++    // we try to keep the *bottom* of the accent char atleast x-height 
++    // from the baseline of the base char. we also slap on an extra
++    // padding between the accent and base chars.
+     overDelta1 = ruleThickness + onePixel/2;
+     if (bmBase.ascent < xHeight) { 
++      // also ensure at least x-height above the baseline of the base
+       overDelta1 += xHeight - bmBase.ascent;
+     }
+     overDelta2 = ruleThickness;
+   }
+   // empty over?
+   if (!(bmOver.ascent + bmOver.descent)) overDelta1 = 0;
+ 
+   nscoord dxBase, dxOver = 0, dxUnder = 0;
+@@ -477,19 +599,26 @@ nsMathMLmunderoverFrame::Place(nsRenderi
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
    mReference.x = 0;
@@ -1356,8 +1437,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
      // place overscript
 -    dy = aDesiredSize.ascent - mBoundingMetrics.ascent + bmOver.ascent - overSize.ascent;
 -    FinishReflowChild (overFrame, PresContext(), nsnull, overSize, dxOver, dy, 0);
-+    if (mContent->Tag() == nsGkAtoms::mover_ ||
-+        mContent->Tag() == nsGkAtoms::munderover_) {
++    if (overFrame) {
 +      dy = aDesiredSize.ascent - mBoundingMetrics.ascent + bmOver.ascent 
 +        - overSize.ascent;
 +      FinishReflowChild (overFrame, PresContext(), nsnull, overSize, dxOver, dy, 0);
@@ -1368,8 +1448,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
      // place underscript
 -    dy = aDesiredSize.ascent + mBoundingMetrics.descent - bmUnder.descent - underSize.ascent;
 -    FinishReflowChild (underFrame, PresContext(), nsnull, underSize, dxUnder, dy, 0);
-+    if (mContent->Tag() == nsGkAtoms::munder_ ||
-+        mContent->Tag() == nsGkAtoms::munderover_) {
++    if (underFrame) {
 +      dy = aDesiredSize.ascent + mBoundingMetrics.descent - bmUnder.descent 
 +        - underSize.ascent;
 +      FinishReflowChild (underFrame, PresContext(), nsnull, underSize,

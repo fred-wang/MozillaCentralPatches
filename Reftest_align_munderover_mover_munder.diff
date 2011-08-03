@@ -1,0 +1,1792 @@
+# HG changeset patch
+# Parent a67d545becc6d79f6b65bd8abe72517a7ffd91fc
+# User Jonathan Hage <hage.jonathan@gmail.com>
+munder, mover, munderover: Reftest for the align attribute
+
+diff --git a/layout/reftests/mathml/munder-mover-align-accent-false-ref.html b/layout/reftests/mathml/munder-mover-align-accent-false-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munder-mover-align-accent-false-ref.html
+@@ -0,0 +1,224 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="false" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="2">mover</th>
++	<th colspan="2">munder</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++	<th>
++	  <h5>Under & Over</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mrow>
++	  </math>
++	</th>
++	<th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++	<th>
++	  <h5>Base</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	    </mrow>
++	  </math>
++	</th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munder-mover-align-accent-false.html b/layout/reftests/mathml/munder-mover-align-accent-false.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munder-mover-align-accent-false.html
+@@ -0,0 +1,176 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="false" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="2">mover</th>
++	<th colspan="2">munder</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover align="left">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="left">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="left">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="left">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover align="right">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="right">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munder align="right">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="right">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <mover align="center">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="center">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munder align="center">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="center">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++      <th>
++	<h5>Under & Over</h5>
++      
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="red"/>
++	  </mrow>
++	</math>
++      </th>
++      <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++      <th>
++	<h5>Base</h5>
++	
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="blue"/>
++	  </mrow>
++	</math>
++      </th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munder-mover-align-accent-true-ref.html b/layout/reftests/mathml/munder-mover-align-accent-true-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munder-mover-align-accent-true-ref.html
+@@ -0,0 +1,224 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="true" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="2">mover</th>
++	<th colspan="2">munder</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover accent="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++	<th>
++	  <h5>Under & Over</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mrow>
++	  </math>
++	</th>
++	<th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++	<th>
++	  <h5>Base</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	    </mrow>
++	  </math>
++	</th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munder-mover-align-accent-true.html b/layout/reftests/mathml/munder-mover-align-accent-true.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munder-mover-align-accent-true.html
+@@ -0,0 +1,176 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="true" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="2">mover</th>
++	<th colspan="2">munder</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	  </mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover align="left" accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="left" accent="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="left" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="left" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <mover align="right" accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="right" accent="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munder align="right" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="right" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <mover align="center" accent="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <mover align="center" accent="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munder align="center" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munder align="center" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munder>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++      <th>
++	<h5>Under & Over</h5>
++      
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="red"/>
++	  </mrow>
++	</math>
++      </th>
++      <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++      <th>
++	<h5>Base</h5>
++	
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="blue"/>
++	  </mrow>
++	</math>
++      </th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munderover-align-accent-false-ref.html b/layout/reftests/mathml/munderover-align-accent-false-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-align-accent-false-ref.html
+@@ -0,0 +1,274 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="false" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="6">munderover</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	    <mo>&lt;</mo>
++	    <mi>Under<mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	    <mo>&gt;</mo>
++	    <mi>Under</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center"><mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	</mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="50px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="50px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="false" accentunder="false">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++	<th>
++	  <h5>Under & Over</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mrow>
++	  </math>
++	</th>
++	<th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++	<th>
++	  <h5>Base</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	    </mrow>
++	  </math>
++	</th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munderover-align-accent-false.html b/layout/reftests/mathml/munderover-align-accent-false.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-align-accent-false.html
+@@ -0,0 +1,190 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="false" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>	
++	<th colspan="4">munderover</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	    <mo>&lt;</mo>
++	    <mi>Under<mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	    <mo>&gt;</mo>
++	    <mi>Under</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center"><mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	</mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover align="left">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover align="right">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="right">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munderover align="right">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="right">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <munderover align="center">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="center">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munderover align="center">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="center">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++      <th>
++	<h5>Under & Over</h5>
++      
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="red"/>
++	  </mrow>
++	</math>
++      </th>
++      <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++      <th>
++	<h5>Base</h5>
++	
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="blue"/>
++	  </mrow>
++	</math>
++      </th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munderover-align-accent-true-ref.html b/layout/reftests/mathml/munderover-align-accent-true-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-align-accent-true-ref.html
+@@ -0,0 +1,274 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="true" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>
++	<th colspan="6">munderover</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	    <mo>&lt;</mo>
++	    <mi>Under<mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	    <mo>&gt;</mo>
++	    <mi>Under</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center"><mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	</mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="50px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="50px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="red"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover accent="true" accentunder="true">
++	      <mrow>
++		<mspace height="15px" width="25px"/>
++		<mspace height="15px" width="25px" mathbackground="blue"/>
++		<mspace height="15px" width="25px"/>
++	      </mrow>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++	<th>
++	  <h5>Under & Over</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mrow>
++	  </math>
++	</th>
++	<th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++	<th>
++	  <h5>Base</h5>
++	  
++	  <math>
++	    <mrow>
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	    </mrow>
++	  </math>
++	</th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/munderover-align-accent-true.html b/layout/reftests/mathml/munderover-align-accent-true.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/munderover-align-accent-true.html
+@@ -0,0 +1,190 @@
++<html>
++  <head><title></title></head>
++  <body>
++    <h2> Test with accent="true" </h2>
++    <TABLE border="1">
++      <tr>
++	<td align="center"></td>	
++	<th colspan="4">munderover</th>
++      </tr>
++      <tr>
++	<td align="center"></td>
++	<td align="center"><mrow>
++	    <mi>Over</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	    <mo>&lt;</mo>
++	    <mi>Under<mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	    <mo>&gt;</mo>
++	    <mi>Under</mi>
++	  </mrow>
++	</td>
++	<td align="center">
++	  <mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&lt;</mo>
++	    <mi>Base</mi>
++	  </mrow>
++	</td>
++	<td align="center"><mrow>
++	    <mi>Over = Under</mi>
++	    <mo>&gt;</mo>
++	    <mi>Base</mi>
++	</mrow></td>
++      </tr>
++      <tr>
++	<th>
++	  align="left"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover align="left" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </mover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left" accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="left" accent="true" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++      <tr>
++	<th>
++	  align="right"
++	</th>
++	<td align="center">
++	  <math>
++	    <munderover align="right" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="right" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munderover align="right" accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="right" accent="true" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++      </tr>
++      <tr>
++	<th>
++	align="center"
++      </th>
++	<td align="center">
++	  <math>
++	    <munderover align="center" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="center" accent="true" accentunder="true">
++	      <mspace height="15px" width="50px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	  </td>
++	<td align="center">
++	  <math>
++	    <munderover align="center" accent="true" accentunder="true">
++	      <mspace height="15px" width="75px" mathbackground="blue"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	      <mspace height="15px" width="25px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++	<td align="center">
++	  <math>
++	    <munderover align="center" accent="true" accentunder="true">
++	      <mspace height="15px" width="25px" mathbackground="blue"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	      <mspace height="15px" width="75px" mathbackground="red"/>
++	    </munderover>
++	  </math>
++	</td>
++      </tr>
++    </TABLE>
++    <table>
++      <tr>
++      <th>
++	<h5>Under & Over</h5>
++      
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="red"/>
++	  </mrow>
++	</math>
++      </th>
++      <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
++      <th>
++	<h5>Base</h5>
++	
++	<math>
++	  <mrow>
++	    <mspace height="15px" width="25px" mathbackground="blue"/>
++	  </mrow>
++	</math>
++      </th>
++      </tr>
++    </table>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -69,11 +69,15 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == mpadded-2.html mpadded-2-ref.html
+ == mpadded-3.html mpadded-3-ref.html
+ == mpadded-4.html mpadded-4-ref.html
+ == mpadded-5.html mpadded-5-ref.html
+ == mpadded-1-2.html mpadded-1-2-ref.html
+ == mpadded-6.html mpadded-6-ref.html
+ == math-display.html math-display-ref.html
+ == scriptlevel-movablelimits-1.html scriptlevel-movablelimits-1-ref.html
++== munderover-align-accent-false.html munderover-align-accent-false-ref.html
++== munderover-align-accent-true.html munderover-align-accent-true-ref.html
++== munder-mover-align-accent-true.html munder-mover-align-accent-true-ref.html
++== munder-mover-align-accent-false.html munder-mover-align-accent-false-ref.html
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
+ != link-1.xhtml link-ref.xhtml
