@@ -1,12 +1,30 @@
 # HG changeset patch
-# Parent 3c3a3eebeb8fadf8fe46abd547519d57dafb45c1
+# Parent 7e1e3ccff88c2e7034bbabb6cd18dea1da022a4d
 # User Jonathan Hage <hage.jonathan@gmail.com>
 Remove namedspace value overriding
 
 diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
 --- a/content/base/src/nsGkAtomList.h
 +++ b/content/base/src/nsGkAtomList.h
-@@ -1577,23 +1577,16 @@ GK_ATOM(msubsup_, "msubsup")
+@@ -1531,17 +1531,16 @@ GK_ATOM(malignscope_, "malignscope")
+ GK_ATOM(mathbackground_, "mathbackground")
+ GK_ATOM(mathcolor_, "mathcolor")
+ GK_ATOM(mathsize_, "mathsize")
+ GK_ATOM(mathvariant_, "mathvariant")
+ GK_ATOM(matrixrow_, "matrixrow")
+ GK_ATOM(maxsize_, "maxsize")
+ GK_ATOM(mean_, "mean")
+ GK_ATOM(median_, "median")
+-GK_ATOM(mediummathspace_, "mediummathspace")
+ GK_ATOM(menclose_, "menclose")
+ GK_ATOM(merror_, "merror")
+ GK_ATOM(mfenced_, "mfenced")
+ GK_ATOM(mfrac_, "mfrac")
+ GK_ATOM(mfraction_, "mfraction")
+ GK_ATOM(mglyph_, "mglyph")
+ GK_ATOM(mi_, "mi")
+ GK_ATOM(minlabelspacing_, "minlabelspacing")
+@@ -1577,23 +1576,16 @@ GK_ATOM(msubsup_, "msubsup")
  GK_ATOM(msup_, "msup")
  GK_ATOM(mtable_, "mtable")
  GK_ATOM(mtd_, "mtd")
@@ -30,7 +48,7 @@ diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
  GK_ATOM(notprsubset_, "notprsubset")
  GK_ATOM(notsubset_, "notsubset")
  GK_ATOM(numalign_, "numalign")
-@@ -1645,29 +1638,23 @@ GK_ATOM(stackalign_, "stackalign")
+@@ -1645,29 +1637,23 @@ GK_ATOM(stackalign_, "stackalign")
  GK_ATOM(stretchy_, "stretchy")
  GK_ATOM(subscriptshift_, "subscriptshift")
  GK_ATOM(subset_, "subset")
@@ -60,6 +78,64 @@ diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
  GK_ATOM(avg, "avg")
  GK_ATOM(booleanFromString, "boolean-from-string")
  GK_ATOM(countNonEmpty, "count-non-empty")
+diff --git a/content/base/src/nsTreeSanitizer.cpp b/content/base/src/nsTreeSanitizer.cpp
+--- a/content/base/src/nsTreeSanitizer.cpp
++++ b/content/base/src/nsTreeSanitizer.cpp
+@@ -937,30 +937,22 @@ nsIAtom** const kAttributesMathML[] = {
+    &nsGkAtoms::lquote_, // lquote
+    &nsGkAtoms::lspace_, // lspace
+    &nsGkAtoms::ltr, // ltr
+    &nsGkAtoms::mathbackground_, // mathbackground
+    &nsGkAtoms::mathcolor_, // mathcolor
+    &nsGkAtoms::mathsize_, // mathsize
+    &nsGkAtoms::mathvariant_, // mathvariant
+    &nsGkAtoms::maxsize_, // maxsize
+-   &nsGkAtoms::mediummathspace_, // mediummathspace
+    &nsGkAtoms::minlabelspacing_, // minlabelspacing
+    &nsGkAtoms::minsize_, // minsize
+    &nsGkAtoms::monospaced_, // monospaced
+    &nsGkAtoms::movablelimits_, // movablelimits
+    &nsGkAtoms::msgroup_, // msgroup
+    &nsGkAtoms::name, // name
+-   &nsGkAtoms::negativemediummathspace_, // negativemediummathspace
+-   &nsGkAtoms::negativethickmathspace_, // negativethickmathspace
+-   &nsGkAtoms::negativethinmathspace_, // negativethinmathspace
+-   &nsGkAtoms::negativeverythickmathspace_, // negativeverythickmathspace
+-   &nsGkAtoms::negativeverythinmathspace_, // negativeverythinmathspace
+-   &nsGkAtoms::negativeveryverythickmathspace_, // negativeveryverythickmathspace
+-   &nsGkAtoms::negativeveryverythinmathspace_, // negativeveryverythinmathspace
+    &nsGkAtoms::newline, // newline
+    &nsGkAtoms::notation_, // notation
+    &nsGkAtoms::numalign_, // numalign
+    &nsGkAtoms::number, // number
+    &nsGkAtoms::open, // open
+    &nsGkAtoms::order, // order
+    &nsGkAtoms::other_, // other
+    &nsGkAtoms::overflow, // overflow
+@@ -983,23 +975,17 @@ nsIAtom** const kAttributesMathML[] = {
+    &nsGkAtoms::shift_, // shift
+    &nsGkAtoms::side_, // side
+    &nsGkAtoms::src, // src
+    &nsGkAtoms::stackalign_, // stackalign
+    &nsGkAtoms::stretchy_, // stretchy
+    &nsGkAtoms::subscriptshift_, // subscriptshift
+    &nsGkAtoms::superscriptshift_, // superscriptshift
+    &nsGkAtoms::symmetric_, // symmetric
+-   &nsGkAtoms::thickmathspace_, // thickmathspace
+-   &nsGkAtoms::thinmathspace_, // thinmathspace
+    &nsGkAtoms::type, // type
+-   &nsGkAtoms::verythickmathspace_, // verythickmathspace
+-   &nsGkAtoms::verythinmathspace_, // verythinmathspace
+-   &nsGkAtoms::veryverythickmathspace_, // veryverythickmathspace
+-   &nsGkAtoms::veryverythinmathspace_, // veryverythinmathspace
+    &nsGkAtoms::voffset_, // voffset
+    &nsGkAtoms::width, // width
+    &nsGkAtoms::xref_, // xref
+   nsnull
+ };
+ 
+ nsIAtom** const kURLAttributesMathML[] = {
+   &nsGkAtoms::href,
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
@@ -382,7 +458,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -427,36 +427,38 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -421,36 +421,38 @@ nsMathMLmoFrame::ProcessOperatorData()
    // we will ignore our default left/right space
  
    // lspace = number h-unit | namedspace
@@ -427,7 +503,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
      }
    }
  
-@@ -517,70 +519,76 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -511,70 +513,76 @@ nsMathMLmoFrame::ProcessOperatorData()
      mFlags |= NS_MATHML_OPERATOR_SYMMETRIC;
  
    // minsize = number [ v-unit | h-unit ] | namedspace
