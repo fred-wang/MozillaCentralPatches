@@ -1,11 +1,12 @@
-# HG changeset patch
-# Parent 51aa502950710b04a1b56a56d19bb0467705e824
-# User Marco Bonardo <mbonardo@mozilla.com>
-
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -5432,16 +5432,15 @@ function asyncOpenWebPanel(event)
+@@ -5448,49 +5448,54 @@ function asyncOpenWebPanel(event)
+ 
+ /*
+  * - [ Dependencies ] ---------------------------------------------------------
+  *  utilityOverlay.js:
+  *    - gatherTextUnder
   */
  
  /**
@@ -27,7 +28,9 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  {
    function isHTMLLink(aNode)
    {
-@@ -5451,7 +5450,7 @@ function hrefAndLinkNodeForClickEvent(ev
+     // Be consistent with what nsContextMenu.js does.
+     return ((aNode instanceof HTMLAnchorElement && aNode.href) ||
+             (aNode instanceof HTMLAreaElement && aNode.href) ||
              aNode instanceof HTMLLinkElement);
    }
  
@@ -36,7 +39,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    while (node && !isHTMLLink(node)) {
      node = node.parentNode;
    }
-@@ -5459,12 +5458,18 @@ function hrefAndLinkNodeForClickEvent(ev
+ 
    if (node)
      return [node.href, node];
  
@@ -58,7 +61,17 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
        if (href)
          baseURI = node.baseURI;
      }
-@@ -5490,7 +5495,7 @@ function contentAreaClick(event, isPanel
+     node = node.parentNode;
+   }
+ 
+   // In case of XLink, we don't return the node we got href from since
+   // callers expect <a>-like elements.
+@@ -5506,17 +5511,17 @@ function hrefAndLinkNodeForClickEvent(ev
+  *        Whether the event comes from a web panel.
+  * @note default event is prevented if the click is handled.
+  */
+ function contentAreaClick(event, isPanelClick)
+ {
    if (!event.isTrusted || event.getPreventDefault() || event.button == 2)
      return true;
  
@@ -67,10 +80,20 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    if (!href) {
      // Not a link, handle middle mouse navigation.
      if (event.button == 1 &&
+         gPrefService.getBoolPref("middlemouse.contentLoadURL") &&
+         !gPrefService.getBoolPref("general.autoScroll")) {
+       middleMousePaste(event);
+       event.preventDefault();
+     }
 diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsContextMenu.js
 --- a/browser/base/content/nsContextMenu.js
 +++ b/browser/base/content/nsContextMenu.js
-@@ -418,6 +418,10 @@ nsContextMenu.prototype = {
+@@ -414,16 +414,20 @@ nsContextMenu.prototype = {
+       this.setItemAttr("context-media-showcontrols", "disabled", hasError);
+       this.setItemAttr("context-media-hidecontrols", "disabled", hasError);
+       if (this.onVideo)
+         this.setItemAttr("context-video-fullscreen",  "disabled", hasError);
+     }
      this.showItem("context-media-sep-commands",  onMedia);
    },
  
@@ -81,7 +104,17 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
    // Set various context menu attributes based on the state of the world.
    setTarget: function (aNode, aRangeParent, aRangeOffset) {
      const xulNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-@@ -439,9 +443,6 @@ nsContextMenu.prototype = {
+     if (aNode.namespaceURI == xulNS ||
+         aNode.nodeType == Node.DOCUMENT_NODE ||
+         this.isTargetAFormControl(aNode)) {
+       this.shouldDisplay = false;
+       return;
+@@ -435,19 +439,16 @@ nsContextMenu.prototype = {
+     this.onCompletedImage  = false;
+     this.onStandaloneImage = false;
+     this.onCanvas          = false;
+     this.onVideo           = false;
+     this.onAudio           = false;
      this.onTextInput       = false;
      this.onKeywordField    = false;
      this.mediaURL          = "";
@@ -91,7 +124,17 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
      this.link              = null;
      this.linkURL           = "";
      this.linkURI           = null;
-@@ -539,25 +540,15 @@ nsContextMenu.prototype = {
+     this.linkProtocol      = "";
+     this.onMathML          = false;
+     this.inFrame           = false;
+     this.hasBGImage        = false;
+     this.bgImageURL        = "";
+@@ -535,35 +536,25 @@ nsContextMenu.prototype = {
+     }
+ 
+     // Second, bubble out, looking for items of interest that can have childen.
+     // Always pick the innermost link, background image, etc.
+     const XMLNS = "http://www.w3.org/XML/1998/namespace";
      var elem = this.target;
      while (elem) {
        if (elem.nodeType == Node.ELEMENT_NODE) {
@@ -126,7 +169,17 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
          }
  
          // Background image?  Don't bother if we've already found a
-@@ -1133,40 +1124,11 @@ nsContextMenu.prototype = {
+         // background image further down the hierarchy.  Otherwise,
+         // we look for the computed background-image style.
+         if (!this.hasBGImage &&
+             !this._hasMultipleBGImages) {
+           let bgImgUrl;
+@@ -1140,50 +1131,21 @@ nsContextMenu.prototype = {
+       node.setAttribute(attr.nodeName, attr.nodeValue);
+     }
+ 
+     // Voila!
+     return node;
    },
  
    // Generate fully qualified URL for clicked-on link.
@@ -170,10 +223,20 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
  
    // Get text of link.
    linkText: function() {
+     var text = gatherTextUnder(this.link);
+     if (!text || !text.match(/\S/)) {
+       text = this.link.getAttribute("title");
+       if (!text || !text.match(/\S/)) {
+         text = this.link.getAttribute("alt");
 diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/base/content/test/browser_contentAreaClick.js
 --- a/browser/base/content/test/browser_contentAreaClick.js
 +++ b/browser/base/content/test/browser_contentAreaClick.js
-@@ -53,7 +53,8 @@ let gTests = [
+@@ -48,28 +48,30 @@
+ 
+ let gTests = [
+ 
+   {
+     desc: "Simple left click",
      setup: function() {},
      clean: function() {},
      event: {},
@@ -183,7 +246,10 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [],
      preventDefault: false,
    },
-@@ -64,7 +65,8 @@ let gTests = [
+ 
+   {
+     desc: "Ctrl/Cmd left click",
+     setup: function() {},
      clean: function() {},
      event: { ctrlKey: true,
               metaKey: true },
@@ -193,7 +259,17 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
      preventDefault: true,
    },
-@@ -88,7 +90,8 @@ let gTests = [
+ 
+   // The next test was once handling feedService.forcePreview().  Now it should
+   // just be like Alt click.
+   {
+     desc: "Shift+Alt left click",
+@@ -83,27 +85,29 @@ let gTests = [
+   },
+ 
+   {
+     desc: "Shift+Alt left click on XLinks",
+     setup: function() {},
      clean: function() {},
      event: { shiftKey: true,
               altKey: true },
@@ -203,7 +279,9 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "saveURL" ],
      preventDefault: true,
    },
-@@ -98,7 +101,8 @@ let gTests = [
+ 
+   {
+     desc: "Shift click",
      setup: function() {},
      clean: function() {},
      event: { shiftKey: true },
@@ -213,7 +291,17 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
      preventDefault: true,
    },
-@@ -118,7 +122,8 @@ let gTests = [
+ 
+   {
+     desc: "Alt click",
+     setup: function() {},
+     clean: function() {},
+@@ -113,17 +117,18 @@ let gTests = [
+     preventDefault: true,
+   },
+ 
+   {
+     desc: "Alt click on XLinks",
      setup: function() {},
      clean: function() {},
      event: { altKey: true },
@@ -223,7 +311,17 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "saveURL" ],
      preventDefault: true,
    },
-@@ -138,7 +143,8 @@ let gTests = [
+ 
+   {
+     desc: "Panel click",
+     setup: function() {},
+     clean: function() {},
+@@ -133,33 +138,35 @@ let gTests = [
+     preventDefault: true,
+   },
+ 
+   {
+     desc: "Simple middle click opentab",
      setup: function() {},
      clean: function() {},
      event: { button: 1 },
@@ -233,7 +331,15 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
      preventDefault: true,
    },
-@@ -154,7 +160,8 @@ let gTests = [
+ 
+   {
+     desc: "Simple middle click openwin",
+     setup: function() {
+       gPrefService.setBoolPref("browser.tabs.opentabfor.middleclick", false);
+     },
+     clean: function() {
+       try {
+         gPrefService.clearUserPref("browser.tabs.opentabfor.middleclick");
        } catch(ex) {}
      },
      event: { button: 1 },
@@ -243,7 +349,17 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
      expectedInvokedMethods: [ "urlSecurityCheck", "openLinkIn" ],
      preventDefault: true,
    },
-@@ -259,8 +266,13 @@ let gClickHandler = {
+ 
+   {
+     desc: "Middle mouse paste",
+     setup: function() {
+       gPrefService.setBoolPref("middlemouse.contentLoadURL", true);
+@@ -254,18 +261,23 @@ let gClickHandler = {
+     executeSoon(runNextTest);
+   }
+ }
+ 
+ // Wraps around the methods' replacement mock function.
  function wrapperMethod(aInvokedMethods, aMethodName) {
    return function () {
      aInvokedMethods.push(aMethodName);
@@ -258,7 +374,17 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
    }
  }
  
-@@ -283,7 +295,10 @@ function setupTestBrowserWindow() {
+ function setupTestBrowserWindow() {
+   // Steal click events and don't propagate them.
+   gTestWin.addEventListener("click", gClickHandler, true);
+ 
+   // Replace methods.
+@@ -278,17 +290,20 @@ function setupTestBrowserWindow() {
+   let doc = gTestWin.content.document;
+   let mainDiv = doc.createElement("div");
+   mainDiv.innerHTML =
+     '<p><a id="commonlink" href="http://mochi.test/moz/">Common link</a></p>' +
+     '<p><a id="panellink" href="http://mochi.test/moz/">Panel link</a></p>' +
      '<p><a id="emptylink">Empty link</a></p>' +
      '<p><math id="mathxlink" xmlns="http://www.w3.org/1998/Math/MathML" xlink:type="simple" xlink:href="http://mochi.test/moz/"><mtext>MathML XLink</mtext></math></p>' +
      '<p><svg id="svgxlink" xmlns="http://www.w3.org/2000/svg" width="100px" height="50px" version="1.1"><a xlink:type="simple" xlink:href="http://mochi.test/moz/"><text transform="translate(10, 25)">SVG XLink</text></a></svg></p>' +
@@ -270,3 +396,8 @@ diff --git a/browser/base/content/test/browser_contentAreaClick.js b/browser/bas
    doc.body.appendChild(mainDiv);
  }
  
+ function runNextTest() {
+   if (!gCurrentTest) {
+     gCurrentTest = gTests.shift();
+     gCurrentTest.setup();
+   }
