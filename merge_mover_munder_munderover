@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 073393702bb53824061e1da165be4dcf28e5fa1b
+# Parent 365b94bad1c347944f9bc831881b1b6e9e3bfb8f
 # User Jonathan Hage <hage.jonathan@gmail.com>
 Merge nsMathMLmunderFrame and nsMathMLmoverFrame into nsMathMLmunderoverFrame
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
 --- a/layout/base/nsCSSFrameConstructor.cpp
 +++ b/layout/base/nsCSSFrameConstructor.cpp
-@@ -4657,18 +4657,18 @@ nsCSSFrameConstructor::FindMathMLData(El
+@@ -4641,18 +4641,18 @@ nsCSSFrameConstructor::FindMathMLData(El
      SIMPLE_MATHML_CREATE(mn_, NS_NewMathMLTokenFrame),
      SIMPLE_MATHML_CREATE(ms_, NS_NewMathMLTokenFrame),
      SIMPLE_MATHML_CREATE(mtext_, NS_NewMathMLTokenFrame),
@@ -1378,7 +1378,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
  
    aRenderingContext.SetFont(GetStyleFont()->mFont,
                              PresContext()->GetUserFontSet());
-@@ -379,18 +472,47 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -382,18 +475,47 @@ nsMathMLmunderoverFrame::Place(nsRenderi
      // XXX This is not a TeX rule... 
      // delta1 (as computed abvove) can become really big when bmOver.descent is
      // negative,  e.g., if the content is &OverBar. In such case, we use the height
@@ -1416,17 +1416,18 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 +    // from the baseline of the base char. we also slap on an extra
 +    // padding between the accent and base chars.
      overDelta1 = ruleThickness + onePixel/2;
-     if (bmBase.ascent < xHeight) { 
+-    if (bmBase.ascent < xHeight) { 
++    if (bmBase.ascent < xHeight) {
 +      // also ensure at least x-height above the baseline of the base
        overDelta1 += xHeight - bmBase.ascent;
      }
      overDelta2 = ruleThickness;
    }
    // empty over?
-   if (!(bmOver.ascent + bmOver.descent)) overDelta1 = 0;
- 
-   nscoord dxBase, dxOver = 0, dxUnder = 0;
-@@ -477,19 +599,26 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+   if (!(bmOver.ascent + bmOver.descent)) {
+     overDelta1 = 0;
+     overDelta2 = 0;
+@@ -489,19 +611,26 @@ nsMathMLmunderoverFrame::Place(nsRenderi
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
  
    mReference.x = 0;

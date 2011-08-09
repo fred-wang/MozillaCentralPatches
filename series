@@ -5,16 +5,11 @@ mathparser-simple.diff
 mathparser-itex.diff
 mathparser-tests.diff
 reftest-analyser-validate.diff
-remove-tex-mathematica.diff
-munderover-vertical-metrics-reftests.diff
-munderover-vertical-metrics.diff
-munderover-vertical-metrics-2.diff
 merge_mover_munder_munderover
 munderover-scriptlevel-inc-reftest.diff
 munderover-scriptlevel-inc2.diff
 Reftest_align_munderover_mover_munder.diff
 align_munderover.diff
-munderover-vertical-metrics-3.diff
 Reftests-positive-namedspaces.diff
 Remove-namedspace-value-overriding.diff
 mathml-link-reftests-2.diff

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent f882967aa364f7fce77837022930ece50abf7a2d
+# Parent efbf6e2222bac36eaa79abbade9e10d19debe8b6
 # User Jonathan Hage <hage.jonathan@gmail.com>
 munder, mover, munderover: add support for the align
 
@@ -24,13 +24,13 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -515,38 +516,77 @@ nsMathMLmunderoverFrame::Place(nsRenderi
-       overDelta1 += xHeight - bmBase.ascent;
-     }
-     overDelta2 = ruleThickness;
+@@ -525,38 +526,77 @@ nsMathMLmunderoverFrame::Place(nsRenderi
    }
    // empty over?
-   if (!(bmOver.ascent + bmOver.descent)) overDelta1 = 0;
+   if (!(bmOver.ascent + bmOver.descent)) {
+     overDelta1 = 0;
+     overDelta2 = 0;
+   }
  
    nscoord dxBase, dxOver = 0, dxUnder = 0;
 +  nsAutoString value_align;
@@ -44,13 +44,13 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 +  PRBool getattribute =
 +    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::align,
 +                 value_align);
-+
++  
 +  enum Align_Attribute {
 +    center,
 +    left,
 +    right
 +  } align_position;
-+
++  
 +  if(getattribute) {
 +    if (value_align.EqualsLiteral("right")){
 +      align_position = right;
@@ -107,7 +107,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
      NS_MIN(dxBase + bmBase.leftBearing, dxOver + bmOver.leftBearing);
    mBoundingMetrics.rightBearing = 
      NS_MAX(dxBase + bmBase.rightBearing, dxOver + bmOver.rightBearing);
-@@ -570,20 +610,38 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -580,20 +620,38 @@ nsMathMLmunderoverFrame::Place(nsRenderi
    nscoord underWidth = bmUnder.width;
    if (!underWidth) {
      underWidth = bmUnder.rightBearing - bmUnder.leftBearing;
