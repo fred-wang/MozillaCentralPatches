@@ -20,6 +20,7 @@ mathml_overall_directionality.diff
 mirror-op-1.diff
 mirror-op-2.diff
 mtable-align-negative-rownumber.diff
+Merge_ParseAttribute_into_ParseNumericValue.diff
 ________
 opdict-diagonal-arrows.diff
 maction-embellished-op.diff
