@@ -1,0 +1,101 @@
+# HG changeset patch
+# Parent 85b55f4fdf09b5b11eb572036c762816379cf334
+# User Frédéric Wang <fred.wang@free.fr>
+remove nonstandard actiontype "restyle" of maction. r=karlt (bug 398505)
+
+diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmactionFrame.cpp
+--- a/layout/mathml/nsMathMLmactionFrame.cpp
++++ b/layout/mathml/nsMathMLmactionFrame.cpp
+@@ -64,17 +64,16 @@
+ //
+ // <maction> -- bind actions to a subexpression - implementation
+ //
+ 
+ #define NS_MATHML_ACTION_TYPE_NONE         0
+ #define NS_MATHML_ACTION_TYPE_TOGGLE       1
+ #define NS_MATHML_ACTION_TYPE_STATUSLINE   2
+ #define NS_MATHML_ACTION_TYPE_TOOLTIP      3 // unsupported
+-#define NS_MATHML_ACTION_TYPE_RESTYLE      4
+ 
+ 
+ nsIFrame*
+ NS_NewMathMLmactionFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+ {
+   return new (aPresShell) nsMathMLmactionFrame(aContext);
+ }
+ 
+@@ -123,47 +122,16 @@ nsMathMLmactionFrame::Init(nsIContent*  
+     }
+ 
+     if (NS_MATHML_ACTION_TYPE_NONE == mActionType) {
+       // expected statusline prefix (11ch)...
+       if (11 < value.Length() && 0 == value.Find("statusline#"))
+         mActionType = NS_MATHML_ACTION_TYPE_STATUSLINE;
+     }
+ 
+-    if (NS_MATHML_ACTION_TYPE_NONE == mActionType) {
+-      // expected restyle prefix (8ch)...
+-      if (8 < value.Length() && 0 == value.Find("restyle#")) {
+-        mActionType = NS_MATHML_ACTION_TYPE_RESTYLE;
+-        mRestyle = value;
+-
+-        // Here is the situation:
+-        // When the attribute [actiontype="restyle#id"] is set, the Style System has
+-        // given us the associated style. But we want to start with our default style.
+-
+-        // So... first, remove the attribute actiontype="restyle#id"
+-        // XXXbz this is pretty messed up, since this can change whether we
+-        // should have a frame at all.  This really needs a better solution.
+-        PRBool notify = PR_FALSE; // don't trigger a reflow yet!
+-        aContent->UnsetAttr(kNameSpaceID_None, nsGkAtoms::actiontype_, notify);
+-
+-        // then, re-resolve our style
+-        nsStyleContext* parentStyleContext = GetStyleContext()->GetParent();
+-        newStyleContext = PresContext()->StyleSet()->
+-          ResolveStyleFor(aContent->AsElement(), parentStyleContext);
+-
+-        if (!newStyleContext) 
+-          mRestyle.Truncate();
+-        else {
+-          if (newStyleContext != GetStyleContext())
+-            SetStyleContextWithoutNotification(newStyleContext);
+-          else
+-            mRestyle.Truncate();
+-        }
+-      }
+-    }
+   }
+ 
+   // Let the base class do the rest
+   return nsMathMLContainerFrame::Init(aContent, aParent, aPrevInFlow);
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmactionFrame::TransmitAutomaticData() {
+@@ -435,26 +403,9 @@ nsMathMLmactionFrame::MouseClick()
+       mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::selection_, value, notify);
+ 
+       // Now trigger a content-changed reflow...
+       PresContext()->PresShell()->
+         FrameNeedsReflow(mSelectedFrame, nsIPresShell::eTreeChange,
+                          NS_FRAME_IS_DIRTY);
+     }
+   }
+-  else if (NS_MATHML_ACTION_TYPE_RESTYLE == mActionType) {
+-    if (!mRestyle.IsEmpty()) {
+-      nsCOMPtr<nsIDOMElement> node( do_QueryInterface(mContent) );
+-      if (node.get()) {
+-        if (nsContentUtils::HasNonEmptyAttr(mContent, kNameSpaceID_None,
+-                                            nsGkAtoms::actiontype_))
+-          node->RemoveAttribute(NS_LITERAL_STRING("actiontype"));
+-        else
+-          node->SetAttribute(NS_LITERAL_STRING("actiontype"), mRestyle);
+-
+-        // Trigger a style change reflow
+-        PresContext()->PresShell()->
+-          FrameNeedsReflow(mSelectedFrame, nsIPresShell::eStyleChange,
+-                           NS_FRAME_IS_DIRTY);
+-      }
+-    }
+-  }
+ }
