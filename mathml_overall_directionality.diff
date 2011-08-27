@@ -259,7 +259,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
  
 -  childFrame = firstChild;
 +  if (isRTL)
-+    childFrame = this->GetLastChild(nsnull);
++    childFrame = this->GetLastChild(nsIFrame::kPrincipalList);
 +  else
 +    childFrame = firstChild;
 +
