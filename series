@@ -4,7 +4,6 @@ mathparser-dictionary.diff
 mathparser-simple.diff
 mathparser-itex.diff
 mathparser-tests.diff
-reftest-analyser-validate.diff
 mathml-link-reftests-2.diff
 click.diff
 mathml-visited.diff
@@ -12,7 +11,6 @@ mathml_directionality.diff
 mathml_overall_directionality.diff
 mirror-op-1.diff
 mirror-op-2.diff
-maction-remove-restyle-actiontype.diff
 ________
 Reftest_align_munderover_mover_munder.diff
 align_munderover.diff

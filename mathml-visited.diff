@@ -2,13 +2,13 @@
 # User Boris Zbarsky <bzbarsky@mit.edu>
 # Date 1309371325 14400
 # Node ID 23729bbb8153ee2834bc09f845b59225afc5acd6
-# Parent 91bcf5787073df451eeb58291f6fe360d3f7b63d
+# Parent 282dd8f3bb7f53f2ba8ca0911e6e26bcb5e51034
 Bug 667576.  Handle visited colors correctly in MathML.  r=dbaron
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -2039,17 +2039,17 @@ nsMathMLChar::PaintForeground(nsPresCont
+@@ -2048,17 +2048,17 @@ nsMathMLChar::PaintForeground(nsPresCont
  
    if (mDrawNormal) {
      // normal drawing if there is nothing special about this char
@@ -21,8 +21,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  nscolor fgColor = styleContext->GetVisitedDependentColor(eCSSProperty_color);
    if (aIsSelected) {
      // get color to use for selection from the look&feel object
-     aPresContext->LookAndFeel()->
-       GetColor(nsILookAndFeel::eColor_TextSelectForeground, fgColor);
+     fgColor = LookAndFeel::GetColor(LookAndFeel::eColorID_TextSelectForeground,
+                                     fgColor);
    }
    aRenderingContext.SetColor(fgColor);
  
@@ -30,7 +30,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -510,17 +510,17 @@ public:
+@@ -511,17 +511,17 @@ public:
  private:
    nsRect    mRect;
  };
