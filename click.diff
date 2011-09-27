@@ -2,13 +2,13 @@
 # User Bill Gianopoulos <bill@wg9s.com>
 # Date 1315079350 14400
 # Node ID c54487e154ad27454a5f4e055950f0c8399a6cf6
-# Parent  a351ae35f2c469e32411d6f42a5e164de6ac2f41
+# Parent 8412b3e7fbf18fa798429eff167a151d8aa778d4
 Bug 534968: Unify codepath for context menu and click - also support MathML href.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -5461,49 +5461,54 @@ function asyncOpenWebPanel(event)
+@@ -5470,49 +5470,54 @@ function asyncOpenWebPanel(event)
  
  /*
   * - [ Dependencies ] ---------------------------------------------------------
@@ -73,7 +73,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  
    // In case of XLink, we don't return the node we got href from since
    // callers expect <a>-like elements.
-@@ -5519,17 +5524,17 @@ function hrefAndLinkNodeForClickEvent(ev
+@@ -5528,17 +5533,17 @@ function hrefAndLinkNodeForClickEvent(ev
   *        Whether the event comes from a web panel.
   * @note default event is prevented if the click is handled.
   */
@@ -95,13 +95,13 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsContextMenu.js
 --- a/browser/base/content/nsContextMenu.js
 +++ b/browser/base/content/nsContextMenu.js
-@@ -426,16 +426,20 @@ nsContextMenu.prototype = {
-       this.setItemAttr("context-media-showcontrols", "disabled", hasError);
-       this.setItemAttr("context-media-hidecontrols", "disabled", hasError);
-       if (this.onVideo)
-         this.setItemAttr("context-video-fullscreen",  "disabled", hasError);
+@@ -437,16 +437,20 @@ nsContextMenu.prototype = {
+     if (InspectorUI.isTreePanelOpen) {
+       InspectorUI.inspectNode(this.target);
+       InspectorUI.stopInspecting();
+     } else {
+       InspectorUI.openInspectorUI(this.target);
      }
-     this.showItem("context-media-sep-commands",  onMedia);
    },
  
 +  get onLink() !!this.link,
@@ -116,7 +116,7 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
          this.isTargetAFormControl(aNode)) {
        this.shouldDisplay = false;
        return;
-@@ -447,19 +451,16 @@ nsContextMenu.prototype = {
+@@ -458,19 +462,16 @@ nsContextMenu.prototype = {
      this.onCompletedImage  = false;
      this.onStandaloneImage = false;
      this.onCanvas          = false;
@@ -136,7 +136,7 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
      this.inFrame           = false;
      this.hasBGImage        = false;
      this.bgImageURL        = "";
-@@ -547,35 +548,26 @@ nsContextMenu.prototype = {
+@@ -558,35 +559,26 @@ nsContextMenu.prototype = {
      }
  
      // Second, bubble out, looking for items of interest that can have childen.
@@ -182,7 +182,7 @@ diff --git a/browser/base/content/nsContextMenu.js b/browser/base/content/nsCont
          if (!this.hasBGImage &&
              !this._hasMultipleBGImages) {
            let bgImgUrl;
-@@ -1152,50 +1144,21 @@ nsContextMenu.prototype = {
+@@ -1163,50 +1155,21 @@ nsContextMenu.prototype = {
        node.setAttribute(attr.nodeName, attr.nodeValue);
      }
  
