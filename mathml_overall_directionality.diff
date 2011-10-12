@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent e39b22774dd59b52a0685c359c5260eaf37292a7
+# Parent cff5279679a3ed39c75d19375b30a9dacff25759
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -230,7 +230,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
-@@ -378,48 +378,69 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+@@ -378,48 +378,67 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
    //////////////////
    // Adjust the origins of each child.
    // and update our bounding metrics
@@ -257,7 +257,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
      firstTime = PR_FALSE;
    }
  
-   childFrame = firstChild;
+-  childFrame = firstChild;
 +  if (isRTL) {
 +    childFrame = this->GetLastChild(nsIFrame::kPrincipalList);
 +  } else {
@@ -285,7 +285,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
      }
      i++;
  
-     childFrame = childFrame->GetNextSibling();
+-    childFrame = childFrame->GetNextSibling();
 +    if (isRTL) {
 +      childFrame = childFrame->GetPrevSibling();
 +    } else {
