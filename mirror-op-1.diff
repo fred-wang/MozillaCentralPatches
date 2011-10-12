@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 48772f74061139901c5bc7f7b4d9b62975f3ca39
+# Parent 1c63f819a6b93eec6d85f556781c6ff9a8290d23
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
@@ -17,7 +17,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                        nsBoundingMetrics&       aDesiredStretchSize,
 -                      PRUint32                 aStretchHint)
 +                      PRUint32                 aStretchHint,
-+                      PRBool                   aRTL)
++                      bool                     aRTL)
  {
    NS_ASSERTION(!(aStretchHint &
                   ~(NS_STRETCH_VARIABLE_MASK | NS_STRETCH_LARGEOP |
@@ -117,7 +117,7 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
            nsBoundingMetrics&       aDesiredStretchSize,
 -          PRUint32                 aStretchHint = NS_STRETCH_NORMAL);
 +          PRUint32                 aStretchHint,
-+          PRBool                   aRTL);
++          bool                     aRTL);
  
    void
    SetData(nsPresContext* aPresContext,
@@ -351,7 +351,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
    i = 0;
    nscoord dx = 0;
    nsBoundingMetrics bm;
-@@ -496,28 +499,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
+@@ -494,28 +497,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
                                   nsMathMLChar*        aMathMLChar,
                                   nsOperatorFlags      aForm,
                                   PRInt32              aScriptLevel,
@@ -362,7 +362,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
                                   nscoord&             aAscent,
 -                                 nscoord&             aDescent)
 +                                 nscoord&             aDescent,
-+                                 PRBool               aRTL)
++                                 bool                 aRTL)
  {
    if (aMathMLChar && 0 < aMathMLChar->Length()) {
      nscoord leftSpace;
@@ -398,7 +398,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.h b/layout/mathml/nsMathMLmfence
               nscoord&             aAscent,
 -             nscoord&             aDescent);
 +             nscoord&             aDescent,
-+             PRBool               aRTL);
++             bool                 aRTL);
  
    static void
    PlaceChar(nsMathMLChar*      aMathMLChar,

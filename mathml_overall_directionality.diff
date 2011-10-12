@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent cff5279679a3ed39c75d19375b30a9dacff25759
+# Parent 85f6eddcc0caa4aa24fbb0ef078e7fafc53e83d5
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -366,7 +366,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
                         nsIFrame* aFrame, const nsRect& aRect,
 -                       nscoord aThickness)
 -    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness) {
-+                       nscoord aThickness, PRBool aRTL)
++                       nscoord aThickness, bool aRTL)
 +    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness),
 +      mRTL(aRTL) {
      MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
@@ -383,7 +383,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  private:
    nsRect    mRect;
    nscoord   mThickness;
-+  PRBool    mRTL;
++  bool      mRTL;
  };
  
  void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
@@ -430,7 +430,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      return NS_OK;
 -  
 +
-+  PRBool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
++  bool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
 +
    return aLists.Content()->AppendNewToTop(new (aBuilder)
 -      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
