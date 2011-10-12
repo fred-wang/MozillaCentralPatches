@@ -1,6 +1,0 @@
-# HG changeset patch
-# Parent 28d992440d394da984632ad72bc53df9658b3406
-# User Frédéric Wang <fred.wang@free.fr>
-try: -b do -p all -u all -t all
-
-

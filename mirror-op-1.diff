@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent b5f3a6a419e122c5cabe49eb11abd2428c0c4922
+# Parent 48772f74061139901c5bc7f7b4d9b62975f3ca39
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1689,24 +1689,28 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1698,24 +1698,28 @@ nsMathMLChar::StretchInternal(nsPresCont
  }
  
  nsresult
@@ -36,7 +36,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Record the metrics
    mBoundingMetrics = aDesiredStretchSize;
-@@ -1782,20 +1786,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
+@@ -1791,20 +1795,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
    }
    nscoord dx = 0, dy = 0;
    for (i = 0, child = mSibling; child; child = child->mSibling, i++) {
@@ -59,7 +59,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      }
      child->SetRect(nsRect(dx, dy, childSize.width, childSize.ascent+childSize.descent));
      if (0 == i)
-@@ -2014,18 +2019,23 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -2023,18 +2028,23 @@ nsMathMLChar::Display(nsDisplayListBuild
          nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                        aSelectedRect && !aSelectedRect->IsEmpty()));
  }
@@ -126,7 +126,7 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
    void
    GetData(nsString& aData) {
      aData = mData;
-@@ -253,16 +255,17 @@ private:
+@@ -253,16 +255,18 @@ private:
    // from the family in the nsStyleContext.
    nsString           mFamily;
    // mUnscaledAscent is the actual ascent of the char.
@@ -134,8 +134,9 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
    // mScaleX, mScaleY are the factors by which we scale the char.
    float              mScaleX, mScaleY;
    // mDrawNormal indicates whether we use special glyphs or not.
-   PRPackedBool       mDrawNormal;
-+  PRPackedBool       mMirrored;
+   bool               mDrawNormal;
++  // mMirrored indicates whether the character is mirrored. 
++  bool               mMirrored;
  
    class StretchEnumContext;
    friend class StretchEnumContext;
@@ -175,7 +176,7 @@ diff --git a/layout/mathml/nsMathMLOperators.cpp b/layout/mathml/nsMathMLOperato
           NS_MATHML_OPERATOR_IS_LARGEOP(allFlags);
  }
  
-+/* static */ PRBool
++/* static */ bool
 +nsMathMLOperators::IsMirrorableOperator(const nsString& aOperator)
 +{
 +  // LookupOperator will search infix, postfix and prefix forms of aOperator and
@@ -228,18 +229,20 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
  enum eMATHVARIANT {
    eMATHVARIANT_NONE = -1,
    eMATHVARIANT_normal = 0,
-@@ -144,17 +145,18 @@ public:
+@@ -144,16 +145,20 @@ public:
                     float*                aLeftSpace,
                     float*                aRightSpace);
  
    // IsMutableOperator:
    // Return true if the operator exists and is stretchy or largeop
-   static PRBool
+   static bool
    IsMutableOperator(const nsString& aOperator);
  
--  // Helper function used by the nsMathMLChar class.
 +  // Helper functions used by the nsMathMLChar class.
-+  static PRBool IsMirrorableOperator(const nsString& aOperator);
++  static bool
++  IsMirrorableOperator(const nsString& aOperator);
++
+   // Helper function used by the nsMathMLChar class.
    static nsStretchDirection GetStretchyDirection(const nsString& aOperator);
  
    // Return the variant type of one Unicode Mathematical Alphanumeric Symbol
@@ -247,8 +250,7 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
    // eMATHVARIANT_NONE if aChar is not such a character.
    static eMATHVARIANT LookupInvariantChar(const nsAString& aChar);
  
-   // Return the styled Mathematical Alphanumeric Symbol character
-@@ -224,16 +226,19 @@ public:
+@@ -224,16 +229,19 @@ public:
    (NS_MATHML_OPERATOR_MOVABLELIMITS == ((_flags) & NS_MATHML_OPERATOR_MOVABLELIMITS))
  
  #define NS_MATHML_OPERATOR_IS_SYMMETRIC(_flags) \
@@ -349,7 +351,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
    i = 0;
    nscoord dx = 0;
    nsBoundingMetrics bm;
-@@ -493,28 +496,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
+@@ -496,28 +499,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
                                   nsMathMLChar*        aMathMLChar,
                                   nsOperatorFlags      aForm,
                                   PRInt32              aScriptLevel,
@@ -408,7 +410,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.h b/layout/mathml/nsMathMLmfence
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -762,17 +762,17 @@ nsMathMLmoFrame::Stretch(nsRenderingCont
+@@ -760,17 +760,17 @@ nsMathMLmoFrame::Stretch(nsRenderingCont
            container.descent = aContainerSize.descent;
            container.ascent = height - container.descent;
          }
