@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 1c63f819a6b93eec6d85f556781c6ff9a8290d23
+# Parent e0aeaaa34ab5c8b3e68029da5b328ae30e4de608
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
@@ -24,7 +24,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                     NS_STRETCH_INTEGRAL)),
                 "Unexpected stretch flags");
  
-   mDrawNormal = PR_TRUE;
+   mDrawNormal = true;
 +  if (aRTL && nsMathMLOperators::IsMirrorableOperator(mData)) {
 +    mMirrored = PR_TRUE;
 +  }
@@ -96,8 +96,8 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
      mParent = aParent;
      mUnscaledAscent = 0;
      mScaleX = mScaleY = 1.0;
-     mDrawNormal = PR_TRUE;
-+    mMirrored = PR_FALSE;
+     mDrawNormal = true;
++    mMirrored = false;
    }
  
    ~nsMathMLChar() { // not a virtual destructor: this class is not intended to be subclassed
@@ -425,7 +425,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
        // gracefully handle cases where stretching the char failed (i.e., GetBoundingMetrics failed)
        // clear our 'form' to behave as if the operator wasn't in the dictionary
        mFlags &= ~NS_MATHML_OPERATOR_FORM;
-       useMathMLChar = PR_FALSE;
+       useMathMLChar = false;
      }
    }
  

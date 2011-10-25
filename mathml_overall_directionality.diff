@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent 85f6eddcc0caa4aa24fbb0ef078e7fafc53e83d5
+# Parent 6b0a704d4a01dc9cf2721d7f19701587d1c48bf4
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -254,7 +254,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
 +  if (leftChar) {
 +    PlaceChar(leftChar, ascent, bm, dx);
      aDesiredSize.mBoundingMetrics = bm;
-     firstTime = PR_FALSE;
+     firstTime = false;
    }
  
 -  childFrame = firstChild;
@@ -267,7 +267,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
      nsHTMLReflowMetrics childSize;
      GetReflowAndBoundingMetricsFor(childFrame, childSize, bm);
      if (firstTime) {
-       firstTime = PR_FALSE;
+       firstTime = false;
        aDesiredSize.mBoundingMetrics  = bm;
      }
      else  
