@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 4d19e745affced8d0555c63f2ac0c01f8fcf87e5
+# Parent eb23390ce588c2b84504a41dd8ea5f8a250eca0d
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 2
 
@@ -67,7 +67,7 @@ diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properti
  operator.\u00B1.infix = lspace:4 rspace:4 # &PlusMinus;
  operator.\u00B1.prefix = lspace:0 rspace:1 # &PlusMinus;
  operator.\u00B4.postfix = lspace:0 rspace:0 accent # &DiacriticalAcute;
-@@ -336,52 +336,52 @@ operator.\u2208.infix = lspace:5 rspace:
+@@ -336,49 +336,49 @@ operator.\u2208.infix = lspace:5 rspace:
  operator.\u2209.infix = lspace:5 rspace:5 # &NotElement;
  operator.\u220A.infix = lspace:5 rspace:5 # small element of
  operator.\u220B.infix = lspace:5 rspace:5 # &SuchThat; &ReverseElement;
@@ -111,26 +111,20 @@ diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properti
 -operator.\u222E.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ContourIntegral;
 -operator.\u222F.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &DoubleContourIntegral;
 -operator.\u2230.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # volume integral
--operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # clockwise integral
--operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ClockwiseContourIntegral;
--operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &CounterClockwiseContourIntegral;
 +operator.\u222B.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &Integral;
 +operator.\u222C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # double integral
 +operator.\u222D.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # triple integral
 +operator.\u222E.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ContourIntegral;
 +operator.\u222F.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &DoubleContourIntegral;
 +operator.\u2230.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # volume integral
-+operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # clockwise integral
-+operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ClockwiseContourIntegral;
-+operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &CounterClockwiseContourIntegral;
+ operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # clockwise integral
+ operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ClockwiseContourIntegral;
+ operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &CounterClockwiseContourIntegral;
  operator.\u2234.infix = lspace:5 rspace:5 # &Therefore;
  operator.\u2235.infix = lspace:5 rspace:5 # &Because;
  operator.\u2236.infix = lspace:5 rspace:5 # ratio
  operator.\u2237.infix = lspace:5 rspace:5 # &Colon; &Proportion;
  operator.\u2238.infix = lspace:4 rspace:4 # dot minus
- operator.\u2239.infix = lspace:5 rspace:5 # excess
- operator.\u223A.infix = lspace:4 rspace:4 # geometric proportion
- operator.\u223B.infix = lspace:5 rspace:5 # homothetic
 @@ -933,34 +933,34 @@ operator.\u2A02.prefix = lspace:1 rspace
  operator.\u2A03.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # n-ary union operator with dot
  operator.\u2A04.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical # &biguplus;
@@ -146,31 +140,29 @@ diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properti
 -operator.\u2A0E.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with double stroke
 -operator.\u2A0F.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral average with slash
 -operator.\u2A10.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # circulation function
--operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # anticlockwise integration
--operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with rectangular path around pole
--operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with semicircular path around pole
--operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration not including the pole
--operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral around a point operator
--operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # quaternion integral operator
--operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with leftwards arrow with hook
--operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with times sign
--operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with intersection
--operator.\u2A1A.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with union
--operator.\u2A1B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with overbar
--operator.\u2A1C.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with underbar
 +operator.\u2A0B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # summation with integral
 +operator.\u2A0C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # quadruple integral operator
 +operator.\u2A0D.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # finite part integral
 +operator.\u2A0E.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with double stroke
 +operator.\u2A0F.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral average with slash
 +operator.\u2A10.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # circulation function
-+operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # anticlockwise integration
+ operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # anticlockwise integration
+-operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with rectangular path around pole
+-operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration with semicircular path around pole
+-operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # line integration not including the pole
+-operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral around a point operator
+-operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # quaternion integral operator
 +operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with rectangular path around pole
 +operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with semicircular path around pole
 +operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration not including the pole
 +operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral around a point operator
 +operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # quaternion integral operator
-+operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with leftwards arrow with hook
+ operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with leftwards arrow with hook
+-operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with times sign
+-operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with intersection
+-operator.\u2A1A.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with union
+-operator.\u2A1B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with overbar
+-operator.\u2A1C.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral # integral with underbar
 +operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with times sign
 +operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with intersection
 +operator.\u2A1A.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with union
