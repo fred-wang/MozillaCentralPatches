@@ -6,7 +6,6 @@ mathparser-itex.diff
 mathparser-tests.diff
 mathml-link-reftests-2.diff
 click.diff
-mathml-visited.diff
 mathml_directionality.diff
 mathml_overall_directionality.diff
 mirror-op-1.diff

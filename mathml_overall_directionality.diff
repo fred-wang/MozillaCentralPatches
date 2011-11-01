@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent 6b0a704d4a01dc9cf2721d7f19701587d1c48bf4
+# Parent 905908722788c51c26e3e0d096e1b88f756e598d
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
@@ -428,13 +428,12 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
                                   const nsDisplayListSet& aLists) {
    if (!aFrame->GetStyleVisibility()->IsVisible() || aRect.IsEmpty())
      return NS_OK;
--  
 +
 +  bool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
-+
+   
    return aLists.Content()->AppendNewToTop(new (aBuilder)
 -      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
-+     nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
++      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
  }
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp

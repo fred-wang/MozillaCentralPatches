@@ -26,7 +26,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    mDrawNormal = true;
 +  if (aRTL && nsMathMLOperators::IsMirrorableOperator(mData)) {
-+    mMirrored = PR_TRUE;
++    mMirrored = true;
 +  }
    mScaleY = mScaleX = 1.0;
    mDirection = aStretchDirection;
@@ -283,7 +283,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
                                               NS_STRETCH_DIRECTION_VERTICAL,
                                               contSize, bmLongdivChar,
 -                                             NS_STRETCH_LARGER);
-+                                             NS_STRETCH_LARGER, PR_FALSE);
++                                             NS_STRETCH_LARGER, false);
        mMathMLChar[mLongDivCharIndex].GetBoundingMetrics(bmLongdivChar);
  
        // Update horizontal parameters
