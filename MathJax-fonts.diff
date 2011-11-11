@@ -1,0 +1,68 @@
+# HG changeset patch
+# Parent a64afa478da4d44ffed9d6d5608f5473ece9faa7
+# User Frédéric Wang <fred.wang@free.fr>
+Use MathJax fonts on token elements.
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -49,28 +49,58 @@
+ /**************************************************************************/
+ 
+ math {
+   direction: ltr;
+   unicode-bidi: embed;
+   display: inline;
+   font-size: inherit;
+   font-style: normal;
+-  font-family: STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
++  font-family: MathJax_Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+   text-rendering: optimizeLegibility;
+   -moz-float-edge: margin-box;
+ }
+ math[mode="display"], math[display="block"] {
+   display: block;
+   text-align: -moz-center;
+ }
+ math[display="inline"] {
+   display: inline;
+ }
+ 
++/******************************************************************************/
++/* Rules for MathJax fonts                                                    */
++/******************************************************************************/
++mn, mo, mtext, ms {
++  font-family: MathJax_Main;
++}
++[mathvariant="normal"] {
++  font-family: MathJax_Math;
++}
++[mathvariant="double-struck"] {
++  font-family: MathJax_AMS;
++}
++[mathvariant="script"],
++[mathvariant="bold-script"] {
++  font-family: MathJax_Script;
++}
++[mathvariant="fraktur"],
++[mathvariant="bold-fraktur"] {
++  font-family: MathJax_Fraktur;
++}
++[mathvariant="sans-serif"],
++[mathvariant="bold-sans-serif"],
++[mathvariant="sans-serif-italic"],
++[mathvariant="sans-serif-bold-italic"] {
++  font-family: MathJax_SansSerif;
++}
++[mathvariant="monospace"] {
++  font-family: MathJax_Typewriter;
++}
++ 
+ /**************************************************************************/
+ /* Style switching during frame construction depending on the context of <mi>:
+    These rules are not used when mathvariant or fontstyle is specified
+    explicitly. 
+ /**************************************************************************/
+ 
+ /* If the textual content of an <mi> consists of a single character
+    with a corresponding mathematical italic alphanumeric character,
