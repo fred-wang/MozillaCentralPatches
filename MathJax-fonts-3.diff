@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 52b81b69948a34f60ccfe396d77170772fddfe4a
+# Parent 54817bcc955800cb1866fc5561448942102d6af4
 # User Frédéric Wang <fred.wang@free.fr>
 Add page to convert MathJax font table into our own format
 
@@ -7,7 +7,7 @@ diff --git a/layout/mathml/MathJaxFonts.html b/layout/mathml/MathJaxFonts.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/mathml/MathJaxFonts.html
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,176 @@
 +<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
 +<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
 +<!-- ***** BEGIN LICENSE BLOCK *****
@@ -158,9 +158,10 @@ new file mode 100644
 +      var fonts1 = fontData.FONTS[fontList[1]];
 +      var fonts2 = fontData.FONTS[fontList[2]];
 +      for (var u in fonts1) {
-+        if (u == "version" || u == "available" ||
++        if (delimiters.hasOwnProperty(u) ||
++            u == "version" || u == "available" ||
 +            u == "directory" ||  u == "family" || u == "testString") {
-+          // Ignore thses properties
++          // Ignore these properties
 +          continue;
 +        }
 +        t.value += codePoint(u);

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 4ff14f2269f0157278ae708d5ba65be559f1cfd3
+# Parent c44dc31504b6416f0e27435df533daf331b3cc4d
 # User Frédéric Wang <fred.wang@free.fr>
 Add stretchy operator table for MathJax fonts
 
@@ -53,7 +53,7 @@ diff --git a/layout/mathml/mathfontMathJax_Main.properties b/layout/mathml/mathf
 new file mode 100644
 --- /dev/null
 +++ b/layout/mathml/mathfontMathJax_Main.properties
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,104 @@
 +# ***** BEGIN LICENSE BLOCK *****
 +# Version: MPL 1.1/GPL 2.0/LGPL 2.1
 +#
@@ -71,7 +71,7 @@ new file mode 100644
 +#                                                                       
 +# The Initial Developer of the Original Code is
 +# The University of Queensland.
-+# Portions created by the Initial Developer are Copyright (C) 2001
++# Portions created by the Initial Developer are Copyright (C) 2011
 +# the Initial Developer. All Rights Reserved.
 +#                                                                       
 +# Contributor(s):                                                       
@@ -139,30 +139,12 @@ new file mode 100644
 +\u27EE = \u23A7@4\uFFFD\u23A9@4\u23AA@4\u27EE
 +\u27EF = \u23AB@4\uFFFD\u23AD@4\u23AA@4\u27EF
 +\u0020 = \uFFFD\uFFFD\uFFFD\uFFFD\u0020@1\u0020@2
-+\u0028 = \uFFFD\uFFFD\uFFFD\uFFFD\u0028@1\u0028@2
-+\u0029 = \uFFFD\uFFFD\uFFFD\uFFFD\u0029@1\u0029@2
-+\u002F = \uFFFD\uFFFD\uFFFD\uFFFD\u002F@1\u002F@2
-+\u005B = \uFFFD\uFFFD\uFFFD\uFFFD\u005B@1\u005B@2
-+\u005C = \uFFFD\uFFFD\uFFFD\uFFFD\u005C@1\u005C@2
-+\u005D = \uFFFD\uFFFD\uFFFD\uFFFD\u005D@1\u005D@2
-+\u007B = \uFFFD\uFFFD\uFFFD\uFFFD\u007B@1\u007B@2
-+\u007D = \uFFFD\uFFFD\uFFFD\uFFFD\u007D@1\u007D@2
 +\u00A0 = \uFFFD\uFFFD\uFFFD\uFFFD\u00A0@1\u00A0@2
-+\u02C6 = \uFFFD\uFFFD\uFFFD\uFFFD\u02C6@1\u02C6@2
-+\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\u02DC@1\u02DC@2
 +\u0302 = \uFFFD\uFFFD\uFFFD\uFFFD\u0302@1\u0302@2
 +\u0303 = \uFFFD\uFFFD\uFFFD\uFFFD\u0303@1\u0303@2
-+\u2016 = \uFFFD\uFFFD\uFFFD\uFFFD\u2016@1
-+\u2191 = \uFFFD\uFFFD\uFFFD\uFFFD\u2191@1
-+\u2193 = \uFFFD\uFFFD\uFFFD\uFFFD\u2193@1
-+\u21D1 = \uFFFD\uFFFD\uFFFD\uFFFD\u21D1@1
-+\u21D3 = \uFFFD\uFFFD\uFFFD\uFFFD\u21D3@1
 +\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\u220F@1\u220F@2
 +\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\u2210@1\u2210@2
 +\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\u2211@1\u2211@2
-+\u221A = \uFFFD\uFFFD\uFFFD\uFFFD\u221A@1\u221A@2
-+\u2223 = \uFFFD\uFFFD\uFFFD\uFFFD\u2223@1
-+\u2225 = \uFFFD\uFFFD\uFFFD\uFFFD\u2225@1
 +\u222B = \uFFFD\uFFFD\uFFFD\uFFFD\u222B@1\u222B@2
 +\u222C = \uFFFD\uFFFD\uFFFD\uFFFD\u222C@1\u222C@2
 +\u222D = \uFFFD\uFFFD\uFFFD\uFFFD\u222D@1\u222D@2
@@ -171,13 +153,6 @@ new file mode 100644
 +\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C1@1\u22C1@2
 +\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C2@1\u22C2@2
 +\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C3@1\u22C3@2
-+\u2308 = \uFFFD\uFFFD\uFFFD\uFFFD\u2308@1\u2308@2
-+\u2309 = \uFFFD\uFFFD\uFFFD\uFFFD\u2309@1\u2309@2
-+\u230A = \uFFFD\uFFFD\uFFFD\uFFFD\u230A@1\u230A@2
-+\u230B = \uFFFD\uFFFD\uFFFD\uFFFD\u230B@1\u230B@2
-+\u23D0 = \uFFFD\uFFFD\uFFFD\uFFFD\u23D0@1
-+\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E8@1\u27E8@2
-+\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E9@1\u27E9@2
 +\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A00@1\u2A00@2
 +\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A01@1\u2A01@2
 +\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A02@1\u2A02@2
