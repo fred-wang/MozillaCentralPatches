@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 54817bcc955800cb1866fc5561448942102d6af4
+# Parent 7e423821a77107729fb335a9b8fee5b10cf73de2
 # User Frédéric Wang <fred.wang@free.fr>
 Add page to convert MathJax font table into our own format
 
@@ -7,7 +7,7 @@ diff --git a/layout/mathml/MathJaxFonts.html b/layout/mathml/MathJaxFonts.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/mathml/MathJaxFonts.html
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,197 @@
 +<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
 +<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
 +<!-- ***** BEGIN LICENSE BLOCK *****
@@ -65,8 +65,12 @@ new file mode 100644
 +        "MathJax_Size1",
 +        "MathJax_Size2",
 +        "MathJax_Size3",
-+        "MathJax_Size4"
++        "MathJax_Size4",
++        "MathJax_AMS",
++        "MathJax_Main-bold"
 +      ];
++
++      var noChar = codePoint();
 +
 +      function codePoint(aValue, aFont)
 +      {
@@ -91,22 +95,35 @@ new file mode 100644
 +      function codePoint2(aList)
 +      {
 +        if (aList) {
-+          return codePoint(aList[0], aList[1]);
++          if (Array.isArray(aList[0])) {
++            // Generate a string representation for a composite character.
++            // (the syntax may not match the parser in nsMathMLChar, but 
++            // support for composite character is broken anyway).
++            var str = "(";
++            str += codePoint(aList[0][0], aList[1]);
++            for (var i = 1; i < aList[0].length; i++) {
++              str += "," + codePoint(aList[0][i], aList[1]);
++            }
++            str += ")";
++            return str;
++          } else {
++            return codePoint(aList[0], aList[1]);
++          }
 +        } else {
-+          return codePoint();
++          return noChar;
 +        }
 +      }
 +
 +      MathJax.Hub.Queue(
 +      ["Require", MathJax.Ajax, "[MathJax]/jax/element/mml/jax.js"],
 +      ["Require", MathJax.Ajax, "[MathJax]/jax/output/HTML-CSS/jax.js"],
++      ["Require", MathJax.Ajax, "[MathJax]/jax/output/HTML-CSS/fonts/TeX/fontdata-extra.js"],
 +      function () {
 +
 +      var t = document.getElementById("output");
 +      t.value = "";
 +
 +      var fontData = MathJax.OutputJax["HTML-CSS"].FONTDATA;
-+      var noChar = codePoint();
 +
 +      t.value += "# Content below is generated from MathJaxFonts.html. Do not edit.\n";
 +      t.value += "\n";
@@ -123,10 +140,14 @@ new file mode 100644
 +
 +        var v = delimiters[u];
 +
-+        if (u == 0x23DE || u == 0x23DF || v.alias) {
-+          // Ignore horizontal braces because they use two middle glyphs
-+          // Ignore aliases
++        if (v.alias || v.load) {
++          // Ignore these characters
 +          continue;
++        }
++
++        if (u == 0x23DE || u == 0x23DF) {
++          // Ignore horizontal braces because they require composite characters
++          t.value += "# ";
 +        }
 +
 +        t.value += codePoint(u);
@@ -158,7 +179,7 @@ new file mode 100644
 +      var fonts1 = fontData.FONTS[fontList[1]];
 +      var fonts2 = fontData.FONTS[fontList[2]];
 +      for (var u in fonts1) {
-+        if (delimiters.hasOwnProperty(u) ||
++        if (delimiters.hasOwnProperty(u) || // already listed above
 +            u == "version" || u == "available" ||
 +            u == "directory" ||  u == "family" || u == "testString") {
 +          // Ignore these properties
