@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ccb3558fdff7fd36fca67a01cb8359a98b5cd47d
+# Parent acdbc2a415f2e738c84aa9da0018681bd33e88c1
 # User Frédéric Wang <fred.wang@free.fr>
 Add page to convert MathJax font table into our own format
 
@@ -7,7 +7,7 @@ diff --git a/layout/mathml/MathJaxFonts.html b/layout/mathml/MathJaxFonts.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/mathml/MathJaxFonts.html
-@@ -0,0 +1,208 @@
+@@ -0,0 +1,222 @@
 +<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
 +<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
 +<!-- ***** BEGIN LICENSE BLOCK *****
@@ -114,6 +114,21 @@ new file mode 100644
 +        }
 +      }
 +
++      function isSupported(aStretch)
++      {
++        for (var x in aStretch) {
++          var part = aStretch[x];
++          if (part[0] instanceof Array) {
++            // Composite char
++            return false;
++          } else if (part.length > 2) {
++            // Part has scale factor
++            return false;
++          }
++        }
++        return true;
++      }
++
 +      MathJax.Hub.Queue(
 +      ["Require", MathJax.Ajax, "[MathJax]/jax/element/mml/jax.js"],
 +      ["Require", MathJax.Ajax, "[MathJax]/jax/output/HTML-CSS/jax.js"],
@@ -150,14 +165,13 @@ new file mode 100644
 +            // use data from the char pointed by this alias
 +            v = delimiters[v.alias];
 +          } else {
-+            // Can not found the corresponding char. Ignore it.
++            // It is an alias to a non-stretchy char. Ignore it.
 +            continue;
 +          }
 +        }
 +
-+        if (u == 0x23DE || u == 0x23DF ||
-+            u == 0xFE37 || u == 0xFE38) {
-+          // Ignore horizontal braces because they require composite characters
++        if (v.stretch && !isSupported(v.stretch)) {
++          // This construction is not supported. Comment the line.
 +          t.value += "# ";
 +        }
 +

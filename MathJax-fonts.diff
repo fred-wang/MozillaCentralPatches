@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent a64afa478da4d44ffed9d6d5608f5473ece9faa7
+# Parent d8c77ce3f69f380dbf798b3ccae814cff33ec781
 # User Frédéric Wang <fred.wang@free.fr>
 Use MathJax fonts on token elements.
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -49,28 +49,58 @@
+@@ -49,27 +49,30 @@
  /**************************************************************************/
  
  math {
@@ -16,7 +16,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    font-size: inherit;
    font-style: normal;
 -  font-family: STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
-+  font-family: MathJax_Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
++  font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
    text-rendering: optimizeLegibility;
    -moz-float-edge: margin-box;
  }
@@ -27,37 +27,10 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
  math[display="inline"] {
    display: inline;
  }
++mi {
++  font-family: MathJax_Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
++}
  
-+/******************************************************************************/
-+/* Rules for MathJax fonts                                                    */
-+/******************************************************************************/
-+mn, mo, mtext, ms {
-+  font-family: MathJax_Main;
-+}
-+[mathvariant="normal"] {
-+  font-family: MathJax_Math;
-+}
-+[mathvariant="double-struck"] {
-+  font-family: MathJax_AMS;
-+}
-+[mathvariant="script"],
-+[mathvariant="bold-script"] {
-+  font-family: MathJax_Script;
-+}
-+[mathvariant="fraktur"],
-+[mathvariant="bold-fraktur"] {
-+  font-family: MathJax_Fraktur;
-+}
-+[mathvariant="sans-serif"],
-+[mathvariant="bold-sans-serif"],
-+[mathvariant="sans-serif-italic"],
-+[mathvariant="sans-serif-bold-italic"] {
-+  font-family: MathJax_SansSerif;
-+}
-+[mathvariant="monospace"] {
-+  font-family: MathJax_Typewriter;
-+}
-+ 
  /**************************************************************************/
  /* Style switching during frame construction depending on the context of <mi>:
     These rules are not used when mathvariant or fontstyle is specified
@@ -65,4 +38,42 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
  /**************************************************************************/
  
  /* If the textual content of an <mi> consists of a single character
-    with a corresponding mathematical italic alphanumeric character,
+@@ -170,33 +173,33 @@ math[display="inline"] {
+ [mathvariant="italic"] { 
+   font-style: italic;
+ }
+ [mathvariant="bold-italic"] {
+   font-weight: bold;
+   font-style: italic;
+ }
+ [mathvariant="sans-serif"] {
+-  font-family: sans-serif;
++  font-family: MathJax_SansSerif, sans-serif !important;
+ }
+ [mathvariant="bold-sans-serif"] {
+   font-weight: bold;
+-  font-family: sans-serif;
++  font-family: MathJax_SansSerif, sans-serif !important;
+ }
+ [mathvariant="sans-serif-italic"] {
+-  font-family: sans-serif;
++  font-family: MathJax_SansSerif, sans-serif !important;
+   font-style: italic;
+ }
+ [mathvariant="sans-serif-bold-italic"] {
+-  font-family: sans-serif;
++  font-family: MathJax_SansSerif, sans-serif !important;
+   font-weight: bold;
+   font-style: italic;
+ }
+ [mathvariant="monospace"] {
+-  font-family: monospace;
++  font-family: MathJax_Typewriter, monospace !important;
+ }
+ 
+ /**************************************************************************/
+ /* tags with generated content                                            */
+ /**************************************************************************/
+ 
+ ms {
+   display: inline;

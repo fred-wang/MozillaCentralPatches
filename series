@@ -10,9 +10,9 @@ mathml_directionality.diff
 mathml_overall_directionality.diff
 mirror-op-1.diff
 mirror-op-2.diff
-MathJax-fonts.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
+MathJax-fonts.diff
 test-stretchy-and-large-operators.diff
 ________
 mpadded-vertical-metrics.diff
