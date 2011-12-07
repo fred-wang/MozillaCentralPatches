@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 7e423821a77107729fb335a9b8fee5b10cf73de2
+# Parent ccb3558fdff7fd36fca67a01cb8359a98b5cd47d
 # User Frédéric Wang <fred.wang@free.fr>
 Add page to convert MathJax font table into our own format
 
@@ -7,7 +7,7 @@ diff --git a/layout/mathml/MathJaxFonts.html b/layout/mathml/MathJaxFonts.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/mathml/MathJaxFonts.html
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,208 @@
 +<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
 +<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
 +<!-- ***** BEGIN LICENSE BLOCK *****
@@ -140,12 +140,23 @@ new file mode 100644
 +
 +        var v = delimiters[u];
 +
-+        if (v.alias || v.load) {
-+          // Ignore these characters
++        if (v.load) {
++          // These characters are already handled when we load fontdata-extra.js
 +          continue;
 +        }
 +
-+        if (u == 0x23DE || u == 0x23DF) {
++        if (v.alias) {
++          if (delimiters.hasOwnProperty(v.alias)) {
++            // use data from the char pointed by this alias
++            v = delimiters[v.alias];
++          } else {
++            // Can not found the corresponding char. Ignore it.
++            continue;
++          }
++        }
++
++        if (u == 0x23DE || u == 0x23DF ||
++            u == 0xFE37 || u == 0xFE38) {
 +          // Ignore horizontal braces because they require composite characters
 +          t.value += "# ";
 +        }
@@ -162,7 +173,7 @@ new file mode 100644
 +            t.value += codePoint2(v.stretch.left);
 +            t.value += codePoint2(v.stretch.mid);
 +            t.value += codePoint2(v.stretch.right);
-+            t.value += codePoint2(v.stretch.sep);
++            t.value += codePoint2(v.stretch.rep);
 +          }
 +        } else {
 +          t.value += noChar + noChar + noChar + noChar;

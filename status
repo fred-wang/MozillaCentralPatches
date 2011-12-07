@@ -11,6 +11,6 @@ bd8a239ab3c2686eee4f4c0d5f317a450399a9e2:mathml_directionality.diff
 fdcba727b9af948b4a688d48c1c53e0554521ae5:mirror-op-1.diff
 29dd489609387f4cb55b82a1bd279ebe95eca6b8:mirror-op-2.diff
 fd3dc39a1fb73b19937ae6f892e49a6f8ff454f0:MathJax-fonts.diff
-6d32c45e9dfa5a9f7ba83d9160a715721fbc6bdf:MathJax-fonts-2.diff
-e5847d4844375749a51b380a1ee29677072951d5:MathJax-fonts-3.diff
-01db8414255dbaecf8ad6e8cd4d078c30501ae45:test-stretchy-and-large-operators.diff
+11bfb028c8e3d848f7f80d748de3ffcb385c3a9b:MathJax-fonts-2.diff
+e7553738d967e2eadc200f3c3b4bd4345ad9d0fe:MathJax-fonts-3.diff
+97fc5df5f599ad534ab47c378f07f5a3d435b9bb:test-stretchy-and-large-operators.diff
