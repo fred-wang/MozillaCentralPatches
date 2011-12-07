@@ -13,6 +13,7 @@ mirror-op-2.diff
 MathJax-fonts.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
+test-stretchy-and-large-operators.diff
 ________
 mpadded-vertical-metrics.diff
 Reftest_align_munderover_mover_munder.diff

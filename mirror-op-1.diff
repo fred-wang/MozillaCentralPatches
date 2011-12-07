@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent e0aeaaa34ab5c8b3e68029da5b328ae30e4de608
+# Parent 0cc9e6bc415237d490b1065e072793c3f486f451
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
@@ -307,7 +307,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
        mMathMLChar[mRadicalCharIndex].GetBoundingMetrics(bmRadicalChar);
  
        // Update horizontal parameters
-       dx = NS_MAX(dx, bmRadicalChar.width);
+       *dx_leading = NS_MAX(*dx_leading, bmRadicalChar.width);
  
        // Update vertical parameters
        radicalAscent = bmBase.ascent + psi + mRuleThickness;

@@ -2,13 +2,13 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent 905908722788c51c26e3e0d096e1b88f756e598d
+# Parent bd8a239ab3c2686eee4f4c0d5f317a450399a9e2
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -462,8 +462,24 @@ semantics > :not(:first-child) {
+@@ -462,8 +462,23 @@ semantics > :not(:first-child) {
  /* all other cases can be described using regular CSS, so we do it this way because it's
     more efficient and less code */
  mroot > :not(:first-child) { -moz-script-level:+2; }
@@ -23,8 +23,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 +/*****************************************/
 +
 +math[dir="rtl"], mstyle[dir="rtl"], mrow[dir="rtl"],
-+mi[dir="rtl"], mn[dir="rtl"], mo[dir="rtl"],
-+mtext[dir="rtl"], mspace[dir="rtl"], ms[dir="rtl"] {
++mi[dir="rtl"], mn[dir="rtl"], mo[dir="rtl"], mtext[dir="rtl"], ms[dir="rtl"] {
 +    direction: rtl;
 +}
 +
@@ -55,14 +54,14 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
  void
 -nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
 +nsMathMLContainerFrame::PositionRowChildFrames(nscoord aParentWidth,
-+                                               nscoord aOffsetX,
++                                               nscoord aLeadingX,
                                                 nscoord aBaseline)
  {
    RowChildFrameIterator child(this);
    while (child.Frame()) {
 -    nscoord dx = aOffsetX + child.X();
 +    nscoord dx = MirrorIfRTL(aParentWidth, child.ReflowMetrics().width,
-+                             aOffsetX + child.X());
++                             aLeadingX + child.X());
      nscoord dy = aBaseline - child.Ascent();
      FinishReflowChild(child.Frame(), PresContext(), nsnull,
                        child.ReflowMetrics(), dx, dy, 0);
@@ -99,18 +98,22 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
     * This method is used to measure or position child frames and other
     * elements.  It may be called any number of times with aPlaceOrigin
     * false to measure, and the final call of the Reflow process before
-@@ -362,17 +370,18 @@ public:
+@@ -359,20 +367,21 @@ public:
+   // may do do its TransmitAutomaticData()). @see RebuildAutomaticDataForChildren
+   //
+   // aBits are the bits to pass to FrameNeedsReflow() when we call it.
    static nsresult
    ReLayoutChildren(nsIFrame* aParentFrame);
  
  protected:
    // Helper method which positions child frames as an <mrow> on given baseline
-   // y = aBaseline starting from x = aOffsetX, calling FinishReflowChild()
+-  // y = aBaseline starting from x = aOffsetX, calling FinishReflowChild()
++  // y = aBaseline starting from x = aLeadingX, calling FinishReflowChild()
    // on the frames.
    void
 -  PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
 +  PositionRowChildFrames(nscoord aParentWidth,
-+                         nscoord aOffsetX, nscoord aBaseline);
++                         nscoord aLeadingX, nscoord aBaseline);
  
    // A variant on FinishAndStoreOverflow() that uses the union of child
    // overflows, the frame bounds, and mBoundingMetrics to set and store the
@@ -151,8 +154,8 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
    ///////////////
    // radical notation:
    if (IsToDraw(NOTATION_RADICAL)) {
-+    nscoord &dx =
-+      NS_MATHML_IS_RTL(mPresentationData.flags) ? dx_right : dx_left;
++    nscoord *dx_leading =
++      NS_MATHML_IS_RTL(mPresentationData.flags) ? &dx_right : &dx_left;
 +    
      if (aWidthOnly) {
        nscoord radical_width = mMathMLChar[mRadicalCharIndex].
@@ -160,7 +163,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
        
        // Update horizontal parameters
 -      dx_left = NS_MAX(dx_left, radical_width);
-+      dx = NS_MAX(dx, radical_width);
++     *dx_leading = NS_MAX(*dx_leading, radical_width);
      } else {
        // Stretch the radical symbol to the appropriate height if it is not
        // big enough.
@@ -177,7 +180,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
  
        // Update horizontal parameters
 -      dx_left = NS_MAX(dx_left, bmRadicalChar.width);
-+      dx = NS_MAX(dx, bmRadicalChar.width);
++      *dx_leading = NS_MAX(*dx_leading, bmRadicalChar.width);
  
        // Update vertical parameters
        radicalAscent = bmBase.ascent + psi + mRuleThickness;
@@ -355,7 +358,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
  }
  
  NS_IMETHODIMP
-@@ -544,59 +552,72 @@ nsMathMLmfracFrame::UpdatePresentationDa
+@@ -544,59 +552,71 @@ nsMathMLmfracFrame::UpdatePresentationDa
      UpdatePresentationDataFromChildAt(aFirstIndex, aLastIndex,
                                        aFlagsValues, aFlagsToUpdate);
  }
@@ -428,12 +431,12 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
                                   const nsDisplayListSet& aLists) {
    if (!aFrame->GetStyleVisibility()->IsVisible() || aRect.IsEmpty())
      return NS_OK;
+-  
 +
-+  bool aRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
-   
    return aLists.Content()->AppendNewToTop(new (aBuilder)
 -      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness));
-+      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness, aRTL));
++      nsDisplayMathMLSlash(aBuilder, aFrame, aRect, aThickness,
++                           NS_MATHML_IS_RTL(mPresentationData.flags)));
  }
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
