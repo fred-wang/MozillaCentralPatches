@@ -2,13 +2,13 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent bd8a239ab3c2686eee4f4c0d5f317a450399a9e2
+# Parent d5850916514b11ca014b02423d5845425f9bfa70
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -462,8 +462,23 @@ semantics > :not(:first-child) {
+@@ -462,8 +462,22 @@ semantics > :not(:first-child) {
  /* all other cases can be described using regular CSS, so we do it this way because it's
     more efficient and less code */
  mroot > :not(:first-child) { -moz-script-level:+2; }
@@ -28,48 +28,84 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 +}
 +
 +math[dir="ltr"], mstyle[dir="ltr"], mrow[dir="ltr"],
-+mi[dir="ltr"], mn[dir="ltr"], mo[dir="ltr"],
-+mtext[dir="ltr"], mspace[dir="ltr"], ms[dir="ltr"] {
++mi[dir="ltr"], mn[dir="ltr"], mo[dir="ltr"], mtext[dir="ltr"], ms[dir="ltr"] {
 +    direction: ltr;
 +}
 diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
 --- a/layout/mathml/nsMathMLContainerFrame.cpp
 +++ b/layout/mathml/nsMathMLContainerFrame.cpp
-@@ -1297,29 +1297,31 @@ nsMathMLContainerFrame::Place(nsRenderin
- 
-   mReference.x = 0;
-   mReference.y = aDesiredSize.ascent;
- 
-   //////////////////
-   // Place Children
- 
-   if (aPlaceOrigin) {
--    PositionRowChildFrames(0, aDesiredSize.ascent);
-+    PositionRowChildFrames(aDesiredSize.width, 0, aDesiredSize.ascent);
-   }
- 
-   return NS_OK;
- }
- 
- void
--nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
-+nsMathMLContainerFrame::PositionRowChildFrames(nscoord aParentWidth,
-+                                               nscoord aLeadingX,
-                                                nscoord aBaseline)
+@@ -1188,38 +1188,49 @@ static nscoord GetThinSpace(const nsStyl
  {
-   RowChildFrameIterator child(this);
-   while (child.Frame()) {
--    nscoord dx = aOffsetX + child.X();
-+    nscoord dx = MirrorIfRTL(aParentWidth, child.ReflowMetrics().width,
-+                             aLeadingX + child.X());
-     nscoord dy = aBaseline - child.Ascent();
-     FinishReflowChild(child.Frame(), PresContext(), nsnull,
-                       child.ReflowMetrics(), dx, dy, 0);
-     ++child;
-   }
+   return NSToCoordRound(float(aStyleFont->mFont.size)*float(3) / float(18));
  }
  
- class ForceReflow : public nsIReflowCallback {
+ class nsMathMLContainerFrame::RowChildFrameIterator {
+ public:
+   explicit RowChildFrameIterator(nsMathMLContainerFrame* aParentFrame) :
+     mParentFrame(aParentFrame),
+-    mChildFrame(aParentFrame->mFrames.FirstChild()),
+     mX(0),
+     mCarrySpace(0),
+-    mFromFrameType(eMathMLFrameType_UNKNOWN)
++    mFromFrameType(eMathMLFrameType_UNKNOWN),
++    mRTL(NS_MATHML_IS_RTL(aParentFrame->mPresentationData.flags))
+   {
++    if (!mRTL) {
++      mChildFrame = aParentFrame->mFrames.FirstChild();
++    } else {
++      mChildFrame = aParentFrame->mFrames.LastChild();
++    }
++
+     if (!mChildFrame)
+       return;
+ 
+     InitMetricsForChild();
+     // Remove left correction in <msqrt> because the sqrt glyph itself is
+     // there first.
+     if (mParentFrame->GetContent()->Tag() == nsGkAtoms::msqrt_) {
+       mX = 0;
+     }
+   }
+ 
+   RowChildFrameIterator& operator++()
+   {
+     // add child size + italic correction
+     mX += mSize.mBoundingMetrics.width + mItalicCorrection;
+ 
+-    mChildFrame = mChildFrame->GetNextSibling();
++    if (!mRTL) {
++      mChildFrame = mChildFrame->GetNextSibling();
++    } else {
++      mChildFrame = mChildFrame->GetPrevSibling();
++    }
++
+     if (!mChildFrame)
+       return *this;
+ 
+     eMathMLFrameType prevFrameType = mChildFrameType;
+     InitMetricsForChild();
+ 
+     // add inter frame spacing
+     const nsStyleFont* font = mParentFrame->GetStyleFont();
+@@ -1246,16 +1257,18 @@ private:
+   nsHTMLReflowMetrics mSize;
+   nscoord mX;
+ 
+   nscoord mItalicCorrection;
+   eMathMLFrameType mChildFrameType;
+   PRInt32 mCarrySpace;
+   eMathMLFrameType mFromFrameType;
+ 
++  bool mRTL;
++
+   void InitMetricsForChild()
+   {
+     GetReflowAndBoundingMetricsFor(mChildFrame, mSize, mSize.mBoundingMetrics,
+                                    &mChildFrameType);
+     nscoord leftCorrection;
+     GetItalicCorrection(mSize.mBoundingMetrics, leftCorrection,
+                         mItalicCorrection);
+     // add left correction -- this fixes the problem of the italic 'f'
 diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLContainerFrame.h
 --- a/layout/mathml/nsMathMLContainerFrame.h
 +++ b/layout/mathml/nsMathMLContainerFrame.h
@@ -84,10 +120,10 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
  
 +  // helper function to apply mirroring to a horizontal coordinate, if needed.
 +  nscoord
-+  MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth, nscoord aChildLeft)
++  MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth, nscoord aChildLeading)
 +  {
 +    return (NS_MATHML_IS_RTL(mPresentationData.flags) ?
-+            aParentWidth - aChildWidth - aChildLeft : aChildLeft);
++            aParentWidth - aChildWidth - aChildLeading : aChildLeading);
 +  }
 +
    // --------------------------------------------------------------------------
@@ -98,30 +134,6 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLCont
     * This method is used to measure or position child frames and other
     * elements.  It may be called any number of times with aPlaceOrigin
     * false to measure, and the final call of the Reflow process before
-@@ -359,20 +367,21 @@ public:
-   // may do do its TransmitAutomaticData()). @see RebuildAutomaticDataForChildren
-   //
-   // aBits are the bits to pass to FrameNeedsReflow() when we call it.
-   static nsresult
-   ReLayoutChildren(nsIFrame* aParentFrame);
- 
- protected:
-   // Helper method which positions child frames as an <mrow> on given baseline
--  // y = aBaseline starting from x = aOffsetX, calling FinishReflowChild()
-+  // y = aBaseline starting from x = aLeadingX, calling FinishReflowChild()
-   // on the frames.
-   void
--  PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
-+  PositionRowChildFrames(nscoord aParentWidth,
-+                         nscoord aLeadingX, nscoord aBaseline);
- 
-   // A variant on FinishAndStoreOverflow() that uses the union of child
-   // overflows, the frame bounds, and mBoundingMetrics to set and store the
-   // overflow.
-   void GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics);
- 
-   /**
-    * Call DidReflow() if the NS_FRAME_IN_REFLOW frame bit is set on aFirst and
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
@@ -189,7 +201,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
                                 radicalAscent));
  
        mBoundingMetrics.ascent = NS_MAX(mBoundingMetrics.ascent,
-@@ -648,30 +652,36 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -648,30 +652,35 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
        mMathMLChar[mLongDivCharIndex].SetRect(nsRect(dx_left -
                                                      bmLongdivChar.width,
                                                      aDesiredSize.ascent -
@@ -218,8 +230,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
      //////////////////
      // Finish reflowing child frames
 -    PositionRowChildFrames(dx_left, aDesiredSize.ascent);
-+    PositionRowChildFrames(aDesiredSize.width,
-+                           NS_MATHML_IS_RTL(mPresentationData.flags) ?
++    PositionRowChildFrames(NS_MATHML_IS_RTL(mPresentationData.flags) ?
 +                           dx_right : dx_left,
 +                           aDesiredSize.ascent);
    }
@@ -500,25 +511,6 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
      } while (mprescriptsFrame != childFrame);
    }
  
-diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
---- a/layout/mathml/nsMathMLmpaddedFrame.cpp
-+++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -466,13 +466,14 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
-   mBoundingMetrics.descent = depth;
-   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
- 
-   mReference.x = 0;
-   mReference.y = aDesiredSize.ascent;
- 
-   if (aPlaceOrigin) {
-     // Finish reflowing child frames, positioning their origins.
--    PositionRowChildFrames(dx, aDesiredSize.ascent - voffset);
-+    PositionRowChildFrames(aDesiredSize.width, dx,
-+                           aDesiredSize.ascent - voffset);
-   }
- 
-   return NS_OK;
- }
 diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
 --- a/layout/mathml/nsMathMLmrootFrame.cpp
 +++ b/layout/mathml/nsMathMLmrootFrame.cpp
