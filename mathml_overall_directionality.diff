@@ -34,7 +34,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
 --- a/layout/mathml/nsMathMLContainerFrame.cpp
 +++ b/layout/mathml/nsMathMLContainerFrame.cpp
-@@ -1188,38 +1188,49 @@ static nscoord GetThinSpace(const nsStyl
+@@ -1188,38 +1188,44 @@ static nscoord GetThinSpace(const nsStyl
  {
    return NSToCoordRound(float(aStyleFont->mFont.size)*float(3) / float(18));
  }
@@ -60,11 +60,11 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
        return;
  
      InitMetricsForChild();
-     // Remove left correction in <msqrt> because the sqrt glyph itself is
-     // there first.
-     if (mParentFrame->GetContent()->Tag() == nsGkAtoms::msqrt_) {
-       mX = 0;
-     }
+-    // Remove left correction in <msqrt> because the sqrt glyph itself is
+-    // there first.
+-    if (mParentFrame->GetContent()->Tag() == nsGkAtoms::msqrt_) {
+-      mX = 0;
+-    }
    }
  
    RowChildFrameIterator& operator++()
@@ -87,7 +87,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
  
      // add inter frame spacing
      const nsStyleFont* font = mParentFrame->GetStyleFont();
-@@ -1246,16 +1257,18 @@ private:
+@@ -1246,26 +1252,39 @@ private:
    nsHTMLReflowMetrics mSize;
    nscoord mX;
  
@@ -102,10 +102,34 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
    {
      GetReflowAndBoundingMetricsFor(mChildFrame, mSize, mSize.mBoundingMetrics,
                                     &mChildFrameType);
-     nscoord leftCorrection;
-     GetItalicCorrection(mSize.mBoundingMetrics, leftCorrection,
-                         mItalicCorrection);
+-    nscoord leftCorrection;
+-    GetItalicCorrection(mSize.mBoundingMetrics, leftCorrection,
+-                        mItalicCorrection);
++    nscoord leftCorrection, rightCorrection;
++    GetItalicCorrection(mSize.mBoundingMetrics,
++                        leftCorrection, rightCorrection);
++    if (!mChildFrame->GetPrevSibling() &&
++        mParentFrame->GetContent()->Tag() == nsGkAtoms::msqrt_) {
++      // Remove leading correction in <msqrt> because the sqrt glyph itself is
++      // there first.
++      if (!mRTL) {
++        leftCorrection = 0;
++      } else {
++        rightCorrection = 0;
++      }
++    }
      // add left correction -- this fixes the problem of the italic 'f'
+     // e.g., <mo>q</mo> <mi>f</mi> <mo>I</mo> 
+     mX += leftCorrection;
++    mItalicCorrection = rightCorrection;
+   }
+ };
+ 
+ /* virtual */ nsresult
+ nsMathMLContainerFrame::Place(nsRenderingContext& aRenderingContext,
+                               bool                 aPlaceOrigin,
+                               nsHTMLReflowMetrics& aDesiredSize)
+ {
 diff --git a/layout/mathml/nsMathMLContainerFrame.h b/layout/mathml/nsMathMLContainerFrame.h
 --- a/layout/mathml/nsMathMLContainerFrame.h
 +++ b/layout/mathml/nsMathMLContainerFrame.h
@@ -175,7 +199,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
        
        // Update horizontal parameters
 -      dx_left = NS_MAX(dx_left, radical_width);
-+     *dx_leading = NS_MAX(*dx_leading, radical_width);
++      *dx_leading = NS_MAX(*dx_leading, radical_width);
      } else {
        // Stretch the radical symbol to the appropriate height if it is not
        // big enough.
@@ -201,7 +225,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
                                 radicalAscent));
  
        mBoundingMetrics.ascent = NS_MAX(mBoundingMetrics.ascent,
-@@ -648,30 +652,35 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -648,24 +652,27 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
        mMathMLChar[mLongDivCharIndex].SetRect(nsRect(dx_left -
                                                      bmLongdivChar.width,
                                                      aDesiredSize.ascent -
@@ -229,18 +253,9 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
  
      //////////////////
      // Finish reflowing child frames
--    PositionRowChildFrames(dx_left, aDesiredSize.ascent);
-+    PositionRowChildFrames(NS_MATHML_IS_RTL(mPresentationData.flags) ?
-+                           dx_right : dx_left,
-+                           aDesiredSize.ascent);
+     PositionRowChildFrames(dx_left, aDesiredSize.ascent);
    }
  
-   return NS_OK;
- }
- 
- nscoord
- nsMathMLmencloseFrame::FixInterFrameSpacing(nsHTMLReflowMetrics& aDesiredSize)
- {
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
@@ -511,6 +526,207 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
      } while (mprescriptsFrame != childFrame);
    }
  
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
+--- a/layout/mathml/nsMathMLmpaddedFrame.cpp
++++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
+@@ -128,20 +128,21 @@ nsMathMLmpaddedFrame::ProcessAttributes(
+   // depth
+   mDepthSign = NS_MATHML_SIGN_INVALID;
+   GetAttribute(mContent, nsnull, nsGkAtoms::depth_, value);
+   if (!value.IsEmpty()) {
+     ParseAttribute(value, mDepthSign, mDepth, mDepthPseudoUnit);
+   }
+ 
+   // lspace
+-  mLeftSpaceSign = NS_MATHML_SIGN_INVALID;
++  mLeadingSpaceSign = NS_MATHML_SIGN_INVALID;
+   GetAttribute(mContent, nsnull, nsGkAtoms::lspace_, value);
+   if (!value.IsEmpty()) {
+-    ParseAttribute(value, mLeftSpaceSign, mLeftSpace, mLeftSpacePseudoUnit);
++    ParseAttribute(value, mLeadingSpaceSign, mLeadingSpace,
++                   mLeadingSpacePseudoUnit);
+   }
+ 
+   // voffset
+   mVerticalOffsetSign = NS_MATHML_SIGN_INVALID;
+   GetAttribute(mContent, nsnull, nsGkAtoms::voffset_, value);
+   if (!value.IsEmpty()) {
+     ParseAttribute(value, mVerticalOffsetSign, mVerticalOffset, 
+                    mVerticalOffsetPseudoUnit);
+@@ -375,40 +376,46 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+     nsMathMLContainerFrame::Place(aRenderingContext, false, aDesiredSize);
+   if (NS_MATHML_HAS_ERROR(mPresentationData.flags) || NS_FAILED(rv)) {
+     DidReflowChildren(GetFirstPrincipalChild());
+     return rv;
+   }
+ 
+   nscoord height = mBoundingMetrics.ascent;
+   nscoord depth  = mBoundingMetrics.descent;
+-  // In MathML2 (http://www.w3.org/TR/MathML2/chapter3.html#presm.mpadded),
+-  // lspace is "the amount of space between the left edge of a bounding box
+-  // and the start of the rendering of its contents' bounding box" and the
+-  // default is zero.
++  // The REC says:
+   //
+-  // In MathML3 draft
+-  // http://www.w3.org/TR/2007/WD-MathML3-20070427/chapter3.html#id.3.3.6.2,
+-  // lspace is "the amount of space between the left edge of the bounding box
+-  // and the positioning poin [sic] of the mpadded element" and the default is
+-  // "same as content".
++  // "The lspace attribute ('leading' space) specifies the horizontal location
++  // of the positioning point of the child content with respect to the
++  // positioning point of the mpadded element. By default they coincide, and
++  // therefore absolute values for lspace have the same effect as relative
++  // values."
+   //
+-  // In both cases, "MathML renderers should ensure that, except for the
+-  // effects of the attributes, relative spacing between the contents of
+-  // mpadded and surrounding MathML elements is not modified by replacing an
+-  // mpadded element with an mrow element with the same content."
++  // "MathML renderers should ensure that, except for the effects of the
++  // attributes, the relative spacing between the contents of the mpadded
++  // element and surrounding MathML elements would not be modified by replacing
++  // an mpadded element with an mrow element with the same content, even if
++  // linebreaking occurs within the mpadded element."
++  //
++  // (http://www.w3.org/TR/MathML/chapter3.html#presm.mpadded)
++  // 
++  // "In those discussions, the terms leading and trailing are used to specify
++  // a side of an object when which side to use depends on the directionality;
++  // ie. leading means left in LTR but right in RTL."
++  // (http://www.w3.org/TR/MathML/chapter3.html#presm.bidi.math)
+   nscoord lspace = 0;
+-  // In MATHML3, "width" will be the bounding box width and "advancewidth" will
++  // In MathML3, "width" will be the bounding box width and "advancewidth" will
+   // refer "to the horizontal distance between the positioning point of the
+   // mpadded and the positioning point for the following content".  MathML2
+   // doesn't make the distinction.
+   nscoord width  = mBoundingMetrics.width;
+   nscoord voffset = 0;
+ 
+   PRInt32 pseudoUnit;
++  nscoord initialWidth = width;
+ 
+   // update width
+   pseudoUnit = (mWidthPseudoUnit == NS_MATHML_PSEUDO_UNIT_ITSELF)
+              ? NS_MATHML_PSEUDO_UNIT_WIDTH : mWidthPseudoUnit;
+   UpdateValue(mWidthSign, pseudoUnit, mWidth,
+               mBoundingMetrics, width);
+   width = NS_MAX(0, width);
+ 
+@@ -422,48 +429,64 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+   // update "depth" (this is the descent in the terminology of the REC)
+   pseudoUnit = (mDepthPseudoUnit == NS_MATHML_PSEUDO_UNIT_ITSELF)
+              ? NS_MATHML_PSEUDO_UNIT_DEPTH : mDepthPseudoUnit;
+   UpdateValue(mDepthSign, pseudoUnit, mDepth,
+               mBoundingMetrics, depth);
+   depth = NS_MAX(0, depth);
+ 
+   // update lspace
+-  if (mLeftSpacePseudoUnit != NS_MATHML_PSEUDO_UNIT_ITSELF) {
+-    pseudoUnit = mLeftSpacePseudoUnit;
+-    UpdateValue(mLeftSpaceSign, pseudoUnit, mLeftSpace,
++  if (mLeadingSpacePseudoUnit != NS_MATHML_PSEUDO_UNIT_ITSELF) {
++    pseudoUnit = mLeadingSpacePseudoUnit;
++    UpdateValue(mLeadingSpaceSign, pseudoUnit, mLeadingSpace,
+                 mBoundingMetrics, lspace);
+   }
+ 
+   // update voffset
+   if (mVerticalOffsetPseudoUnit != NS_MATHML_PSEUDO_UNIT_ITSELF) {
+     pseudoUnit = mVerticalOffsetPseudoUnit;
+     UpdateValue(mVerticalOffsetSign, pseudoUnit, mVerticalOffset,
+                 mBoundingMetrics, voffset);
+   }
+   // do the padding now that we have everything
+   // The idea here is to maintain the invariant that <mpadded>...</mpadded> (i.e.,
+   // with no attributes) looks the same as <mrow>...</mrow>. But when there are
+   // attributes, tweak our metrics and move children to achieve the desired visual
+   // effects.
+ 
+-  if (mLeftSpaceSign != NS_MATHML_SIGN_INVALID) { // there was padding on the left
+-    // dismiss the left italic correction now (so that our parent won't correct us)
+-    mBoundingMetrics.leftBearing = 0;
++  if (mLeadingSpaceSign != NS_MATHML_SIGN_INVALID) {
++    if (!NS_MATHML_IS_RTL(mPresentationData.flags)) {
++      // there was padding on the left. dismiss the left italic correction now
++      // (so that our parent won't correct us)
++      mBoundingMetrics.leftBearing = 0;
++    } else {
++      // there was padding on the right. dismiss the right italic correction now
++      // (so that our parent won't correct us)
++      mBoundingMetrics.width = width;
++      mBoundingMetrics.rightBearing = width;
++    }
+   }
+ 
+-  if (mWidthSign != NS_MATHML_SIGN_INVALID) { // there was padding on the right
+-    // dismiss the right italic correction now (so that our parent won't correct us)
+-    mBoundingMetrics.width = width;
+-    mBoundingMetrics.rightBearing = mBoundingMetrics.width;
++  if (mWidthSign != NS_MATHML_SIGN_INVALID) {
++    if (!NS_MATHML_IS_RTL(mPresentationData.flags)) {
++      // there was padding on the right. dismiss the right italic correction now
++      // (so that our parent won't correct us)
++      mBoundingMetrics.width = width;
++      mBoundingMetrics.rightBearing = mBoundingMetrics.width;
++    } else {
++      // there was padding on the left. dismiss the left italic correction now
++      // (so that our parent won't correct us)
++      mBoundingMetrics.leftBearing = 0;
++    }
+   }
+ 
+   nscoord dy = height - mBoundingMetrics.ascent;
+-  nscoord dx = lspace;
+-
++  nscoord dx = NS_MATHML_IS_RTL(mPresentationData.flags) ?
++    width - initialWidth - lspace : lspace;
++    
+   aDesiredSize.ascent += dy;
+   aDesiredSize.width = mBoundingMetrics.width;
+   aDesiredSize.height += dy + depth - mBoundingMetrics.descent;
+   mBoundingMetrics.ascent = height;
+   mBoundingMetrics.descent = depth;
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   mReference.x = 0;
+diff --git a/layout/mathml/nsMathMLmpaddedFrame.h b/layout/mathml/nsMathMLmpaddedFrame.h
+--- a/layout/mathml/nsMathMLmpaddedFrame.h
++++ b/layout/mathml/nsMathMLmpaddedFrame.h
+@@ -78,29 +78,29 @@ protected:
+   virtual ~nsMathMLmpaddedFrame();
+   
+   virtual PRIntn GetSkipSides() const { return 0; }
+ 
+ private:
+   nsCSSValue mWidth;
+   nsCSSValue mHeight;
+   nsCSSValue mDepth;
+-  nsCSSValue mLeftSpace;
++  nsCSSValue mLeadingSpace;
+   nsCSSValue mVerticalOffset;
+ 
+   PRInt32    mWidthSign;
+   PRInt32    mHeightSign;
+   PRInt32    mDepthSign;
+-  PRInt32    mLeftSpaceSign;
++  PRInt32    mLeadingSpaceSign;
+   PRInt32    mVerticalOffsetSign;
+ 
+   PRInt32    mWidthPseudoUnit;
+   PRInt32    mHeightPseudoUnit;
+   PRInt32    mDepthPseudoUnit;
+-  PRInt32    mLeftSpacePseudoUnit;
++  PRInt32    mLeadingSpacePseudoUnit;
+   PRInt32    mVerticalOffsetPseudoUnit;
+ 
+   // helpers to process the attributes
+   void
+   ProcessAttributes();
+ 
+   static bool
+   ParseAttribute(nsString&   aString,
 diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
 --- a/layout/mathml/nsMathMLmrootFrame.cpp
 +++ b/layout/mathml/nsMathMLmrootFrame.cpp
