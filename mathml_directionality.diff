@@ -2,7 +2,7 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262541153 -3600
 # Node ID 7f8941c192349709b7fcaaf465c915d507d75979
-# Parent 27ea919c03943a9b1817e1605ee49a136fb6e3ab
+# Parent 7ab478082ca72615083636938a23486490d029ad
 Add a directionality flag on MathML frames (bug 534963). r=karlt
 
 diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
@@ -69,7 +69,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -83,16 +84,48 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
+@@ -83,16 +84,47 @@ nsMathMLFrame::FindAttrDisplaystyle(nsIC
    case 1:
      aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
      aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
@@ -84,14 +84,13 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 +                                      nsPresentationData& aPresentationData)
 +{
 +  NS_ASSERTION(aContent->Tag() == nsGkAtoms::math ||
++               aContent->Tag() == nsGkAtoms::mrow_ ||
++               aContent->Tag() == nsGkAtoms::mstyle_ ||
 +               aContent->Tag() == nsGkAtoms::mi_ ||
 +               aContent->Tag() == nsGkAtoms::mn_ ||
 +               aContent->Tag() == nsGkAtoms::mo_ ||
 +               aContent->Tag() == nsGkAtoms::mtext_ ||
-+               aContent->Tag() == nsGkAtoms::mspace_ ||
-+               aContent->Tag() == nsGkAtoms::ms_ ||
-+               aContent->Tag() == nsGkAtoms::mstyle_ ||
-+               aContent->Tag() == nsGkAtoms::mrow_, "bad caller");
++               aContent->Tag() == nsGkAtoms::ms_, "bad caller");
 +
 +  static nsIContent::AttrValuesArray strings[] =
 +    {&nsGkAtoms::ltr, &nsGkAtoms::rtl, nsnull};
@@ -118,7 +117,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
    mEmbellishData.leftSpace = 0;
    mEmbellishData.rightSpace = 0;
-@@ -103,28 +136,35 @@ nsMathMLFrame::InheritAutomaticData(nsIF
+@@ -103,28 +135,35 @@ nsMathMLFrame::InheritAutomaticData(nsIF
  
    // by default, just inherit the display of our parent
    nsPresentationData parentData;
@@ -154,7 +153,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
      }
      else {
        mPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
-@@ -216,16 +256,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
+@@ -216,16 +255,17 @@ nsMathMLFrame::GetPresentationDataFrom(n
        break;
  
      if (content->Tag() == nsGkAtoms::math) {
@@ -236,7 +235,7 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenF
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -59,16 +60,19 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+@@ -59,16 +60,25 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
  }
  
  NS_IMETHODIMP
@@ -245,8 +244,14 @@ diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenF
    // let the base class get the default from our parent
    nsMathMLContainerFrame::InheritAutomaticData(aParent);
  
-+  // see if the directionality attribute is there
-+  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++  if (mContent->Tag() == nsGkAtoms::mi_ ||
++      mContent->Tag() == nsGkAtoms::mn_ ||
++      mContent->Tag() == nsGkAtoms::mo_ ||
++      mContent->Tag() == nsGkAtoms::mtext_ ||
++      mContent->Tag() == nsGkAtoms::ms_) {
++    // see if the directionality attribute is there
++    nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++  }
 +
    ProcessTextData();
  
@@ -277,7 +282,7 @@ diff --git a/layout/mathml/nsMathMLmrowFrame.cpp b/layout/mathml/nsMathMLmrowFra
   * of those above. If you wish to allow use of your version of this file only
   * under the terms of either the GPL or the LGPL, and not to allow others to
   * use your version of this file under the terms of the MPL, indicate your
-@@ -64,16 +65,19 @@ nsMathMLmrowFrame::~nsMathMLmrowFrame()
+@@ -64,16 +65,21 @@ nsMathMLmrowFrame::~nsMathMLmrowFrame()
  NS_IMETHODIMP
  nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent)
  {
@@ -286,8 +291,10 @@ diff --git a/layout/mathml/nsMathMLmrowFrame.cpp b/layout/mathml/nsMathMLmrowFra
  
    mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
  
-+  // see if the directionality attribute is there
-+  nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++  if (mContent->Tag() == nsGkAtoms::mrow_) {
++    // see if the directionality attribute is there
++    nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
++  }
 +
    return NS_OK;
  }
