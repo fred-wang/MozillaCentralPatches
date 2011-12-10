@@ -2,13 +2,13 @@
 # User Frédéric Wang <fred.wang@free.fr>
 # Date 1262686951 -3600
 # Node ID 2f0903c556883e3228a1abbad43fee10b0824b1e
-# Parent d5850916514b11ca014b02423d5845425f9bfa70
+# Parent c24767cda17565d24e4ca5abe46a15e4df2075d3
 Overall Directionality of formulas (bug 534963). r=karlt
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -462,8 +462,22 @@ semantics > :not(:first-child) {
+@@ -465,8 +465,22 @@ semantics > :not(:first-child) {
  /* all other cases can be described using regular CSS, so we do it this way because it's
     more efficient and less code */
  mroot > :not(:first-child) { -moz-script-level:+2; }
@@ -614,7 +614,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
                mBoundingMetrics, width);
    width = NS_MAX(0, width);
  
-@@ -422,48 +429,64 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+@@ -422,48 +429,53 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
    // update "depth" (this is the descent in the terminology of the REC)
    pseudoUnit = (mDepthPseudoUnit == NS_MATHML_PSEUDO_UNIT_ITSELF)
               ? NS_MATHML_PSEUDO_UNIT_DEPTH : mDepthPseudoUnit;
@@ -646,35 +646,21 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
  
 -  if (mLeftSpaceSign != NS_MATHML_SIGN_INVALID) { // there was padding on the left
 -    // dismiss the left italic correction now (so that our parent won't correct us)
--    mBoundingMetrics.leftBearing = 0;
-+  if (mLeadingSpaceSign != NS_MATHML_SIGN_INVALID) {
-+    if (!NS_MATHML_IS_RTL(mPresentationData.flags)) {
-+      // there was padding on the left. dismiss the left italic correction now
-+      // (so that our parent won't correct us)
-+      mBoundingMetrics.leftBearing = 0;
-+    } else {
-+      // there was padding on the right. dismiss the right italic correction now
-+      // (so that our parent won't correct us)
-+      mBoundingMetrics.width = width;
-+      mBoundingMetrics.rightBearing = width;
-+    }
++  if ((NS_MATHML_IS_RTL(mPresentationData.flags) ?
++       mWidthSign : mLeadingSpaceSign) != NS_MATHML_SIGN_INVALID) {
++    // there was padding on the left. dismiss the left italic correction now
++    // (so that our parent won't correct us)
+     mBoundingMetrics.leftBearing = 0;
    }
  
 -  if (mWidthSign != NS_MATHML_SIGN_INVALID) { // there was padding on the right
 -    // dismiss the right italic correction now (so that our parent won't correct us)
--    mBoundingMetrics.width = width;
--    mBoundingMetrics.rightBearing = mBoundingMetrics.width;
-+  if (mWidthSign != NS_MATHML_SIGN_INVALID) {
-+    if (!NS_MATHML_IS_RTL(mPresentationData.flags)) {
-+      // there was padding on the right. dismiss the right italic correction now
-+      // (so that our parent won't correct us)
-+      mBoundingMetrics.width = width;
-+      mBoundingMetrics.rightBearing = mBoundingMetrics.width;
-+    } else {
-+      // there was padding on the left. dismiss the left italic correction now
-+      // (so that our parent won't correct us)
-+      mBoundingMetrics.leftBearing = 0;
-+    }
++  if ((NS_MATHML_IS_RTL(mPresentationData.flags) ?
++       mLeadingSpaceSign : mWidthSign) != NS_MATHML_SIGN_INVALID) {
++    // there was padding on the right. dismiss the right italic correction now
++    // (so that our parent won't correct us)
+     mBoundingMetrics.width = width;
+     mBoundingMetrics.rightBearing = mBoundingMetrics.width;
    }
  
    nscoord dy = height - mBoundingMetrics.ascent;

@@ -1,0 +1,709 @@
+# HG changeset patch
+# Parent b87ca382b8ad67b86c2db5bcd0d4ef93d36b8d26
+# User Frédéric Wang <fred.wang@free.fr>
+Add MathML reftests for dir=rtl
+
+diff --git a/layout/reftests/mathml/dir-1-ref.html b/layout/reftests/mathml/dir-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-1-ref.html
+@@ -0,0 +1,91 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++    <p>
++      math:
++      <math>
++	<mspace width="25px" height="25px" mathbackground="blue"/>
++	<mspace width="25px" height="25px" mathbackground="green"/>
++	<mspace width="25px" height="25px" mathbackground="red"/>
++      </math>
++    </p>
++
++    <p>
++      mrow:
++      <math>
++	<mrow>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</mrow>
++      </math>
++    </p>
++
++    <p>
++      mstyle:
++      <math>
++	<mstyle>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</mstyle>
++      </math>
++    </p>
++
++    <p>
++      mpadded lspace="25px" width="150px":
++      <math>
++	<mspace width="1px" height="25px" mathbackground="black"/>
++	<mpadded lspace="50px" width="150px">
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</mpadded>
++	<mspace width="1px" height="25px" mathbackground="black"/>
++      </math>
++    </p>
++
++    <p>
++      mfenced open="A" close="D" separators="BC":
++      <math>
++        <mfenced open="D" close="A" separators="CB">
++          <mtext>c</mtext>
++          <mtext>b</mtext>
++          <mtext>a</mtext>
++        </mfenced>
++      </math>
++    </p>
++
++    <p>
++      mtable:
++      <math>
++	<mtable>
++          <mtr>
++            <mtd>
++	      <mtext>c</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>b</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>a</mtext>
++	    </mtd>
++	  </mtr>
++          <mtr>
++            <mtd>
++	      <mtext>f</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>e</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>d</mtext>
++	    </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-1.html b/layout/reftests/mathml/dir-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-1.html
+@@ -0,0 +1,91 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++    <p>
++      math:
++      <math dir="rtl">
++	<mspace width="25px" height="25px" mathbackground="red"/>
++	<mspace width="25px" height="25px" mathbackground="green"/>
++	<mspace width="25px" height="25px" mathbackground="blue"/>
++      </math>
++    </p>
++
++    <p>
++      mrow:
++      <math>
++	<mrow dir="rtl">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</mrow>
++      </math>
++    </p>
++
++    <p>
++      mstyle:
++      <math>
++	<mstyle dir="rtl">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</mstyle>
++      </math>
++    </p>
++
++    <p>
++      mpadded lspace="25px" width="150px":
++      <math dir="rtl">
++	<mspace width="1px" height="25px" mathbackground="black"/>
++	<mpadded lspace="25px" width="150px">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</mpadded>
++	<mspace width="1px" height="25px" mathbackground="black"/>
++      </math>
++    </p>
++
++    <p>
++      mfenced open="A" close="D" separators="BC":
++      <math dir="rtl">
++        <mfenced open="A" close="D" separators="BC">
++          <mtext>a</mtext>
++          <mtext>b</mtext>
++          <mtext>c</mtext>
++        </mfenced>
++      </math>
++    </p>
++
++    <p>
++      mtable:
++      <math dir="rtl">
++	<mtable>
++          <mtr>
++            <mtd>
++	      <mtext>a</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>b</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>c</mtext>
++	    </mtd>
++	  </mtr>
++          <mtr>
++            <mtd>
++	      <mtext>d</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>e</mtext>
++	    </mtd>
++	    <mtd>
++	      <mtext>f</mtext>
++	    </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-2-ref.html b/layout/reftests/mathml/dir-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-2-ref.html
+@@ -0,0 +1,81 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++    <p>
++      mfrac (numalign=left):
++      <math>
++	<mfrac numalign="left">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="75px" height="25px" mathbackground="green"/>
++	</mfrac>
++      </math>
++    </p>
++
++    <p>
++      mfrac (numalign=right):
++      <math>
++	<mfrac numalign="right">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="75px" height="25px" mathbackground="green"/>
++	</mfrac>
++      </math>
++    </p>
++
++    <p>
++      menclose:
++      <math>
++	<menclose>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="left":
++      <math>
++	<menclose notation="left">
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="right":
++      <math>
++	<menclose notation="right">
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="updiagonalstrike":
++      <math>
++	<menclose notation="updiagonalstrike">
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="downdiagonalstrike":
++      <math>
++	<menclose notation="downdiagonalstrike">
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	</menclose>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-2.html b/layout/reftests/mathml/dir-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-2.html
+@@ -0,0 +1,81 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++    <p>
++      mfrac (numalign=left):
++      <math dir="rtl">
++	<mfrac numalign="left">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="75px" height="25px" mathbackground="green"/>
++	</mfrac>
++      </math>
++    </p>
++
++    <p>
++      mfrac (numalign=right):
++      <math dir="rtl">
++	<mfrac numalign="right">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="75px" height="25px" mathbackground="green"/>
++	</mfrac>
++      </math>
++    </p>
++
++    <p>
++      menclose:
++      <math dir="rtl">
++	<menclose>
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="left":
++      <math dir="rtl">
++	<menclose notation="left">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="right":
++      <math dir="rtl">
++	<menclose notation="right">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="updiagonalstrike":
++      <math dir="rtl">
++	<menclose notation="updiagonalstrike">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</menclose>
++      </math>
++    </p>
++
++    <p>
++      menclose notation="downdiagonalstrike":
++      <math dir="rtl">
++	<menclose notation="downdiagonalstrike">
++	  <mspace width="25px" height="25px" mathbackground="red"/>
++	  <mspace width="25px" height="25px" mathbackground="green"/>
++	  <mspace width="25px" height="25px" mathbackground="blue"/>
++	</menclose>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-3-ref.html b/layout/reftests/mathml/dir-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-3-ref.html
+@@ -0,0 +1,11 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body style="background: white;">
++
++    <div style="position: absolute; top: 5px; left: 5px;">
++      <div style="width: 30px; height: 500px; background: black;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-3.html b/layout/reftests/mathml/dir-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-3.html
+@@ -0,0 +1,114 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body style="background: white;">
++
++    <!-- The visible part of the formulas below should be covered by the
++	 black rectangle when dir=rtl -->
++
++    <div style="position: absolute; top: 5px; left: 5px;">
++      <!-- msup -->
++      <math dir="rtl">
++	<msup>
++	  <mspace width="20px" height="20px"/>
++	  <mspace width="20px" height="20px" mathbackground="red"/>
++	</msup>
++      </math><br/>
++      <!-- msub -->
++      <math dir="rtl">
++	<msub>
++	  <mspace width="20px" height="20px"/>
++	  <mspace width="20px" height="20px" mathbackground="orange"/>
++	</msub>
++      </math><br/>
++      <!-- msubsup -->
++      <math dir="rtl">
++	<msubsup>
++	  <mspace width="20px" height="20px"/>
++	  <mspace width="20px" height="20px" mathbackground="green"/>
++	  <mspace width="20px" height="20px" mathbackground="blue"/>
++	</msubsup>
++      </math><br/>
++      <!-- mmultiscripts -->
++      <math dir="rtl">
++	<mmultiscripts>
++	  <mspace/>
++	  <mspace width="20px" height="20px" mathbackground="cyan"/>
++	  <mspace width="20px" height="20px" mathbackground="yellow"/>
++	  <mprescripts/>
++	  <mspace width="20px" height="20px"/>
++	  <mspace width="20px" height="20px"/>
++	</mmultiscripts>
++      </math><br/>
++      <!-- munder (mo with movablelimits=true and displaystyle=false) -->
++      <math dir="rtl">
++        <munder>
++	  <mpadded width="20px">
++            <mphantom>
++              <mo movablelimits="true" displaystyle="false">|</mo>
++	    </mphantom>
++	  </mpadded>
++          <mspace width="20px" height="20px" mathbackground="magenta"/>
++        </munder>
++      </math><br/>
++      <!-- mover (mo with movablelimits=true and displaystyle=false) -->
++      <math dir="rtl">
++	<mover>
++	  <mpadded width="20px">
++            <mphantom>
++              <mo movablelimits="true" displaystyle="false">|</mo>
++	    </mphantom>
++	  </mpadded>
++	  <mspace width="20px" height="20px" mathbackground="cyan"/>
++        </mover>
++      </math><br/>
++      <!-- munderover (mo with movablelimits=true and displaystyle=false) -->
++      <math dir="rtl">
++        <munderover>
++	  <mpadded width="20px">
++            <mphantom>
++              <mo movablelimits="true" displaystyle="false">|</mo>
++	    </mphantom>
++	  </mpadded>
++          <mspace width="20px" height="20px" mathbackground="yellow"/>
++          <mspace width="20px" height="20px" mathbackground="grey"/>
++        </munderover>
++      </math>
++      <!-- mfrac (bevelled=true) -->
++      <math dir="rtl">
++	<mstyle mathcolor="white">
++	  <mfrac bevelled="true">
++	    <mspace width="20px" height="20px"/>
++	    <mspace width="20px" height="20px" mathbackground="red"/>
++	  </mfrac>
++	</mstyle>
++      </math><br/>
++      <!-- mroot -->
++      <math dir="rtl">
++	<mstyle mathcolor="white">
++	  <mroot>
++	    <mspace width="20px" height="20px" mathbackground="orange"/>
++	    <mspace width="20px" height="20px"/>
++	  </mroot>
++	</mstyle>
++      </math>
++      <!-- msqrt -->
++      <math dir="rtl">
++	<mstyle mathcolor="white">
++	  <msqrt>
++	    <!-- Here, we assume that (width of radical + width of mspace)
++		 is greater than the width of the black rectangle (i.e.
++		 width of radical > 30 - 25 = 5px), so the test fails if the
++		 radical is placed on the left. -->
++	    <mspace width="25px" height="20px" mathbackground="grey"/>
++	  </msqrt>
++	</mstyle>
++      </math>
++    </div>
++
++    <div style="position: absolute; top: 5px; left: 5px;">
++      <div style="width: 30px; height: 500px; background: black;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-4-ref.html b/layout/reftests/mathml/dir-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-4-ref.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body style="background: white;">
++
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 100px; height: 100px;
++		text-align: center; background: black;">
++      <div style="position: absolute;
++		  width: 35px; height: 100px; background: red;"></div>
++      <div style="position: absolute; left: 40px;
++		  width: 20px; height: 100px; background: blue;"></div>
++      <div style="position: absolute; left: 60px; width: 40px; height: 100px;
++		  background: green;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-4.html b/layout/reftests/mathml/dir-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-4.html
+@@ -0,0 +1,37 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body style="background: white;">
++
++    <!-- menclose notation=radical -->
++
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 100px; height: 100px;
++		text-align: center; background: black;">
++      <math dir="rtl">
++	<mstyle mathcolor="yellow">
++	  <!-- left and right notation make the menclose symmetric -->
++	  <menclose notation="radical left right">
++	    <mspace width="20px" height="20px"/>
++	  </menclose>
++	</mstyle>
++      </math>
++    </div>
++
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 100px; height: 100px;">
++      <!-- hide the left part of the menclose. A 5px band is not covered, where
++	   the radical may be seen if it is wrongly placed on the left instead.
++	-->
++      <div style="position: absolute;
++		  width: 35px; height: 100px; background: red;"></div>
++      <!-- hide the middle part of the menclose -->
++      <div style="position: absolute; left: 40px;
++		  width: 20px; height: 100px; background: blue;"></div>
++      <!-- hide the right part of the menclose -->
++      <div style="position: absolute; left: 60px; width: 40px; height: 100px;
++		  background: green;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-5-ref.html b/layout/reftests/mathml/dir-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-5-ref.html
+@@ -0,0 +1,37 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 200px; height: 200px;">
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 0px; background: red;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 40px; background: green;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 80px; background: magenta;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 120px; background: blue;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 160px; background: yellow;"></div>
++    </div>
++
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 200px; height: 200px;">
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: -5px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 35px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 75px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 115px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 155px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 195px; background: black;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-5.html b/layout/reftests/mathml/dir-5.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-5.html
+@@ -0,0 +1,76 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <!-- mmultiscripts. The formulas
++
++	 1 3                 3 1
++	  X  in dir=ltr  and  X  in dir=rtl
++         2 4                 4 2
++
++         do not match perfectly, so we use an alternative == reftest here
++         which is less strict. -->
++
++    <!-- five vertical bands: red, green, magenta, blue and yellow -->
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 200px; height: 200px;">
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 0px; background: red;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 40px; background: green;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 80px; background: magenta;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 120px; background: blue;"></div>
++      <div style="position: absolute; width: 40px; height: 200px;
++		  left: 160px; background: yellow;"></div>
++    </div>
++
++    <!-- a mmultiscripts element whose children are squares of different
++	 colors. In dir=rtl, the color of each square should match the one of
++	 the band over which the square is positioned. Hence, this
++	 mmultiscripts should not be visible. -->
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 200px; height: 200px;">
++      <math dir="rtl">
++	<mmultiscripts>
++	  <mspace width="40px" height="40px" mathbackground="magenta"/>
++
++	  <mspace width="40px" height="40px" mathbackground="green"/>
++	  <mspace width="40px" height="40px" mathbackground="green"/>
++
++	  <mspace width="40px" height="40px" mathbackground="red"/>
++	  <mspace width="40px" height="40px" mathbackground="red"/>
++
++ 	  <mprescripts/>
++
++	  <mspace width="40px" height="40px" mathbackground="yellow"/>
++	  <mspace width="40px" height="40px" mathbackground="yellow"/>
++
++	  <mspace width="40px" height="40px" mathbackground="blue"/>
++	  <mspace width="40px" height="40px" mathbackground="blue"/>
++	</mmultiscripts>
++      </math>
++    </div>
++
++    <!-- We add black vertical bands to cover spaces between the children of
++	 mmultiscripts. -->
++    <div style="position: absolute;
++		top: 5px; left: 5px; width: 200px; height: 200px;">
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: -5px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 35px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 75px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 115px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 155px; background: black;"></div>
++      <div style="position: absolute; width: 10px; height: 200px;
++		  left: 195px; background: black;"></div>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -1,8 +1,13 @@
++== dir-1.html dir-1-ref.html
++== dir-2.html dir-2-ref.html
++== dir-3.html dir-3-ref.html
++== dir-4.html dir-4-ref.html
++== dir-5.html dir-5-ref.html
+ == dynamic-mi.xhtml dynamic-mi-ref.xhtml
+ == mfenced-1.xhtml mfenced-1-ref.xhtml
+ == mfenced-2a.xhtml mfenced-2-ref.xhtml
+ == mfenced-2b.xhtml mfenced-2-ref.xhtml
+ == mfenced-3a.xhtml mfenced-3-ref.xhtml
+ == mfenced-3b.xhtml mfenced-3-ref.xhtml
+ == mfenced-3c.xhtml mfenced-3-ref.xhtml
+ == mfenced-3d.xhtml mfenced-3-ref.xhtml
