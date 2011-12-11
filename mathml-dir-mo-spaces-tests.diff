@@ -1,0 +1,111 @@
+# HG changeset patch
+# Parent 28b1d04fe8c9748c0419b8218e036f2f2417091a
+# User Frédéric Wang <fred.wang@free.fr>
+Add MathML reftests for lspace/rspace in dir=rtl. r=karlt
+
+diff --git a/layout/reftests/mathml/dir-6-ref.html b/layout/reftests/mathml/dir-6-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-6-ref.html
+@@ -0,0 +1,48 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <p>
++      mo (lspace=1em rspace=2em):
++      <math>
++        <mtext>_</mtext><mo lspace="2em" rspace="1em">+</mo><mtext>_</mtext>
++      </math>
++    </p>
++
++    <p>
++      embellished mrow (lspace=1em rspace=2em):
++      <math>
++        <mtext>_</mtext>
++        <mrow><mo lspace="2em" rspace="1em">+</mo></mrow>
++        <mtext>_</mtext>
++      </math>
++    </p>
++
++    <p>
++      embellished munderover (lspace=1em rspace=2em):
++      <math>
++        <mtext>_</mtext>
++        <munderover>
++          <mo lspace="2em" rspace="1em">+</mo>
++          <mtext>|</mtext>
++          <mtext>|</mtext>
++        </munderover>
++        <mtext>_</mtext>
++      </math>
++    </p>
++      
++    <p>
++      embellished mfrac (lspace=1em rspace=2em):
++      <math
++        <mtext>_</mtext>
++        <mfrac>
++          <mo lspace="2em" rspace="1em">+</mo>
++          <mtext>|</mtext>
++        </mfrac>
++        <mtext>_</mtext>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-6.html b/layout/reftests/mathml/dir-6.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-6.html
+@@ -0,0 +1,48 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <p>
++      mo (lspace=1em rspace=2em):
++      <math dir="rtl">
++        <mtext>_</mtext><mo lspace="1em" rspace="2em">+</mo><mtext>_</mtext>
++      </math>
++    </p>
++
++    <p>
++      embellished mrow (lspace=1em rspace=2em):
++      <math dir="rtl">
++        <mtext>_</mtext>
++        <mrow><mo lspace="1em" rspace="2em">+</mo></mrow>
++        <mtext>_</mtext>
++      </math>
++    </p>
++
++    <p>
++      embellished munderover (lspace=1em rspace=2em):
++      <math dir="rtl">
++        <mtext>_</mtext>
++        <munderover>
++          <mo lspace="1em" rspace="2em">+</mo>
++          <mtext>|</mtext>
++          <mtext>|</mtext>
++        </munderover>
++        <mtext>_</mtext>
++      </math>
++    </p>
++
++    <p>
++      embellished mfrac (lspace=1em rspace=2em):
++      <math dir="rtl">
++        <mtext>_</mtext>
++        <mfrac>
++          <mo lspace="1em" rspace="2em">+</mo>
++          <mtext>|</mtext>
++        </mfrac>
++        <mtext>_</mtext>
++      </math>
++    </p>
++
++  </body>
++</html>

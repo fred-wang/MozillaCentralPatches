@@ -7,6 +7,8 @@ mathparser-tests.diff
 mathml_directionality.diff
 mathml_overall_directionality.diff
 mathml-overall-directionality-tests.diff
+mathml-dir-mo-spaces.diff
+mathml-dir-mo-spaces-tests.diff
 mirror-op-1.diff
 mirror-op-2.diff
 MathJax-fonts.diff

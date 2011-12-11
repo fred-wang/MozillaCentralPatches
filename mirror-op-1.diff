@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0cc9e6bc415237d490b1065e072793c3f486f451
+# Parent fd06a69efb217ade873faa83d58eaeb30c85b00d
 # User Frédéric Wang <fred.wang@free.fr>
 Mirroring of operators for arabic math (Bug 208309) - part 1
 
@@ -215,12 +215,12 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
    // Additional bits not stored in the dictionary
 -  NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE   = 1<<12,
 -  NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE   = 1<<13,
--  NS_MATHML_OPERATOR_LEFTSPACE_ATTR     = 1<<14,
--  NS_MATHML_OPERATOR_RIGHTSPACE_ATTR    = 1<<15
+-  NS_MATHML_OPERATOR_LSPACE_ATTR     = 1<<14,
+-  NS_MATHML_OPERATOR_RSPACE_ATTR    = 1<<15
 +  NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE   = 1<<13,
 +  NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE   = 1<<14,
-+  NS_MATHML_OPERATOR_LEFTSPACE_ATTR     = 1<<15,
-+  NS_MATHML_OPERATOR_RIGHTSPACE_ATTR    = 1<<16
++  NS_MATHML_OPERATOR_LSPACE_ATTR     = 1<<15,
++  NS_MATHML_OPERATOR_RSPACE_ATTR    = 1<<16
  };
  
  #define NS_MATHML_OPERATOR_SIZE_INFINITY NS_IEEEPositiveInfinity()
@@ -229,9 +229,9 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
  enum eMATHVARIANT {
    eMATHVARIANT_NONE = -1,
    eMATHVARIANT_normal = 0,
-@@ -144,16 +145,20 @@ public:
-                    float*                aLeftSpace,
-                    float*                aRightSpace);
+@@ -145,16 +146,20 @@ public:
+                    float*                aLeadingSpace,
+                    float*                aTrailingSpace);
  
    // IsMutableOperator:
    // Return true if the operator exists and is stretchy or largeop
@@ -250,7 +250,7 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
    // eMATHVARIANT_NONE if aChar is not such a character.
    static eMATHVARIANT LookupInvariantChar(const nsAString& aChar);
  
-@@ -224,16 +229,19 @@ public:
+@@ -225,16 +230,19 @@ public:
    (NS_MATHML_OPERATOR_MOVABLELIMITS == ((_flags) & NS_MATHML_OPERATOR_MOVABLELIMITS))
  
  #define NS_MATHML_OPERATOR_IS_SYMMETRIC(_flags) \
@@ -268,8 +268,8 @@ diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators
  #define NS_MATHML_OPERATOR_MAXSIZE_IS_ABSOLUTE(_flags) \
    (NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE == ((_flags) & NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE))
  
- #define NS_MATHML_OPERATOR_HAS_LEFTSPACE_ATTR(_flags) \
-   (NS_MATHML_OPERATOR_LEFTSPACE_ATTR == ((_flags) & NS_MATHML_OPERATOR_LEFTSPACE_ATTR))
+ #define NS_MATHML_OPERATOR_HAS_LSPACE_ATTR(_flags) \
+   (NS_MATHML_OPERATOR_LSPACE_ATTR == ((_flags) & NS_MATHML_OPERATOR_LSPACE_ATTR))
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
