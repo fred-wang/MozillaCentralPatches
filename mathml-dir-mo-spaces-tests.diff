@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 28b1d04fe8c9748c0419b8218e036f2f2417091a
+# Parent b04fb59c8eaac5323725a4d3c9246e2b17442e74
 # User Frédéric Wang <fred.wang@free.fr>
 Add MathML reftests for lspace/rspace in dir=rtl. r=karlt
 
@@ -109,3 +109,21 @@ new file mode 100644
 +
 +  </body>
 +</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -1,13 +1,14 @@
+ == dir-1.html dir-1-ref.html
+ == dir-2.html dir-2-ref.html
+ == dir-3.html dir-3-ref.html
+ == dir-4.html dir-4-ref.html
+ == dir-5.html dir-5-ref.html
++== dir-6.html dir-6-ref.html
+ == dynamic-mi.xhtml dynamic-mi-ref.xhtml
+ == mfenced-1.xhtml mfenced-1-ref.xhtml
+ == mfenced-2a.xhtml mfenced-2-ref.xhtml
+ == mfenced-2b.xhtml mfenced-2-ref.xhtml
+ == mfenced-3a.xhtml mfenced-3-ref.xhtml
+ == mfenced-3b.xhtml mfenced-3-ref.xhtml
+ == mfenced-3c.xhtml mfenced-3-ref.xhtml
+ == mfenced-3d.xhtml mfenced-3-ref.xhtml

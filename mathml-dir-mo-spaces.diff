@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 5e1a421820cc81294a0416af1ca990847b43bac4
+# Parent e78987e0809b0cbf9832f45f5d5fcf37f9012da7
 # User Frédéric Wang <fred.wang@free.fr>
 Make lspace/rspace in mo behave as leading/trailing spaces
 
@@ -448,7 +448,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      //         {|___________|  S
      //         {               L
      // numShift{               A
-@@ -479,51 +483,59 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -479,51 +483,56 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
      } else {
        mLineRect.width = mLineThickness +
          NS_MIN(slashMaxWidthConstant,
@@ -460,15 +460,12 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 -    mBoundingMetrics.leftBearing = leftSpace + bmNum.leftBearing;
 -    mBoundingMetrics.rightBearing =
 -      leftSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
-+    nscoord leadingSpace2 = leadingSpace + bmNum.leftBearing;
-+    nscoord trailingSpace2 =
-+      leadingSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
 +    if (NS_MATHML_IS_RTL(mPresentationData.flags)) {
-+      mBoundingMetrics.leftBearing = leadingSpace2;
-+      mBoundingMetrics.rightBearing = trailingSpace2;
++      mBoundingMetrics.leftBearing = trailingSpace + bmDen.leftBearing;
++      mBoundingMetrics.rightBearing = trailingSpace + bmDen.width + mLineRect.width + bmNum.rightBearing;
 +    } else {
-+      mBoundingMetrics.leftBearing = trailingSpace2;
-+      mBoundingMetrics.rightBearing = leadingSpace2;
++      mBoundingMetrics.leftBearing = leadingSpace + bmNum.leftBearing;
++      mBoundingMetrics.rightBearing = leadingSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
 +    }
      mBoundingMetrics.width =
 -      leftSpace + bmNum.width + mLineRect.width + bmDen.width + rightSpace;

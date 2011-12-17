@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent b3b0470e3dcb5ed1f424717cfc2c2e47476730cf
+# Parent 9196f6cc1ca23e1ab8a9cd79926505f061aa413c
 # User Frédéric Wang <fred.wang@free.fr>
 Add MathML reftests for dir=rtl. r=karlt
 
