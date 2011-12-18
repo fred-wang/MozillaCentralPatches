@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 9196f6cc1ca23e1ab8a9cd79926505f061aa413c
+# Parent ade46028b610209c756b3057c883dd93ef197f5d
 # User Frédéric Wang <fred.wang@free.fr>
 Add MathML reftests for dir=rtl. r=karlt
 
@@ -7,7 +7,7 @@ diff --git a/layout/reftests/mathml/dir-1-ref.html b/layout/reftests/mathml/dir-
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/dir-1-ref.html
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,61 @@
 +<!DOCTYPE html>
 +<html>
 +  <head><title>Test dir=rtl</title></head>
@@ -67,43 +67,13 @@ new file mode 100644
 +      </math>
 +    </p>
 +
-+    <p>
-+      mtable:
-+      <math>
-+        <mtable>
-+          <mtr>
-+            <mtd>
-+              <mtext>c</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>b</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>a</mtext>
-+            </mtd>
-+          </mtr>
-+          <mtr>
-+            <mtd>
-+              <mtext>f</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>e</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>d</mtext>
-+            </mtd>
-+          </mtr>
-+        </mtable>
-+      </math>
-+    </p>
-+
 +  </body>
 +</html>
 diff --git a/layout/reftests/mathml/dir-1.html b/layout/reftests/mathml/dir-1.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/dir-1.html
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,61 @@
 +<!DOCTYPE html>
 +<html>
 +  <head><title>Test dir=rtl</title></head>
@@ -160,36 +130,6 @@ new file mode 100644
 +          <mtext>b</mtext>
 +          <mtext>c</mtext>
 +        </mfenced>
-+      </math>
-+    </p>
-+
-+    <p>
-+      mtable:
-+      <math dir="rtl">
-+        <mtable>
-+          <mtr>
-+            <mtd>
-+              <mtext>a</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>b</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>c</mtext>
-+            </mtd>
-+          </mtr>
-+          <mtr>
-+            <mtd>
-+              <mtext>d</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>e</mtext>
-+            </mtd>
-+            <mtd>
-+              <mtext>f</mtext>
-+            </mtd>
-+          </mtr>
-+        </mtable>
 +      </math>
 +    </p>
 +
@@ -690,15 +630,100 @@ new file mode 100644
 +
 +  </body>
 +</html>
+diff --git a/layout/reftests/mathml/dir-6-ref.html b/layout/reftests/mathml/dir-6-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-6-ref.html
+@@ -0,0 +1,37 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <p>
++      mtable:
++      <math>
++        <mtable>
++          <mtr>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-6.html b/layout/reftests/mathml/dir-6.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-6.html
+@@ -0,0 +1,37 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
++
++    <p>
++      mtable:
++      <math dir="rtl">
++        <mtable>
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++
++  </body>
++</html>
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -1,8 +1,13 @@
+@@ -1,8 +1,14 @@
 +== dir-1.html dir-1-ref.html
 +== dir-2.html dir-2-ref.html
 +== dir-3.html dir-3-ref.html
 +== dir-4.html dir-4-ref.html
 +== dir-5.html dir-5-ref.html
++fails == dir-6.html dir-6-ref.html
  == dynamic-mi.xhtml dynamic-mi-ref.xhtml
  == mfenced-1.xhtml mfenced-1-ref.xhtml
  == mfenced-2a.xhtml mfenced-2-ref.xhtml
