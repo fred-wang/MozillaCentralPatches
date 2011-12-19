@@ -1,0 +1,156 @@
+# HG changeset patch
+# Parent c609591397b3ac777e538920d9b8b942cb0bdbca
+# User Frédéric Wang <fred.wang@free.fr>
+Reftests for bug 208309: mirroring of some mo characters in MathML. r=karlt
+
+diff --git a/layout/reftests/mathml/mirror-op-1-ref.html b/layout/reftests/mathml/mirror-op-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-1-ref.html
+@@ -0,0 +1,19 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <style type="text/css">
++    mo {
++      -moz-transform: scaleX(-1.0);
++    }
++  </style>
++  <body>
++
++    <p><math><mo>(</mo></math></p>
++    <p><math><mo>)</mo></math></p>
++    <p><math><mo>[</mo></math></p>
++    <p><math><mo>]</mo></math></p>
++    <p><math><mo>{</mo></math></p>
++    <p><math><mo>}</mo></math></p>
++    
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-1.html b/layout/reftests/mathml/mirror-op-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-1.html
+@@ -0,0 +1,14 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math dir="rtl"><mo>(</mo></math></p>
++    <p><math dir="rtl"><mo>)</mo></math></p>
++    <p><math dir="rtl"><mo>[</mo></math></p>
++    <p><math dir="rtl"><mo>]</mo></math></p>
++    <p><math dir="rtl"><mo>{</mo></math></p>
++    <p><math dir="rtl"><mo>}</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-2-ref.html b/layout/reftests/mathml/mirror-op-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-2-ref.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block"><mo>&#x2211;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-2.html b/layout/reftests/mathml/mirror-op-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-2.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block" dir="rtl"><mo>&#x2211;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-3-ref.html b/layout/reftests/mathml/mirror-op-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-3-ref.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block"><mo>&#x221A;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-3.html b/layout/reftests/mathml/mirror-op-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-3.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block" dir="rtl"><mo>&#x221A;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-4-ref.html b/layout/reftests/mathml/mirror-op-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-4-ref.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block"><mo>&#x222B;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mirror-op-4.html b/layout/reftests/mathml/mirror-op-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mirror-op-4.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test mirror op</title></head>
++  <body>
++
++    <p><math display="block" dir="rtl"><mo>&#x222B;</mo></math></p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -1,16 +1,20 @@
+ == dir-1.html dir-1-ref.html
+ == dir-2.html dir-2-ref.html
+ == dir-3.html dir-3-ref.html
+ == dir-4.html dir-4-ref.html
+ == dir-5.html dir-5-ref.html
+ fails == dir-6.html dir-6-ref.html
+ == dir-7.html dir-7-ref.html
+ fails == dir-8.html dir-8-ref.html
++== mirror-op-1.html mirror-op-1-ref.html
++!= mirror-op-2.html mirror-op-2-ref.html
++!= mirror-op-3.html mirror-op-3-ref.html
++!= mirror-op-4.html mirror-op-4-ref.html
+ == dynamic-mi.xhtml dynamic-mi-ref.xhtml
+ == mfenced-1.xhtml mfenced-1-ref.xhtml
+ == mfenced-2a.xhtml mfenced-2-ref.xhtml
+ == mfenced-2b.xhtml mfenced-2-ref.xhtml
+ == mfenced-3a.xhtml mfenced-3-ref.xhtml
+ == mfenced-3b.xhtml mfenced-3-ref.xhtml
+ == mfenced-3c.xhtml mfenced-3-ref.xhtml
+ == mfenced-3d.xhtml mfenced-3-ref.xhtml

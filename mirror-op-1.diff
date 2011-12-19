@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent fd06a69efb217ade873faa83d58eaeb30c85b00d
+# Parent 0961f0a30b73acff4e60152c812f52f4f77481b1
 # User Frédéric Wang <fred.wang@free.fr>
-Mirroring of operators for arabic math (Bug 208309) - part 1
+Mirroring of operators for arabic math (Bug 208309) - part 1. r=karlt
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1698,24 +1698,28 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1698,24 +1698,26 @@ nsMathMLChar::StretchInternal(nsPresCont
  }
  
  nsresult
@@ -25,9 +25,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                 "Unexpected stretch flags");
  
    mDrawNormal = true;
-+  if (aRTL && nsMathMLOperators::IsMirrorableOperator(mData)) {
-+    mMirrored = true;
-+  }
++  mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
    mScaleY = mScaleX = 1.0;
    mDirection = aStretchDirection;
    nsresult rv =
@@ -36,7 +34,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Record the metrics
    mBoundingMetrics = aDesiredStretchSize;
-@@ -1791,20 +1795,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
+@@ -1791,20 +1793,21 @@ nsMathMLChar::ComposeChildren(nsPresCont
    }
    nscoord dx = 0, dy = 0;
    for (i = 0, child = mSibling; child; child = child->mSibling, i++) {
@@ -59,7 +57,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      }
      child->SetRect(nsRect(dx, dy, childSize.width, childSize.ascent+childSize.descent));
      if (0 == i)
-@@ -2023,18 +2028,23 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -2023,18 +2026,23 @@ nsMathMLChar::Display(nsDisplayListBuild
          nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                        aSelectedRect && !aSelectedRect->IsEmpty()));
  }
@@ -315,34 +313,37 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
-@@ -356,29 +356,32 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+@@ -352,44 +352,45 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
+   // adjust the origin of children.
+ 
+   // we need to center around the axis
+   nscoord delta = NS_MAX(containerSize.ascent - axisHeight, 
                           containerSize.descent + axisHeight);
    containerSize.ascent = delta + axisHeight;
    containerSize.descent = delta - axisHeight;
  
++  bool isRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
++
    /////////////////
    // opening fence ...
    ReflowChar(aPresContext, *aReflowState.rendContext, mOpenChar,
               NS_MATHML_OPERATOR_FORM_PREFIX, font->mScriptLevel, 
 -             axisHeight, leading, em, containerSize, ascent, descent);
-+             axisHeight, leading, em, containerSize, ascent, descent,
-+             NS_MATHML_IS_RTL(mPresentationData.flags));
++             axisHeight, leading, em, containerSize, ascent, descent, isRTL);
    /////////////////
    // separators ...
    for (i = 0; i < mSeparatorsCount; i++) {
      ReflowChar(aPresContext, *aReflowState.rendContext, &mSeparatorsChar[i],
                 NS_MATHML_OPERATOR_FORM_INFIX, font->mScriptLevel,
 -               axisHeight, leading, em, containerSize, ascent, descent);
-+               axisHeight, leading, em, containerSize, ascent, descent,
-+               NS_MATHML_IS_RTL(mPresentationData.flags));
++               axisHeight, leading, em, containerSize, ascent, descent, isRTL);
    }
    /////////////////
    // closing fence ...
    ReflowChar(aPresContext, *aReflowState.rendContext, mCloseChar,
               NS_MATHML_OPERATOR_FORM_POSTFIX, font->mScriptLevel,
 -             axisHeight, leading, em, containerSize, ascent, descent);
-+             axisHeight, leading, em, containerSize, ascent, descent,
-+             NS_MATHML_IS_RTL(mPresentationData.flags));
++             axisHeight, leading, em, containerSize, ascent, descent, isRTL);
  
    //////////////////
    // Adjust the origins of each child.
@@ -351,7 +352,18 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
    i = 0;
    nscoord dx = 0;
    nsBoundingMetrics bm;
-@@ -494,28 +497,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
+   bool firstTime = true;
+   nsMathMLChar *leftChar, *rightChar;
+-  bool isRTL = NS_MATHML_IS_RTL(mPresentationData.flags);
+   if (isRTL) {
+     leftChar = mCloseChar;
+     rightChar = mOpenChar;
+   } else {
+     leftChar = mOpenChar;
+     rightChar = mCloseChar;
+   }
+ 
+@@ -494,28 +495,30 @@ nsMathMLmfencedFrame::ReflowChar(nsPresC
                                   nsMathMLChar*        aMathMLChar,
                                   nsOperatorFlags      aForm,
                                   PRInt32              aScriptLevel,
@@ -410,7 +422,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.h b/layout/mathml/nsMathMLmfence
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -760,17 +760,17 @@ nsMathMLmoFrame::Stretch(nsRenderingCont
+@@ -760,17 +760,20 @@ nsMathMLmoFrame::Stretch(nsRenderingCont
            container.descent = aContainerSize.descent;
            container.ascent = height - container.descent;
          }
@@ -420,7 +432,10 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
      // let the MathMLChar stretch itself...
      nsresult res = mMathMLChar.Stretch(PresContext(), aRenderingContext,
 -                                       aStretchDirection, container, charSize, stretchHint);
-+                                       aStretchDirection, container, charSize, stretchHint, NS_MATHML_IS_RTL(mPresentationData.flags));
++                                       aStretchDirection, container, charSize,
++                                       stretchHint,
++                                       NS_MATHML_IS_RTL(mPresentationData.
++                                                        flags));
      if (NS_FAILED(res)) {
        // gracefully handle cases where stretching the char failed (i.e., GetBoundingMetrics failed)
        // clear our 'form' to behave as if the operator wasn't in the dictionary
