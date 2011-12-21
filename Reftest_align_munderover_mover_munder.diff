@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent a67d545becc6d79f6b65bd8abe72517a7ffd91fc
+# Parent ba434e34e37ee8a831da127e55df6565170d8196
 # User Jonathan Hage <hage.jonathan@gmail.com>
-munder, mover, munderover: Reftest for the align attribute
+munder, mover, munderover: reftest the the align attribute (bug 557476). r=karlt
 
 diff --git a/layout/reftests/mathml/munder-mover-align-accent-false-ref.html b/layout/reftests/mathml/munder-mover-align-accent-false-ref.html
 new file mode 100644
@@ -12,7 +12,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="false" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="2">mover</th>
@@ -206,7 +206,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +	<th>
@@ -241,7 +241,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="false" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="2">mover</th>
@@ -387,7 +387,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +      <th>
@@ -422,7 +422,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="true" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="2">mover</th>
@@ -616,7 +616,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +	<th>
@@ -651,7 +651,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="true" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="2">mover</th>
@@ -797,7 +797,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +      <th>
@@ -832,7 +832,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="false" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="6">munderover</th>
@@ -1076,7 +1076,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +	<th>
@@ -1111,7 +1111,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="false" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>	
 +	<th colspan="4">munderover</th>
@@ -1271,7 +1271,7 @@ new file mode 100644
 +	  </math>
 +	</td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +      <th>
@@ -1306,7 +1306,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="true" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>
 +	<th colspan="6">munderover</th>
@@ -1550,7 +1550,7 @@ new file mode 100644
 +	  </math>
 +	  </td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +	<th>
@@ -1585,7 +1585,7 @@ new file mode 100644
 +  <head><title></title></head>
 +  <body>
 +    <h2> Test with accent="true" </h2>
-+    <TABLE border="1">
++    <table border="1">
 +      <tr>
 +	<td align="center"></td>	
 +	<th colspan="4">munderover</th>
@@ -1745,7 +1745,7 @@ new file mode 100644
 +	  </math>
 +	</td>
 +      </tr>
-+    </TABLE>
++    </table>
 +    <table>
 +      <tr>
 +      <th>
@@ -1774,7 +1774,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -69,11 +69,15 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+@@ -70,13 +70,17 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
  == mpadded-2.html mpadded-2-ref.html
  == mpadded-3.html mpadded-3-ref.html
  == mpadded-4.html mpadded-4-ref.html
@@ -1790,3 +1790,5 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
  == mathml-negativespace.html mathml-negativespace-ref.html
  != link-1.xhtml link-ref.xhtml
+ == munderover-empty-scripts.html munderover-empty-scripts-ref.html
+ == positive-namedspace.html positive-namedspace-ref.html
