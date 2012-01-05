@@ -1,11 +1,10 @@
-MathJax-fonts.diff
+remove-namedspace-value-overriding-1.diff
+remove-namedspace-value-overriding-2.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
+MathJax-fonts.diff
 ________
-Reftest_align_munderover_mover_munder.diff
-align_munderover.diff
 mpadded-vertical-metrics.diff
-Remove-namedspace-value-overriding.diff
 Merge_ParseAttribute_into_ParseNumericValue.diff
 maction-embellished-op.diff
 largeop-initial-stretch.diff
@@ -14,8 +13,6 @@ rotate_stretchy.diff
 mstyle-ms.diff
 mathml_map_quotes.diff
 mo-selection.diff
-mathml-link-reftests-2.diff
-click.diff
 math-height.diff
 mathml_localize.diff
 mathml_linebreak.diff

@@ -1,3 +1,5 @@
-312651d593d0636e824dd9e1daa718d5b6f4171b:MathJax-fonts.diff
-b5c8965a15e4529e80e6e4d108094ef4ed5c72f0:MathJax-fonts-2.diff
-0afdc9f9c0690bc948e9f7835e35635c6fc666e1:MathJax-fonts-3.diff
+eacfaf61e4539f386363bbceb3d0eff2938375a1:remove-namedspace-value-overriding-1.diff
+39103e497bc5aabd426abd08e3aa86a62d05eeaa:remove-namedspace-value-overriding-2.diff
+c3691a781a7c0a687cc21a16c32eb81272e0207d:MathJax-fonts-2.diff
+8ba843ef6dc4007232c5c40f67534e620a7c305a:MathJax-fonts-3.diff
+95adab0386ef53fe7a97a8f5dba8ef56e3bdf406:MathJax-fonts.diff
