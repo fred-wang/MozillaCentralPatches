@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 0eec6ba6a87aa3149854bb7680eff9ac0cb924f4
+# Parent 315027713807aa4942656af61a2ae388b98cb2a7
 # User Jonathan Hage <hage.jonathan@gmail.com>
 Remove namedspace value overriding - part 2 (bug 673759). r=karlt
 
 diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
 --- a/content/base/src/nsGkAtomList.h
 +++ b/content/base/src/nsGkAtomList.h
-@@ -1542,17 +1542,16 @@ GK_ATOM(malignscope_, "malignscope")
+@@ -1540,17 +1540,16 @@ GK_ATOM(malignmark_, "malignmark")
  GK_ATOM(mathbackground_, "mathbackground")
  GK_ATOM(mathcolor_, "mathcolor")
  GK_ATOM(mathsize_, "mathsize")
@@ -20,11 +20,11 @@ diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
  GK_ATOM(merror_, "merror")
  GK_ATOM(mfenced_, "mfenced")
  GK_ATOM(mfrac_, "mfrac")
- GK_ATOM(mfraction_, "mfraction")
  GK_ATOM(mglyph_, "mglyph")
  GK_ATOM(mi_, "mi")
  GK_ATOM(minlabelspacing_, "minlabelspacing")
-@@ -1588,23 +1587,16 @@ GK_ATOM(msubsup_, "msubsup")
+ GK_ATOM(minsize_, "minsize")
+@@ -1584,23 +1583,16 @@ GK_ATOM(msubsup_, "msubsup")
  GK_ATOM(msup_, "msup")
  GK_ATOM(mtable_, "mtable")
  GK_ATOM(mtd_, "mtd")
@@ -48,7 +48,7 @@ diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
  GK_ATOM(notprsubset_, "notprsubset")
  GK_ATOM(notsubset_, "notsubset")
  GK_ATOM(numalign_, "numalign")
-@@ -1656,29 +1648,23 @@ GK_ATOM(stackalign_, "stackalign")
+@@ -1652,29 +1644,23 @@ GK_ATOM(stackalign_, "stackalign")
  GK_ATOM(stretchy_, "stretchy")
  GK_ATOM(subscriptshift_, "subscriptshift")
  GK_ATOM(subset_, "subset")
@@ -81,7 +81,7 @@ diff --git a/content/base/src/nsGkAtomList.h b/content/base/src/nsGkAtomList.h
 diff --git a/content/base/src/nsTreeSanitizer.cpp b/content/base/src/nsTreeSanitizer.cpp
 --- a/content/base/src/nsTreeSanitizer.cpp
 +++ b/content/base/src/nsTreeSanitizer.cpp
-@@ -916,30 +916,22 @@ nsIAtom** const kAttributesMathML[] = {
+@@ -913,29 +913,21 @@ nsIAtom** const kAttributesMathML[] = {
     &nsGkAtoms::lquote_, // lquote
     &nsGkAtoms::lspace_, // lspace
     &nsGkAtoms::ltr, // ltr
@@ -93,7 +93,6 @@ diff --git a/content/base/src/nsTreeSanitizer.cpp b/content/base/src/nsTreeSanit
 -   &nsGkAtoms::mediummathspace_, // mediummathspace
     &nsGkAtoms::minlabelspacing_, // minlabelspacing
     &nsGkAtoms::minsize_, // minsize
-    &nsGkAtoms::monospaced_, // monospaced
     &nsGkAtoms::movablelimits_, // movablelimits
     &nsGkAtoms::msgroup_, // msgroup
     &nsGkAtoms::name, // name
@@ -112,7 +111,7 @@ diff --git a/content/base/src/nsTreeSanitizer.cpp b/content/base/src/nsTreeSanit
     &nsGkAtoms::order, // order
     &nsGkAtoms::other_, // other
     &nsGkAtoms::overflow, // overflow
-@@ -962,23 +954,17 @@ nsIAtom** const kAttributesMathML[] = {
+@@ -958,23 +950,17 @@ nsIAtom** const kAttributesMathML[] = {
     &nsGkAtoms::shift_, // shift
     &nsGkAtoms::side_, // side
     &nsGkAtoms::src, // src

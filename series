@@ -1,5 +1,7 @@
+bug696647.patch
 remove-namedspace-value-overriding-1.diff
 remove-namedspace-value-overriding-2.diff
+mglyph.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
 MathJax-fonts.diff
