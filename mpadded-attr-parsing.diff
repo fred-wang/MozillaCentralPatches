@@ -46,8 +46,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
-@@ -80,25 +80,63 @@ public:
-   virtual bool ParseAttribute(PRInt32 aNamespaceID,
+@@ -81,24 +81,60 @@ public:
                                  nsIAtom* aAttribute,
                                  const nsAString& aValue,
                                  nsAttrValue& aResult);
@@ -55,8 +54,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
    NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* aAttribute) const;
    virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
  
--  enum {
-+  enum parseNumericValueFlags {
+   enum {
 +    // IN parameters
      PARSE_ALLOW_UNITLESS = 0x01, // unitless 0 will be turned into 0px
      PARSE_ALLOW_NEGATIVE = 0x02,
@@ -85,14 +83,12 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 +    NS_MATHML_PSEUDO_UNIT_MASK = 7 << 6
 +  };
 +
-+  static void MpaddedSignWrite(PRUint32& aFlags,
-+                               parseNumericValueFlags aValue)
++  static void MpaddedSignWrite(PRUint32& aFlags, PRUint32 aValue)
 +  {
 +    aFlags = ((aFlags & (~NS_MATHML_SIGN_MASK)) | aValue);
 +  };
 +
-+  static void MpaddedPseudoUnitWrite(PRUint32& aFlags,
-+                                     parseNumericValueFlags aValue)
++  static void MpaddedPseudoUnitWrite(PRUint32& aFlags, PRUint32 aValue)
 +  {
 +    aFlags = ((aFlags & (~NS_MATHML_PSEUDO_UNIT_MASK)) | aValue);
 +  };
@@ -391,7 +387,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
      if (eCSSUnit_Percent == unit || eCSSUnit_Number == unit) {
 -      switch(aPseudoUnit) {
 -        case NS_MATHML_PSEUDO_UNIT_WIDTH:
-+      switch(nsMathMLElement::nsMathMLPseudoUnitRead(aFlags)) {
++      switch(nsMathMLElement::MpaddedPseudoUnitRead(aFlags)) {
 +        case nsMathMLElement::NS_MATHML_PSEUDO_UNIT_WIDTH:
               scaler = aBoundingMetrics.width;
               break;
@@ -421,7 +417,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
        amount = CalcLength(PresContext(), mStyleContext, aCSSValue);
  
 -    if (NS_MATHML_SIGN_PLUS == aSign)
-+    if (sign = nsMathMLElement::NS_MATHML_SIGN_PLUS)
++    if (sign == nsMathMLElement::NS_MATHML_SIGN_PLUS)
        aValueToUpdate += amount;
 -    else if (NS_MATHML_SIGN_MINUS == aSign)
 +    else if (sign == nsMathMLElement::NS_MATHML_SIGN_MINUS)
@@ -433,7 +429,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
  
  NS_IMETHODIMP
  nsMathMLmpaddedFrame::Reflow(nsPresContext*          aPresContext,
-@@ -411,68 +249,85 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
+@@ -411,68 +249,92 @@ nsMathMLmpaddedFrame::Place(nsRenderingC
    nscoord lspace = 0;
    // In MathML3, "width" will be the bounding box width and "advancewidth" will
    // refer "to the horizontal distance between the positioning point of the
@@ -443,7 +439,8 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
    nscoord voffset = 0;
  
 -  PRInt32 pseudoUnit;
-+  PRInt32 flags, sign, pseudoUnit;
++  PRUint32 flags;
++  PRUint32 sign, pseudoUnit;
    nscoord initialWidth = width;
  
    // update width
@@ -452,12 +449,14 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 -  UpdateValue(mWidthSign, pseudoUnit, mWidth,
 -              mBoundingMetrics, width);
 +  flags = mWidthFlags;
-+  pseudoUnit = nsMathMLElement::nsMathMLPseudoUnitRead(flags);
-+  nsMathMLElement::NS_MATHML_PSEUDO_UNIT_WRITE(flags,
-+                              (pseudoUnit ==
-+                               nsMathMLElement::NS_MATHML_PSEUDO_UNIT_ITSELF) ?
-+                              nsMathMLElement::NS_MATHML_PSEUDO_UNIT_WIDTH :
-+                              pseudoUnit);
++  pseudoUnit = nsMathMLElement::MpaddedPseudoUnitRead(flags);
++  nsMathMLElement::MpaddedPseudoUnitWrite(flags,
++                                          (pseudoUnit ==
++                                           nsMathMLElement::
++                                           NS_MATHML_PSEUDO_UNIT_ITSELF) ?
++                                          nsMathMLElement::
++                                          NS_MATHML_PSEUDO_UNIT_WIDTH :
++                                          pseudoUnit);
 +  UpdateValue(flags, mWidth, mBoundingMetrics, width);
    width = NS_MAX(0, width);
  
@@ -467,12 +466,14 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 -  UpdateValue(mHeightSign, pseudoUnit, mHeight,
 -              mBoundingMetrics, height);
 +  flags = mHeightFlags;
-+  pseudoUnit = nsMathMLElement::nsMathMLPseudoUnitRead(flags);
-+  nsMathMLElement::NS_MATHML_PSEUDO_UNIT_WRITE(flags,
-+                              (pseudoUnit ==
-+                               nsMathMLElement::NS_MATHML_PSEUDO_UNIT_ITSELF) ?
-+                              nsMathMLElement::NS_MATHML_PSEUDO_UNIT_HEIGHT :
-+                              pseudoUnit);
++  pseudoUnit = nsMathMLElement::MpaddedPseudoUnitRead(flags);
++  nsMathMLElement::MpaddedPseudoUnitWrite(flags,
++                                          (pseudoUnit ==
++                                           nsMathMLElement::
++                                           NS_MATHML_PSEUDO_UNIT_ITSELF) ?
++                                          nsMathMLElement::
++                                          NS_MATHML_PSEUDO_UNIT_HEIGHT :
++                                          pseudoUnit);
 +  UpdateValue(flags, mHeight, mBoundingMetrics, height);
    height = NS_MAX(0, height);
  
@@ -482,12 +483,14 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 -  UpdateValue(mDepthSign, pseudoUnit, mDepth,
 -              mBoundingMetrics, depth);
 +  flags = mDepthFlags;
-+  pseudoUnit = nsMathMLElement::nsMathMLPseudoUnitRead(flags);
-+  nsMathMLElement::NS_MATHML_PSEUDO_UNIT_WRITE(flags,
-+                              (pseudoUnit ==
-+                               nsMathMLElement::NS_MATHML_PSEUDO_UNIT_ITSELF) ?
-+                              nsMathMLElement::NS_MATHML_PSEUDO_UNIT_DEPTH :
-+                              pseudoUnit);
++  pseudoUnit = nsMathMLElement::MpaddedPseudoUnitRead(flags);
++  nsMathMLElement::MpaddedPseudoUnitWrite(flags,
++                                          (pseudoUnit ==
++                                           nsMathMLElement::
++                                           NS_MATHML_PSEUDO_UNIT_ITSELF) ?
++                                          nsMathMLElement::
++                                          NS_MATHML_PSEUDO_UNIT_DEPTH :
++                                          pseudoUnit);
 +  UpdateValue(flags, mDepth, mBoundingMetrics, depth);
    depth = NS_MAX(0, depth);
  
@@ -497,7 +500,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 -    UpdateValue(mLeadingSpaceSign, pseudoUnit, mLeadingSpace,
 -                mBoundingMetrics, lspace);
 +  flags = mLeadingSpaceFlags;
-+  if (nsMathMLElement::nsMathMLPseudoUnitRead(flags) !=
++  if (nsMathMLElement::MpaddedPseudoUnitRead(flags) !=
 +      nsMathMLElement::NS_MATHML_PSEUDO_UNIT_ITSELF) {
 +    UpdateValue(flags, mLeadingSpace, mBoundingMetrics, lspace);
    }
@@ -508,7 +511,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 -    UpdateValue(mVerticalOffsetSign, pseudoUnit, mVerticalOffset,
 -                mBoundingMetrics, voffset);
 +  flags = mVerticalOffsetFlags;
-+  if (nsMathMLElement::nsMathMLPseudoUnitRead(flags) !=
++  if (nsMathMLElement::MpaddedPseudoUnitRead(flags) !=
 +      nsMathMLElement::NS_MATHML_PSEUDO_UNIT_ITSELF) {
 +    UpdateValue(flags, mVerticalOffset, mBoundingMetrics, voffset);
    }
@@ -567,11 +570,11 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.h b/layout/mathml/nsMathMLmpadde
 -  PRInt32    mDepthPseudoUnit;
 -  PRInt32    mLeadingSpacePseudoUnit;
 -  PRInt32    mVerticalOffsetPseudoUnit;
-+  PRInt32    mWidthFlags;
-+  PRInt32    mHeightFlags;
-+  PRInt32    mDepthFlags;
-+  PRInt32    mLeadingSpaceFlags;
-+  PRInt32    mVerticalOffsetFlags;
++  PRUint32    mWidthFlags;
++  PRUint32    mHeightFlags;
++  PRUint32    mDepthFlags;
++  PRUint32    mLeadingSpaceFlags;
++  PRUint32    mVerticalOffsetFlags;
  
    // helpers to process the attributes
    void
