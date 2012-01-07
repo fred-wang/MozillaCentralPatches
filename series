@@ -1,11 +1,13 @@
 bug696647.patch
 remove-namedspace-value-overriding-1.diff
+mpadded-attr-parsing.diff
 remove-namedspace-value-overriding-2.diff
-mglyph.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
 MathJax-fonts.diff
 ________
+mglyph-1.diff
+mglyph-2.diff
 mpadded-vertical-metrics.diff
 Merge_ParseAttribute_into_ParseNumericValue.diff
 maction-embellished-op.diff

@@ -1,0 +1,419 @@
+# HG changeset patch
+# Parent 382c0b64e3c3e2f9c2384770c683675dc0450325
+# User Frédéric Wang <fred.wang@free.fr>
+Add support for mglyph (bug 297465) - part 1.
+
+diff --git a/content/mathml/content/src/Makefile.in b/content/mathml/content/src/Makefile.in
+--- a/content/mathml/content/src/Makefile.in
++++ b/content/mathml/content/src/Makefile.in
+@@ -44,16 +44,17 @@ VPATH		= @srcdir@
+ include $(DEPTH)/config/autoconf.mk
+ 
+ MODULE		= content
+ LIBRARY_NAME	= gkcontentmathml_s
+ LIBXUL_LIBRARY	= 1
+ 
+ CPPSRCS		= \
+ 		nsMathMLElement.cpp               \
++		nsMathMLMglyphElement.cpp         \
+ 		nsMathMLElementFactory.cpp        \
+ 		$(NULL)
+ 
+ include $(topsrcdir)/config/config.mk
+ 
+ # we don't want the shared lib, but we want to force the creation of a static 
+ # lib.
+ FORCE_STATIC_LIB = 1
+diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
+--- a/content/mathml/content/src/nsMathMLElement.cpp
++++ b/content/mathml/content/src/nsMathMLElement.cpp
+@@ -141,16 +141,29 @@ nsMathMLElement::ParseAttribute(PRInt32 
+       return aResult.ParseColor(aValue);
+     }
+   }
+ 
+   return nsMathMLElementBase::ParseAttribute(aNamespaceID, aAttribute,
+                                              aValue, aResult);
+ }
+ 
++static nsGenericElement::MappedAttributeEntry sMglyphStyles[] = {
++  // The MathML REC says that src, width, height and alt attributes can not
++  // be set on mstyle. So we don't need to find these attributes on ancestors.
++  { &nsGkAtoms::width},
++  { &nsGkAtoms::height},
++
++  // The MathML REC says that mathcolor has no effect
++  // { &nsGkAtoms::mathcolor_ }, 
++
++  { &nsGkAtoms::mathbackground_ },
++  { nsnull }
++};
++
+ static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
+   { &nsGkAtoms::mathsize_ },
+   { &nsGkAtoms::fontsize_ },
+   { &nsGkAtoms::color },
+   { &nsGkAtoms::fontfamily_ },
+   { nsnull }
+ };
+ 
+@@ -166,31 +179,36 @@ static nsGenericElement::MappedAttribute
+   { &nsGkAtoms::mathcolor_ },
+   { &nsGkAtoms::mathbackground_ },
+   { nsnull }
+ };
+ 
+ bool
+ nsMathMLElement::IsAttributeMapped(const nsIAtom* aAttribute) const
+ {
++  static const MappedAttributeEntry* const mglyphMap[] = {
++    sMglyphStyles
++  };
+   static const MappedAttributeEntry* const tokenMap[] = {
+     sTokenStyles,
+     sCommonPresStyles
+   };
+   static const MappedAttributeEntry* const mstyleMap[] = {
+     sTokenStyles,
+     sEnvironmentStyles,
+     sCommonPresStyles
+   };
+   static const MappedAttributeEntry* const commonPresMap[] = {
+     sCommonPresStyles
+   };
+   
+-  // We don't support mglyph (yet).
+   nsIAtom* tag = Tag();
++  if (tag == nsGkAtoms::mglyph_) {
++    return FindAttributeDependence(aAttribute, mglyphMap);
++  }
+   if (tag == nsGkAtoms::ms_ || tag == nsGkAtoms::mi_ ||
+       tag == nsGkAtoms::mn_ || tag == nsGkAtoms::mo_ ||
+       tag == nsGkAtoms::mtext_ || tag == nsGkAtoms::mspace_)
+     return FindAttributeDependence(aAttribute, tokenMap);
+   if (tag == nsGkAtoms::mstyle_ ||
+       tag == nsGkAtoms::math)
+     return FindAttributeDependence(aAttribute, mstyleMap);
+ 
+@@ -497,16 +515,36 @@ nsMathMLElement::MapMathMLAttributesInto
+     }
+     nscolor color;
+     nsCSSValue* colorValue = aData->ValueForColor();
+     if (value && value->GetColorValue(color) &&
+         colorValue->GetUnit() == eCSSUnit_Null) {
+       colorValue->SetColorValue(color);
+     }
+   }
++
++  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
++    nsCSSValue* width = aData->ValueForWidth();
++    if (width->GetUnit() == eCSSUnit_Null) {
++      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
++      if (value && value->Type() == nsAttrValue::eString) {
++        ParseNumericValue(value->GetStringValue(), *width,
++                          PARSE_ALLOW_NAMEDSPACE | PARSE_ALLOW_UNITLESS);
++      }
++    }
++
++    nsCSSValue* height = aData->ValueForHeight();
++    if (height->GetUnit() == eCSSUnit_Null) {
++      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
++      if (value && value->Type() == nsAttrValue::eString) {
++        ParseNumericValue(value->GetStringValue(), *height,
++                          PARSE_ALLOW_NAMEDSPACE | PARSE_ALLOW_UNITLESS);
++      }
++    }
++  }
+ }
+ 
+ nsresult
+ nsMathMLElement::PreHandleEvent(nsEventChainPreVisitor& aVisitor)
+ {
+   nsresult rv = nsGenericElement::PreHandleEvent(aVisitor);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+diff --git a/content/mathml/content/src/nsMathMLElementFactory.cpp b/content/mathml/content/src/nsMathMLElementFactory.cpp
+--- a/content/mathml/content/src/nsMathMLElementFactory.cpp
++++ b/content/mathml/content/src/nsMathMLElementFactory.cpp
+@@ -35,21 +35,29 @@
+  * the terms of any one of the MPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+ 
+ #include "nsContentCreatorFunctions.h"
+ #include "nsGkAtoms.h"
+ #include "nsIDocument.h"
+ #include "nsMathMLElement.h"
++#include "nsMathMLMglyphElement.h"
+ 
+ // MathML Element Factory (declared in nsContentCreatorFunctions.h)
+ nsresult
+ NS_NewMathMLElement(nsIContent** aResult, already_AddRefed<nsINodeInfo> aNodeInfo)
+ {
+   aNodeInfo.get()->SetIDAttributeAtom(nsGkAtoms::id);
+ 
+-  nsMathMLElement* it = new nsMathMLElement(aNodeInfo);
++  nsIAtom *name = aNodeInfo.get()->NameAtom();
++
++  nsMathMLElement* it;
++  if (name == nsGkAtoms::mglyph_) {
++    it = new nsMathMLMglyphElement(aNodeInfo);
++  } else {
++    it = new nsMathMLElement(aNodeInfo);
++  }
+   NS_ENSURE_TRUE(it, NS_ERROR_OUT_OF_MEMORY);
+ 
+   NS_ADDREF(*aResult = it);
+   return NS_OK;
+ }
+diff --git a/content/mathml/content/src/nsMathMLMglyphElement.cpp b/content/mathml/content/src/nsMathMLMglyphElement.cpp
+new file mode 100644
+--- /dev/null
++++ b/content/mathml/content/src/nsMathMLMglyphElement.cpp
+@@ -0,0 +1,164 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2O12
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#include "nsMathMLMglyphElement.h"
++
++nsMathMLMglyphElement::nsMathMLMglyphElement(already_AddRefed<nsINodeInfo>
++                                             aNodeInfo)
++  : nsMathMLElement(aNodeInfo)
++{
++}
++
++nsMathMLMglyphElement::~nsMathMLMglyphElement()
++{
++  DestroyImageLoadingContent();
++}
++
++//----------------------------------------------------------------------
++// nsISupports methods:
++
++#define eDOMClassInfo_MathMLMglyphElement_id eDOMClassInfo_MathMLElement_id
++
++DOMCI_NODE_DATA(MathMLMglyphElement, nsMathMLMglyphElement)
++
++NS_INTERFACE_TABLE_HEAD(nsMathMLMglyphElement)
++  NS_NODE_OFFSET_AND_INTERFACE_TABLE_BEGIN(nsMathMLMglyphElement)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, nsIDOMNode)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, nsIDOMElement)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, nsILink)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, Link)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, imgIDecoderObserver)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, nsIImageLoadingContent)
++    NS_INTERFACE_TABLE_ENTRY(nsMathMLMglyphElement, imgIContainerObserver)
++  NS_OFFSET_AND_INTERFACE_TABLE_END
++  NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE
++NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(MathMLMglyphElement)
++NS_ELEMENT_INTERFACE_MAP_END
++
++#undef eDOMClassInfo_MathMLMglyphElement_id
++
++NS_IMPL_ADDREF_INHERITED(nsMathMLMglyphElement, nsMathMLElement)
++NS_IMPL_RELEASE_INHERITED(nsMathMLMglyphElement, nsMathMLElement)
++
++nsresult
++nsMathMLMglyphElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
++                                  nsIContent* aBindingParent,
++                                  bool aCompileEventHandlers)
++{
++  nsresult rv = nsMathMLElement::BindToTree(aDocument, aParent, aBindingParent,
++                                            aCompileEventHandlers);
++
++  if (HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
++    // FIXME: Bug 660963 it would be nice if we could just have
++    // ClearBrokenState update our state and do it fast...
++    ClearBrokenState();
++    RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
++    // If loading is temporarily disabled, don't even launch MaybeLoadImage.
++    // Otherwise MaybeLoadImage may run later when someone has reenabled
++    // loading.
++    if (LoadingEnabled()) {
++      nsContentUtils::AddScriptRunner(
++        NS_NewRunnableMethod(this, &nsMathMLMglyphElement::MaybeLoadImage));
++    }
++  }
++
++  return rv;
++}
++
++nsresult
++nsMathMLMglyphElement::SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
++                               nsIAtom* aPrefix, const nsAString& aValue,
++                               bool aNotify)
++{
++  if (aNotify &&
++      aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
++
++    // Prevent setting image.src by exiting early
++    if (nsContentUtils::IsImageSrcSetDisabled()) {
++      return NS_OK;
++    }
++
++    // A hack to get animations to reset. See bug 594771.
++    mNewRequestsWillNeedAnimationReset = true;
++
++    // Force image loading here, so that we'll try to load the image from
++    // network if it's set to be not cacheable...  If we change things so that
++    // the state gets in nsGenericElement's attr-setting happen around this
++    // LoadImage call, we could start passing false instead of aNotify
++    // here.
++
++    LoadImage(aValue, true, aNotify);
++
++    mNewRequestsWillNeedAnimationReset = false;
++   }
++  
++  return nsMathMLElement::SetAttr(aNameSpaceID, aName, aPrefix, aValue,
++                                  aNotify);
++}
++
++nsresult
++nsMathMLMglyphElement::UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aAttr,
++                                 bool aNotify)
++{
++  if (aNameSpaceID == kNameSpaceID_None && aAttr == nsGkAtoms::src) {
++    CancelImageRequests(aNotify);
++  }
++  
++  return nsMathMLElement::UnsetAttr(aNameSpaceID, aAttr, aNotify);
++}
++
++void
++nsMathMLMglyphElement::MaybeLoadImage()
++{
++  // Our base URI may have changed; claim that our URI changed, and the
++  // nsImageLoadingContent will decide whether a new image load is warranted.
++  // Note, check LoadingEnabled() after LoadImage call.
++  nsAutoString uri;
++  if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, uri) &&
++      (NS_FAILED(LoadImage(uri, false, true)) ||
++       !LoadingEnabled())) {
++    CancelImageRequests(true);
++  }
++}
++
++nsEventStates
++nsMathMLMglyphElement::IntrinsicState() const
++{
++  return nsMathMLElement::IntrinsicState() |
++    nsImageLoadingContent::ImageState();
++}
+diff --git a/content/mathml/content/src/nsMathMLMglyphElement.h b/content/mathml/content/src/nsMathMLMglyphElement.h
+new file mode 100644
+--- /dev/null
++++ b/content/mathml/content/src/nsMathMLMglyphElement.h
+@@ -0,0 +1,77 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2O12
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#ifndef nsMathMLMglyphElement_h
++#define nsMathMLMglyphElement_h
++
++#include "nsMathMLElement.h"
++#include "nsImageLoadingContent.h"
++
++class nsMathMLMglyphElement : public nsMathMLElement,
++                              public nsImageLoadingContent
++{
++public:
++  nsMathMLMglyphElement(already_AddRefed<nsINodeInfo> aNodeInfo);
++  virtual ~nsMathMLMglyphElement();
++
++  // Implementation of nsISupports is inherited from nsMathMLElementBase
++  NS_DECL_ISUPPORTS_INHERITED
++
++  // Forward implementations of parent interfaces of nsMathMLElement to 
++  // our base class
++  NS_FORWARD_NSIDOMNODE(nsMathMLElement::)
++  NS_FORWARD_NSIDOMELEMENT(nsMathMLElement::)
++
++  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
++                              nsIContent* aBindingParent,
++                              bool aCompileEventHandlers);
++
++  virtual nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
++                           nsIAtom* aPrefix, const nsAString& aValue,
++                           bool aNotify);
++
++  virtual nsresult UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aAttr,
++                             bool aNotify);
++
++  virtual nsEventStates IntrinsicState() const;
++
++  void MaybeLoadImage();
++  virtual nsXPCClassInfo* GetClassInfo();
++};
++
++#endif // nsMathMLMglyphElement_h
