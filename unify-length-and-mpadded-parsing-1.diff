@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 82fe146ec9449c35d2d78c91863191b1c426d18d
 # User Frédéric Wang <fred.wang@free.fr>
-Remove namedspace value overriding - part 1 (bug 673759). r=karlt
+Bug 677036 - Unify parsing length and mpadded attributes (bug 673759) - part1. r=karlt
 
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp

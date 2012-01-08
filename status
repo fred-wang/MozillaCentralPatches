@@ -1,2 +1,2 @@
-137ea055e70b1bf33c6ac4032b27a7ac4256dc4f:bug696647.patch
-fcc1c2a774a0884cd893b6f236888f546260113e:remove-namedspace-value-overriding-1.diff
+fae47a28fa960a211ae3b7250b193650f1c86d05:bug696647.patch
+b3c7e8fdb229f7acac5a78dc64b26125848061c9:unify-length-and-mpadded-parsing-1.diff
