@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 82fe146ec9449c35d2d78c91863191b1c426d18d
+# Parent fae47a28fa960a211ae3b7250b193650f1c86d05
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 677036 - Unify parsing length and mpadded attributes (bug 673759) - part1. r=karlt
+Bug 677036 - Unify parsing of length and mpadded attributes - part 1. r=karlt
 
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
-@@ -227,16 +227,63 @@ nsMapRuleToAttributesFunc
+@@ -227,54 +227,116 @@ nsMapRuleToAttributesFunc
  nsMathMLElement::GetAttributeMappingFunction() const
  {
    // It doesn't really matter what our tag is here, because only attributes
@@ -15,13 +15,39 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
    return &MapMathMLAttributesInto;
  }
  
+-// ================
+-// Utilities for parsing and retrieving numeric values
+-
+-/*
+-The REC says:
+-  An explicit plus sign ('+') is not allowed as part of a numeric value
+-  except when it is specifically listed in the syntax (as a quoted '+'
+-  or "+"),
+-
+-  Units allowed
+-  ID  Description
+-  em  ems (font-relative unit traditionally used for horizontal lengths)
+-  ex  exs (font-relative unit traditionally used for vertical lengths)
+-  px  pixels, or pixel size of a "typical computer display"
+-  in  inches (1 inch = 2.54 centimeters)
+-  cm  centimeters
+-  mm  millimeters
+-  pt  points (1 point = 1/72 inch)
+-  pc  picas (1 pica = 12 points)
+-  %   percentage of default value
+-
+-Implementation here:
+-  The numeric value is valid only if it is of the form [-] nnn.nnn
+-  [h/v-unit]
+-*/
+-
 +/* static */ bool
 +nsMathMLElement::ParseNamedSpaceValue(const nsString& aString,
 +                                      nsCSSValue&     aCSSValue,
 +                                      PRUint32        aFlags)
 +{
 +   PRInt32 i = 0;
-+   // See if it is one of the 'namedspace' (ranging 1/18em...7/18em)
++   // See if it is one of the 'namedspace' (ranging -7/18em, -6/18, ... 7/18em)
 +   if (aString.EqualsLiteral("veryverythinmathspace")) {
 +     i = 1;
 +   } else if (aString.EqualsLiteral("verythinmathspace")) {
@@ -62,28 +88,47 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +   return false;
 +}
 + 
- // ================
- // Utilities for parsing and retrieving numeric values
- 
- /*
- The REC says:
-   An explicit plus sign ('+') is not allowed as part of a numeric value
-   except when it is specifically listed in the syntax (as a quoted '+'
-   or "+"),
-@@ -258,23 +305,32 @@ Implementation here:
-   [h/v-unit]
- */
- 
++// The REC says:
++//
++// "Most presentation elements have attributes that accept values representing
++// lengths to be used for size, spacing or similar properties. The syntax of a
++// length is specified as
++//
++// number | number unit | namedspace
++//
++// There should be no space between the number and the unit of a length."
++// 
++// "A trailing '%' represents a percent of the default value. The default
++// value, or how it is obtained, is listed in the table of attributes for each
++// element. [...] A number without a unit is intepreted as a multiple of the
++// default value."
++//
++// "The possible units in MathML are:
++//  
++// Unit Description
++// em   an em (font-relative unit traditionally used for horizontal lengths)
++// ex   an ex (font-relative unit traditionally used for vertical lengths)
++// px   pixels, or size of a pixel in the current display
++// in   inches (1 inch = 2.54 centimeters)
++// cm   centimeters
++// mm   millimeters
++// pt   points (1 point = 1/72 inch)
++// pc   picas (1 pica = 12 points)
++// %    percentage of default value"
++//
++// The numbers are defined that way:
++// - unsigned-number: "a string of decimal digits with up to one decimal point
++//   (U+002E), representing a non-negative terminating decimal number (a type of
++//   rational number)"
++// - number: "an optional prefix of '-' (U+002D), followed by an unsigned
++//   number, representing a terminating decimal number (a type of rational
++//   number)"
++//
  /* static */ bool
  nsMathMLElement::ParseNumericValue(const nsString& aString,
                                     nsCSSValue&     aCSSValue,
                                     PRUint32        aFlags)
  {
-+  if (aFlags & PARSE_MPADDED_SYNTAX) {
-+    // XXXfw To reimplement! (bug 677036)
-+    return false;
-+  }
-+
    nsAutoString str(aString);
    str.CompressWhitespace(); // aString is const in this code...
  
@@ -91,7 +136,8 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
    if (!stringLength)
      return false;
  
-+  if (ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
++  if (!(aFlags & PARSE_DISALLOW_NAMEDSPACES) &&
++      ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
 +    return true;
 +  }
 +
@@ -103,10 +149,204 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
    if (c == '-') {
      number.Append(c);
      i++;
+@@ -342,16 +404,24 @@ nsMathMLElement::ParseNumericValue(const
+   return true;
+ }
+ 
+ void
+ nsMathMLElement::MapMathMLAttributesInto(const nsMappedAttributes* aAttributes,
+                                          nsRuleData* aData)
+ {
+   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Font)) {
++    // scriptsizemultiplier
++    //
++    // "Specifies the multiplier to be used to adjust font size due to changes
++    // in scriptlevel.
++    //
++    // values: number
++    // default: 0.71
++    //
+     const nsAttrValue* value =
+       aAttributes->GetAttr(nsGkAtoms::scriptsizemultiplier_);
+     nsCSSValue* scriptSizeMultiplier =
+       aData->ValueForScriptSizeMultiplier();
+     if (value && value->Type() == nsAttrValue::eString &&
+         scriptSizeMultiplier->GetUnit() == eCSSUnit_Null) {
+       nsAutoString str(value->GetStringValue());
+       str.CompressWhitespace();
+@@ -361,23 +431,46 @@ nsMathMLElement::MapMathMLAttributesInto
+         float floatValue = str.ToFloat(&errorCode);
+         // Negative scriptsizemultipliers are not parsed
+         if (NS_SUCCEEDED(errorCode) && floatValue >= 0.0f) {
+           scriptSizeMultiplier->SetFloatValue(floatValue, eCSSUnit_Number);
+         }
+       }
+     }
+ 
++    // scriptminsize
++    //
++    // "Specifies the minimum font size allowed due to changes in scriptlevel.
++    // Note that this does not limit the font size due to changes to mathsize."
++    //
++    // values: length
++    // default: 8pt
++    //
++    // We don't allow negative values.
++    // XXXfw Should we allow unitless values? (bug 411227)
++    // XXXfw Does a relative unit give a multiple of the default value?
++    //
+     value = aAttributes->GetAttr(nsGkAtoms::scriptminsize_);
+     nsCSSValue* scriptMinSize = aData->ValueForScriptMinSize();
+     if (value && value->Type() == nsAttrValue::eString &&
+         scriptMinSize->GetUnit() == eCSSUnit_Null) {
+       ParseNumericValue(value->GetStringValue(), *scriptMinSize, 0);
+     }
+ 
++    // scriptlevel
++    // 
++    // "Changes the scriptlevel in effect for the children. When the value is
++    // given without a sign, it sets scriptlevel to the specified value; when a
++    // sign is given, it increments ("+") or decrements ("-") the current
++    // value. (Note that large decrements can result in negative values of
++    // scriptlevel, but these values are considered legal.)"
++    //
++    // values: ( "+" | "-" )? unsigned-integer
++    // default: inherited
++    //
+     value = aAttributes->GetAttr(nsGkAtoms::scriptlevel_);
+     nsCSSValue* scriptLevel = aData->ValueForScriptLevel();
+     if (value && value->Type() == nsAttrValue::eString &&
+         scriptLevel->GetUnit() == eCSSUnit_Null) {
+       nsAutoString str(value->GetStringValue());
+       str.CompressWhitespace();
+       if (str.Length() > 0) {
+         PRInt32 errorCode;
+@@ -392,16 +485,38 @@ nsMathMLElement::MapMathMLAttributesInto
+             scriptLevel->SetIntValue(intValue, eCSSUnit_Integer);
+           } else {
+             scriptLevel->SetFloatValue(intValue, eCSSUnit_Number);
+           }
+         }
+       }
+     }
+ 
++    // mathsize
++    //
++    // "Specifies the size to display the token content. The values 'small' and
++    // 'big' choose a size smaller or larger than the current font size, but
++    // leave the exact proportions unspecified; 'normal' is allowed for
++    // completeness, but since it is equivalent to '100%' or '1em', it has no
++    // effect."
++    //
++    // values: "small" | "normal" | "big" | length
++    // default: inherited
++    //
++    // fontsize
++    //
++    // "Specified the size for the token. Deprecated in favor of mathsize."
++    //
++    // values: length
++    // default: inherited
++    //
++    // In both cases, we don't allow negative values.
++    // XXXfw Should we allow unitless values? (bug 411227)
++    // XXXfw Does a relative unit give a multiple of the default value?
++    //  
+     bool parseSizeKeywords = true;
+     value = aAttributes->GetAttr(nsGkAtoms::mathsize_);
+     if (!value) {
+       parseSizeKeywords = false;
+       value = aAttributes->GetAttr(nsGkAtoms::fontsize_);
+     }
+     nsCSSValue* fontSize = aData->ValueForFontSize();
+     if (value && value->Type() == nsAttrValue::eString &&
+@@ -419,39 +534,82 @@ nsMathMLElement::MapMathMLAttributesInto
+           if (str.EqualsASCII(sizes[i])) {
+             fontSize->SetIntValue(values[i], eCSSUnit_Enumerated);
+             break;
+           }
+         }
+       }
+     }
+ 
++    // fontfamily
++    //
++    // "Should be the name of a font that may be available to a MathML renderer,
++    // or a CSS font specification; See Section 6.5 Using CSS with MathML and
++    // CSS for more information. Deprecated in favor of mathvariant."
++    //
++    // values: string
++    // 
+     value = aAttributes->GetAttr(nsGkAtoms::fontfamily_);
+     nsCSSValue* fontFamily = aData->ValueForFontFamily();
+     if (value && value->Type() == nsAttrValue::eString &&
+         fontFamily->GetUnit() == eCSSUnit_Null) {
+       fontFamily->SetStringValue(value->GetStringValue(), eCSSUnit_Families);
+     }
+   }
+ 
++  // mathbackground
++  // 
++  // "Specifies the background color to be used to fill in the bounding box of
++  // the element and its children. The default, 'transparent', lets the
++  // background color, if any, used in the current rendering context to show
++  // through."
++  // 
++  // values: color | "transparent" 
++  // default: "transparent"
++  //
++  // background
++  //
++  // "Specified the background color to be used to fill in the bounding box of
++  // the element and its children. Deprecated in favor of mathbackground."
++  //
++  // values: color | "transparent"
++  // default: "transparent"
++  //
+   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Background)) {
+     const nsAttrValue* value =
+       aAttributes->GetAttr(nsGkAtoms::mathbackground_);
+     if (!value) {
+       value = aAttributes->GetAttr(nsGkAtoms::background);
+     }
+     nsCSSValue* backgroundColor = aData->ValueForBackgroundColor();
+     if (value && backgroundColor->GetUnit() == eCSSUnit_Null) {
+       nscolor color;
+       if (value->GetColorValue(color)) {
+         backgroundColor->SetColorValue(color);
+       }
+     }
+   }
+ 
++  // mathcolor
++  //
++  // "Specifies the foreground color to use when drawing the components of this
++  // element, such as the content for token elements or any lines, surds, or
++  // other decorations. It also establishes the default mathcolor used for
++  // child elements when used on a layout element."
++  //
++  // values: color
++  // default: inherited
++  //
++  // color
++  // 
++  // "Specified the color for the token. Deprecated in favor of mathcolor." 
++  //
++  // values: color
++  // default: inherited
++  //
+   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Color)) {
+     const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::mathcolor_);
+     if (!value) {
+       value = aAttributes->GetAttr(nsGkAtoms::color);
+     }
+     nscolor color;
+     nsCSSValue* colorValue = aData->ValueForColor();
+     if (value && value->GetColorValue(color) &&
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
-@@ -82,18 +82,23 @@ public:
+@@ -82,18 +82,27 @@ public:
                                  const nsAString& aValue,
                                  nsAttrValue& aResult);
  
@@ -117,7 +357,11 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
      PARSE_ALLOW_UNITLESS = 0x01, // unitless 0 will be turned into 0px
 -    PARSE_ALLOW_NEGATIVE = 0x02
 +    PARSE_ALLOW_NEGATIVE = 0x02,
-+    PARSE_MPADDED_SYNTAX = 0x04
++    // This flag allows to use the former syntax when namedspaces were not
++    // accepted by ParseNamedSpaceValue. This will be necessary for
++    // minsize/maxsize attributes as well as for the attributes of mpadded,
++    // until bug 677036 is fixed.
++    PARSE_DISALLOW_NAMEDSPACES = 0x04
    };
 +  static bool ParseNamedSpaceValue(const nsString& aString,
 +                                   nsCSSValue&     aCSSValue,
@@ -134,19 +378,19 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -342,138 +342,64 @@ nsMathMLFrame::GetAxisHeight(nsRendering
-   nsBoundingMetrics bm = aRenderingContext.GetBoundingMetrics(&minus, 1);
-   aAxisHeight = bm.ascent - (bm.ascent + bm.descent)/2;
-   if (aAxisHeight <= 0 || aAxisHeight >= xHeight) {
-     // fall-back to the other version
-     GetAxisHeight(aFontMetrics, aAxisHeight);
+@@ -375,105 +375,42 @@ nsMathMLFrame::CalcLength(nsPresContext*
+     return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
    }
+ 
+   // MathML doesn't specify other CSS units such as rem or ch
+   NS_ERROR("Unsupported unit");
+   return 0;
  }
  
--/* static */ nscoord
--nsMathMLFrame::CalcLength(nsPresContext*   aPresContext,
--                          nsStyleContext*   aStyleContext,
--                          const nsCSSValue& aCSSValue)
+-/* static */ bool
+-nsMathMLFrame::ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
+-                                    nsString&   aString,
+-                                    nsCSSValue& aCSSValue)
 +/* static */ void
 +nsMathMLFrame::ParseNumericValue(const nsString&   aString,
 +                                 nscoord&          aLengthValue,
@@ -154,67 +398,11 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 +                                 nsPresContext*    aPresContext,
 +                                 nsStyleContext*   aStyleContext)
  {
--  NS_ASSERTION(aCSSValue.IsLengthUnit(), "not a length unit");
-+  nsCSSValue cssValue;
- 
--  if (aCSSValue.IsFixedLengthUnit()) {
--    return aCSSValue.GetFixedLength(aPresContext);
--  }
--  if (aCSSValue.IsPixelLengthUnit()) {
--    return aCSSValue.GetPixelLength();
-+  if (!nsMathMLElement::ParseNumericValue(aString, cssValue, aFlags)) {
-+    return;
-   }
- 
--  nsCSSUnit unit = aCSSValue.GetUnit();
-+  nsCSSUnit unit = cssValue.GetUnit();
-+
-+  if (unit == eCSSUnit_Percent || unit == eCSSUnit_Number) {
-+    aLengthValue = NSToCoordRound(cssValue.GetFloatValue() * aLengthValue);
-+    return;
-+  }
-+
-+  if (cssValue.IsFixedLengthUnit()) {
-+    aLengthValue = cssValue.GetFixedLength(aPresContext);
-+    return;
-+  }
-+
-+  if (cssValue.IsPixelLengthUnit()) {
-+    aLengthValue = cssValue.GetPixelLength();
-+    return;
-+  }
- 
-   if (eCSSUnit_EM == unit) {
-     const nsStyleFont* font = aStyleContext->GetStyleFont();
--    return NSToCoordRound(aCSSValue.GetFloatValue() * (float)font->mFont.size);
-+    aLengthValue = NSToCoordRound(cssValue.GetFloatValue() *
-+                                  (float)font->mFont.size);
-+    return;
-   }
-   else if (eCSSUnit_XHeight == unit) {
-     nsRefPtr<nsFontMetrics> fm;
-     nsLayoutUtils::GetFontMetricsForStyleContext(aStyleContext,
-                                                  getter_AddRefs(fm));
-     nscoord xHeight = fm->XHeight();
--    return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
-+    aLengthValue = NSToCoordRound(cssValue.GetFloatValue() * (float)xHeight);
-+    return;
-   }
- 
-   // MathML doesn't specify other CSS units such as rem or ch
--  NS_ERROR("Unsupported unit");
--  return 0;
--}
--
--/* static */ bool
--nsMathMLFrame::ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
--                                    nsString&   aString,
--                                    nsCSSValue& aCSSValue)
--{
 -  aCSSValue.Reset();
 -  aString.CompressWhitespace(); //  aString is not a const in this code...
 -  if (!aString.Length()) return false;
--
++  nsCSSValue cssValue;
+ 
 -  // See if it is one of the 'namedspace' (ranging 1/18em...7/18em)
 -  PRInt32 i = 0;
 -  nsIAtom* namedspaceAtom = nsnull;
@@ -273,8 +461,12 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 -  else if (aString.EqualsLiteral("negativeveryverythickmathspace")) {
 -    i = -7;
 -    namedspaceAtom = nsGkAtoms::negativeveryverythickmathspace_;
--  }
--
++  if (!nsMathMLElement::ParseNumericValue(aString, cssValue, aFlags)) {
++    // Invalid attribute value. aLengthValue remains unchanged, so the default
++    // length value is used.
++    return;
+   }
+ 
 -  if (0 != i) {
 -    if (aMathMLmstyleFrame) {
 -      // see if there is a <mstyle> that has overriden the default value
@@ -288,15 +480,22 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 -        }
 -      }
 -    }
--
++  nsCSSUnit unit = cssValue.GetUnit();
+ 
 -    // fall back to the default value
 -    aCSSValue.SetFloatValue(float(i)/float(18), eCSSUnit_EM);
 -    return true;
--  }
++  if (unit == eCSSUnit_Percent || unit == eCSSUnit_Number) {
++    // Relative units. A multiple of the default length value is used.
++    aLengthValue = NSToCoordRound(cssValue.GetFloatValue() *
++                                  (float)aLengthValue);
++    return;
+   }
 -
 -  return false;
-+  NS_NOTREACHED("Unsupported unit");
-+  return;
++  
++  // Absolute units.
++  aLengthValue = CalcLength(aPresContext, aStyleContext, cssValue);
  }
  
  // ================
@@ -308,7 +507,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -181,33 +181,21 @@ public:
+@@ -181,34 +181,29 @@ public:
    static bool
    GetAttribute(nsIContent* aContent,
                 nsIFrame*   aMathMLmstyleFrame,          
@@ -324,22 +523,24 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 -            nsMathMLElement::PARSE_ALLOW_NEGATIVE |
 -            nsMathMLElement::PARSE_ALLOW_UNITLESS);
 -  }
--
--  static nscoord 
--  CalcLength(nsPresContext*   aPresContext,
--             nsStyleContext*   aStyleContext,
--             const nsCSSValue& aCSSValue);
--
--  static bool
--  ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
--                       nsString&   aString,
--                       nsCSSValue& aCSSValue);
++  // @pre  aLengthValue is the default length value of the attribute.
++  // @post aLengthValue is the length value computed from the attribute.
 +  static void ParseNumericValue(const nsString&   aString,
 +                                nscoord&          aLengthValue,
 +                                PRUint32          aFlags,
 +                                nsPresContext*    aPresContext,
 +                                nsStyleContext*   aStyleContext);
  
+   static nscoord 
+   CalcLength(nsPresContext*   aPresContext,
+              nsStyleContext*   aStyleContext,
+              const nsCSSValue& aCSSValue);
+ 
+-  static bool
+-  ParseNamedSpaceValue(nsIFrame*   aMathMLmstyleFrame,
+-                       nsString&   aString,
+-                       nsCSSValue& aCSSValue);
+-
    static eMathMLFrameType
    GetMathMLFrameTypeFor(nsIFrame* aFrame)
    {
@@ -347,10 +548,11 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
        nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
        if (mathMLFrame)
          return mathMLFrame->GetMathMLFrameType();
+     }
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -119,16 +119,24 @@ nsMathMLmfracFrame::CalcLineThickness(ns
+@@ -119,16 +119,25 @@ nsMathMLmfracFrame::CalcLineThickness(ns
                                        nsString&        aThicknessAttribute,
                                        nscoord          onePixel,
                                        nscoord          aDefaultRuleThickness)
@@ -365,7 +567,8 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 +  // default value is 'medium', 'thin' is thinner, but visible, 'thick' is
 +  // thicker; the exact thickness of these is left up to the rendering agent."
 +  //
-+  // syntax: length | "thin" | "medium" | "thick"
++  // values: length | "thin" | "medium" | "thick"
++  // default: medium
 +  //
    if (!aThicknessAttribute.IsEmpty()) {
      if (aThicknessAttribute.EqualsLiteral("thin")) {
@@ -375,7 +578,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
        if (defaultThickness > onePixel && lineThickness > defaultThickness - onePixel)
          lineThickness = defaultThickness - onePixel;
      }
-@@ -137,27 +145,22 @@ nsMathMLmfracFrame::CalcLineThickness(ns
+@@ -137,27 +146,22 @@ nsMathMLmfracFrame::CalcLineThickness(ns
      }
      else if (aThicknessAttribute.EqualsLiteral("thick")) {
        lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
@@ -412,7 +615,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 +++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
-@@ -115,34 +115,46 @@ nsMathMLmmultiscriptsFrame::TransmitAuto
+@@ -115,34 +115,52 @@ nsMathMLmmultiscriptsFrame::TransmitAuto
  }
  
  void
@@ -426,6 +629,9 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  //
 +  // "Specifies the minimum amount to shift the baseline of subscript down; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
@@ -447,6 +653,9 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  //
 +  // "Specifies the minimum amount to shift the baseline of superscript up; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
@@ -472,7 +681,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -408,48 +408,44 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -408,48 +408,58 @@ nsMathMLmoFrame::ProcessOperatorData()
          }
        }
      }
@@ -485,6 +694,14 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // lspace
 +  //
 +  // "Specifies the leading space appearing before the operator"
++  //
++  // values: length
++  // default: set by dictionary (thickmathspace) 
++  //
++  // XXXfw Should we allow negative values? (bug 411227) They will be made
++  // positive by the rounding below.
++  // XXXfw A relative unit gives a multiple of the current leading space, which
++  // is not necessarily the default one.
 +  //
    nscoord leadingSpace = mEmbellishData.leadingSpace;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::lspace_,
@@ -501,8 +718,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 -      mFlags |= NS_MATHML_OPERATOR_LSPACE_ATTR;
 -    }
 +    ParseNumericValue(value, leadingSpace, 
-+                      nsMathMLElement::PARSE_ALLOW_UNITLESS |
-+                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
++                      nsMathMLElement::PARSE_ALLOW_UNITLESS,
 +                      presContext, mStyleContext);
 +    mFlags |= NS_MATHML_OPERATOR_LSPACE_ATTR;
    }
@@ -511,6 +727,14 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // rspace
 +  //
 +  // "Specifies the trailing space appearing after the operator"
++  //
++  // values: length
++  // default: set by dictionary (thickmathspace) 
++  //
++  // XXXfw Should we allow negative values? (bug 411227) They will be made
++  // positive by the rounding below.
++  // XXXfw A relative unit gives a multiple of the current trailing space, which
++  // is not necessarily the default one.
 +  //
    nscoord trailingSpace = mEmbellishData.trailingSpace;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::rspace_,
@@ -527,8 +751,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 -      mFlags |= NS_MATHML_OPERATOR_RSPACE_ATTR;
 -    }
 +    ParseNumericValue(value, trailingSpace, 
-+                      nsMathMLElement::PARSE_ALLOW_UNITLESS |
-+                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
++                      nsMathMLElement::PARSE_ALLOW_UNITLESS,
 +                      presContext, mStyleContext);
 +    mFlags |= NS_MATHML_OPERATOR_RSPACE_ATTR;
    }
@@ -539,7 +762,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
      nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
      if (leadingSpace && leadingSpace < onePixel)
        leadingSpace = onePixel;
-@@ -498,84 +494,35 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -498,76 +508,103 @@ nsMathMLmoFrame::ProcessOperatorData()
    }
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::symmetric_,
                 value);
@@ -549,94 +772,114 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
      mFlags |= NS_MATHML_OPERATOR_SYMMETRIC;
  
 -  // minsize = number [ v-unit | h-unit ] | namedspace
++
 +  // minsize
 +  //
-+  // 
++  // "Specifies the minimum size of the operator when stretchy"
++  //
++  // values: length
++  // default: set by dictionary (1em)
++  //
++  // We don't allow negative values.
++  // XXXfw Does a relative unit give a multiple of the default value?
 +  //
    mMinSize = 0.0;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::minsize_,
                 value);
    if (!value.IsEmpty()) {
--    nsCSSValue cssValue;
+     nsCSSValue cssValue;
 -    if (ParseNumericValue(value, cssValue) ||
 -        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
 -    {
--      nsCSSUnit unit = cssValue.GetUnit();
--      if (eCSSUnit_Number == unit)
--        mMinSize = cssValue.GetFloatValue();
--      else if (eCSSUnit_Percent == unit)
--        mMinSize = cssValue.GetPercentValue();
--      else if (eCSSUnit_Null != unit) {
--        mMinSize = float(CalcLength(presContext, mStyleContext, cssValue));
--        mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
--      }
--
--      if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
--        // see if the multiplicative inheritance should be from <mstyle>
--        GetAttribute(nsnull, mPresentationData.mstyle,
--                     nsGkAtoms::minsize_, value);
--        if (!value.IsEmpty()) {
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::
++                                           PARSE_ALLOW_UNITLESS)) {
+       nsCSSUnit unit = cssValue.GetUnit();
+       if (eCSSUnit_Number == unit)
+         mMinSize = cssValue.GetFloatValue();
+       else if (eCSSUnit_Percent == unit)
+         mMinSize = cssValue.GetPercentValue();
+       else if (eCSSUnit_Null != unit) {
+         mMinSize = float(CalcLength(presContext, mStyleContext, cssValue));
+         mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
+       }
+ 
+       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+         // see if the multiplicative inheritance should be from <mstyle>
+         GetAttribute(nsnull, mPresentationData.mstyle,
+                      nsGkAtoms::minsize_, value);
+         if (!value.IsEmpty()) {
 -          if (ParseNumericValue(value, cssValue)) {
--            if (cssValue.IsLengthUnit()) {
--              mMinSize *= float(CalcLength(presContext, mStyleContext, cssValue));
--              mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
--            }
--          }
--        }
--      }
--    }
-+    // XXXfw TODO
++          if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                                 nsMathMLElement::
++                                                 PARSE_ALLOW_UNITLESS |
++                                                 nsMathMLElement::
++                                                 PARSE_DISALLOW_NAMEDSPACES)) {
+             if (cssValue.IsLengthUnit()) {
+               mMinSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+               mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
+             }
+           }
+         }
+       }
+     }
    }
  
 -  // maxsize = number [ v-unit | h-unit ] | namedspace | infinity
 +  // maxsize
 +  //
 +  // "Specifies the maximum size of the operator when stretchy"
++  //
++  // values: length | "infinity"
++  // default: set by dictionary (infinity)
++  //
++  // We don't allow negative values.
++  // XXXfw Does a relative unit give a multiple of the default value?
++  //
    mMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::maxsize_,
                 value);
    if (!value.IsEmpty()) {
--    nsCSSValue cssValue;
+     nsCSSValue cssValue;
 -    if (ParseNumericValue(value, cssValue) ||
 -        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
 -    {
--      nsCSSUnit unit = cssValue.GetUnit();
--      if (eCSSUnit_Number == unit)
--        mMaxSize = cssValue.GetFloatValue();
--      else if (eCSSUnit_Percent == unit)
--        mMaxSize = cssValue.GetPercentValue();
--      else if (eCSSUnit_Null != unit) {
--        mMaxSize = float(CalcLength(presContext, mStyleContext, cssValue));
--        mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
--      }
--
--      if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
--        // see if the multiplicative inheritance should be from <mstyle>
--        GetAttribute(nsnull, mPresentationData.mstyle,
--                     nsGkAtoms::maxsize_, value);
--        if (!value.IsEmpty()) {
--          if (ParseNumericValue(value, cssValue)) {
--            if (cssValue.IsLengthUnit()) {
--              mMaxSize *= float(CalcLength(presContext, mStyleContext, cssValue));
--              mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
--            }
--          }
--        }
--      }
--    }
-+    // XXXfw TODO    
-   }
- }
++    if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                           nsMathMLElement::
++                                           PARSE_ALLOW_UNITLESS)) {
+       nsCSSUnit unit = cssValue.GetUnit();
+       if (eCSSUnit_Number == unit)
+         mMaxSize = cssValue.GetFloatValue();
+       else if (eCSSUnit_Percent == unit)
+         mMaxSize = cssValue.GetPercentValue();
+       else if (eCSSUnit_Null != unit) {
+         mMaxSize = float(CalcLength(presContext, mStyleContext, cssValue));
+         mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
+       }
  
- static PRUint32
- GetStretchHint(nsOperatorFlags aFlags, nsPresentationData aPresentationData,
-                bool aIsVertical)
- {
-   PRUint32 stretchHint = NS_STRETCH_NONE;
+       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+         // see if the multiplicative inheritance should be from <mstyle>
+         GetAttribute(nsnull, mPresentationData.mstyle,
+                      nsGkAtoms::maxsize_, value);
+         if (!value.IsEmpty()) {
+-          if (ParseNumericValue(value, cssValue)) {
++          if (nsMathMLElement::ParseNumericValue(value, cssValue,
++                                                 nsMathMLElement::
++                                                 PARSE_ALLOW_UNITLESS |
++                                                 nsMathMLElement::
++                                                 PARSE_DISALLOW_NAMEDSPACES)) {
+             if (cssValue.IsLengthUnit()) {
+               mMaxSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+               mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
+             }
+           }
+         }
+       }
+     }
 diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
 --- a/layout/mathml/nsMathMLmpaddedFrame.cpp
 +++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -262,29 +262,29 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
+@@ -262,28 +262,31 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
      */
    }
    else if (unit.EqualsLiteral("width"))  aPseudoUnit = NS_MATHML_PSEUDO_UNIT_WIDTH;
@@ -647,7 +890,9 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
      // see if the unit is a named-space
 -    // XXX nsnull in ParseNamedSpacedValue()? don't access mstyle?
 -    if (ParseNamedSpaceValue(nsnull, unit, aCSSValue)) {
-+    if (false) {
++    if (nsMathMLElement::ParseNamedSpaceValue(unit, aCSSValue,
++                                              nsMathMLElement::
++                                              PARSE_ALLOW_NEGATIVE)) {
        // re-scale properly, and we know that the unit of the named-space is 'em'
        floatValue *= aCSSValue.GetFloatValue();
        aCSSValue.SetFloatValue(floatValue, eCSSUnit_EM);
@@ -658,9 +903,10 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
      // see if the input was just a CSS value
      number.Append(unit); // leave the sign out if it was there
 -    if (ParseNumericValue(number, aCSSValue))
-+    if (false) {
++    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
++                                           nsMathMLElement::
++                                           PARSE_DISALLOW_NAMEDSPACES))
        return true;
-+    }
    }
  
    // if we enter here, we have a number that will act as a multiplier on a pseudo-unit
@@ -668,31 +914,10 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
      if (gotPercent)
        aCSSValue.SetPercentValue(floatValue / 100.0f);
      else
-       aCSSValue.SetFloatValue(floatValue, eCSSUnit_Number);
-@@ -335,17 +335,18 @@ nsMathMLmpaddedFrame::UpdateValue(PRInt3
-       }
-     }
- 
-     if (eCSSUnit_Number == unit)
-       amount = NSToCoordRound(float(scaler) * aCSSValue.GetFloatValue());
-     else if (eCSSUnit_Percent == unit)
-       amount = NSToCoordRound(float(scaler) * aCSSValue.GetPercentValue());
-     else
--      amount = CalcLength(PresContext(), mStyleContext, aCSSValue);
-+      // XXXfw TODO
-+      amount = 0; //CalcLength(PresContext(), mStyleContext, aCSSValue);
- 
-     if (NS_MATHML_SIGN_PLUS == aSign)
-       aValueToUpdate += amount;
-     else if (NS_MATHML_SIGN_MINUS == aSign)
-       aValueToUpdate -= amount;
-     else
-       aValueToUpdate  = amount;
-   }
 diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
 --- a/layout/mathml/nsMathMLmspaceFrame.cpp
 +++ b/layout/mathml/nsMathMLmspaceFrame.cpp
-@@ -66,61 +66,66 @@ bool
+@@ -66,61 +66,75 @@ bool
  nsMathMLmspaceFrame::IsLeaf() const
  {
    return true;
@@ -715,6 +940,9 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
    // width 
 +  //
 +  // "Specifies the desired width of the space."
++  //
++  // values: length
++  // default: 0em
 +  //
 +  // The default value is "0em", so unitless values can be ignored.
 +  // <mspace/> is listed among MathML elements allowing negative spacing and
@@ -739,6 +967,9 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 +  //
 +  // "Specifies the desired height (above the baseline) of the space."
 +  //
++  // values: length
++  // default: 0ex
++  //
 +  // The default value is "0ex", so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
 +  //
@@ -759,6 +990,9 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
    // depth
 +  //
 +  // "Specifies the desired depth (below the baseline) of the space."
++  //
++  // values: length
++  // default: 0ex
 +  //
 +  // The default value is "0ex", so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
@@ -786,7 +1020,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFrame.cpp
 --- a/layout/mathml/nsMathMLmsubFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubFrame.cpp
-@@ -84,26 +84,32 @@ nsMathMLmsubFrame::TransmitAutomaticData
+@@ -84,26 +84,35 @@ nsMathMLmsubFrame::TransmitAutomaticData
  /* virtual */ nsresult
  nsMathMLmsubFrame::Place (nsRenderingContext& aRenderingContext,
                            bool                 aPlaceOrigin,
@@ -800,6 +1034,9 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 +  //
 +  // "Specifies the minimum amount to shift the baseline of subscript down; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
@@ -827,7 +1064,8 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsubsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsubsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubsupFrame.cpp
-@@ -91,35 +91,48 @@ nsMathMLmsubsupFrame::TransmitAutomaticD
+@@ -90,36 +90,54 @@ nsMathMLmsubsupFrame::TransmitAutomaticD
+ /* virtual */ nsresult
  nsMathMLmsubsupFrame::Place(nsRenderingContext& aRenderingContext,
                              bool                 aPlaceOrigin,
                              nsHTMLReflowMetrics& aDesiredSize)
@@ -835,11 +1073,14 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
    // extra spacing between base and sup/subscript
    nscoord scriptSpace = 0;
  
-   // check if the subscriptshift attribute is there
+-  // check if the subscriptshift attribute is there
++  // subscriptshift
 +  //
-+  // The REC defines subscriptshift that way:
 +  // "Specifies the minimum amount to shift the baseline of subscript down; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
@@ -862,6 +1103,9 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 +  //
 +  // "Specifies the minimum amount to shift the baseline of superscript up; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
@@ -888,7 +1132,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsupFrame.cpp
-@@ -84,26 +84,32 @@ nsMathMLmsupFrame::TransmitAutomaticData
+@@ -84,26 +84,35 @@ nsMathMLmsupFrame::TransmitAutomaticData
  /* virtual */ nsresult
  nsMathMLmsupFrame::Place(nsRenderingContext& aRenderingContext,
                           bool                 aPlaceOrigin,
@@ -902,6 +1146,9 @@ diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFra
 +  //
 +  // "Specifies the minimum amount to shift the baseline of superscript up; the
 +  // default is for the rendering agent to use its own positioning rules."
++  //
++  // values: length
++  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
 +  // XXXfw Should we forbid negative values? (bug 411227)
