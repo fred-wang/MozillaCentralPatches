@@ -18,17 +18,19 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  - MathJax-fonts-2.diff
-  - MathJax-fonts-3.diff
+  { MathJax-fonts-2.diff
+  { MathJax-fonts-3.diff
+
+  { unify-length-and-mpadded-parsing.diff
+  { crashtest-398038.diff
 
 * Work in progress patches:
 
-  { bug696647.patch
-  { unify-length-and-mpadded-parsing-1.diff
-  { unify-length-and-mpadded-parsing-2.diff
-  { unify-length-and-mpadded-parsing-3.diff
   { remove-namedspace-atoms.diff
-    => May break MathML functionalities.
+    => See bug 673759 comment 16.
+
+  { crashtest-716349.diff
+    => No fix written yet.
 
   { MathJax-fonts.diff
     => See bug 701758 comment 13.
@@ -39,6 +41,7 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Experimental and old patches:
 
+  - try.diff (used to push to try server)
   - mpadded-vertical-metrics.diff
   - maction-embellished-op.diff
   - largeop-initial-stretch.diff
