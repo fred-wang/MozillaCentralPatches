@@ -1,6 +1,0 @@
-# HG changeset patch
-# Parent 9c4f810196d21c41d8adb7f453cc21990f2e30ed
-# User Frédéric Wang <fred.wang@free.fr>
-Bug 677036 - Unify parsing length and mpadded attributes (bug 673759) - part2. r=karlt
-
-

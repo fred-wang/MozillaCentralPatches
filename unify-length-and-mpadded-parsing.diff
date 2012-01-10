@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent fae47a28fa960a211ae3b7250b193650f1c86d05
+# Parent 01d69766026d4a1ed6b56b5b8148a630ea6dde6a
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 677036 - Unify parsing of length and mpadded attributes - part 1. r=karlt
+Bug 677036 - Unify parsing of length and mpadded attributes . r=karlt
 
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
-@@ -227,54 +227,116 @@ nsMapRuleToAttributesFunc
+@@ -227,66 +227,127 @@ nsMapRuleToAttributesFunc
  nsMathMLElement::GetAttributeMappingFunction() const
  {
    // It doesn't really matter what our tag is here, because only attributes
@@ -129,15 +129,19 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
                                     nsCSSValue&     aCSSValue,
                                     PRUint32        aFlags)
  {
++  bool calledFromMpadded = (aFlags & PARSE_CALLED_FROM_MPADDED);
++
    nsAutoString str(aString);
-   str.CompressWhitespace(); // aString is const in this code...
+-  str.CompressWhitespace(); // aString is const in this code...
++  if (!calledFromMpadded) {
++    str.CompressWhitespace(); // aString is const in this code...
++  }
  
    PRInt32 stringLength = str.Length();
    if (!stringLength)
      return false;
  
-+  if (!(aFlags & PARSE_DISALLOW_NAMEDSPACES) &&
-+      ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
++  if (!calledFromMpadded && ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
 +    return true;
 +  }
 +
@@ -149,7 +153,38 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
    if (c == '-') {
      number.Append(c);
      i++;
-@@ -342,16 +404,24 @@ nsMathMLElement::ParseNumericValue(const
+-
+-    // skip any space after the negative sign
+-    if (i < stringLength && nsCRT::IsAsciiSpace(str[i]))
+-      i++;
+   }
+ 
+   // Gather up characters that make up the number
+   bool gotDot = false;
+   for ( ; i < stringLength; i++) {
+     c = str[i];
+     if (gotDot && c == '.')
+       return false;  // two dots encountered
+@@ -318,17 +379,17 @@ nsMathMLElement::ParseNumericValue(const
+       // We are supposed to have a unit, but there isn't one.
+       // If the value is 0 we can just call it "pixels" otherwise
+       // this is illegal.
+       if (floatValue != 0.0)
+         return false;
+       cssUnit = eCSSUnit_Pixel;
+     }
+   }
+-  else if (unit.EqualsLiteral("%")) {
++  else if (!calledFromMpadded && unit.EqualsLiteral("%")) {
+     aCSSValue.SetPercentValue(floatValue / 100.0f);
+     return true;
+   }
+   else if (unit.EqualsLiteral("em")) cssUnit = eCSSUnit_EM;
+   else if (unit.EqualsLiteral("ex")) cssUnit = eCSSUnit_XHeight;
+   else if (unit.EqualsLiteral("px")) cssUnit = eCSSUnit_Pixel;
+   else if (unit.EqualsLiteral("in")) cssUnit = eCSSUnit_Inch;
+   else if (unit.EqualsLiteral("cm")) cssUnit = eCSSUnit_Centimeter;
+@@ -342,16 +403,24 @@ nsMathMLElement::ParseNumericValue(const
    return true;
  }
  
@@ -174,7 +209,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
          scriptSizeMultiplier->GetUnit() == eCSSUnit_Null) {
        nsAutoString str(value->GetStringValue());
        str.CompressWhitespace();
-@@ -361,23 +431,46 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -361,23 +430,46 @@ nsMathMLElement::MapMathMLAttributesInto
          float floatValue = str.ToFloat(&errorCode);
          // Negative scriptsizemultipliers are not parsed
          if (NS_SUCCEEDED(errorCode) && floatValue >= 0.0f) {
@@ -221,7 +256,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
        str.CompressWhitespace();
        if (str.Length() > 0) {
          PRInt32 errorCode;
-@@ -392,16 +485,38 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -392,16 +484,38 @@ nsMathMLElement::MapMathMLAttributesInto
              scriptLevel->SetIntValue(intValue, eCSSUnit_Integer);
            } else {
              scriptLevel->SetFloatValue(intValue, eCSSUnit_Number);
@@ -260,7 +295,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
      }
      nsCSSValue* fontSize = aData->ValueForFontSize();
      if (value && value->Type() == nsAttrValue::eString &&
-@@ -419,39 +534,82 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -419,39 +533,82 @@ nsMathMLElement::MapMathMLAttributesInto
            if (str.EqualsASCII(sizes[i])) {
              fontSize->SetIntValue(values[i], eCSSUnit_Enumerated);
              break;
@@ -346,7 +381,25 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
-@@ -82,18 +82,27 @@ public:
+@@ -17,16 +17,17 @@
+  * The Initial Developer of the Original Code is
+  * mozilla.org.
+  * Portions created by the Initial Developer are Copyright (C) 2007
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *    Vlad Sukhoy <vladimir.sukhoy@gmail.com> (original developer)
+  *    Daniel Kraft <d@domob.eu> (nsMathMLElement patch, attachment 262925) 
++ *    Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either the GNU General Public License Version 2 or later (the "GPL"), or
+  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -82,18 +83,25 @@ public:
                                  const nsAString& aValue,
                                  nsAttrValue& aResult);
  
@@ -357,11 +410,9 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
      PARSE_ALLOW_UNITLESS = 0x01, // unitless 0 will be turned into 0px
 -    PARSE_ALLOW_NEGATIVE = 0x02
 +    PARSE_ALLOW_NEGATIVE = 0x02,
-+    // This flag allows to use the former syntax when namedspaces were not
-+    // accepted by ParseNamedSpaceValue. This will be necessary for
-+    // minsize/maxsize attributes as well as for the attributes of mpadded,
-+    // until bug 677036 is fixed.
-+    PARSE_DISALLOW_NAMEDSPACES = 0x04
++    // This flag enables a restricted syntax when ParseNumericValue is called
++    // from nsMathMLmpaddedFrame.cpp.
++    PARSE_CALLED_FROM_MPADDED = 0x04
    };
 +  static bool ParseNamedSpaceValue(const nsString& aString,
 +                                   nsCSSValue&     aCSSValue,
@@ -615,7 +666,25 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 --- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
 +++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
-@@ -115,34 +115,52 @@ nsMathMLmmultiscriptsFrame::TransmitAuto
+@@ -18,16 +18,17 @@
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Shyjan Mahamud <mahamud@cs.cmu.edu> (added TeX rendering rules)
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -115,34 +116,52 @@ nsMathMLmmultiscriptsFrame::TransmitAuto
  }
  
  void
@@ -762,7 +831,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
      nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
      if (leadingSpace && leadingSpace < onePixel)
        leadingSpace = onePixel;
-@@ -498,76 +508,103 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -498,83 +508,78 @@ nsMathMLmoFrame::ProcessOperatorData()
    }
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::symmetric_,
                 value);
@@ -781,7 +850,9 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // default: set by dictionary (1em)
 +  //
 +  // We don't allow negative values.
-+  // XXXfw Does a relative unit give a multiple of the default value?
++  // Note: Contrary to other "length" values, unitless and percentage do not
++  // give a multiple of the defaut value but a multiple of the operator at
++  // normal size.
 +  //
    mMinSize = 0.0;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::minsize_,
@@ -803,25 +874,20 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
          mMinSize = float(CalcLength(presContext, mStyleContext, cssValue));
          mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
        }
- 
-       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
-         // see if the multiplicative inheritance should be from <mstyle>
-         GetAttribute(nsnull, mPresentationData.mstyle,
-                      nsGkAtoms::minsize_, value);
-         if (!value.IsEmpty()) {
+-
+-      if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+-        // see if the multiplicative inheritance should be from <mstyle>
+-        GetAttribute(nsnull, mPresentationData.mstyle,
+-                     nsGkAtoms::minsize_, value);
+-        if (!value.IsEmpty()) {
 -          if (ParseNumericValue(value, cssValue)) {
-+          if (nsMathMLElement::ParseNumericValue(value, cssValue,
-+                                                 nsMathMLElement::
-+                                                 PARSE_ALLOW_UNITLESS |
-+                                                 nsMathMLElement::
-+                                                 PARSE_DISALLOW_NAMEDSPACES)) {
-             if (cssValue.IsLengthUnit()) {
-               mMinSize *= float(CalcLength(presContext, mStyleContext, cssValue));
-               mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
-             }
-           }
-         }
-       }
+-            if (cssValue.IsLengthUnit()) {
+-              mMinSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+-              mFlags |= NS_MATHML_OPERATOR_MINSIZE_ABSOLUTE;
+-            }
+-          }
+-        }
+-      }
      }
    }
  
@@ -834,7 +900,9 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // default: set by dictionary (infinity)
 +  //
 +  // We don't allow negative values.
-+  // XXXfw Does a relative unit give a multiple of the default value?
++  // Note: Contrary to other "length" values, unitless and percentage do not
++  // give a multiple of the defaut value but a multiple of the operator at
++  // normal size.
 +  //
    mMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::maxsize_,
@@ -856,31 +924,138 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
          mMaxSize = float(CalcLength(presContext, mStyleContext, cssValue));
          mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
        }
- 
-       if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
-         // see if the multiplicative inheritance should be from <mstyle>
-         GetAttribute(nsnull, mPresentationData.mstyle,
-                      nsGkAtoms::maxsize_, value);
-         if (!value.IsEmpty()) {
+-
+-      if ((eCSSUnit_Number == unit) || (eCSSUnit_Percent == unit)) {
+-        // see if the multiplicative inheritance should be from <mstyle>
+-        GetAttribute(nsnull, mPresentationData.mstyle,
+-                     nsGkAtoms::maxsize_, value);
+-        if (!value.IsEmpty()) {
 -          if (ParseNumericValue(value, cssValue)) {
-+          if (nsMathMLElement::ParseNumericValue(value, cssValue,
-+                                                 nsMathMLElement::
-+                                                 PARSE_ALLOW_UNITLESS |
-+                                                 nsMathMLElement::
-+                                                 PARSE_DISALLOW_NAMEDSPACES)) {
-             if (cssValue.IsLengthUnit()) {
-               mMaxSize *= float(CalcLength(presContext, mStyleContext, cssValue));
-               mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
-             }
-           }
-         }
-       }
+-            if (cssValue.IsLengthUnit()) {
+-              mMaxSize *= float(CalcLength(presContext, mStyleContext, cssValue));
+-              mFlags |= NS_MATHML_OPERATOR_MAXSIZE_ABSOLUTE;
+-            }
+-          }
+-        }
+-      }
      }
+   }
+ }
+ 
+ static PRUint32
+ GetStretchHint(nsOperatorFlags aFlags, nsPresentationData aPresentationData,
+                bool aIsVertical)
+ {
 diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpaddedFrame.cpp
 --- a/layout/mathml/nsMathMLmpaddedFrame.cpp
 +++ b/layout/mathml/nsMathMLmpaddedFrame.cpp
-@@ -262,28 +262,31 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
-     */
+@@ -18,16 +18,17 @@
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -101,17 +102,19 @@ nsMathMLmpaddedFrame::ProcessAttributes(
+   */
+ 
+   nsAutoString value;
+ 
+   /* The REC says:
+   There is one exceptional element, <mpadded>, whose attributes cannot be 
+   set with <mstyle>. When the attributes width, height and depth are specified
+   on an <mstyle> element, they apply only to the <mspace/> element. Similarly, 
+-  when lspace is set with <mstyle>, it applies only to the <mo> element. 
++  when lspace is set with <mstyle>, it applies only to the <mo> element. To be
++  consistent, the voffset attribute of the mpadded element can not be set on
++  mstyle. 
+   */
+ 
+   // See if attributes are local, don't access mstyle !
+ 
+   // width
+   mWidthSign = NS_MATHML_SIGN_INVALID;
+   GetAttribute(mContent, nsnull, nsGkAtoms::width, value);
+   if (!value.IsEmpty()) {
+@@ -180,20 +183,16 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
+   }
+   else if (aString[0] == '-') {
+     aSign = NS_MATHML_SIGN_MINUS;
+     i++;
+   }
+   else
+     aSign = NS_MATHML_SIGN_UNSPECIFIED;
+ 
+-  // skip any space after the sign
+-  if (i < stringLength && nsCRT::IsAsciiSpace(aString[i]))
+-    i++;
+-
+   // get the number
+   bool gotDot = false, gotPercent = false;
+   for (; i < stringLength; i++) {
+     PRUnichar c = aString[i];
+     if (gotDot && c == '.') {
+       // error - two dots encountered
+       aSign = NS_MATHML_SIGN_INVALID;
+       return false;
+@@ -221,69 +220,58 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
+ 
+   PRInt32 errorCode;
+   float floatValue = number.ToFloat(&errorCode);
+   if (errorCode) {
+     aSign = NS_MATHML_SIGN_INVALID;
+     return false;
+   }
+ 
+-  // skip any space after the number
+-  if (i < stringLength && nsCRT::IsAsciiSpace(aString[i]))
+-    i++;
+-
+   // see if this is a percentage-based value
+   if (i < stringLength && aString[i] == '%') {
+     i++;
+     gotPercent = true;
+-
+-    // skip any space after the '%' sign
+-    if (i < stringLength && nsCRT::IsAsciiSpace(aString[i]))
+-      i++;
+   }
+ 
+   // the remainder now should be a css-unit, or a pseudo-unit, or a named-space
+   aString.Right(unit, stringLength - i);
+ 
+   if (unit.IsEmpty()) {
+-    // also cater for the edge case of "0" for which the unit is optional
+-    if (gotPercent || !floatValue) {
++    if (gotPercent) {
++      // case ["+"|"-"] unsigned-number "%" 
+       aCSSValue.SetPercentValue(floatValue / 100.0f);
+       aPseudoUnit = NS_MATHML_PSEUDO_UNIT_ITSELF;
+       return true;
++    } else {
++      // The REC does not allow the case ["+"|"-"] unsigned-number
+     }
+-    /*
+-    else {
+-      // no explicit CSS unit and no explicit pseudo-unit...
+-      // In this case, the MathML REC suggests taking ems for
+-      // h-unit (width, lspace) or exs for v-unit (height, depth).
+-      // Here, however, we explicitly request authors to specify
+-      // the unit. This is more in line with the CSS REC (and
+-      // it allows keeping the code simpler...)
+-    }
+-    */
    }
    else if (unit.EqualsLiteral("width"))  aPseudoUnit = NS_MATHML_PSEUDO_UNIT_WIDTH;
    else if (unit.EqualsLiteral("height")) aPseudoUnit = NS_MATHML_PSEUDO_UNIT_HEIGHT;
@@ -901,11 +1076,13 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
      }
  
      // see if the input was just a CSS value
++    // We use a specific flag to indicate that the call is made from mpadded.
++    // We are not supposed to have a unitless or negative value.
      number.Append(unit); // leave the sign out if it was there
 -    if (ParseNumericValue(number, aCSSValue))
 +    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
 +                                           nsMathMLElement::
-+                                           PARSE_DISALLOW_NAMEDSPACES))
++                                           PARSE_CALLED_FROM_MPADDED))
        return true;
    }
  
@@ -917,7 +1094,25 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
 diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
 --- a/layout/mathml/nsMathMLmspaceFrame.cpp
 +++ b/layout/mathml/nsMathMLmspaceFrame.cpp
-@@ -66,61 +66,75 @@ bool
+@@ -16,16 +16,17 @@
+  *
+  * The Initial Developer of the Original Code is
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -66,61 +67,75 @@ bool
  nsMathMLmspaceFrame::IsLeaf() const
  {
    return true;
@@ -1020,7 +1215,25 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFrame.cpp
 --- a/layout/mathml/nsMathMLmsubFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubFrame.cpp
-@@ -84,26 +84,35 @@ nsMathMLmsubFrame::TransmitAutomaticData
+@@ -18,16 +18,17 @@
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Shyjan Mahamud <mahamud@cs.cmu.edu> (added TeX rendering rules)
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -84,26 +85,35 @@ nsMathMLmsubFrame::TransmitAutomaticData
  /* virtual */ nsresult
  nsMathMLmsubFrame::Place (nsRenderingContext& aRenderingContext,
                            bool                 aPlaceOrigin,
@@ -1064,7 +1277,25 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsubsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsubsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsubsupFrame.cpp
-@@ -90,36 +90,54 @@ nsMathMLmsubsupFrame::TransmitAutomaticD
+@@ -18,16 +18,17 @@
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Shyjan Mahamud <mahamud@cs.cmu.edu> (added TeX rendering rules)
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -90,36 +91,54 @@ nsMathMLmsubsupFrame::TransmitAutomaticD
  /* virtual */ nsresult
  nsMathMLmsubsupFrame::Place(nsRenderingContext& aRenderingContext,
                              bool                 aPlaceOrigin,
@@ -1132,7 +1363,25 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFrame.cpp
 --- a/layout/mathml/nsMathMLmsupFrame.cpp
 +++ b/layout/mathml/nsMathMLmsupFrame.cpp
-@@ -84,26 +84,35 @@ nsMathMLmsupFrame::TransmitAutomaticData
+@@ -18,16 +18,17 @@
+  * The University Of Queensland.
+  * Portions created by the Initial Developer are Copyright (C) 1999
+  * the Initial Developer. All Rights Reserved.
+  *
+  * Contributor(s):
+  *   Roger B. Sidje <rbs@maths.uq.edu.au>
+  *   David J. Fiddes <D.J.Fiddes@hw.ac.uk>
+  *   Shyjan Mahamud <mahamud@cs.cmu.edu> (added TeX rendering rules)
++ *   Frederic Wang <fred.wang@free.fr>
+  *
+  * Alternatively, the contents of this file may be used under the terms of
+  * either of the GNU General Public License Version 2 or later (the "GPL"),
+  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+  * in which case the provisions of the GPL or the LGPL are applicable instead
+  * of those above. If you wish to allow use of your version of this file only
+  * under the terms of either the GPL or the LGPL, and not to allow others to
+  * use your version of this file under the terms of the MPL, indicate your
+@@ -84,26 +85,35 @@ nsMathMLmsupFrame::TransmitAutomaticData
  /* virtual */ nsresult
  nsMathMLmsupFrame::Place(nsRenderingContext& aRenderingContext,
                           bool                 aPlaceOrigin,

@@ -1,2 +1,2 @@
-fae47a28fa960a211ae3b7250b193650f1c86d05:bug696647.patch
-f51db5789610ca596cef71c70251aa9a804992c5:unify-length-and-mpadded-parsing-1.diff
+d8432e1093803bb1fd1d41a01a036ae3796ab705:unify-length-and-mpadded-parsing.diff
+f1741916fdc37e77547643195a44f5eb49afaaf9:crashtest-398038.diff
