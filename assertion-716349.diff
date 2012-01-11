@@ -1,0 +1,81 @@
+# HG changeset patch
+# Parent 4b10c65c5c12d126f11cf9013c3e51f9f2a68f12
+# User Frédéric Wang <fred.wang@free.fr>
+Prevent invalid metrics for mspace (bug 716349). r=karlt
+
+diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
+--- a/layout/mathml/nsMathMLmspaceFrame.cpp
++++ b/layout/mathml/nsMathMLmspaceFrame.cpp
+@@ -98,64 +98,64 @@ nsMathMLmspaceFrame::ProcessAttributes(n
+   // height
+   //
+   // "Specifies the desired height (above the baseline) of the space."
+   //
+   // values: length
+   // default: 0ex
+   //
+   // The default value is "0ex", so unitless values can be ignored.
+-  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
++  // We do not allow negative values. See bug 716349.
+   //
+   mHeight = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::height,
+                value);
+   if (!value.IsEmpty()) {
+-    ParseNumericValue(value, mHeight,
+-                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
++    ParseNumericValue(value, mHeight, 0,
+                       aPresContext, mStyleContext);
+   }
+ 
+   // depth
+   //
+   // "Specifies the desired depth (below the baseline) of the space."
+   //
+   // values: length
+   // default: 0ex
+   //
+   // The default value is "0ex", so unitless values can be ignored.
+-  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
++  // We do not allow negative values. See bug 716349.
+   //
+   mDepth = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::depth_,
+                value);
+   if (!value.IsEmpty()) {
+-    ParseNumericValue(value, mDepth,
+-                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
++    ParseNumericValue(value, mDepth, 0,
+                       aPresContext, mStyleContext);
+   }
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmspaceFrame::Reflow(nsPresContext*          aPresContext,
+                             nsHTMLReflowMetrics&     aDesiredSize,
+                             const nsHTMLReflowState& aReflowState,
+                             nsReflowStatus&          aStatus)
+ {
+   ProcessAttributes(aPresContext);
+ 
++  // XXXfw Negative spaces are not implemented.
++
+   mBoundingMetrics = nsBoundingMetrics();
+-  mBoundingMetrics.width = mWidth;
++  mBoundingMetrics.width = NS_MAX(0, mWidth);
+   mBoundingMetrics.ascent = mHeight;
+   mBoundingMetrics.descent = mDepth;
+   mBoundingMetrics.leftBearing = 0;
+   mBoundingMetrics.rightBearing = mWidth;
+ 
+   aDesiredSize.ascent = mHeight;
+-  aDesiredSize.width = mWidth;
++  aDesiredSize.width = NS_MAX(0, mWidth);
+   aDesiredSize.height = aDesiredSize.ascent + mDepth;
+   // Also return our bounding metrics
+   aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+ 
+   aStatus = NS_FRAME_COMPLETE;
+   NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
+   return NS_OK;
+ }

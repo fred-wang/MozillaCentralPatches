@@ -30,7 +30,8 @@ stable patches below and I'll try to update them as soon as possible.
     => See bug 673759 comment 16.
 
   { crashtest-716349.diff
-    => No fix written yet.
+  { assertion-716349.diff
+    => Crashtest passed, but patches not sent to Try server yet.
 
   { MathJax-fonts.diff
     => See bug 701758 comment 13.

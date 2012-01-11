@@ -1,6 +1,7 @@
 unify-length-and-mpadded-parsing.diff
 crashtest-398038.diff
 crashtest-716349.diff
+assertion-716349.diff
 try.diff
 remove-namedspace-atoms.diff
 MathJax-fonts-2.diff
