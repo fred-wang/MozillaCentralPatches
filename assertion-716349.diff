@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 4b10c65c5c12d126f11cf9013c3e51f9f2a68f12
+# Parent 2b524789ec3c307777aeffa9362ba8a88328dbb9
 # User Frédéric Wang <fred.wang@free.fr>
 Prevent invalid metrics for mspace (bug 716349). r=karlt
 
@@ -66,11 +66,12 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
    mBoundingMetrics.ascent = mHeight;
    mBoundingMetrics.descent = mDepth;
    mBoundingMetrics.leftBearing = 0;
-   mBoundingMetrics.rightBearing = mWidth;
+-  mBoundingMetrics.rightBearing = mWidth;
++  mBoundingMetrics.rightBearing = mBoundingMetrics.width;
  
    aDesiredSize.ascent = mHeight;
 -  aDesiredSize.width = mWidth;
-+  aDesiredSize.width = NS_MAX(0, mWidth);
++  aDesiredSize.width = mBoundingMetrics.width;
    aDesiredSize.height = aDesiredSize.ascent + mDepth;
    // Also return our bounding metrics
    aDesiredSize.mBoundingMetrics = mBoundingMetrics;

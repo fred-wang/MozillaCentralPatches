@@ -1,0 +1,346 @@
+# HG changeset patch
+# Parent 3a382cf4810ee8b7fb04dba96379da8402574633
+# User Frédéric Wang <fred.wang@free.fr>
+Add support for mglyph (bug 297465) - part 3
+
+diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
+--- a/layout/base/nsCSSFrameConstructor.cpp
++++ b/layout/base/nsCSSFrameConstructor.cpp
+@@ -4691,23 +4691,41 @@ nsCSSFrameConstructor::FindMathMLData(El
+     SIMPLE_MATHML_CREATE(mmultiscripts_, NS_NewMathMLmmultiscriptsFrame),
+     SIMPLE_MATHML_CREATE(mstyle_, NS_NewMathMLmstyleFrame),
+     SIMPLE_MATHML_CREATE(msqrt_, NS_NewMathMLmsqrtFrame),
+     SIMPLE_MATHML_CREATE(mroot_, NS_NewMathMLmrootFrame),
+     SIMPLE_MATHML_CREATE(maction_, NS_NewMathMLmactionFrame),
+     SIMPLE_MATHML_CREATE(mrow_, NS_NewMathMLmrowFrame),
+     SIMPLE_MATHML_CREATE(merror_, NS_NewMathMLmrowFrame),
+     SIMPLE_MATHML_CREATE(menclose_, NS_NewMathMLmencloseFrame),
+-    SIMPLE_MATHML_CREATE(semantics_, NS_NewMathMLsemanticsFrame)
++    SIMPLE_MATHML_CREATE(semantics_, NS_NewMathMLsemanticsFrame),
++    { &nsGkAtoms::mglyph_, FCDATA_DECL(FCDATA_DISALLOW_OUT_OF_FLOW |
++                                       FCDATA_FORCE_NULL_ABSPOS_CONTAINER |
++                                       FCDATA_FUNC_IS_DATA_GETTER,
++                                       nsCSSFrameConstructor::FindMglyphData) }
+   };
+ 
+   return FindDataByTag(aTag, aElement, aStyleContext, sMathMLData,
+                        ArrayLength(sMathMLData));
+ }
+ 
++/* static */
++const nsCSSFrameConstructor::FrameConstructionData*
++nsCSSFrameConstructor::FindMglyphData(Element* aElement,
++                                      nsStyleContext* aStyleContext)
++{
++  if (!nsImageFrame::ShouldCreateImageFrameFor(aElement, aStyleContext)) {
++    return nsnull;
++  }
++
++  static const FrameConstructionData sMglyphData =
++    SIMPLE_FCDATA(NS_NewMathMLmglyphFrame);
++  return &sMglyphData;
++}
++
+ // Only outer <svg> elements can be floated or positioned.  All other SVG
+ // should be in-flow.
+ #define SIMPLE_SVG_FCDATA(_func)                                        \
+   FCDATA_DECL(FCDATA_DISALLOW_OUT_OF_FLOW |                             \
+               FCDATA_SKIP_ABSPOS_PUSH |                                 \
+               FCDATA_DISALLOW_GENERATED_CONTENT,  _func)
+ #define SIMPLE_SVG_CREATE(_tag, _func)            \
+   { &nsGkAtoms::_tag, SIMPLE_SVG_FCDATA(_func) }
+diff --git a/layout/base/nsCSSFrameConstructor.h b/layout/base/nsCSSFrameConstructor.h
+--- a/layout/base/nsCSSFrameConstructor.h
++++ b/layout/base/nsCSSFrameConstructor.h
+@@ -1280,16 +1280,20 @@ private:
+ 
+   // Function to find FrameConstructionData for aContent.  Will return
+   // null if aContent is not MathML.
+   static const FrameConstructionData* FindMathMLData(Element* aElement,
+                                                      nsIAtom* aTag,
+                                                      PRInt32 aNameSpaceID,
+                                                      nsStyleContext* aStyleContext);
+ 
++  static const FrameConstructionData* FindMglyphData(Element* aElement,
++                                                     nsStyleContext*
++                                                     aStyleContext);
++
+   // Function to find FrameConstructionData for aContent.  Will return
+   // null if aContent is not XUL.
+   static const FrameConstructionData* FindXULTagData(Element* aElement,
+                                                      nsIAtom* aTag,
+                                                      PRInt32 aNameSpaceID,
+                                                      nsStyleContext* aStyleContext);
+   // XUL data-finding helper functions and structures
+ #ifdef MOZ_XUL
+diff --git a/layout/generic/nsQueryFrame.h b/layout/generic/nsQueryFrame.h
+--- a/layout/generic/nsQueryFrame.h
++++ b/layout/generic/nsQueryFrame.h
+@@ -145,16 +145,17 @@ public:
+     nsMathMLForeignFrameWrapper_id,
+     nsMathMLFrame_id,
+     nsMathMLmactionFrame_id,
+     nsMathMLmathBlockFrame_id,
+     nsMathMLmathInlineFrame_id,
+     nsMathMLmencloseFrame_id,
+     nsMathMLmfencedFrame_id,
+     nsMathMLmfracFrame_id,
++    nsMathMLmglyphFrame_id,
+     nsMathMLmmultiscriptsFrame_id,
+     nsMathMLmoFrame_id,
+     nsMathMLmoverFrame_id,
+     nsMathMLmpaddedFrame_id,
+     nsMathMLmphantomFrame_id,
+     nsMathMLmrootFrame_id,
+     nsMathMLmrowFrame_id,
+     nsMathMLmspaceFrame_id,
+diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
+--- a/layout/mathml/Makefile.in
++++ b/layout/mathml/Makefile.in
+@@ -66,16 +66,17 @@ CPPSRCS =         nsMathMLChar.cpp		    
+                   nsMathMLForeignFrameWrapper.cpp		\
+                   nsMathMLOperators.cpp \
+                   nsMathMLTokenFrame.cpp		\
+                   nsMathMLmoFrame.cpp			\
+                   nsMathMLmrowFrame.cpp		        \
+                   nsMathMLmphantomFrame.cpp		\
+                   nsMathMLmfencedFrame.cpp		\
+                   nsMathMLmfracFrame.cpp		\
++                  nsMathMLmglyphFrame.cpp		\
+                   nsMathMLmsupFrame.cpp			\
+                   nsMathMLmsubFrame.cpp			\
+                   nsMathMLmsubsupFrame.cpp		\
+                   nsMathMLmmultiscriptsFrame.cpp	\
+                   nsMathMLmtableFrame.cpp		\
+                   nsMathMLmunderoverFrame.cpp		\
+                   nsMathMLmpaddedFrame.cpp		\
+                   nsMathMLmspaceFrame.cpp		\
+diff --git a/layout/mathml/nsMathMLParts.h b/layout/mathml/nsMathMLParts.h
+--- a/layout/mathml/nsMathMLParts.h
++++ b/layout/mathml/nsMathMLParts.h
+@@ -48,16 +48,17 @@ nsIFrame* NS_NewMathMLTokenFrame(nsIPres
+ nsIFrame* NS_NewMathMLmoFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmphantomFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmpaddedFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmspaceFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmsFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmfencedFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmfracFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
++nsIFrame* NS_NewMathMLmglyphFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmsubFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmsupFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmsubsupFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmmultiscriptsFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmstyleFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmtableOuterFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+ nsIFrame* NS_NewMathMLmtableFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+diff --git a/layout/mathml/nsMathMLmglyphFrame.cpp b/layout/mathml/nsMathMLmglyphFrame.cpp
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/nsMathMLmglyphFrame.cpp
+@@ -0,0 +1,109 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2012
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#include "nsMathMLmglyphFrame.h"
++
++//
++// <mglyph> -- using images to represent symbols - implementation
++//
++
++nsIFrame*
++NS_NewMathMLmglyphFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
++{
++  return new (aPresShell) nsMathMLmglyphFrame(aContext);
++}
++
++NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmglyphFrame)
++
++nsMathMLmglyphFrame::~nsMathMLmglyphFrame()
++{
++}
++
++NS_IMETHODIMP
++nsMathMLmglyphFrame::Reflow(nsPresContext*           aPresContext,
++                            nsHTMLReflowMetrics&     aDesiredSize,
++                            const nsHTMLReflowState& aReflowState,
++                            nsReflowStatus&          aStatus)
++{
++  nsresult rv;
++
++  rv = nsImageFrame::Reflow(aPresContext, aDesiredSize, aReflowState,
++                            aStatus);
++
++  // valign
++  //
++  // "Specifies the baseline alignment point of the image with respect to the
++  // current baseline. A positive value shifts the bottom of the image above
++  // the current baseline, while a negative value lowers it. A value of 0 (the
++  // default) means that the baseline of the image is at the bottom of the
++  // image."
++  //
++  // values: length
++  // default: 0ex
++  //
++  // The default value is "0ex", so unitless values can be ignored.
++  //
++  nscoord valign = 0;
++  nsAutoString value;
++  GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::valign,
++               value);
++  if (!value.IsEmpty()) {
++    ParseNumericValue(value, valign,
++                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
++                      aPresContext, mStyleContext);
++  }
++
++  mBoundingMetrics = nsBoundingMetrics();
++
++  mBoundingMetrics.width = aDesiredSize.width;
++  mBoundingMetrics.leftBearing = 0;
++  mBoundingMetrics.rightBearing = aDesiredSize.width;
++
++  mBoundingMetrics.ascent = aDesiredSize.height;
++  mBoundingMetrics.descent = 0;
++
++  aDesiredSize.ascent = aDesiredSize.height + valign;
++  aDesiredSize.mBoundingMetrics = mBoundingMetrics;
++
++  mReference.x = 0;
++  mReference.y = aDesiredSize.ascent;
++
++  NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
++
++  return rv;
++}
+diff --git a/layout/mathml/nsMathMLmglyphFrame.h b/layout/mathml/nsMathMLmglyphFrame.h
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/nsMathMLmglyphFrame.h
+@@ -0,0 +1,89 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2012
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#ifndef nsMathMLmglyphFrame_h___
++#define nsMathMLmglyphFrame_h___
++
++#include "nsMathMLContainerFrame.h"
++#include "nsImageFrame.h"
++
++//
++// <mglyph> -- using images to represent symbols
++//
++
++/*
++The MathML REC describes:
++
++The mglyph element provides a mechanism for displaying images to represent
++non-standard symbols. It may be used within the content of the token elements
++mi, mn, mo, mtext or ms where existing Unicode characters are not adequate.
++
++Unicode defines a large number of characters used in mathematics and, in most
++cases, glyphs representing these characters are widely available in a variety
++of fonts. Although these characters should meet almost all users needs, MathML
++recognizes that mathematics is not static and that new characters and symbols
++are added when convenient. Characters that become well accepted will likely be
++eventually incorporated by the Unicode Consortium or other standards bodies,
++but that is often a lengthy process.
++
++Note that the glyph's src attribute uniquely identifies the mglyph; two mglyphs
++with the same values for src should be considered identical by applications
++that must determine whether two characters/glyphs are identical.
++*/
++
++class nsMathMLmglyphFrame : public nsMathMLFrame,
++                            public nsImageFrame {
++public:
++  NS_DECL_FRAMEARENA_HELPERS
++
++  friend nsIFrame* NS_NewMathMLmglyphFrame(nsIPresShell* aPresShell,
++                                           nsStyleContext* aContext);
++
++protected:
++  nsMathMLmglyphFrame(nsStyleContext* aContext) :
++    nsMathMLFrame(), nsImageFrame(aContext) {}
++  virtual ~nsMathMLmglyphFrame();
++
++  NS_IMETHOD
++  Reflow(nsPresContext*           aPresContext,
++         nsHTMLReflowMetrics&     aDesiredSize,
++         const nsHTMLReflowState& aReflowState,
++         nsReflowStatus&          aStatus);
++};
++
++#endif /* nsMathMLmglyphFrame_h___ */

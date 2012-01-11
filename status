@@ -1,4 +1,7 @@
-d8432e1093803bb1fd1d41a01a036ae3796ab705:unify-length-and-mpadded-parsing.diff
-cac15f7a0aea4dcf0324eecd67f62c398a6feb9d:crashtest-398038.diff
-4b10c65c5c12d126f11cf9013c3e51f9f2a68f12:crashtest-716349.diff
-2f6c0356f3310455deb38790e2b02cd6d6d42bb9:assertion-716349.diff
+991f93c1ab14997921295d398ab71adb04fe14e8:unify-length-and-mpadded-parsing.diff
+f21409b93557e41564d7532f36cf1a012f2ab965:crashtest-398038.diff
+2b524789ec3c307777aeffa9362ba8a88328dbb9:crashtest-716349.diff
+ca16a5af21e96e75ec0ed28f940eca49d4dfd2e8:assertion-716349.diff
+fbfc08d2635f57f241f374f3839590fd6aba703c:mglyph-1.diff
+da9a08ce0f07e07acee8419385de1011d7fee03d:mglyph-2.diff
+4e939eeb1b2102656f15e472de74f93a2e67a780:mglyph-3.diff
