@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 2b524789ec3c307777aeffa9362ba8a88328dbb9
+# Parent d129f597af5c003f14a868c719ee33a565aa000d
 # User Frédéric Wang <fred.wang@free.fr>
 Prevent invalid metrics for mspace (bug 716349). r=karlt
 
 diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
 --- a/layout/mathml/nsMathMLmspaceFrame.cpp
 +++ b/layout/mathml/nsMathMLmspaceFrame.cpp
-@@ -98,64 +98,64 @@ nsMathMLmspaceFrame::ProcessAttributes(n
+@@ -98,64 +98,65 @@ nsMathMLmspaceFrame::ProcessAttributes(n
    // height
    //
    // "Specifies the desired height (above the baseline) of the space."
@@ -58,7 +58,8 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
  {
    ProcessAttributes(aPresContext);
  
-+  // XXXfw Negative spaces are not implemented.
++  // nsLineLayout doesn't expect negative widths.
++  // XXXfw Negative spaces are not implemented. See bug 717546
 +
    mBoundingMetrics = nsBoundingMetrics();
 -  mBoundingMetrics.width = mWidth;

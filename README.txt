@@ -23,21 +23,20 @@ stable patches below and I'll try to update them as soon as possible.
 
   { unify-length-and-mpadded-parsing.diff
   { crashtest-398038.diff
+  { assertion-716349.diff
+  { crashtest-716349.diff
 
 * Work in progress patches:
 
   { remove-namedspace-atoms.diff
     => See bug 673759 comment 16.
 
-  { crashtest-716349.diff
-  { assertion-716349.diff
-    => Crashtest passed, but patches not sent to Try server yet.
-
   { MathJax-fonts.diff
     => See bug 701758 comment 13.
 
   { mglyph-1.diff
   { mglyph-2.diff
+  { mglyph-3.diff
     => May crash Mozilla.
 
 * Experimental and old patches:

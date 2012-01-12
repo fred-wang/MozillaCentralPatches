@@ -1,7 +1,8 @@
 unify-length-and-mpadded-parsing.diff
+remove-namedspace-atoms.diff
 crashtest-398038.diff
-crashtest-716349.diff
 assertion-716349.diff
+crashtest-716349.diff
 mglyph-1.diff
 mglyph-2.diff
 mglyph-3.diff
@@ -9,7 +10,6 @@ MathJax-fonts-2.diff
 MathJax-fonts-3.diff
 MathJax-fonts.diff
 try.diff
-remove-namedspace-atoms.diff
 mpadded-vertical-metrics.diff
 maction-embellished-op.diff
 largeop-initial-stretch.diff
