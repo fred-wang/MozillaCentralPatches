@@ -9,14 +9,15 @@ mglyph-3.diff
 MathJax-fonts-2.diff
 MathJax-fonts-3.diff
 MathJax-fonts.diff
+ms-quotes-1.diff
+ms-quotes-2.diff
+ms-quotes-3.diff
 try.diff
 mpadded-vertical-metrics.diff
 maction-embellished-op.diff
 largeop-initial-stretch.diff
 opdict-diagonal-arrows.diff
 rotate_stretchy.diff
-mstyle-ms.diff
-mathml_map_quotes.diff
 mo-selection.diff
 math-height.diff
 mathml_localize.diff

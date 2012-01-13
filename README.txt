@@ -39,6 +39,11 @@ stable patches below and I'll try to update them as soon as possible.
   { mglyph-3.diff
     => May crash Mozilla.
 
+  { ms-quotes-1.diff
+  { ms-quotes-2.diff
+  { ms-quotes-3.diff
+    => Need feedback for the style part, fail dir=rtl and setAttribute tests.
+
 * Experimental and old patches:
 
   - try.diff (used to push to try server)
@@ -47,7 +52,6 @@ stable patches below and I'll try to update them as soon as possible.
   - largeop-initial-stretch.diff
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff
-  - mstyle-ms.diff
   - mathml_map_quotes.diff
   - mo-selection.diff
   - math-height.diff

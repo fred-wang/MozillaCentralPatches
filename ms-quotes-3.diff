@@ -1,0 +1,130 @@
+# HG changeset patch
+# Parent dee567c8896ba7afa07795acca6a95a2e4d733fc
+# User Frédéric Wang <fred.wang@free.fr>
+Reftests for bug 560100. r=karlt
+
+diff --git a/layout/reftests/mathml/dir-1-ref.html b/layout/reftests/mathml/dir-1-ref.html
+--- a/layout/reftests/mathml/dir-1-ref.html
++++ b/layout/reftests/mathml/dir-1-ref.html
+@@ -52,10 +52,16 @@
+         <mfenced open="D" close="A" separators="CB">
+           <mtext>c</mtext>
+           <mtext>b</mtext>
+           <mtext>a</mtext>
+         </mfenced>
+       </math>
+     </p>
+ 
++    <p>ms lquote="A" rquote="B":
++      <math>
++	<ms lquote="B" rquote="A">___</ms>
++      </math>
++    </p>
++
+   </body>
+ </html>
+diff --git a/layout/reftests/mathml/dir-1.html b/layout/reftests/mathml/dir-1.html
+--- a/layout/reftests/mathml/dir-1.html
++++ b/layout/reftests/mathml/dir-1.html
+@@ -52,10 +52,16 @@
+         <mfenced open="A" close="D" separators="BC">
+           <mtext>a</mtext>
+           <mtext>b</mtext>
+           <mtext>c</mtext>
+         </mfenced>
+       </math>
+     </p>
+ 
++    <p>ms lquote="A" rquote="B":
++      <math dir="rtl">
++	<ms lquote="A" rquote="B">___</ms>
++      </math>
++    </p>
++
+   </body>
+ </html>
+diff --git a/layout/reftests/mathml/quotes-1-ref.xhtml b/layout/reftests/mathml/quotes-1-ref.xhtml
+--- a/layout/reftests/mathml/quotes-1-ref.xhtml
++++ b/layout/reftests/mathml/quotes-1-ref.xhtml
+@@ -2,14 +2,17 @@
+ <head>
+ <style type="text/css">
+ body { font-family:sans-serif; }
+ p { height:2em; }
+ </style>
+ </head>
+ <body>
+ <p>:L_R</p>
+-<p>:L_&#x201D;</p>
+-<p>:&#x201C;_R</p>
+-<p>:L_&#x201D;</p>
+-<p>:&#x201C;_R</p>
++<p>:L_"</p>
++<p>:"_R</p>
++<p>:L_"</p>
++<p>:"_R</p>
++<p>:"_"</p>
++<p>:"_"</p>
++<p>:"_"</p>
+ </body>
+ </html>
+diff --git a/layout/reftests/mathml/quotes-1.xhtml b/layout/reftests/mathml/quotes-1.xhtml
+--- a/layout/reftests/mathml/quotes-1.xhtml
++++ b/layout/reftests/mathml/quotes-1.xhtml
+@@ -6,24 +6,34 @@ p { height:2em; }
+ </style>
+ </head>
+ <body>
+ <p>:<ms xmlns="http://www.w3.org/1998/Math/MathML" lquote="L" rquote="R">_</ms></p>
+ <p>:<ms id="m1" xmlns="http://www.w3.org/1998/Math/MathML">_</ms></p>
+ <p>:<ms id="m2" xmlns="http://www.w3.org/1998/Math/MathML">_</ms></p>
+ <p>:<ms id="m3" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_">_</ms></p>
+ <p>:<ms id="m4" xmlns="http://www.w3.org/1998/Math/MathML" rquote="_">_</ms></p>
++<p>:<ms id="m5" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_" rquote="_">_</ms></p>
++<p>:<ms id="m6" xmlns="http://www.w3.org/1998/Math/MathML" lquote="_">_</ms></p>
++<p>:<ms id="m7" xmlns="http://www.w3.org/1998/Math/MathML" rquote="_">_</ms></p>
+ <script>
+ function doTest() {
+   var m1 = document.getElementById("m1");
+   m1.setAttribute("lquote", "L");
+   var m2 = document.getElementById("m2");
+   m2.setAttribute("rquote", "R");
+   var m3 = document.getElementById("m3");
+   m3.setAttribute("lquote", "L");
+   var m4 = document.getElementById("m4");
+   m4.setAttribute("rquote", "R");
++  var m5 = document.getElementById("m5");
++  m5.removeAttribute("lquote");
++  m5.removeAttribute("rquote");
++  var m6 = document.getElementById("m6");
++  m6.removeAttribute("lquote");
++  var m7 = document.getElementById("m7");
++  m7.removeAttribute("rquote");
+   document.documentElement.removeAttribute('class');
+ }
+ window.addEventListener("MozReftestInvalidate", doTest, false);
+ </script>
+ </body>
+ </html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -66,17 +66,17 @@ fails-if(winWidget) == mfenced-10.html m
+ != mathbackground-1.xml mathbackground-1-ref.xml
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
+ == mathbackground-4.xml mathbackground-4-ref.xml
+ == mstyle-1.xhtml mstyle-1-ref.xhtml
+ == mstyle-2.xhtml mstyle-2-ref.xhtml
+ == mstyle-3.xhtml mstyle-3-ref.xhtml
+ == mstyle-4.xhtml mstyle-4-ref.xhtml
+-fails == mstyle-5.xhtml mstyle-5-ref.xhtml # See bug 569125#c29
++== mstyle-5.xhtml mstyle-5-ref.xhtml
+ == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
+ != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
+ == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
+ != scale-stretchy-4.xhtml scale-stretchy-4-ref.xhtml
+ != scale-stretchy-5.xhtml scale-stretchy-5-ref.xhtml
+ == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
+ == mpadded-1.html mpadded-1-ref.html
+ == mpadded-2.html mpadded-2-ref.html
