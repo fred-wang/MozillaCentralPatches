@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ca16a5af21e96e75ec0ed28f940eca49d4dfd2e8
+# Parent 80d55be2728efaed1721217d3e521a19bf78e1b8
 # User Frédéric Wang <fred.wang@free.fr>
 Add support for mglyph (bug 297465) - part 1.
 
@@ -24,6 +24,19 @@ diff --git a/content/mathml/content/src/Makefile.in b/content/mathml/content/src
  # we don't want the shared lib, but we want to force the creation of a static 
  # lib.
  FORCE_STATIC_LIB = 1
+@@ -61,11 +62,12 @@ FORCE_STATIC_LIB = 1
+ EXPORTS = \
+ 	$(NULL)
+ 
+ 
+ include $(topsrcdir)/config/rules.mk
+ 
+ INCLUDES += 	\
+ 		-I$(srcdir)/../../../base/src \
++		-I$(srcdir)/../../../html/content/src \
+ 		$(NULL)
+ 
+ DEFINES += -D_IMPL_NS_LAYOUT
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
