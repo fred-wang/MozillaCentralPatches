@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent d3aee9b299b8ca4a63a64720c05e5c5e047c82f1
+# Parent fdfd0f7e8e07ed89748cd6b449488e5425e8bedb
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 560100 - Map MathML attributes lquote/rquote to style - part 2. r=karlt.
 
@@ -21,15 +21,15 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +  { nsnull }
 +};
 +
- static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
-   { &nsGkAtoms::mathsize_ },
-   { &nsGkAtoms::fontsize_ },
-   { &nsGkAtoms::color },
-   { &nsGkAtoms::fontfamily_ },
+ static nsGenericElement::MappedAttributeEntry sMtableStyles[] = {
+   { &nsGkAtoms::width },
    { nsnull }
  };
  
-@@ -181,37 +187,46 @@ static nsGenericElement::MappedAttribute
+ static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
+   { &nsGkAtoms::mathsize_ },
+   { &nsGkAtoms::fontsize_ },
+@@ -186,38 +192,47 @@ static nsGenericElement::MappedAttribute
  };
  
  bool
@@ -43,6 +43,10 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +    sTokenStyles,
 +    sCommonPresStyles
 +  };
+   static const MappedAttributeEntry* const mtableMap[] = {
+     sMtableStyles,
+     sCommonPresStyles
+   };
    static const MappedAttributeEntry* const tokenMap[] = {
      sTokenStyles,
      sCommonPresStyles
@@ -62,23 +66,19 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
      return FindAttributeDependence(aAttribute, mglyphMap);
    }
 -  if (tag == nsGkAtoms::ms_ || tag == nsGkAtoms::mi_ ||
++  if (tag == nsGkAtoms::ms_) {
++    return FindAttributeDependence(aAttribute, msMap);
++  }
 +  if (tag == nsGkAtoms::mi_ ||
        tag == nsGkAtoms::mn_ || tag == nsGkAtoms::mo_ ||
        tag == nsGkAtoms::mtext_ || tag == nsGkAtoms::mspace_)
      return FindAttributeDependence(aAttribute, tokenMap);
-+  if (tag == nsGkAtoms::ms_) {
-+    return FindAttributeDependence(aAttribute, msMap);
-+  }
    if (tag == nsGkAtoms::mstyle_ ||
        tag == nsGkAtoms::math)
      return FindAttributeDependence(aAttribute, mstyleMap);
  
-   if (tag == nsGkAtoms::maction_ ||
-       tag == nsGkAtoms::maligngroup_ ||
-       tag == nsGkAtoms::malignmark_ ||
-       tag == nsGkAtoms::menclose_ ||
-@@ -673,16 +688,50 @@ nsMathMLElement::MapMathMLAttributesInto
-     nsCSSValue* height = aData->ValueForHeight();
+   if (tag == nsGkAtoms::mtable_)
+@@ -694,16 +709,50 @@ nsMathMLElement::MapMathMLAttributesInto
      if (height->GetUnit() == eCSSUnit_Null) {
        const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
        if (value && value->Type() == nsAttrValue::eString) {
@@ -86,7 +86,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
        }
      }
    }
-+
+ 
 +  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Quotes)) {
 +    // lquote
 +    //
@@ -120,6 +120,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +      }
 +    }
 +  }
++
  }
  
  nsresult

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent fbfc08d2635f57f241f374f3839590fd6aba703c
+# Parent 997cbe070e7afbe0adf64f3c7150476f56b96a60
 # User Frédéric Wang <fred.wang@free.fr>
 Add support for mglyph (bug 297465) - part 2.
 
@@ -27,15 +27,15 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +  { nsnull }
 +};
 +
- static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
-   { &nsGkAtoms::mathsize_ },
-   { &nsGkAtoms::fontsize_ },
-   { &nsGkAtoms::color },
-   { &nsGkAtoms::fontfamily_ },
+ static nsGenericElement::MappedAttributeEntry sMtableStyles[] = {
+   { &nsGkAtoms::width },
    { nsnull }
  };
  
-@@ -166,31 +178,36 @@ static nsGenericElement::MappedAttribute
+ static nsGenericElement::MappedAttributeEntry sTokenStyles[] = {
+   { &nsGkAtoms::mathsize_ },
+   { &nsGkAtoms::fontsize_ },
+@@ -171,16 +183,19 @@ static nsGenericElement::MappedAttribute
    { &nsGkAtoms::mathcolor_ },
    { &nsGkAtoms::mathbackground_ },
    { nsnull }
@@ -47,11 +47,15 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +  static const MappedAttributeEntry* const mglyphMap[] = {
 +    sMglyphStyles
 +  };
+   static const MappedAttributeEntry* const mtableMap[] = {
+     sMtableStyles,
+     sCommonPresStyles
+   };
    static const MappedAttributeEntry* const tokenMap[] = {
      sTokenStyles,
      sCommonPresStyles
    };
-   static const MappedAttributeEntry* const mstyleMap[] = {
+@@ -188,18 +203,20 @@ nsMathMLElement::IsAttributeMapped(const
      sTokenStyles,
      sEnvironmentStyles,
      sCommonPresStyles
@@ -73,18 +77,24 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
        tag == nsGkAtoms::math)
      return FindAttributeDependence(aAttribute, mstyleMap);
  
-@@ -611,16 +628,61 @@ nsMathMLElement::MapMathMLAttributesInto
-     }
-     nscolor color;
+@@ -624,25 +641,67 @@ nsMathMLElement::MapMathMLAttributesInto
      nsCSSValue* colorValue = aData->ValueForColor();
      if (value && value->GetColorValue(color) &&
          colorValue->GetUnit() == eCSSUnit_Null) {
        colorValue->SetColorValue(color);
      }
    }
-+
-+  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
-+    // width
+ 
+   if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
+-    // width: value
++    // width (mtable)
++    //
++    // "Specifies the desired width of the entire table"
++    //
++    // values: "auto" | length
++    // default: auto
++    //
++    // width (mglyph)
 +    //
 +    // "Specifies the desired width of the glyph; see height."
 +    //
@@ -96,13 +106,16 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +    // should be treated like percent values but some pages in the MathML test
 +    // suite seem to assume they are pixel values.
 +    //
-+    nsCSSValue* width = aData->ValueForWidth();
-+    if (width->GetUnit() == eCSSUnit_Null) {
-+      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
-+      if (value && value->Type() == nsAttrValue::eString) {
-+        ParseNumericValue(value->GetStringValue(), *width, 0);
-+      }
-+    }
+     nsCSSValue* width = aData->ValueForWidth();
+     if (width->GetUnit() == eCSSUnit_Null) {
+       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
+-      // This does not handle auto and unitless values
+       if (value && value->Type() == nsAttrValue::eString) {
++        // mtable: ParseNumericValue ignores "auto", so the default automatic
++        // computation of the width is used.
+         ParseNumericValue(value->GetStringValue(), *width, 0);
+       }
+     }
 +
 +    // height
 +    //
@@ -126,12 +139,11 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +        ParseNumericValue(value->GetStringValue(), *height, 0);
 +      }
 +    }
-+  }
+   }
+ 
  }
  
  nsresult
  nsMathMLElement::PreHandleEvent(nsEventChainPreVisitor& aVisitor)
  {
    nsresult rv = nsGenericElement::PreHandleEvent(aVisitor);
-   NS_ENSURE_SUCCESS(rv, rv);
- 
