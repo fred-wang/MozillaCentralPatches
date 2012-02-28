@@ -37,10 +37,10 @@ diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properti
  
  %ifdef XP_WIN
 -font.mathfont-glyph-tables = STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L, Symbol
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L, Symbol
++font.mathfont-glyph-tables = STIXNonUnicode, STIXSizeOneSym, STIXSize1, MathJax_Main, Asana Math, Standard Symbols L, Symbol
  %else
 -font.mathfont-glyph-tables = STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L
++font.mathfont-glyph-tables = STIXNonUnicode, STIXSizeOneSym, STIXSize1, MathJax_Main, Asana Math, Standard Symbols L
  %endif
  
  # The ordered list of fonts with which to attempt to stretch MathML
@@ -98,7 +98,7 @@ new file mode 100644
 +external.3 = MathJax_Size3
 +external.4 = MathJax_Size4
 +external.5 = MathJax_AMS
-+external.6 = MathJax_Main-bold
++# external.6 = MathJax_Main-Bold
 +
 +\u0028 = \u239B@4\uFFFD\u239D@4\u239C@4\u0028\u0028@1\u0028@2\u0028@3\u0028@4
 +\u0029 = \u239E@4\uFFFD\u23A0@4\u239F@4\u0029\u0029@1\u0029@2\u0029@3\u0029@4
@@ -244,7 +244,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, MathJax_Main, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -263,7 +263,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, MathJax_Main, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // cleartype settings - false implies default system settings 
  
@@ -282,7 +282,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, MathJax_Main, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // individual font faces to be treated as independent families
  // names are Postscript names of each face
@@ -301,7 +301,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
  
 -pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
++pref("font.mathfont-family", "STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, MathJax_Main, Asana Math, DejaVu Sans");
  
  // Languages only need lists if we have a default that might not be available.
  // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
