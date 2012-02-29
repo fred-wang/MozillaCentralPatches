@@ -45,14 +45,14 @@ stable patches below and I'll try to update them as soon as possible.
 
   - workaround-gcc-bug.diff (workaround compilation bug. See https://bugs.launchpad.net/ubuntu/+source/firefox/+bug/918763)
   - try.diff (used to push to try server)
-  - mpadded-vertical-metrics.diff
   - maction-embellished-op.diff
+  - rewrite-mtable-1.diff
+  - rewrite-mtable-2.diff
+  - mpadded-vertical-metrics.diff
   - largeop-initial-stretch.diff
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff
-  - mathml_map_quotes.diff
   - mo-selection.diff
   - math-height.diff
   - mathml_localize.diff
   - mathml_linebreak.diff
-  - workaround_bars.diff

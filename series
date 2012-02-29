@@ -12,8 +12,10 @@ ms-quotes-1.diff
 ms-quotes-2.diff
 ms-quotes-3.diff
 try.diff
-mpadded-vertical-metrics.diff
 maction-embellished-op.diff
+rewrite-mtable-1.diff
+rewrite-mtable-2.diff
+mpadded-vertical-metrics.diff
 largeop-initial-stretch.diff
 opdict-diagonal-arrows.diff
 rotate_stretchy.diff
@@ -21,4 +23,3 @@ mo-selection.diff
 math-height.diff
 mathml_localize.diff
 mathml_linebreak.diff
-workaround_bars.diff
