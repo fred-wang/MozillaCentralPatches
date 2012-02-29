@@ -1,4 +1,4 @@
-bug-722880-fix.patch
+workaround-gcc-bug.diff
 unify-length-and-mpadded-parsing.diff
 remove-namedspace-atoms.diff
 crashtest-398038.diff
@@ -7,8 +7,6 @@ crashtest-716349.diff
 mglyph-1.diff
 mglyph-2.diff
 mglyph-3.diff
-MathJax-fonts-2.diff
-MathJax-fonts-3.diff
 MathJax-fonts.diff
 ms-quotes-1.diff
 ms-quotes-2.diff

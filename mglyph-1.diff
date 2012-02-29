@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 80d55be2728efaed1721217d3e521a19bf78e1b8
+# Parent 91da3dcfcdba4f605cceda1811577426d9046207
 # User Frédéric Wang <fred.wang@free.fr>
 Add support for mglyph (bug 297465) - part 1.
 
@@ -101,7 +101,7 @@ diff --git a/content/mathml/content/src/nsMathMLMglyphElement.cpp b/content/math
 new file mode 100644
 --- /dev/null
 +++ b/content/mathml/content/src/nsMathMLMglyphElement.cpp
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,146 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=2 et sw=2 tw=80: */
 +/* ***** BEGIN LICENSE BLOCK *****
@@ -205,45 +205,27 @@ new file mode 100644
 +}
 +
 +nsresult
-+nsMathMLMglyphElement::SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
-+                               nsIAtom* aPrefix, const nsAString& aValue,
-+                               bool aNotify)
++nsMathMLMglyphElement::AfterSetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
++                                const nsAttrValue* aValue, bool aNotify)
 +{
-+  if (aNotify &&
-+      aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
++  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
 +
 +    // Prevent setting image.src by exiting early
 +    if (nsContentUtils::IsImageSrcSetDisabled()) {
 +      return NS_OK;
 +    }
 +
-+    // A hack to get animations to reset. See bug 594771.
-+    mNewRequestsWillNeedAnimationReset = true;
-+
-+    // Force image loading here, so that we'll try to load the image from
-+    // network if it's set to be not cacheable...  If we change things so that
-+    // the state gets in nsGenericElement's attr-setting happen around this
-+    // LoadImage call, we could start passing false instead of aNotify
-+    // here.
-+
-+    LoadImage(aValue, true, aNotify);
-+
-+    mNewRequestsWillNeedAnimationReset = false;
-+   }
-+  
-+  return nsMathMLElement::SetAttr(aNameSpaceID, aName, aPrefix, aValue,
-+                                  aNotify);
-+}
-+
-+nsresult
-+nsMathMLMglyphElement::UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aAttr,
-+                                 bool aNotify)
-+{
-+  if (aNameSpaceID == kNameSpaceID_None && aAttr == nsGkAtoms::src) {
-+    CancelImageRequests(aNotify);
++    if (aValue) {
++      nsAutoString uri;
++      if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, uri)) {
++        LoadImage(uri, true, aNotify);
++      }
++    } else {
++      CancelImageRequests(aNotify);
++    }
 +  }
-+  
-+  return nsMathMLElement::UnsetAttr(aNameSpaceID, aAttr, aNotify);
++  return nsMathMLElement::AfterSetAttr(aNamespaceID, aName,
++                                       aValue, aNotify);
 +}
 +
 +void
@@ -270,7 +252,7 @@ diff --git a/content/mathml/content/src/nsMathMLMglyphElement.h b/content/mathml
 new file mode 100644
 --- /dev/null
 +++ b/content/mathml/content/src/nsMathMLMglyphElement.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,73 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=2 et sw=2 tw=80: */
 +/* ***** BEGIN LICENSE BLOCK *****
@@ -334,12 +316,8 @@ new file mode 100644
 +                              nsIContent* aBindingParent,
 +                              bool aCompileEventHandlers);
 +
-+  virtual nsresult SetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
-+                           nsIAtom* aPrefix, const nsAString& aValue,
-+                           bool aNotify);
-+
-+  virtual nsresult UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aAttr,
-+                             bool aNotify);
++  virtual nsresult AfterSetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
++                                const nsAttrValue* aValue, bool aNotify);
 +
 +  virtual nsEventStates IntrinsicState() const;
 +

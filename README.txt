@@ -18,9 +18,6 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { MathJax-fonts-2.diff
-  { MathJax-fonts-3.diff
-
   { unify-length-and-mpadded-parsing.diff
   { crashtest-398038.diff
   { assertion-716349.diff
@@ -46,6 +43,7 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Experimental and old patches:
 
+  - workaround-gcc-bug.diff (workaround compilation bug. See https://bugs.launchpad.net/ubuntu/+source/firefox/+bug/918763)
   - try.diff (used to push to try server)
   - mpadded-vertical-metrics.diff
   - maction-embellished-op.diff
