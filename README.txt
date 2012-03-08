@@ -22,15 +22,14 @@ stable patches below and I'll try to update them as soon as possible.
   { crashtest-398038.diff
   { assertion-716349.diff
   { crashtest-716349.diff
+  { bug-320294-fix.patch
+  { MathJax-fonts.diff
+  { MathJax-fonts-2.diff
 
 * Work in progress patches:
 
   { remove-namedspace-atoms.diff
     => See bug 673759 comment 16.
-
-  { MathJax-fonts.diff
-  { MathJax-fonts-2.diff
-    => In testing.
 
   { mglyph-1.diff
   { mglyph-2.diff

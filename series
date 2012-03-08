@@ -1,4 +1,5 @@
 workaround-gcc-bug.diff
+bug-320294-fix.patch
 MathJax-fonts.diff
 MathJax-fonts-2.diff
 unify-length-and-mpadded-parsing.diff
