@@ -22,9 +22,6 @@ stable patches below and I'll try to update them as soon as possible.
   { crashtest-398038.diff
   { assertion-716349.diff
   { crashtest-716349.diff
-  { bug-320294-fix.patch
-  { MathJax-fonts.diff
-  { MathJax-fonts-2.diff
 
 * Work in progress patches:
 
