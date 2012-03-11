@@ -23,6 +23,9 @@ stable patches below and I'll try to update them as soon as possible.
   { assertion-716349.diff
   { crashtest-716349.diff
 
+  { maction-embellished-op.diff
+  { crashtest-657279.diff
+
 * Work in progress patches:
 
   { remove-namedspace-atoms.diff
@@ -42,7 +45,6 @@ stable patches below and I'll try to update them as soon as possible.
 
   - workaround-gcc-bug.diff (workaround compilation bug. See https://bugs.launchpad.net/ubuntu/+source/firefox/+bug/918763)
   - try.diff (used to push to try server)
-  - maction-embellished-op.diff
   - rewrite-mtable-1.diff
   - rewrite-mtable-2.diff
   - mpadded-vertical-metrics.diff

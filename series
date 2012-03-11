@@ -1,4 +1,6 @@
 workaround-gcc-bug.diff
+maction-embellished-op.diff
+crashtest-657279.diff
 unify-length-and-mpadded-parsing.diff
 remove-namedspace-atoms.diff
 crashtest-398038.diff
@@ -11,7 +13,6 @@ ms-quotes-1.diff
 ms-quotes-2.diff
 ms-quotes-3.diff
 try.diff
-maction-embellished-op.diff
 rewrite-mtable-1.diff
 rewrite-mtable-2.diff
 mpadded-vertical-metrics.diff
