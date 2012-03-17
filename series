@@ -1,4 +1,6 @@
 workaround-gcc-bug.diff
+mathml-css.diff
+nsMathMLChar-downloadable-fonts.diff
 maction-embellished-op.diff
 crashtest-657279.diff
 unify-length-and-mpadded-parsing.diff

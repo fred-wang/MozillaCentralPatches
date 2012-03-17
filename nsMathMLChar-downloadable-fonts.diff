@@ -1,0 +1,116 @@
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1036,17 +1036,17 @@ insert:
+                      p_name - p_begin);
+   }
+   else { // whitespace or empty
+     aFontName = aFallbackFamilies;
+   }
+ }
+ 
+ // Update the font and rendering context if there is a family change
+-static void
++static bool
+ SetFontFamily(nsStyleContext*      aStyleContext,
+               nsRenderingContext&  aRenderingContext,
+               nsFont&              aFont,
+               const nsGlyphTable*  aGlyphTable,
+               const nsGlyphCode&   aGlyphCode,
+               const nsAString&     aDefaultFamily)
+ {
+   const nsAString& family =
+@@ -1054,17 +1054,20 @@ SetFontFamily(nsStyleContext*      aStyl
+   if (! family.Equals(aFont.name)) {
+     aFont.name = family;
+     nsRefPtr<nsFontMetrics> fm;
+     aRenderingContext.DeviceContext()->GetMetricsFor(aFont,
+       aStyleContext->GetStyleFont()->mLanguage,
+       aStyleContext->PresContext()->GetUserFontSet(),
+       *getter_AddRefs(fm));
+     aRenderingContext.SetFont(fm);
++    return true;
+   }
++
++  return (aGlyphTable != &gGlyphTableList->mUnicodeTable);
+ }
+ 
+ class nsMathMLChar::StretchEnumContext {
+ public:
+   StretchEnumContext(nsMathMLChar*        aChar,
+                      nsPresContext*       aPresContext,
+                      nsRenderingContext& aRenderingContext,
+                      nsStretchDirection   aStretchDirection,
+@@ -1145,17 +1148,22 @@ nsMathMLChar::StretchEnumContext::TryVar
+ #ifdef NOISY_SEARCH
+   printf("  searching in %s ...\n",
+            NS_LossyConvertUTF16toASCII(aFamily).get());
+ #endif
+ 
+   nsGlyphCode ch;
+   while ((ch = aGlyphTable->BigOf(mPresContext, mChar, size)).Exists()) {
+ 
+-    SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily);
++    if (!SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily)) {
++      // if largeopOnly is set, break now
++      if (largeopOnly) break;
++      ++size;
++      continue;
++    }
+ 
+     NS_ASSERTION(maxWidth || ch.code[0] != mChar->mGlyph.code[0] ||
+                  ch.code[1] != mChar->mGlyph.code[1] ||
+                  !font.name.Equals(mChar->mFamily),
+                  "glyph table incorrectly set -- duplicate found");
+ 
+     nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
+                                                                 ch.Length());
+@@ -1269,18 +1277,20 @@ nsMathMLChar::StretchEnumContext::TryPar
+     if (!ch.Exists()) ch = glue;
+     chdata[i] = ch;
+     if (!ch.Exists()) {
+       // Null glue indicates that a rule will be drawn, which can stretch to
+       // fill any space.  Leave bounding metrics at 0.
+       sizedata[i] = mTargetSize;
+     }
+     else {
+-      SetFontFamily(mChar->mStyleContext, mRenderingContext,
+-                    font, aGlyphTable, ch, aFamily);
++      if (!SetFontFamily(mChar->mStyleContext, mRenderingContext,
++                         font, aGlyphTable, ch, aFamily)) {
++        return false;
++      }
+       nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
+                                                                   ch.Length());
+ 
+       // TODO: For the generic Unicode table, ideally we should check that the
+       // glyphs are actually found and that they each come from the same
+       // font.
+       bmdata[i] = bm;
+       sizedata[i] = isVertical ? bm.ascent + bm.descent
+@@ -1414,24 +1424,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
+   nsGlyphTable* glyphTable = aGeneric ?
+     &gGlyphTableList->mUnicodeTable : gGlyphTableList->GetGlyphTableFor(aFamily);
+ 
+   if (context->mTablesTried.Contains(glyphTable))
+     return true; // already tried this one
+ 
+   context->mGlyphTable = glyphTable;
+ 
+-  if (aGeneric)
+-    return ResolverCallback(aFamily, aData);
+-
+-  bool aborted;
+-  gfxPlatform *pf = gfxPlatform::GetPlatform();
+-  nsresult rv =
+-    pf->ResolveFontName(aFamily, ResolverCallback, aData, aborted);
+-  return NS_SUCCEEDED(rv) && !aborted; // true means continue
++  return ResolverCallback(aFamily, aData);
+ }
+ 
+ nsresult
+ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
+                               nsRenderingContext&     aRenderingContext,
+                               nsStretchDirection&      aStretchDirection,
+                               const nsBoundingMetrics& aContainerSize,
+                               nsBoundingMetrics&       aDesiredStretchSize,
