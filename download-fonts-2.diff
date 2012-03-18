@@ -1,0 +1,67 @@
+# HG changeset patch
+# Parent ef19e3be90581d73f86e84aff92a713a3d52a007
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 295193 - Allow downloading math fonts with Firefox - part 2.
+
+diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
+--- a/browser/base/content/browser.js
++++ b/browser/base/content/browser.js
+@@ -1411,28 +1411,57 @@ function HandleAppCommandEvent(evt) {
+   case "Home":
+     BrowserHome();
+     break;
+   default:
+     break;
+   }
+ }
+ 
++function HandleMissingMathMLFontsEvent(evt) {
++  var nb = gBrowser.getNotificationBox();
++  var message = 'This page requires mathematical fonts to render correctly...';
++  var buttons = [{
++    label: 'Install add-on',
++    accessKey: 'I',
++    callback: function() {
++      alert("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/");
++    }
++  }, {
++    label: 'More info',
++    accessKey: 'M ',
++    callback: function() {
++      alert("https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts");
++    }
++  }, {
++    label: 'Do not show again',
++    accessKey: 'D',
++    callback: function() {
++      gPrefService.setBoolPref("font.mathfont-warning", false);
++    }
++  }];
++  nb.appendNotification(message, 'mathml-missing-fonts',
++                        'chrome://browser/skin/Info.png',
++                        nb.PRIORITY_WARNING_MEDIUM, buttons);
++}
++
+ function prepareForStartup() {
+   gBrowser.addEventListener("DOMUpdatePageReport", gPopupBlockerObserver, false);
+ 
+   gBrowser.addEventListener("PluginNotFound",     gPluginHandler, true);
+   gBrowser.addEventListener("PluginCrashed",      gPluginHandler, true);
+   gBrowser.addEventListener("PluginBlocklisted",  gPluginHandler, true);
+   gBrowser.addEventListener("PluginOutdated",     gPluginHandler, true);
+   gBrowser.addEventListener("PluginDisabled",     gPluginHandler, true);
+   gBrowser.addEventListener("NewPluginInstalled", gPluginHandler.newPluginInstalled, true);
+ #ifdef XP_MACOSX
+   gBrowser.addEventListener("npapi-carbon-event-model-failure", gPluginHandler, true);
+ #endif
++  gBrowser.addEventListener("DOMMissingMathMLFonts",
++                            HandleMissingMathMLFontsEvent, true);
+ 
+   Services.obs.addObserver(gPluginHandler.pluginCrashed, "plugin-crashed", false);
+ 
+   window.addEventListener("AppCommand", HandleAppCommandEvent, true);
+ 
+   var webNavigation;
+   try {
+     webNavigation = getWebNavigation();
+

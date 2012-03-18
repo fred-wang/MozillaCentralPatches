@@ -1,0 +1,151 @@
+# HG changeset patch
+# Parent ef19e3be90581d73f86e84aff92a713a3d52a007
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 295193 - Allow downloading math fonts with Firefox - part 1.
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -62,27 +62,88 @@
+ #include "nsCSSRendering.h"
+ #include "prprf.h"         // For PR_snprintf()
+ 
+ #include "nsDisplayList.h"
+ 
+ #include "nsMathMLOperators.h"
+ #include "nsMathMLChar.h"
+ 
++#include "nsThreadUtils.h"
++#include "nsEventDispatcher.h"
++#include "nsIPrivateDOMEvent.h"
++
+ using namespace mozilla;
+ 
+ //#define SHOW_BORDERS 1
+ //#define NOISY_SEARCH 1
+ 
+ // -----------------------------------------------------------------------------------
+ static const PRUnichar   kSpaceCh   = PRUnichar(' ');
+ static const nsGlyphCode kNullGlyph = {{0, 0}, 0};
+ typedef enum {eExtension_base, eExtension_variants, eExtension_parts}
+   nsMathfontPrefExtension;
+ 
++// -----------------------------------------------------------------------------
++static bool gDispatchNotificationAgain = true;
++
++class nsFontNotificationEvent : public nsRunnable
++{
++public:
++  nsFontNotificationEvent(nsPresContext* aPresContext)
++    : mPresContext(aPresContext)
++  { }
++
++  NS_IMETHOD Run() {
++    nsCOMPtr<nsIDOMEvent> event;
++    if (NS_SUCCEEDED(nsEventDispatcher::CreateEvent(mPresContext, nsnull,
++                                                    NS_LITERAL_STRING("Events"),
++                                                    getter_AddRefs(event)))) {
++      event->InitEvent(NS_LITERAL_STRING("DOMMissingMathMLFonts"), true, true);
++
++      nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
++      privateEvent->SetTrusted(true);
++
++      nsEventDispatcher::DispatchDOMEvent(mPresContext->Document(),
++                                          nsnull, event,
++                                          mPresContext, nsnull);
++    }
++    return NS_OK;
++  }
++  
++private:
++  nsPresContext* mPresContext;
++};
++
++static void DispatchFontNotificationEvent(nsPresContext* aPresContext)
++{
++  if (!gDispatchNotificationAgain)
++    return;
++
++  // Verify the preference option
++  if (!Preferences::GetService()) {
++    return;
++  }
++  bool dispatchNotificationAgain = true;
++  Preferences::GetBool("font.mathfont-warning", dispatchNotificationAgain);
++  if (!dispatchNotificationAgain) {
++    gDispatchNotificationAgain = false;
++    return;
++  }
++
++  // Dispatch the notification
++  nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
++  if (NS_FAILED(NS_DispatchToCurrentThread(event))) {
++    return;
++  }
++
++  // Dispatch notification at most once per session
++  gDispatchNotificationAgain = false;
++}
++
+ // -----------------------------------------------------------------------------------
+ // nsGlyphTable is a class that provides an interface for accessing glyphs
+ // of stretchy chars. It acts like a table that stores the variants of bigger
+ // sizes (if any) and the partial glyphs needed to build extensible symbols.
+ // An instance of nsGlyphTable is associated to one primary font. Extra glyphs
+ // can be taken in other additional fonts when stretching certain characters.
+ // These supplementary fonts are referred to as "external" fonts to the table.
+ //
+@@ -717,18 +778,16 @@ InitGlobals(nsPresContext* aPresContext)
+   // We just want to iterate over the font-family list using the
+   // callback mechanism that nsFont has...
+   nsFont font("", 0, 0, 0, 0, 0, 0);
+   NS_NAMED_LITERAL_CSTRING(defaultKey, "font.mathfont-glyph-tables");
+   rv = mathfontProp->GetStringProperty(defaultKey, font.name);
+   if (NS_FAILED(rv)) return rv;
+ 
+   // Parse the font list and append an entry for each family to gGlyphTableList
+-  nsAutoString missingFamilyList;
+-
+   font.EnumerateFamilies(MathFontEnumCallback, nsnull);
+   return rv;
+ }
+ 
+ // -----------------------------------------------------------------------------------
+ // And now the implementation of nsMathMLChar
+ 
+ nsStyleContext*
+@@ -1717,16 +1776,19 @@ nsMathMLChar::Stretch(nsPresContext*    
+   mDrawNormal = true;
+   mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
+   mScaleY = mScaleX = 1.0;
+   mDirection = aStretchDirection;
+   nsresult rv =
+     StretchInternal(aPresContext, aRenderingContext, mDirection,
+                     aContainerSize, aDesiredStretchSize, aStretchHint);
+ 
++  // XXX
++  DispatchFontNotificationEvent(aPresContext);
++
+   // Record the metrics
+   mBoundingMetrics = aDesiredStretchSize;
+ 
+   return rv;
+ }
+ 
+ // What happens here is that the StretchInternal algorithm is used but
+ // modified by passing the NS_STRETCH_MAXWIDTH stretch hint.  That causes
+diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
+--- a/modules/libpref/src/init/all.js
++++ b/modules/libpref/src/init/all.js
+@@ -3509,8 +3509,11 @@ pref("memory.low_commit_space_threshold_
+ // than this many mb of physical memory available on the whole machine.
+ pref("memory.low_physical_memory_threshold_mb", 0);
+ 
+ // On Windows 32- or 64-bit, don't fire a low-memory notification because of
+ // low available physical memory or low commit space more than once every
+ // low_memory_notification_interval_ms.
+ pref("memory.low_memory_notification_interval_ms", 10000);
+ #endif
++
++// warning for missing MathML fonts
++pref("font.mathfont_warning", true);
