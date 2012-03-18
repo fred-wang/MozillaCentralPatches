@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent ef19e3be90581d73f86e84aff92a713a3d52a007
+# Parent 677dc92e009594c95547443e9318e24018b5ca1f
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 2.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -1411,28 +1411,57 @@ function HandleAppCommandEvent(evt) {
+@@ -1411,28 +1411,61 @@ function HandleAppCommandEvent(evt) {
    case "Home":
      BrowserHome();
      break;
@@ -15,24 +15,28 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    }
  }
  
-+function HandleMissingMathMLFontsEvent(evt) {
++function HandleMissingMathMLFontsEvent(aEvent) {
++  var bundleService = Cc["@mozilla.org/intl/stringbundle;1"].
++                      getService(Ci.nsIStringBundleService);
++  var bundle = bundleService.
++               createBundle("chrome://browser/locale/browser.properties");
 +  var nb = gBrowser.getNotificationBox();
-+  var message = 'This page requires mathematical fonts to render correctly...';
++  var message = bundle.GetStringFromName("mathFontsWarning.message");
 +  var buttons = [{
-+    label: 'Install add-on',
-+    accessKey: 'I',
++    label: bundle.GetStringFromName("mathFontsWarning.install"),
++    accessKey: bundle.GetStringFromName("mathFontsWarning.install.accessKey"),
 +    callback: function() {
-+      alert("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/");
++      openNewTabWith("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/", null, null, null, true);
 +    }
 +  }, {
-+    label: 'More info',
-+    accessKey: 'M ',
++    label: bundle.GetStringFromName("mathFontsWarning.info"),
++    accessKey: bundle.GetStringFromName("mathFontsWarning.info.accessKey"),
 +    callback: function() {
-+      alert("https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts");
++      openNewTabWith("https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts", null, null, null, true);
 +    }
-+  }, {
-+    label: 'Do not show again',
-+    accessKey: 'D',
++  }, {  
++    label: bundle.GetStringFromName("mathFontsWarning.dontShowAgain"),
++    accessKey: bundle.GetStringFromName("mathFontsWarning.dontShowAgain.accessKey"),
 +    callback: function() {
 +      gPrefService.setBoolPref("font.mathfont-warning", false);
 +    }
@@ -64,4 +68,24 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    var webNavigation;
    try {
      webNavigation = getWebNavigation();
-
+diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
+--- a/browser/locales/en-US/chrome/browser/browser.properties
++++ b/browser/locales/en-US/chrome/browser/browser.properties
+@@ -354,8 +354,17 @@ keywordPrompt.yesButton.accessKey = Y
+ # LOCALIZATION NOTE (keywordPrompt.noButton): %1$S is a host name (e.g. "somewebsearch.com") from the current value of keyword.URL
+ keywordPrompt.noButton = No, continue using '%1$S'
+ keywordPrompt.noButton.accessKey  = N
+ 
+ # Telemetry opt-out prompt for Aurora and Nightly
+ # LOCALIZATION NOTE (telemetryOptOutPrompt): %1$S and %3$S will be replaced by
+ # brandFullName, and %2$S by the value of the toolkit.telemetry.server_owner preference.
+ telemetryOptOutPrompt = %1$S sends information about performance, hardware, usage and customizations back to %2$S to help improve %3$S.
++
++# Missing MathML fonts warning
++mathFontsWarning.message = Mathematical fonts are required to render this page correctly
++mathFontsWarning.install = Install MathML-fonts add-on
++mathFontsWarning.install.accessKey = I
++mathFontsWarning.info = About math fonts
++mathFontsWarning.info.accessKey = A
++mathFontsWarning.dontShowAgain = Do not show again
++mathFontsWarning.dontShowAgain.accessKey = D

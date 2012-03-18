@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent ef19e3be90581d73f86e84aff92a713a3d52a007
+# Parent 8e08afbd47dd2803b58fa30ea23ba182b5c86767
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -62,27 +62,88 @@
+@@ -62,27 +62,77 @@
  #include "nsCSSRendering.h"
  #include "prprf.h"         // For PR_snprintf()
  
@@ -66,17 +66,6 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  if (!gDispatchNotificationAgain)
 +    return;
 +
-+  // Verify the preference option
-+  if (!Preferences::GetService()) {
-+    return;
-+  }
-+  bool dispatchNotificationAgain = true;
-+  Preferences::GetBool("font.mathfont-warning", dispatchNotificationAgain);
-+  if (!dispatchNotificationAgain) {
-+    gDispatchNotificationAgain = false;
-+    return;
-+  }
-+
 +  // Dispatch the notification
 +  nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
 +  if (NS_FAILED(NS_DispatchToCurrentThread(event))) {
@@ -95,7 +84,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // can be taken in other additional fonts when stretching certain characters.
  // These supplementary fonts are referred to as "external" fonts to the table.
  //
-@@ -717,18 +778,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -717,19 +767,21 @@ InitGlobals(nsPresContext* aPresContext)
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
    nsFont font("", 0, 0, 0, 0, 0, 0);
@@ -105,8 +94,12 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Parse the font list and append an entry for each family to gGlyphTableList
 -  nsAutoString missingFamilyList;
--
-   font.EnumerateFamilies(MathFontEnumCallback, nsnull);
++  font.EnumerateFamilies(MathFontEnumCallback, nsnull);
+ 
+-  font.EnumerateFamilies(MathFontEnumCallback, nsnull);
++  // Verify whether we should display a warning for missing math fonts.
++  gDispatchNotificationAgain = Preferences::GetBool("font.mathfont-warning",
++                                                    gDispatchNotificationAgain);
    return rv;
  }
  
@@ -114,7 +107,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsStyleContext*
-@@ -1717,16 +1776,19 @@ nsMathMLChar::Stretch(nsPresContext*    
+ nsMathMLChar::GetStyleContext() const
+@@ -1717,16 +1769,19 @@ nsMathMLChar::Stretch(nsPresContext*    
    mDrawNormal = true;
    mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
    mScaleY = mScaleX = 1.0;
@@ -148,4 +142,4 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  #endif
 +
 +// warning for missing MathML fonts
-+pref("font.mathfont_warning", true);
++pref("font.mathfont-warning", true);
