@@ -6,7 +6,7 @@ Bug 295193 - Allow downloading math fonts with Firefox - part 2.
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -1411,28 +1411,61 @@ function HandleAppCommandEvent(evt) {
+@@ -1411,28 +1411,60 @@ function HandleAppCommandEvent(evt) {
    case "Home":
      BrowserHome();
      break;
@@ -16,27 +16,26 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  }
  
 +function HandleMissingMathMLFontsEvent(aEvent) {
-+  var bundleService = Cc["@mozilla.org/intl/stringbundle;1"].
-+                      getService(Ci.nsIStringBundleService);
-+  var bundle = bundleService.
-+               createBundle("chrome://browser/locale/browser.properties");
 +  var nb = gBrowser.getNotificationBox();
-+  var message = bundle.GetStringFromName("mathFontsWarning.message");
++  var bundle = gNavigatorBundle;
++  var message = bundle.getString("mathFontsWarning.message");
 +  var buttons = [{
-+    label: bundle.GetStringFromName("mathFontsWarning.install"),
-+    accessKey: bundle.GetStringFromName("mathFontsWarning.install.accessKey"),
++    label: bundle.getString("mathFontsWarning.install"),
++    accessKey: bundle.getString("mathFontsWarning.install.accessKey"),
 +    callback: function() {
-+      openNewTabWith("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/", null, null, null, true);
++      openNewTabWith("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/",
++                     null, null, null, true);
 +    }
 +  }, {
-+    label: bundle.GetStringFromName("mathFontsWarning.info"),
-+    accessKey: bundle.GetStringFromName("mathFontsWarning.info.accessKey"),
++    label: bundle.getString("mathFontsWarning.info"),
++    accessKey: bundle.getString("mathFontsWarning.info.accessKey"),
 +    callback: function() {
-+      openNewTabWith("https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts", null, null, null, true);
++      openNewTabWith("https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts",
++                     null, null, null, true);
 +    }
 +  }, {  
-+    label: bundle.GetStringFromName("mathFontsWarning.dontShowAgain"),
-+    accessKey: bundle.GetStringFromName("mathFontsWarning.dontShowAgain.accessKey"),
++    label: bundle.getString("mathFontsWarning.dontShowAgain"),
++    accessKey: bundle.getString("mathFontsWarning.dontShowAgain.accessKey"),
 +    callback: function() {
 +      gPrefService.setBoolPref("font.mathfont-warning", false);
 +    }
