@@ -1,7 +1,7 @@
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1036,17 +1036,17 @@ insert:
+@@ -1036,35 +1036,43 @@ insert:
                       p_name - p_begin);
    }
    else { // whitespace or empty
@@ -20,19 +20,26 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                const nsAString&     aDefaultFamily)
  {
    const nsAString& family =
-@@ -1054,17 +1054,20 @@ SetFontFamily(nsStyleContext*      aStyl
+     aGlyphCode.font ? aGlyphTable->FontNameFor(aGlyphCode) : aDefaultFamily;
    if (! family.Equals(aFont.name)) {
-     aFont.name = family;
+-    aFont.name = family;
++    nsFont font = aFont;
++    font.name = family;
      nsRefPtr<nsFontMetrics> fm;
-     aRenderingContext.DeviceContext()->GetMetricsFor(aFont,
+-    aRenderingContext.DeviceContext()->GetMetricsFor(aFont,
++    aRenderingContext.DeviceContext()->GetMetricsFor(font,
        aStyleContext->GetStyleFont()->mLanguage,
        aStyleContext->PresContext()->GetUserFontSet(),
        *getter_AddRefs(fm));
++    if (aGlyphTable != &gGlyphTableList->mUnicodeTable &&
++        fm->GetThebesFontGroup()->GetFontAt(0)->
++        GetFontEntry()->FamilyName() != family) {
++      return false;
++    }
++    aFont = font;
      aRenderingContext.SetFont(fm);
-+    return true;
    }
-+
-+  return (aGlyphTable != &gGlyphTableList->mUnicodeTable);
++  return true;
  }
  
  class nsMathMLChar::StretchEnumContext {
@@ -41,7 +48,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                       nsPresContext*       aPresContext,
                       nsRenderingContext& aRenderingContext,
                       nsStretchDirection   aStretchDirection,
-@@ -1145,17 +1148,22 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1145,17 +1153,22 @@ nsMathMLChar::StretchEnumContext::TryVar
  #ifdef NOISY_SEARCH
    printf("  searching in %s ...\n",
             NS_LossyConvertUTF16toASCII(aFamily).get());
@@ -65,7 +72,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
      nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                  ch.Length());
-@@ -1269,18 +1277,20 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1269,18 +1282,20 @@ nsMathMLChar::StretchEnumContext::TryPar
      if (!ch.Exists()) ch = glue;
      chdata[i] = ch;
      if (!ch.Exists()) {
@@ -88,7 +95,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        // font.
        bmdata[i] = bm;
        sizedata[i] = isVertical ? bm.ascent + bm.descent
-@@ -1414,24 +1424,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
+@@ -1414,24 +1429,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
    nsGlyphTable* glyphTable = aGeneric ?
      &gGlyphTableList->mUnicodeTable : gGlyphTableList->GetGlyphTableFor(aFamily);
  
