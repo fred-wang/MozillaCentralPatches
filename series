@@ -1,7 +1,8 @@
 workaround-gcc-bug.diff
 mathml-css.diff
-nsMathMLChar-downloadable-fonts.diff
-maction-embellished-op.diff
+bug-736010-fix.patch
+download-fonts-2.diff
+download-fonts-1.diff
 crashtest-657279.diff
 unify-length-and-mpadded-parsing.diff
 remove-namedspace-atoms.diff
@@ -14,6 +15,7 @@ mglyph-3.diff
 ms-quotes-1.diff
 ms-quotes-2.diff
 ms-quotes-3.diff
+maction-embellished-op.diff
 try.diff
 rewrite-mtable-1.diff
 rewrite-mtable-2.diff

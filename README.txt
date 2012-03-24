@@ -23,10 +23,12 @@ stable patches below and I'll try to update them as soon as possible.
   { assertion-716349.diff
   { crashtest-716349.diff
 
-  { maction-embellished-op.diff
   { crashtest-657279.diff
 
 * Work in progress patches:
+
+  { maction-embellished-op.diff
+   => Need to address review comment
 
   { remove-namedspace-atoms.diff
     => See bug 673759 comment 16.
@@ -40,6 +42,12 @@ stable patches below and I'll try to update them as soon as possible.
   { ms-quotes-2.diff
   { ms-quotes-3.diff
     => Need feedback for the style part, fail dir=rtl and setAttribute tests.
+
+  { bug-736010-fix.patch
+  { download-fonts-1.diff
+  { download-fonts-2.diff
+    => Need feedback for the bug-736010-fix.patch. Need to ensure that font
+    warnings are raised only when relevant.
 
 * Experimental and old patches:
 

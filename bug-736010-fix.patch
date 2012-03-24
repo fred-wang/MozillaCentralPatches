@@ -1,7 +1,14 @@
+# HG changeset patch
+# User François Wang <francoiswang@gmail.com>
+# Date 1332506989 -3600
+# Node ID 3313d58185b55bc3cf47d055e951bacd59fdbff5
+# Parent  f6d38b80417c935b9d73e3c2e61137970f7725f1
+(downloaded-stretchy) Make downloaded fonts usable in nsMathMLChar
+
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1036,35 +1036,43 @@ insert:
+@@ -1036,35 +1036,45 @@ insert:
                       p_name - p_begin);
    }
    else { // whitespace or empty
@@ -31,10 +38,12 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        aStyleContext->GetStyleFont()->mLanguage,
        aStyleContext->PresContext()->GetUserFontSet(),
        *getter_AddRefs(fm));
++    // Update the font if it is an unicode table
++    // or if the family name did not change
 +    if (aGlyphTable != &gGlyphTableList->mUnicodeTable &&
-+        fm->GetThebesFontGroup()->GetFontAt(0)->
-+        GetFontEntry()->FamilyName() != family) {
-+      return false;
++        fm->GetThebesFontGroup()->GetFontAt(0)->GetFontEntry()
++        ->FamilyName() != family) {
++      return false; // We did not update the font
 +    }
 +    aFont = font;
      aRenderingContext.SetFont(fm);
@@ -48,7 +57,27 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                       nsPresContext*       aPresContext,
                       nsRenderingContext& aRenderingContext,
                       nsStretchDirection   aStretchDirection,
-@@ -1145,17 +1153,22 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1084,19 +1094,16 @@ public:
+       mTryVariants(true),
+       mTryParts(true),
+       mGlyphFound(aGlyphFound) {}
+ 
+   static bool
+   EnumCallback(const nsString& aFamily, bool aGeneric, void *aData);
+ 
+ private:
+-  static bool
+-  ResolverCallback (const nsAString& aFamily, void *aData);
+-
+   bool TryVariants(nsGlyphTable* aGlyphTable, const nsAString& aFamily);
+   bool TryParts(nsGlyphTable* aGlyphTable, const nsAString& aFamily);
+ 
+   nsMathMLChar* mChar;
+   nsPresContext* mPresContext;
+   nsRenderingContext& mRenderingContext;
+   const nsStretchDirection mDirection;
+   const nscoord mTargetSize;
+@@ -1145,17 +1152,22 @@ nsMathMLChar::StretchEnumContext::TryVar
  #ifdef NOISY_SEARCH
    printf("  searching in %s ...\n",
             NS_LossyConvertUTF16toASCII(aFamily).get());
@@ -58,7 +87,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    while ((ch = aGlyphTable->BigOf(mPresContext, mChar, size)).Exists()) {
  
 -    SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily);
-+    if (!SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily)) {
++    if(! SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily)) {
 +      // if largeopOnly is set, break now
 +      if (largeopOnly) break;
 +      ++size;
@@ -72,7 +101,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
      nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                  ch.Length());
-@@ -1269,18 +1282,20 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1269,18 +1281,19 @@ nsMathMLChar::StretchEnumContext::TryPar
      if (!ch.Exists()) ch = glue;
      chdata[i] = ch;
      if (!ch.Exists()) {
@@ -83,10 +112,9 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      else {
 -      SetFontFamily(mChar->mStyleContext, mRenderingContext,
 -                    font, aGlyphTable, ch, aFamily);
-+      if (!SetFontFamily(mChar->mStyleContext, mRenderingContext,
-+                         font, aGlyphTable, ch, aFamily)) {
-+        return false;
-+      }
++      if (! SetFontFamily(mChar->mStyleContext, mRenderingContext,
++                        font, aGlyphTable, ch, aFamily)) return false;
++
        nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                    ch.Length());
  
@@ -95,7 +123,56 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        // font.
        bmdata[i] = bm;
        sizedata[i] = isVertical ? bm.ascent + bm.descent
-@@ -1414,24 +1429,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
+@@ -1365,48 +1378,16 @@ nsMathMLChar::StretchEnumContext::TryPar
+   // reset
+   mChar->mGlyph = kNullGlyph; // this will tell paint to build by parts
+   mChar->mGlyphTable = aGlyphTable;
+   mChar->mFamily = aFamily;
+ 
+   return IsSizeOK(mPresContext, computedSize, mTargetSize, mStretchHint);
+ }
+ 
+-// This is only called for glyph table corresponding to a family that exists.
+-// See if the table has a glyph that matches the container
+-bool
+-nsMathMLChar::StretchEnumContext::ResolverCallback (const nsAString& aFamily,
+-                                                    void *aData)
+-{
+-  StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
+-  nsGlyphTable* glyphTable = context->mGlyphTable;
+-
+-  // Only try this table once.
+-  context->mTablesTried.AppendElement(glyphTable);
+-
+-  // If the unicode table is being used, then search all font families.  If a
+-  // special table is being used then the font in this family should have the
+-  // specified glyphs.
+-  const nsAString& family = glyphTable == &gGlyphTableList->mUnicodeTable ?
+-    context->mFamilies : aFamily;
+-
+-  if(context->mTryVariants) {
+-    bool isOK = context->TryVariants(glyphTable, family);
+-    if (isOK)
+-      return false; // no need to continue
+-  }
+-
+-  if(context->mTryParts) {
+-    bool isOK = context->TryParts(glyphTable, family);
+-    if (isOK)
+-      return false; // no need to continue
+-  }
+-  return true;
+-}
+-
+ // This is called for each family, whether it exists or not
+ bool
+ nsMathMLChar::StretchEnumContext::EnumCallback(const nsString& aFamily,
+                                                bool aGeneric, void *aData)
+ {
+   StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
+ 
+   // See if there is a special table for the family, but always use the
+@@ -1414,24 +1395,32 @@ nsMathMLChar::StretchEnumContext::EnumCa
    nsGlyphTable* glyphTable = aGeneric ?
      &gGlyphTableList->mUnicodeTable : gGlyphTableList->GetGlyphTableFor(aFamily);
  
@@ -106,13 +183,27 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
 -  if (aGeneric)
 -    return ResolverCallback(aFamily, aData);
--
++  // Now see if the table has a glyph that matches the container
+ 
 -  bool aborted;
 -  gfxPlatform *pf = gfxPlatform::GetPlatform();
 -  nsresult rv =
 -    pf->ResolveFontName(aFamily, ResolverCallback, aData, aborted);
 -  return NS_SUCCEEDED(rv) && !aborted; // true means continue
-+  return ResolverCallback(aFamily, aData);
++  // Only try this table once.
++  context->mTablesTried.AppendElement(glyphTable);
++
++  // If the unicode table is being used, then search all font families.  If a
++  // special table is being used then the font in this family should have the
++  // specified glyphs.
++  const nsAString& family = glyphTable == &gGlyphTableList->mUnicodeTable ?
++    context->mFamilies : aFamily;
++
++  if((context->mTryVariants && context->TryVariants(glyphTable, family))
++     || (context->mTryParts && context->TryParts(glyphTable, family)))
++      return false; // no need to continue
++
++  return true;
  }
  
  nsresult

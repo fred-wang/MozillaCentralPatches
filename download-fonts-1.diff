@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 8e08afbd47dd2803b58fa30ea23ba182b5c86767
+# Parent 329f0ea4c247c4df8d5828349867883fb636d7b4
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -62,27 +62,77 @@
+@@ -62,27 +62,62 @@
  #include "nsCSSRendering.h"
  #include "prprf.h"         // For PR_snprintf()
  
@@ -31,16 +31,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    nsMathfontPrefExtension;
  
 +// -----------------------------------------------------------------------------
-+static bool gDispatchNotificationAgain = true;
-+
 +class nsFontNotificationEvent : public nsRunnable
 +{
 +public:
 +  nsFontNotificationEvent(nsPresContext* aPresContext)
 +    : mPresContext(aPresContext)
-+  { }
++  {
++  }
 +
-+  NS_IMETHOD Run() {
++  NS_IMETHOD Run()
++  {
 +    nsCOMPtr<nsIDOMEvent> event;
 +    if (NS_SUCCEEDED(nsEventDispatcher::CreateEvent(mPresContext, nsnull,
 +                                                    NS_LITERAL_STRING("Events"),
@@ -61,21 +61,6 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  nsPresContext* mPresContext;
 +};
 +
-+static void DispatchFontNotificationEvent(nsPresContext* aPresContext)
-+{
-+  if (!gDispatchNotificationAgain)
-+    return;
-+
-+  // Dispatch the notification
-+  nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
-+  if (NS_FAILED(NS_DispatchToCurrentThread(event))) {
-+    return;
-+  }
-+
-+  // Dispatch notification at most once per session
-+  gDispatchNotificationAgain = false;
-+}
-+
  // -----------------------------------------------------------------------------------
  // nsGlyphTable is a class that provides an interface for accessing glyphs
  // of stretchy chars. It acts like a table that stores the variants of bigger
@@ -84,7 +69,61 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // can be taken in other additional fonts when stretching certain characters.
  // These supplementary fonts are referred to as "external" fonts to the table.
  //
-@@ -717,19 +767,21 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -493,16 +528,20 @@ public:
+   nsGlyphTable*
+   GetGlyphTableFor(nsPresContext* aPresContext,
+                    nsMathMLChar*  aChar);
+ 
+   // Find the glyph table in the list corresponding to the given font family.
+   nsGlyphTable*
+   GetGlyphTableFor(const nsAString& aFamily);
+ 
++  // Determine whether the given char can be built by parts
++  bool HasPartsFor(nsPresContext* aPresContext,
++                   nsMathMLChar*  aChar);
++
+ private:
+   nsGlyphTable* TableAt(PRInt32 aIndex) {
+     return &mTableList.ElementAt(aIndex);
+   }
+   PRInt32 Count() {
+     return mTableList.Length();
+   }
+ 
+@@ -599,16 +638,32 @@ nsGlyphTableList::GetGlyphTableFor(const
+     if (fontName.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
+       return glyphTable;
+     }
+   }
+   // Fall back to default Unicode table
+   return &mUnicodeTable;
+ }
+ 
++bool
++nsGlyphTableList::HasPartsFor(nsPresContext* aPresContext, 
++                              nsMathMLChar*   aChar)
++{
++  if (mUnicodeTable.HasPartsOf(aPresContext, aChar))
++    return true;
++
++  PRInt32 i;
++  for (i = 0; i < Count(); i++) {
++    nsGlyphTable* glyphTable = TableAt(i);
++    if (glyphTable->HasPartsOf(aPresContext, aChar)) {
++      return true;
++    }
++  }
++  return false;
++}
+ // -----------------------------------------------------------------------------------
+ 
+ // Lookup the preferences:
+ // "font.mathfont-family.\uNNNN.base"     -- fonts for the base size
+ // "font.mathfont-family.\uNNNN.variants" -- fonts for larger glyphs
+ // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
+ // Given the char code and mode of stretch, retrieve the preferred extension
+ // font families.
+@@ -717,18 +772,16 @@ InitGlobals(nsPresContext* aPresContext)
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
    nsFont font("", 0, 0, 0, 0, 0, 0);
@@ -94,12 +133,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // Parse the font list and append an entry for each family to gGlyphTableList
 -  nsAutoString missingFamilyList;
-+  font.EnumerateFamilies(MathFontEnumCallback, nsnull);
- 
--  font.EnumerateFamilies(MathFontEnumCallback, nsnull);
-+  // Verify whether we should display a warning for missing math fonts.
-+  gDispatchNotificationAgain = Preferences::GetBool("font.mathfont-warning",
-+                                                    gDispatchNotificationAgain);
+-
+   font.EnumerateFamilies(MathFontEnumCallback, nsnull);
    return rv;
  }
  
@@ -107,31 +142,46 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsStyleContext*
- nsMathMLChar::GetStyleContext() const
-@@ -1717,16 +1769,19 @@ nsMathMLChar::Stretch(nsPresContext*    
-   mDrawNormal = true;
-   mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
-   mScaleY = mScaleX = 1.0;
-   mDirection = aStretchDirection;
-   nsresult rv =
-     StretchInternal(aPresContext, aRenderingContext, mDirection,
-                     aContainerSize, aDesiredStretchSize, aStretchHint);
+@@ -1689,16 +1742,35 @@ nsMathMLChar::StretchInternal(nsPresCont
+       if (!maxWidth) {
+         mScaleY *= scale;
+       }
+       aDesiredStretchSize.ascent *= scale;
+       aDesiredStretchSize.descent *= scale;
+     }
+   }
  
-+  // XXX
-+  DispatchFontNotificationEvent(aPresContext);
++  if (!maxWidth) {
++    // Send a warning if it seems that the mathematical fonts available are not
++    // enough to stretch the operators. Heuristic rules to determine whether
++    // fonts are missing:
++    // - No glyph variants are available for a largeop in display mode, whereas
++    //   a glyph table was initially found to exist for this character.
++    // - A large scale transform is applied to stretch a character that
++    //   could actually be built by parts with the appropriate fonts installed.
++    if ((!glyphFound && largeop && mGlyphTable) ||
++        ((mScaleX > 2.0 || mScaleY > 2.0) &&
++         gGlyphTableList->HasPartsFor(aPresContext, this))) {
++      if (Preferences::GetBool("font.mathfont-warning")) {
++        // Dispatch the notification
++        nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
++        NS_DispatchToCurrentThread(event);
++      }
++    }
++  }
 +
-   // Record the metrics
-   mBoundingMetrics = aDesiredStretchSize;
- 
-   return rv;
+   return NS_OK;
  }
  
- // What happens here is that the StretchInternal algorithm is used but
- // modified by passing the NS_STRETCH_MAXWIDTH stretch hint.  That causes
+ nsresult
+ nsMathMLChar::Stretch(nsPresContext*           aPresContext,
+                       nsRenderingContext&     aRenderingContext,
+                       nsStretchDirection       aStretchDirection,
+                       const nsBoundingMetrics& aContainerSize,
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -3509,8 +3509,11 @@ pref("memory.low_commit_space_threshold_
+@@ -3536,8 +3536,11 @@ pref("memory.low_commit_space_threshold_
  // than this many mb of physical memory available on the whole machine.
  pref("memory.low_physical_memory_threshold_mb", 0);
  

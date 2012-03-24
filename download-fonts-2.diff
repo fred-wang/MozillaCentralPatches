@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 677dc92e009594c95547443e9318e24018b5ca1f
+# Parent 2a1f43bf43941211b2d65acf0f47f1ede5d8a42e
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 295193 - Allow downloading math fonts with Firefox - part 2.
+Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -1411,28 +1411,60 @@ function HandleAppCommandEvent(evt) {
+@@ -1415,28 +1415,64 @@ function HandleAppCommandEvent(evt) {
    case "Home":
      BrowserHome();
      break;
@@ -40,7 +40,11 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 +      gPrefService.setBoolPref("font.mathfont-warning", false);
 +    }
 +  }];
-+  nb.appendNotification(message, 'mathml-missing-fonts',
++  var id = 'mathml-missing-fonts';
++  var previousNotification = nb.getNotificationWithValue(id);
++  if (previousNotification)
++      notificationBox.removeNotification(previousNotification);
++  nb.appendNotification(message, id,
 +                        'chrome://browser/skin/Info.png',
 +                        nb.PRIORITY_WARNING_MEDIUM, buttons);
 +}
@@ -70,7 +74,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
 --- a/browser/locales/en-US/chrome/browser/browser.properties
 +++ b/browser/locales/en-US/chrome/browser/browser.properties
-@@ -354,8 +354,17 @@ keywordPrompt.yesButton.accessKey = Y
+@@ -355,8 +355,17 @@ keywordPrompt.yesButton.accessKey = Y
  # LOCALIZATION NOTE (keywordPrompt.noButton): %1$S is a host name (e.g. "somewebsearch.com") from the current value of keyword.URL
  keywordPrompt.noButton = No, continue using '%1$S'
  keywordPrompt.noButton.accessKey  = N
@@ -81,7 +85,7 @@ diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/l
  telemetryOptOutPrompt = %1$S sends information about performance, hardware, usage and customizations back to %2$S to help improve %3$S.
 +
 +# Missing MathML fonts warning
-+mathFontsWarning.message = Mathematical fonts are required to render this page correctly
++mathFontsWarning.message = Mathematical fonts are recommended to render this page correctly
 +mathFontsWarning.install = Install MathML-fonts add-on
 +mathFontsWarning.install.accessKey = I
 +mathFontsWarning.info = About math fonts
