@@ -1,7 +1,7 @@
 # HG changeset patch
 # User François Wang <francoiswang@gmail.com>
-# Date 1332506989 -3600
-# Node ID 3313d58185b55bc3cf47d055e951bacd59fdbff5
+# Date 1332607043 -3600
+# Node ID 526b1593aa05c396245927724b97023fd51c3146
 # Parent  f6d38b80417c935b9d73e3c2e61137970f7725f1
 (downloaded-stretchy) Make downloaded fonts usable in nsMathMLChar
 
@@ -38,15 +38,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        aStyleContext->GetStyleFont()->mLanguage,
        aStyleContext->PresContext()->GetUserFontSet(),
        *getter_AddRefs(fm));
-+    // Update the font if it is an unicode table
-+    // or if the family name did not change
-+    if (aGlyphTable != &gGlyphTableList->mUnicodeTable &&
-+        fm->GetThebesFontGroup()->GetFontAt(0)->GetFontEntry()
-+        ->FamilyName() != family) {
-+      return false; // We did not update the font
-+    }
-+    aFont = font;
-     aRenderingContext.SetFont(fm);
+-    aRenderingContext.SetFont(fm);
++    // Set the font if it is an unicode table
++    // or if the same family name has been found
++    if (aGlyphTable == &gGlyphTableList->mUnicodeTable ||
++        fm->GetThebesFontGroup()->GetFontAt(0)->GetFontEntry()->
++        FamilyName() == family) {
++      aFont = font;
++      aRenderingContext.SetFont(fm);
++    } else
++        return false; // We did not set the font
    }
 +  return true;
  }
@@ -87,7 +88,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    while ((ch = aGlyphTable->BigOf(mPresContext, mChar, size)).Exists()) {
  
 -    SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily);
-+    if(! SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily)) {
++    if(!SetFontFamily(sc, mRenderingContext, font, aGlyphTable, ch, aFamily)) {
 +      // if largeopOnly is set, break now
 +      if (largeopOnly) break;
 +      ++size;
@@ -112,8 +113,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      else {
 -      SetFontFamily(mChar->mStyleContext, mRenderingContext,
 -                    font, aGlyphTable, ch, aFamily);
-+      if (! SetFontFamily(mChar->mStyleContext, mRenderingContext,
-+                        font, aGlyphTable, ch, aFamily)) return false;
++      if (!SetFontFamily(mChar->mStyleContext, mRenderingContext,
++                         font, aGlyphTable, ch, aFamily)) return false;
 +
        nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                    ch.Length());
@@ -199,11 +200,11 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  const nsAString& family = glyphTable == &gGlyphTableList->mUnicodeTable ?
 +    context->mFamilies : aFamily;
 +
-+  if((context->mTryVariants && context->TryVariants(glyphTable, family))
-+     || (context->mTryParts && context->TryParts(glyphTable, family)))
-+      return false; // no need to continue
++  if((context->mTryVariants && context->TryVariants(glyphTable, family)) ||
++     (context->mTryParts && context->TryParts(glyphTable, family)))
++    return false; // no need to continue
 +
-+  return true;
++  return true; // true means continue
  }
  
  nsresult
