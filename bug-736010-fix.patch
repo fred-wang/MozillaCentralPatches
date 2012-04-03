@@ -1,7 +1,7 @@
 # HG changeset patch
 # User François Wang <francoiswang@gmail.com>
-# Date 1332607043 -3600
-# Node ID 526b1593aa05c396245927724b97023fd51c3146
+# Date 1332776984 -7200
+# Node ID 2fd76df6d482e54bc7d36cc2da43fe4f5c6a19f1
 # Parent  f6d38b80417c935b9d73e3c2e61137970f7725f1
 (downloaded-stretchy) Make downloaded fonts usable in nsMathMLChar
 
@@ -44,7 +44,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +    if (aGlyphTable == &gGlyphTableList->mUnicodeTable ||
 +        fm->GetThebesFontGroup()->GetFontAt(0)->GetFontEntry()->
 +        FamilyName() == family) {
-+      aFont = font;
++      aFont.name = family;
 +      aRenderingContext.SetFont(fm);
 +    } else
 +        return false; // We did not set the font
@@ -102,7 +102,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
      nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                  ch.Length());
-@@ -1269,18 +1281,19 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1269,18 +1281,20 @@ nsMathMLChar::StretchEnumContext::TryPar
      if (!ch.Exists()) ch = glue;
      chdata[i] = ch;
      if (!ch.Exists()) {
@@ -114,7 +114,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -      SetFontFamily(mChar->mStyleContext, mRenderingContext,
 -                    font, aGlyphTable, ch, aFamily);
 +      if (!SetFontFamily(mChar->mStyleContext, mRenderingContext,
-+                         font, aGlyphTable, ch, aFamily)) return false;
++                         font, aGlyphTable, ch, aFamily))
++        return false;
 +
        nsBoundingMetrics bm = mRenderingContext.GetBoundingMetrics(ch.code,
                                                                    ch.Length());
@@ -124,7 +125,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        // font.
        bmdata[i] = bm;
        sizedata[i] = isVertical ? bm.ascent + bm.descent
-@@ -1365,48 +1378,16 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1365,48 +1379,16 @@ nsMathMLChar::StretchEnumContext::TryPar
    // reset
    mChar->mGlyph = kNullGlyph; // this will tell paint to build by parts
    mChar->mGlyphTable = aGlyphTable;
@@ -173,7 +174,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
  
    // See if there is a special table for the family, but always use the
-@@ -1414,24 +1395,32 @@ nsMathMLChar::StretchEnumContext::EnumCa
+@@ -1414,24 +1396,32 @@ nsMathMLChar::StretchEnumContext::EnumCa
    nsGlyphTable* glyphTable = aGeneric ?
      &gGlyphTableList->mUnicodeTable : gGlyphTableList->GetGlyphTableFor(aFamily);
  

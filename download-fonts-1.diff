@@ -1,12 +1,60 @@
 # HG changeset patch
-# Parent 329f0ea4c247c4df8d5828349867883fb636d7b4
+# Parent fac0311da921bf14a32042a0df3c7439ad59c541
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
+diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
+--- a/layout/base/nsPresContext.cpp
++++ b/layout/base/nsPresContext.cpp
+@@ -2391,16 +2391,22 @@ nsPresContext::IsRootContentDocument()
+   if (!view) {
+     return true;
+   }
+ 
+   nsIFrame* f = view->GetFrame();
+   return (f && f->PresContext()->IsChrome());
+ }
+ 
++bool
++nsPresContext::IsLoadingFonts()
++{
++  return mUserFontSet && mUserFontSet->IsLoadingFonts();
++}
++
+ nsRootPresContext::nsRootPresContext(nsIDocument* aDocument,
+                                      nsPresContextType aType)
+   : nsPresContext(aDocument, aType),
+     mUpdatePluginGeometryForFrame(nsnull),
+     mDOMGeneration(0),
+     mNeedsToUpdatePluginGeometry(false)
+ {
+   mRegisteredPlugins.Init();
+diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
+--- a/layout/base/nsPresContext.h
++++ b/layout/base/nsPresContext.h
+@@ -970,16 +970,18 @@ public:
+ 
+   virtual size_t SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const;
+   virtual size_t SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const {
+     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+   }
+ 
+   bool IsRootContentDocument();
+ 
++  bool IsLoadingFonts();
++
+ protected:
+   friend class nsRunnableMethod<nsPresContext>;
+   NS_HIDDEN_(void) ThemeChangedInternal();
+   NS_HIDDEN_(void) SysColorChangedInternal();
+ 
+   NS_HIDDEN_(void) SetImgAnimations(nsIContent *aParent, PRUint16 aMode);
+   NS_HIDDEN_(void) SetSMILAnimations(nsIDocument *aDoc, PRUint16 aNewMode,
+                                      PRUint16 aOldMode);
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -62,27 +62,62 @@
+@@ -62,27 +62,73 @@
  #include "nsCSSRendering.h"
  #include "prprf.h"         // For PR_snprintf()
  
@@ -31,6 +79,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    nsMathfontPrefExtension;
  
 +// -----------------------------------------------------------------------------
++static bool gMathFontWarning = false;
++
++static int
++PrefsChanged(const char *aPrefName, void *aData)
++{
++  gMathFontWarning =
++    Preferences::GetBool("font.mathfont-warning", gMathFontWarning);
++
++  return 0; /* PREF_OK */
++}
++
 +class nsFontNotificationEvent : public nsRunnable
 +{
 +public:
@@ -69,7 +128,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // can be taken in other additional fonts when stretching certain characters.
  // These supplementary fonts are referred to as "external" fonts to the table.
  //
-@@ -493,16 +528,20 @@ public:
+@@ -493,16 +539,20 @@ public:
    nsGlyphTable*
    GetGlyphTableFor(nsPresContext* aPresContext,
                     nsMathMLChar*  aChar);
@@ -90,7 +149,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      return mTableList.Length();
    }
  
-@@ -599,16 +638,32 @@ nsGlyphTableList::GetGlyphTableFor(const
+@@ -599,16 +649,32 @@ nsGlyphTableList::GetGlyphTableFor(const
      if (fontName.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
        return glyphTable;
      }
@@ -123,7 +182,28 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
  // Given the char code and mode of stretch, retrieve the preferred extension
  // font families.
-@@ -717,18 +772,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -677,16 +743,20 @@ MathFontEnumCallback(const nsString& aFa
+ }
+ 
+ static nsresult
+ InitGlobals(nsPresContext* aPresContext)
+ {
+   NS_ASSERTION(!gInitialized, "Error -- already initialized");
+   gInitialized = true;
+ 
++  // Set up a listener for mathfont-warning and check the initial value
++  Preferences::RegisterCallback(PrefsChanged, "font.mathfont-warning");
++  PrefsChanged(nsnull, nsnull);
++
+   // Allocate the placeholders for the preferred parts and variants
+   nsresult rv = NS_ERROR_OUT_OF_MEMORY;
+   gGlyphTableList = new nsGlyphTableList();
+   if (gGlyphTableList) {
+     rv = gGlyphTableList->Initialize();
+   }
+   if (NS_FAILED(rv)) {
+     delete gGlyphTableList;
+@@ -717,18 +787,16 @@ InitGlobals(nsPresContext* aPresContext)
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
    nsFont font("", 0, 0, 0, 0, 0, 0);
@@ -142,7 +222,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsStyleContext*
-@@ -1689,16 +1742,35 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1679,16 +1747,33 @@ nsMathMLChar::StretchInternal(nsPresCont
        if (!maxWidth) {
          mScaleY *= scale;
        }
@@ -151,7 +231,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      }
    }
  
-+  if (!maxWidth) {
++  if (!maxWidth && gMathFontWarning && !aPresContext->IsLoadingFonts()) {
 +    // Send a warning if it seems that the mathematical fonts available are not
 +    // enough to stretch the operators. Heuristic rules to determine whether
 +    // fonts are missing:
@@ -162,11 +242,9 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +    if ((!glyphFound && largeop && mGlyphTable) ||
 +        ((mScaleX > 2.0 || mScaleY > 2.0) &&
 +         gGlyphTableList->HasPartsFor(aPresContext, this))) {
-+      if (Preferences::GetBool("font.mathfont-warning")) {
-+        // Dispatch the notification
-+        nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
-+        NS_DispatchToCurrentThread(event);
-+      }
++      // Dispatch the notification
++      nsCOMPtr<nsIRunnable> event = new nsFontNotificationEvent(aPresContext);
++      NS_DispatchToCurrentThread(event);
 +    }
 +  }
 +
@@ -178,10 +256,32 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                        nsRenderingContext&     aRenderingContext,
                        nsStretchDirection       aStretchDirection,
                        const nsBoundingMetrics& aContainerSize,
+diff --git a/layout/style/nsFontFaceLoader.h b/layout/style/nsFontFaceLoader.h
+--- a/layout/style/nsFontFaceLoader.h
++++ b/layout/style/nsFontFaceLoader.h
+@@ -83,16 +83,18 @@ public:
+ 
+   nsPresContext *GetPresContext() { return mPresContext; }
+ 
+   virtual void ReplaceFontEntry(gfxProxyFontEntry *aProxy,
+                                 gfxFontEntry *aFontEntry);
+ 
+   nsCSSFontFaceRule *FindRuleForEntry(gfxFontEntry *aFontEntry);
+ 
++  bool IsLoadingFonts() { return mLoaders.Count() > 0; }
++
+ protected:
+   // The font-set keeps track of the collection of rules, and their
+   // corresponding font entries (whether proxies or real entries),
+   // so that we can update the set without having to throw away
+   // all the existing fonts.
+   struct FontFaceRuleRecord {
+     nsRefPtr<gfxFontEntry>       mFontEntry;
+     nsFontFaceRuleContainer      mContainer;
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -3536,8 +3536,11 @@ pref("memory.low_commit_space_threshold_
+@@ -3537,8 +3537,11 @@ pref("memory.low_commit_space_threshold_
  // than this many mb of physical memory available on the whole machine.
  pref("memory.low_physical_memory_threshold_mb", 0);
  

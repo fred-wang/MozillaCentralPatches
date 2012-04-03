@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 2a1f43bf43941211b2d65acf0f47f1ede5d8a42e
+# Parent 53394f6bf85203ad6b2ed83060b8407d675b5b72
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
@@ -74,10 +74,10 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
 --- a/browser/locales/en-US/chrome/browser/browser.properties
 +++ b/browser/locales/en-US/chrome/browser/browser.properties
-@@ -355,8 +355,17 @@ keywordPrompt.yesButton.accessKey = Y
- # LOCALIZATION NOTE (keywordPrompt.noButton): %1$S is a host name (e.g. "somewebsearch.com") from the current value of keyword.URL
- keywordPrompt.noButton = No, continue using '%1$S'
- keywordPrompt.noButton.accessKey  = N
+@@ -340,8 +340,17 @@ webapps.install = Install
+ webapps.install.accesskey = I
+ #LOCALIZATION NOTE (webapps.requestInstall) %1$S is the web app name, %2$S is the site from which the web app is installed
+ webapps.requestInstall = Do you want to install "%1$S" from this site (%2$S)?
  
  # Telemetry opt-out prompt for Aurora and Nightly
  # LOCALIZATION NOTE (telemetryOptOutPrompt): %1$S and %3$S will be replaced by

@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 3a382cf4810ee8b7fb04dba96379da8402574633
+# Parent 4b577a705addea7cba8e01eeb61feabcb0297788
 # User Frédéric Wang <fred.wang@free.fr>
 Add support for mglyph (bug 297465) - part 3
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
 --- a/layout/base/nsCSSFrameConstructor.cpp
 +++ b/layout/base/nsCSSFrameConstructor.cpp
-@@ -4691,23 +4691,41 @@ nsCSSFrameConstructor::FindMathMLData(El
+@@ -4673,23 +4673,41 @@ nsCSSFrameConstructor::FindMathMLData(El
      SIMPLE_MATHML_CREATE(mmultiscripts_, NS_NewMathMLmmultiscriptsFrame),
      SIMPLE_MATHML_CREATE(mstyle_, NS_NewMathMLmstyleFrame),
      SIMPLE_MATHML_CREATE(msqrt_, NS_NewMathMLmsqrtFrame),
@@ -52,7 +52,7 @@ diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConst
 diff --git a/layout/base/nsCSSFrameConstructor.h b/layout/base/nsCSSFrameConstructor.h
 --- a/layout/base/nsCSSFrameConstructor.h
 +++ b/layout/base/nsCSSFrameConstructor.h
-@@ -1280,16 +1280,20 @@ private:
+@@ -1313,16 +1313,20 @@ private:
  
    // Function to find FrameConstructionData for aContent.  Will return
    // null if aContent is not MathML.
@@ -76,8 +76,8 @@ diff --git a/layout/base/nsCSSFrameConstructor.h b/layout/base/nsCSSFrameConstru
 diff --git a/layout/generic/nsQueryFrame.h b/layout/generic/nsQueryFrame.h
 --- a/layout/generic/nsQueryFrame.h
 +++ b/layout/generic/nsQueryFrame.h
-@@ -145,16 +145,17 @@ public:
-     nsMathMLForeignFrameWrapper_id,
+@@ -144,16 +144,17 @@ public:
+     nsMathMLContainerFrame_id,
      nsMathMLFrame_id,
      nsMathMLmactionFrame_id,
      nsMathMLmathBlockFrame_id,
@@ -97,8 +97,8 @@ diff --git a/layout/generic/nsQueryFrame.h b/layout/generic/nsQueryFrame.h
 diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
 --- a/layout/mathml/Makefile.in
 +++ b/layout/mathml/Makefile.in
-@@ -66,16 +66,17 @@ CPPSRCS =         nsMathMLChar.cpp		    
-                   nsMathMLForeignFrameWrapper.cpp		\
+@@ -64,16 +64,17 @@ CPPSRCS =         nsMathMLChar.cpp		    
+                   nsMathMLContainerFrame.cpp		\
                    nsMathMLOperators.cpp \
                    nsMathMLTokenFrame.cpp		\
                    nsMathMLmoFrame.cpp			\
@@ -118,7 +118,7 @@ diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
 diff --git a/layout/mathml/nsMathMLParts.h b/layout/mathml/nsMathMLParts.h
 --- a/layout/mathml/nsMathMLParts.h
 +++ b/layout/mathml/nsMathMLParts.h
-@@ -48,16 +48,17 @@ nsIFrame* NS_NewMathMLTokenFrame(nsIPres
+@@ -47,16 +47,17 @@ nsIFrame* NS_NewMathMLTokenFrame(nsIPres
  nsIFrame* NS_NewMathMLmoFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
  nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
  nsIFrame* NS_NewMathMLmphantomFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);

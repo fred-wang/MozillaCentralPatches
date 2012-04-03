@@ -25,6 +25,8 @@ stable patches below and I'll try to update them as soon as possible.
 
   { crashtest-657279.diff
 
+  { bug-572899.diff
+
 * Work in progress patches:
 
   { maction-embellished-op.diff
@@ -46,8 +48,7 @@ stable patches below and I'll try to update them as soon as possible.
   { bug-736010-fix.patch
   { download-fonts-1.diff
   { download-fonts-2.diff
-    => Need feedback for the bug-736010-fix.patch. Need to ensure that font
-    warnings are raised only when relevant.
+    => More work needed for bug-736010-fix.patch
 
 * Experimental and old patches:
 
