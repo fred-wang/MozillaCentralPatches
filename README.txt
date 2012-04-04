@@ -27,6 +27,8 @@ stable patches below and I'll try to update them as soon as possible.
 
   { bug-572899.diff
 
+  { remove-stix-beta.diff
+
 * Work in progress patches:
 
   { maction-embellished-op.diff

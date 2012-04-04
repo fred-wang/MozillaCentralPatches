@@ -1,0 +1,240 @@
+# HG changeset patch
+# Parent 59f72a060c61f27c919cd7403ecba9966ebcb622
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 742273 - Remove table for stretchy characters in STIX 1.0 beta. r=karlt
+
+diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
+--- a/layout/mathml/Makefile.in
++++ b/layout/mathml/Makefile.in
+@@ -93,17 +93,16 @@ include $(topsrcdir)/config/config.mk
+ FORCE_STATIC_LIB = 1
+ 
+ include $(topsrcdir)/config/rules.mk
+ 
+ font_properties = \
+ 	mathfontMathJax_Main.properties \
+ 	mathfontUnicode.properties \
+ 	mathfontSTIXNonUnicode.properties \
+-	mathfontSTIXSize1.properties \
+ 	mathfontSTIXSizeOneSym.properties \
+ 	mathfontAsanaMath.properties \
+ 	mathfontStandardSymbolsL.properties \
+ 	$(NULL)
+ 
+ ifeq ($(TARGET_MD_ARCH),win32)
+ font_properties += \
+ 	mathfontSymbol.properties
+diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
+--- a/layout/mathml/mathfont.properties
++++ b/layout/mathml/mathfont.properties
+@@ -41,19 +41,19 @@
+ #  Do not translate anything in this file
+ 
+ # List of fonts that have corresponding properties files containing special
+ # glyph tables for stretching MathML characters.  See the documentation at the
+ # end of this file for details on the setup of the property file associated to
+ # each font.  Do not include the Unicode table in this list.
+ 
+ %ifdef XP_WIN
+-font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L, Symbol
++font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Asana Math, Standard Symbols L, Symbol
+ %else
+-font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L
++font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Asana Math, Standard Symbols L
+ %endif
+ 
+ # The ordered list of fonts with which to attempt to stretch MathML
+ # characters is controlled by setting pref("font.mathfont-family",
+ # "CMSY10, CMEX10, ...") for example, or by setting the font-family list in
+ # :-moz-math-stretchy in mathml.css.
+ #
+ # Preferred fonts for particular stretchy characters may be specified in
+diff --git a/layout/mathml/mathfontSTIXSize1.properties b/layout/mathml/mathfontSTIXSize1.properties
+deleted file mode 100644
+--- a/layout/mathml/mathfontSTIXSize1.properties
++++ /dev/null
+@@ -1,105 +0,0 @@
+-# ***** BEGIN LICENSE BLOCK *****
+-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+-#
+-# The contents of this file are subject to the Mozilla Public License Version
+-# 1.1 (the "License"); you may not use this file except in compliance with
+-# the License. You may obtain a copy of the License at
+-# http://www.mozilla.org/MPL/
+-#
+-# Software distributed under the License is distributed on an "AS IS" basis,
+-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+-# for the specific language governing rights and limitations under the
+-# License.
+-#                                                                       
+-# The Original Code is Mozilla MathML Project.                          
+-#                                                                       
+-# The Initial Developer of the Original Code is
+-# The University of Queensland.
+-# Portions created by the Initial Developer are Copyright (C) 2001
+-# the Initial Developer. All Rights Reserved.
+-#                                                                       
+-# Contributor(s):                                                       
+-#   Roger B. Sidje <rbs@maths.uq.edu.au>                                
+-#   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
+-#   Frederic Wang <fred.wang@free.fr>
+-#
+-# Alternatively, the contents of this file may be used under the terms of
+-# either the GNU General Public License Version 2 or later (the "GPL"), or
+-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+-# in which case the provisions of the GPL or the LGPL are applicable instead
+-# of those above. If you wish to allow use of your version of this file only
+-# under the terms of either the GPL or the LGPL, and not to allow others to
+-# use your version of this file under the terms of the MPL, indicate your
+-# decision by deleting the provisions above and replace them with the notice
+-# and other provisions required by the GPL or the LGPL. If you do not delete
+-# the provisions above, a recipient may use your version of this file under
+-# the terms of any one of the MPL, the GPL or the LGPL.
+-#
+-# ***** END LICENSE BLOCK *****
+-
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+-# This file contains the list of some stretchy MathML chars that
+-# can be rendered with STIXSize* set of fonts,
+-# with some help from STIXNonUnicode and STIXGeneral.
+-
+-external.1 = STIXNonUnicode
+-external.2 = STIXSize2
+-external.3 = STIXSize3
+-external.4 = STIXSize4
+-external.5 = STIXSize5
+-external.6 = STIXGeneral
+-
+-#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+-\u0028 = \u239B\uFFFD\u239D\u239C\uFFFD((@2(@3(@4 # (
+-\u0029 = \u239E\uFFFD\u23A0\u239F\uFFFD))@2)@3)@4 # )
+-\u005B = \u23A1\uFFFD\u23A3\u23A2\u005B[[@2[@3[@4 # [
+-\u005D = \u23A4\uFFFD\u23A6\u23A5\u005D]]@2]@3]@4 # ]
+-\u007B = \u23A7\u23A8\u23A9\u23AA\u007B{{@2{@3{@4 # {
+-\u007D = \u23AB\u23AC\u23AD\u23AA\u007D}}@2}@3}@4 # }
+-
+-# N-ARY operators
+-\u2140 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2140 # DOUBLE-STRUCK N-ARY SUMMATION
+-\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u220F # N-ARY PRODUCT
+-\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2210 # N-ARY COPRODUCT
+-\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2211 # N-ARY SUMMATION
+-\u22C0 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C0 # N-ARY LOGICAL AND
+-\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C1 # N-ARY LOGICAL OR
+-\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C2 # N-ARY INTERSECTION
+-\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C3 # N-ARY UNION
+-\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A00 # N-ARY CIRCLED DOT OPERATOR
+-\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A01 # N-ARY CIRCLED PLUS OPERATOR
+-\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A02 # N-ARY CIRCLED TIMES OPERATOR
+-\u2A03 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A03 # N-ARY UNION OPERATOR WITH DOT
+-\u2A04 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A04 # N-ARY UNION OPERATOR WITH PLUS
+-\u2A05 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A05 # N-ARY SQUARE INTERSECTION OPERATOR
+-\u2A06 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A06 # N-ARY SQUARE UNION OPERATOR
+-\u2A09 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A09 # N-ARY TIMES OPERATOR
+-\u2AFF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2AFF # N-ARY WHITE VERTICAL BAR
+-
+-# E000 stix-radical symbol vertical extender
+-# E001 stix-radical symbol top corner
+-\u221A = \uE001@1\uFFFD\u221A@4\uE000@1\uFFFD\u221A\u221A@2\u221A@3 # Sqrt, radic
+-
+-\u222B = \u2320\uFFFD\u2321\u23AE\uFFFD\u222B@6 # Integral, int
+-
+-\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E8\u27E8@2\u27E8@3\u27E8@4 # LeftAngleBracket
+-\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E9\u27E9@2\u27E9@3\u27E9@4 # RightAngleBracket
+-
+-\u23DE = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (Unicode)
+-\uFE37 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (MathML 2.0)
+-\u23B4 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B4\u23B4@2\u23B4@3\u23B4@4\u23B4@5 # &OverBracket;
+-\u23DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (Unicode)
+-\uFE35 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (MathML 2.0)
+-\u23DF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (Unicode)
+-\uFE38 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (MathML 2.0)
+-\u23B5 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B5\u23B5@2\u23B5@3\u23B5@4\u23B5@5 # &UnderBracket;
+-\u23DD = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (Unicode)
+-\uFE36 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (MathML 2.0)
+-
+-\u005E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # circumflex accent, COMBINING CIRCUMFLEX ACCENT
+-\u02C6 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # modifier letter circumflex accent, COMBINING CIRCUMFLEX ACCENT
+-\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # ~ tilde, COMBINING TILDE
+-\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # small tilde, COMBINING TILDE
+-\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u030C\u030C@2\u030C@3\u030C@4\u030C@5 # caron, COMBINING CARON
+diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
+--- a/modules/libpref/src/init/all.js
++++ b/modules/libpref/src/init/all.js
+@@ -1245,17 +1245,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+ 
+ // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
+ // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
+ pref("intl.hyphenation-alias.no", "nb");
+ pref("intl.hyphenation-alias.no-*", "nb");
+ pref("intl.hyphenation-alias.nb-*", "nb");
+ pref("intl.hyphenation-alias.nn-*", "nn");
+ 
+-pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
+ 
+ // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
+ // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
+ pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
+ 
+ pref("images.dither", "auto");
+ pref("security.directory",              "");
+ 
+@@ -1993,17 +1993,17 @@ pref("font.default.zh-TW", "sans-serif")
+ pref("font.size.variable.zh-TW", 16);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 16);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+ // We have special support for Monotype Symbol on Windows.
+-pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+ 
+ // cleartype settings - false implies default system settings 
+ 
+ // use cleartype rendering for downloadable fonts (win xp only)
+ pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
+ 
+ // use cleartype rendering for all fonts always (win xp only)
+ pref("gfx.font_rendering.cleartype.always_use_for_content", false);
+@@ -2516,17 +2516,17 @@ pref("font.default.zh-TW", "sans-serif")
+ pref("font.size.variable.zh-TW", 15);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 15);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+ // Apple's Symbol is Unicode so use it
+-pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+ 
+ // individual font faces to be treated as independent families
+ // names are Postscript names of each face
+ pref("font.single-face-list", "Osaka-Mono");
+ 
+ // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
+ // names are canonical family names (typically English names)
+ pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
+@@ -2565,17 +2565,17 @@ pref("mousewheel.enable_pixel_scrolling"
+ #endif
+ 
+ #ifdef XP_OS2
+ 
+ pref("ui.key.menuAccessKeyFocuses", true);
+ 
+ pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
+ 
+-pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, DejaVu Sans");
+ 
+ // Languages only need lists if we have a default that might not be available.
+ // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
+ // maps them to Times New Roman and Helvetica, respectively. Those fonts and
+ // Courier are available on OS/2 by default.
+ 
+ pref("font.name.serif.ar", "Tms Rmn");
+ pref("font.name.sans-serif.ar", "Helv");
