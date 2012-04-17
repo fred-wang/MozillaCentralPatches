@@ -1,9 +1,6 @@
-workaround-gcc-bug.diff
-mathml-css.diff
 bug-736010-fix.patch
 download-fonts-2.diff
 download-fonts-1.diff
-bug-572899.diff
 crashtest-657279.diff
 unify-length-and-mpadded-parsing.diff
 remove-namedspace-atoms.diff
@@ -19,7 +16,6 @@ ms-quotes-3.diff
 maction-embellished-op.diff
 remove-stix-beta.diff
 try.diff
-remove-scale.diff
 rewrite-mtable-1.diff
 rewrite-mtable-2.diff
 mpadded-vertical-metrics.diff

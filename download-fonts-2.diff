@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 53394f6bf85203ad6b2ed83060b8407d675b5b72
+# Parent 5fa7bf3e7eea9c6b74e68bfedea5a79c1fedc7d6
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts with Firefox - part 1.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -1415,28 +1415,64 @@ function HandleAppCommandEvent(evt) {
+@@ -1421,29 +1421,65 @@ function HandleAppCommandEvent(evt) {
    case "Home":
      BrowserHome();
      break;
@@ -57,6 +57,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
    gBrowser.addEventListener("PluginBlocklisted",  gPluginHandler, true);
    gBrowser.addEventListener("PluginOutdated",     gPluginHandler, true);
    gBrowser.addEventListener("PluginDisabled",     gPluginHandler, true);
+   gBrowser.addEventListener("PluginClickToPlay",  gPluginHandler, true);
    gBrowser.addEventListener("NewPluginInstalled", gPluginHandler.newPluginInstalled, true);
  #ifdef XP_MACOSX
    gBrowser.addEventListener("npapi-carbon-event-model-failure", gPluginHandler, true);
@@ -74,7 +75,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
 --- a/browser/locales/en-US/chrome/browser/browser.properties
 +++ b/browser/locales/en-US/chrome/browser/browser.properties
-@@ -340,8 +340,17 @@ webapps.install = Install
+@@ -343,8 +343,17 @@ webapps.install = Install
  webapps.install.accesskey = I
  #LOCALIZATION NOTE (webapps.requestInstall) %1$S is the web app name, %2$S is the site from which the web app is installed
  webapps.requestInstall = Do you want to install "%1$S" from this site (%2$S)?
