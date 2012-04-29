@@ -2,7 +2,7 @@
 # User François Wang <francoiswang@gmail.com>
 # Date 1332776984 -7200
 # Node ID 2fd76df6d482e54bc7d36cc2da43fe4f5c6a19f1
-# Parent  f6d38b80417c935b9d73e3c2e61137970f7725f1
+# Parent 83ef3c9a64b50b703f73399152f931413d47a904
 (downloaded-stretchy) Make downloaded fonts usable in nsMathMLChar
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
@@ -125,7 +125,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        // font.
        bmdata[i] = bm;
        sizedata[i] = isVertical ? bm.ascent + bm.descent
-@@ -1365,48 +1379,16 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1365,73 +1379,57 @@ nsMathMLChar::StretchEnumContext::TryPar
    // reset
    mChar->mGlyph = kNullGlyph; // this will tell paint to build by parts
    mChar->mGlyphTable = aGlyphTable;
@@ -174,13 +174,21 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
  
    // See if there is a special table for the family, but always use the
-@@ -1414,24 +1396,32 @@ nsMathMLChar::StretchEnumContext::EnumCa
+   // Unicode table for generic fonts.
    nsGlyphTable* glyphTable = aGeneric ?
      &gGlyphTableList->mUnicodeTable : gGlyphTableList->GetGlyphTableFor(aFamily);
  
    if (context->mTablesTried.Contains(glyphTable))
      return true; // already tried this one
  
++  // Check font family if it is not a generic one
++  // We test with the kNullGlyph
++  nsStyleContext *sc = context->mChar->mStyleContext;
++  nsFont font = sc->GetStyleFont()->mFont;
++  if (!aGeneric && !SetFontFamily(sc, context->mRenderingContext,
++                                  font, NULL, kNullGlyph, aFamily))
++     return true; // Could not set the family
++
    context->mGlyphTable = glyphTable;
  
 -  if (aGeneric)
