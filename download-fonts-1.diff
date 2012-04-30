@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent fac0311da921bf14a32042a0df3c7439ad59c541
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 295193 - Allow downloading math fonts with Firefox - part 1.
+Bug 295193 - Allow downloading math fonts in Firefox - part 1.
 
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp

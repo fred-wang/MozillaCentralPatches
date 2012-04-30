@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 5fa7bf3e7eea9c6b74e68bfedea5a79c1fedc7d6
+# Parent cd6850cb30a57fcd1625e1f99dd8602c24a4578f
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 295193 - Allow downloading math fonts with Firefox - part 1.
+Bug 295193 - Allow downloading math fonts in Firefox - part 2.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -1421,29 +1421,65 @@ function HandleAppCommandEvent(evt) {
+@@ -1429,29 +1429,72 @@ function HandleAppCommandEvent(evt) {
    case "Home":
      BrowserHome();
      break;
@@ -16,7 +16,18 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
  }
  
 +function HandleMissingMathMLFontsEvent(aEvent) {
-+  var nb = gBrowser.getNotificationBox();
++  var win = aEvent.originalTarget.defaultView;
++  if (!win) {
++    return;
++  }
++
++  var nb = getNotificationBox(win);
++  var id = 'mathml-missing-fonts';
++  if (nb.getNotificationWithValue(id)) {
++    // only display one notification per window
++    return;
++  }
++
 +  var bundle = gNavigatorBundle;
 +  var message = bundle.getString("mathFontsWarning.message");
 +  var buttons = [{
@@ -40,10 +51,6 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 +      gPrefService.setBoolPref("font.mathfont-warning", false);
 +    }
 +  }];
-+  var id = 'mathml-missing-fonts';
-+  var previousNotification = nb.getNotificationWithValue(id);
-+  if (previousNotification)
-+      notificationBox.removeNotification(previousNotification);
 +  nb.appendNotification(message, id,
 +                        'chrome://browser/skin/Info.png',
 +                        nb.PRIORITY_WARNING_MEDIUM, buttons);
@@ -75,7 +82,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
 --- a/browser/locales/en-US/chrome/browser/browser.properties
 +++ b/browser/locales/en-US/chrome/browser/browser.properties
-@@ -343,8 +343,17 @@ webapps.install = Install
+@@ -347,8 +347,17 @@ webapps.install = Install
  webapps.install.accesskey = I
  #LOCALIZATION NOTE (webapps.requestInstall) %1$S is the web app name, %2$S is the site from which the web app is installed
  webapps.requestInstall = Do you want to install "%1$S" from this site (%2$S)?

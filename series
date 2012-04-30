@@ -1,8 +1,6 @@
-maction-embellished-op.diff
-reftest-657279.diff
 bug-736010-fix.patch
-download-fonts-2.diff
 download-fonts-1.diff
+download-fonts-2.diff
 unify-length-and-mpadded-parsing.diff
 remove-namedspace-atoms.diff
 crashtest-398038.diff
