@@ -23,7 +23,6 @@ stable patches below and I'll try to update them as soon as possible.
   { assertion-716349.diff
   { crashtest-716349.diff
 
-  { bug-736010-fix.patch
   { download-fonts-1.diff
   { download-fonts-2.diff
 
@@ -47,9 +46,6 @@ stable patches below and I'll try to update them as soon as possible.
 * Experimental and old patches:
 
   - try.diff (used to push to try server)
-  - rewrite-mtable-1.diff
-  - rewrite-mtable-2.diff
-  - mpadded-vertical-metrics.diff
   - largeop-initial-stretch.diff
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff

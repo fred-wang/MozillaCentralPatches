@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent f281d8c57455b9df16cf074250356db310a4f472
+# Parent a9223bb01785c4212fc203d7915ed0d6f8908fa3
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 560100 - Map MathML attributes lquote/rquote to style - part 1.
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
 --- a/layout/base/nsCSSFrameConstructor.cpp
 +++ b/layout/base/nsCSSFrameConstructor.cpp
-@@ -1665,16 +1665,26 @@ nsCSSFrameConstructor::CreateGeneratedCo
+@@ -1667,16 +1667,26 @@ nsCSSFrameConstructor::CreateGeneratedCo
          nsXPIDLString temp;
          nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                             "Submit", temp);
@@ -36,7 +36,7 @@ diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConst
 diff --git a/layout/base/nsStyleConsts.h b/layout/base/nsStyleConsts.h
 --- a/layout/base/nsStyleConsts.h
 +++ b/layout/base/nsStyleConsts.h
-@@ -347,16 +347,18 @@ static inline mozilla::css::Side operato
+@@ -346,16 +346,18 @@ static inline mozilla::css::Side operato
  #define NS_STYLE_CLEAR_LAST_VALUE NS_STYLE_CLEAR_PAGE
  
  // See nsStyleContent
@@ -80,7 +80,7 @@ diff --git a/layout/style/nsCSSKeywordList.h b/layout/style/nsCSSKeywordList.h
 diff --git a/layout/style/nsCSSParser.cpp b/layout/style/nsCSSParser.cpp
 --- a/layout/style/nsCSSParser.cpp
 +++ b/layout/style/nsCSSParser.cpp
-@@ -7147,16 +7147,18 @@ CSSParserImpl::ParseContent()
+@@ -7421,16 +7421,18 @@ CSSParserImpl::ParseContent()
      eCSSKeyword_close_quote, NS_STYLE_CONTENT_CLOSE_QUOTE,
      eCSSKeyword_no_open_quote, NS_STYLE_CONTENT_NO_OPEN_QUOTE,
      eCSSKeyword_no_close_quote, NS_STYLE_CONTENT_NO_CLOSE_QUOTE,
@@ -102,11 +102,11 @@ diff --git a/layout/style/nsCSSParser.cpp b/layout/style/nsCSSParser.cpp
 diff --git a/layout/style/nsCSSPropList.h b/layout/style/nsCSSPropList.h
 --- a/layout/style/nsCSSPropList.h
 +++ b/layout/style/nsCSSPropList.h
-@@ -2657,16 +2657,34 @@ CSS_PROP_FONT(
-     script_min_size,
+@@ -2932,16 +2932,36 @@ CSS_PROP_FONT(
      ScriptMinSize,
      // REVIEW: no range restriction?
      CSS_PROPERTY_PARSE_INACCESSIBLE,
+     "",
      0,
      nsnull,
      CSS_PROP_NO_OFFSET,
@@ -116,6 +116,7 @@ diff --git a/layout/style/nsCSSPropList.h b/layout/style/nsCSSPropList.h
 +    ms_lquote,
 +    MsLquote,
 +    CSS_PROPERTY_PARSE_INACCESSIBLE,
++    "",
 +    0,
 +    nsnull,
 +    CSS_PROP_NO_OFFSET,
@@ -125,6 +126,7 @@ diff --git a/layout/style/nsCSSPropList.h b/layout/style/nsCSSPropList.h
 +    ms_rquote,
 +    MsRquote,
 +    CSS_PROPERTY_PARSE_INACCESSIBLE,
++    "",
 +    0,
 +    nsnull,
 +    CSS_PROP_NO_OFFSET,
@@ -136,11 +138,11 @@ diff --git a/layout/style/nsCSSPropList.h b/layout/style/nsCSSPropList.h
      clip_path,
      ClipPath,
      CSS_PROPERTY_PARSE_VALUE,
-     VARIANT_HUO,
+     "",
 diff --git a/layout/style/nsComputedDOMStyle.cpp b/layout/style/nsComputedDOMStyle.cpp
 --- a/layout/style/nsComputedDOMStyle.cpp
 +++ b/layout/style/nsComputedDOMStyle.cpp
-@@ -881,16 +881,18 @@ nsComputedDOMStyle::DoGetContent()
+@@ -900,16 +900,18 @@ nsComputedDOMStyle::DoGetContent()
          break;
        case eStyleContentType_NoOpenQuote:
          val->SetIdent(eCSSKeyword_no_open_quote);
@@ -162,7 +164,7 @@ diff --git a/layout/style/nsComputedDOMStyle.cpp b/layout/style/nsComputedDOMSty
 diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
 --- a/layout/style/nsRuleNode.cpp
 +++ b/layout/style/nsRuleNode.cpp
-@@ -6163,22 +6163,33 @@ nsRuleNode::ComputeContentData(void* aSt
+@@ -6296,22 +6296,33 @@ nsRuleNode::ComputeContentData(void* aSt
      if (NS_SUCCEEDED(content->AllocateContents(count))) {
        while (0 < count--) {
          content->ContentAt(count) = parentContent->ContentAt(count);
@@ -200,7 +202,7 @@ diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
    case eCSSUnit_ListDep: {
      const nsCSSValueList* contentValueList = contentValue->GetListValue();
        count = 0;
-@@ -6413,16 +6424,58 @@ nsRuleNode::ComputeQuotesData(void* aSta
+@@ -6546,16 +6557,58 @@ nsRuleNode::ComputeQuotesData(void* aSta
        ourQuotes = ourQuotes->mNext;
      }
      break;
@@ -262,7 +264,7 @@ diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
 diff --git a/layout/style/nsStyleStruct.cpp b/layout/style/nsStyleStruct.cpp
 --- a/layout/style/nsStyleStruct.cpp
 +++ b/layout/style/nsStyleStruct.cpp
-@@ -2629,16 +2629,21 @@ nsresult nsStyleContent::AllocateContent
+@@ -2636,16 +2636,21 @@ nsresult nsStyleContent::AllocateContent
  // nsStyleQuotes
  //
  
@@ -284,7 +286,7 @@ diff --git a/layout/style/nsStyleStruct.cpp b/layout/style/nsStyleStruct.cpp
    MOZ_COUNT_DTOR(nsStyleQuotes);
    DELETE_ARRAY_IF(mQuotes);
  }
-@@ -2681,16 +2686,21 @@ nsStyleQuotes::CopyFrom(const nsStyleQuo
+@@ -2688,16 +2693,21 @@ nsStyleQuotes::CopyFrom(const nsStyleQuo
      }
    }
  }
@@ -309,7 +311,7 @@ diff --git a/layout/style/nsStyleStruct.cpp b/layout/style/nsStyleStruct.cpp
 diff --git a/layout/style/nsStyleStruct.h b/layout/style/nsStyleStruct.h
 --- a/layout/style/nsStyleStruct.h
 +++ b/layout/style/nsStyleStruct.h
-@@ -1711,17 +1711,19 @@ enum nsStyleContentType {
+@@ -1745,17 +1745,19 @@ enum nsStyleContentType {
    eStyleContentType_Image         = 10,
    eStyleContentType_Attr          = 20,
    eStyleContentType_Counter       = 30,
@@ -330,7 +332,7 @@ diff --git a/layout/style/nsStyleStruct.h b/layout/style/nsStyleStruct.h
      PRUnichar *mString;
      imgIRequest *mImage;
      nsCSSValue::Array* mCounters;
-@@ -1831,16 +1833,19 @@ struct nsStyleQuotes {
+@@ -1865,16 +1867,19 @@ struct nsStyleQuotes {
        aIndex *= 2;
        mQuotes[aIndex] = aOpen;
        mQuotes[++aIndex] = aClose;

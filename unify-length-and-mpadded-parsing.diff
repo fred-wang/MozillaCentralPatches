@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 01d69766026d4a1ed6b56b5b8148a630ea6dde6a
+# Parent ac968ff4fe413b5078a900363d091cc5aee6e2e6
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 677036 - Unify parsing of length and mpadded attributes . r=karlt
 
 diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/content/src/nsMathMLElement.cpp
 --- a/content/mathml/content/src/nsMathMLElement.cpp
 +++ b/content/mathml/content/src/nsMathMLElement.cpp
-@@ -227,66 +227,127 @@ nsMapRuleToAttributesFunc
+@@ -238,66 +238,122 @@ nsMapRuleToAttributesFunc
  nsMathMLElement::GetAttributeMappingFunction() const
  {
    // It doesn't really matter what our tag is here, because only attributes
@@ -80,7 +80,6 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +     }
 +   }
 +   if (0 != i) { 
-+     // fall back to the default value
 +     aCSSValue.SetFloatValue(float(i)/float(18), eCSSUnit_EM);
 +     return true;
 +   }
@@ -129,19 +128,14 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
                                     nsCSSValue&     aCSSValue,
                                     PRUint32        aFlags)
  {
-+  bool calledFromMpadded = (aFlags & PARSE_CALLED_FROM_MPADDED);
-+
    nsAutoString str(aString);
--  str.CompressWhitespace(); // aString is const in this code...
-+  if (!calledFromMpadded) {
-+    str.CompressWhitespace(); // aString is const in this code...
-+  }
+   str.CompressWhitespace(); // aString is const in this code...
  
    PRInt32 stringLength = str.Length();
    if (!stringLength)
      return false;
  
-+  if (!calledFromMpadded && ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
++  if (ParseNamedSpaceValue(aString, aCSSValue, aFlags)) {
 +    return true;
 +  }
 +
@@ -165,26 +159,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
      c = str[i];
      if (gotDot && c == '.')
        return false;  // two dots encountered
-@@ -318,17 +379,17 @@ nsMathMLElement::ParseNumericValue(const
-       // We are supposed to have a unit, but there isn't one.
-       // If the value is 0 we can just call it "pixels" otherwise
-       // this is illegal.
-       if (floatValue != 0.0)
-         return false;
-       cssUnit = eCSSUnit_Pixel;
-     }
-   }
--  else if (unit.EqualsLiteral("%")) {
-+  else if (!calledFromMpadded && unit.EqualsLiteral("%")) {
-     aCSSValue.SetPercentValue(floatValue / 100.0f);
-     return true;
-   }
-   else if (unit.EqualsLiteral("em")) cssUnit = eCSSUnit_EM;
-   else if (unit.EqualsLiteral("ex")) cssUnit = eCSSUnit_XHeight;
-   else if (unit.EqualsLiteral("px")) cssUnit = eCSSUnit_Pixel;
-   else if (unit.EqualsLiteral("in")) cssUnit = eCSSUnit_Inch;
-   else if (unit.EqualsLiteral("cm")) cssUnit = eCSSUnit_Centimeter;
-@@ -342,16 +403,24 @@ nsMathMLElement::ParseNumericValue(const
+@@ -353,16 +409,24 @@ nsMathMLElement::ParseNumericValue(const
    return true;
  }
  
@@ -209,7 +184,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
          scriptSizeMultiplier->GetUnit() == eCSSUnit_Null) {
        nsAutoString str(value->GetStringValue());
        str.CompressWhitespace();
-@@ -361,23 +430,46 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -372,23 +436,46 @@ nsMathMLElement::MapMathMLAttributesInto
          float floatValue = str.ToFloat(&errorCode);
          // Negative scriptsizemultipliers are not parsed
          if (NS_SUCCEEDED(errorCode) && floatValue >= 0.0f) {
@@ -227,8 +202,8 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +    // default: 8pt
 +    //
 +    // We don't allow negative values.
-+    // XXXfw Should we allow unitless values? (bug 411227)
-+    // XXXfw Does a relative unit give a multiple of the default value?
++    // XXXfredw Should we allow unitless values? (bug 411227)
++    // XXXfredw Does a relative unit give a multiple of the default value?
 +    //
      value = aAttributes->GetAttr(nsGkAtoms::scriptminsize_);
      nsCSSValue* scriptMinSize = aData->ValueForScriptMinSize();
@@ -256,7 +231,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
        str.CompressWhitespace();
        if (str.Length() > 0) {
          PRInt32 errorCode;
-@@ -392,16 +484,38 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -403,16 +490,38 @@ nsMathMLElement::MapMathMLAttributesInto
              scriptLevel->SetIntValue(intValue, eCSSUnit_Integer);
            } else {
              scriptLevel->SetFloatValue(intValue, eCSSUnit_Number);
@@ -284,8 +259,8 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 +    // default: inherited
 +    //
 +    // In both cases, we don't allow negative values.
-+    // XXXfw Should we allow unitless values? (bug 411227)
-+    // XXXfw Does a relative unit give a multiple of the default value?
++    // XXXfredw Should we allow unitless values? (bug 411227)
++    // XXXfredw Does a relative unit give a multiple of the default value?
 +    //  
      bool parseSizeKeywords = true;
      value = aAttributes->GetAttr(nsGkAtoms::mathsize_);
@@ -295,7 +270,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
      }
      nsCSSValue* fontSize = aData->ValueForFontSize();
      if (value && value->Type() == nsAttrValue::eString &&
-@@ -419,39 +533,82 @@ nsMathMLElement::MapMathMLAttributesInto
+@@ -430,39 +539,82 @@ nsMathMLElement::MapMathMLAttributesInto
            if (str.EqualsASCII(sizes[i])) {
              fontSize->SetIntValue(values[i], eCSSUnit_Enumerated);
              break;
@@ -381,38 +356,14 @@ diff --git a/content/mathml/content/src/nsMathMLElement.cpp b/content/mathml/con
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
-@@ -17,16 +17,17 @@
-  * The Initial Developer of the Original Code is
-  * mozilla.org.
-  * Portions created by the Initial Developer are Copyright (C) 2007
-  * the Initial Developer. All Rights Reserved.
-  *
-  * Contributor(s):
-  *    Vlad Sukhoy <vladimir.sukhoy@gmail.com> (original developer)
-  *    Daniel Kraft <d@domob.eu> (nsMathMLElement patch, attachment 262925) 
-+ *    Frederic Wang <fred.wang@free.fr>
-  *
-  * Alternatively, the contents of this file may be used under the terms of
-  * either the GNU General Public License Version 2 or later (the "GPL"), or
-  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-  * in which case the provisions of the GPL or the LGPL are applicable instead
-  * of those above. If you wish to allow use of your version of this file only
-  * under the terms of either the GPL or the LGPL, and not to allow others to
-  * use your version of this file under the terms of the MPL, indicate your
-@@ -82,18 +83,25 @@ public:
-                                 const nsAString& aValue,
-                                 nsAttrValue& aResult);
+@@ -84,16 +84,20 @@ public:
  
    NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* aAttribute) const;
    virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
  
    enum {
      PARSE_ALLOW_UNITLESS = 0x01, // unitless 0 will be turned into 0px
--    PARSE_ALLOW_NEGATIVE = 0x02
-+    PARSE_ALLOW_NEGATIVE = 0x02,
-+    // This flag enables a restricted syntax when ParseNumericValue is called
-+    // from nsMathMLmpaddedFrame.cpp.
-+    PARSE_CALLED_FROM_MPADDED = 0x04
+     PARSE_ALLOW_NEGATIVE = 0x02
    };
 +  static bool ParseNamedSpaceValue(const nsString& aString,
 +                                   nsCSSValue&     aCSSValue,
@@ -429,7 +380,7 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -375,105 +375,42 @@ nsMathMLFrame::CalcLength(nsPresContext*
+@@ -375,105 +375,43 @@ nsMathMLFrame::CalcLength(nsPresContext*
      return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
    }
  
@@ -444,7 +395,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 -                                    nsCSSValue& aCSSValue)
 +/* static */ void
 +nsMathMLFrame::ParseNumericValue(const nsString&   aString,
-+                                 nscoord&          aLengthValue,
++                                 nscoord*          aLengthValue,
 +                                 PRUint32          aFlags,
 +                                 nsPresContext*    aPresContext,
 +                                 nsStyleContext*   aStyleContext)
@@ -538,15 +489,16 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 -    return true;
 +  if (unit == eCSSUnit_Percent || unit == eCSSUnit_Number) {
 +    // Relative units. A multiple of the default length value is used.
-+    aLengthValue = NSToCoordRound(cssValue.GetFloatValue() *
-+                                  (float)aLengthValue);
++    *aLengthValue = NSToCoordRound(*aLengthValue * (unit == eCSSUnit_Percent ?
++                                                    cssValue.GetPercentValue() :
++                                                    cssValue.GetFloatValue()));
 +    return;
    }
 -
 -  return false;
 +  
 +  // Absolute units.
-+  aLengthValue = CalcLength(aPresContext, aStyleContext, cssValue);
++  *aLengthValue = CalcLength(aPresContext, aStyleContext, cssValue);
  }
  
  // ================
@@ -577,7 +529,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 +  // @pre  aLengthValue is the default length value of the attribute.
 +  // @post aLengthValue is the length value computed from the attribute.
 +  static void ParseNumericValue(const nsString&   aString,
-+                                nscoord&          aLengthValue,
++                                nscoord*          aLengthValue,
 +                                PRUint32          aFlags,
 +                                nsPresContext*    aPresContext,
 +                                nsStyleContext*   aStyleContext);
@@ -652,7 +604,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 +    else {
 +      // length value
 +      lineThickness = defaultThickness;
-+      ParseNumericValue(aThicknessAttribute, lineThickness,
++      ParseNumericValue(aThicknessAttribute, &lineThickness,
 +                        nsMathMLElement::PARSE_ALLOW_UNITLESS,
 +                        aPresContext, aStyleContext);
      }
@@ -703,7 +655,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    nsAutoString value;
    GetAttribute(mContent, mPresentationData.mstyle,
@@ -713,7 +665,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      mSubScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, mSubScriptShift,
++    ParseNumericValue(value, &mSubScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }
@@ -727,7 +679,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    GetAttribute(mContent, mPresentationData.mstyle,
                 nsGkAtoms::superscriptshift_, value);
@@ -736,7 +688,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      mSupScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, mSupScriptShift,
++    ParseNumericValue(value, &mSupScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }
@@ -750,7 +702,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -408,48 +408,58 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -408,42 +408,60 @@ nsMathMLmoFrame::ProcessOperatorData()
          }
        }
      }
@@ -767,29 +719,26 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // values: length
 +  // default: set by dictionary (thickmathspace) 
 +  //
-+  // XXXfw Should we allow negative values? (bug 411227) They will be made
++  // XXXfredw Should we allow negative values? (bug 411227) They will be made
 +  // positive by the rounding below.
-+  // XXXfw A relative unit gives a multiple of the current leading space, which
-+  // is not necessarily the default one.
++  // XXXfredw Should we allow relative values? They will give a multiple of the
++  // current leading space, which is not necessarily the default one.
 +  //
    nscoord leadingSpace = mEmbellishData.leadingSpace;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::lspace_,
                 value);
    if (!value.IsEmpty()) {
--    nsCSSValue cssValue;
+     nsCSSValue cssValue;
 -    if (ParseNumericValue(value, cssValue) ||
 -        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
 -    {
--      if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
--        leadingSpace = 0;
--      else if (cssValue.IsLengthUnit())
--        leadingSpace = CalcLength(presContext, mStyleContext, cssValue);
--      mFlags |= NS_MATHML_OPERATOR_LSPACE_ATTR;
--    }
-+    ParseNumericValue(value, leadingSpace, 
-+                      nsMathMLElement::PARSE_ALLOW_UNITLESS,
-+                      presContext, mStyleContext);
-+    mFlags |= NS_MATHML_OPERATOR_LSPACE_ATTR;
++    if (nsMathMLElement::ParseNumericValue(value, cssValue, 0)) {
+       if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
+         leadingSpace = 0;
+       else if (cssValue.IsLengthUnit())
+         leadingSpace = CalcLength(presContext, mStyleContext, cssValue);
+       mFlags |= NS_MATHML_OPERATOR_LSPACE_ATTR;
+     }
    }
  
 -  // rspace = number h-unit | namedspace
@@ -800,38 +749,29 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 +  // values: length
 +  // default: set by dictionary (thickmathspace) 
 +  //
-+  // XXXfw Should we allow negative values? (bug 411227) They will be made
++  // XXXfredw Should we allow negative values? (bug 411227) They will be made
 +  // positive by the rounding below.
-+  // XXXfw A relative unit gives a multiple of the current trailing space, which
-+  // is not necessarily the default one.
++  // XXXfredw Should we allow relative values? They will give a multiple of the
++  // current trailing space, which is not necessarily the default one.
 +  //
    nscoord trailingSpace = mEmbellishData.trailingSpace;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::rspace_,
                 value);
    if (!value.IsEmpty()) {
--    nsCSSValue cssValue;
+     nsCSSValue cssValue;
 -    if (ParseNumericValue(value, cssValue) ||
 -        ParseNamedSpaceValue(mPresentationData.mstyle, value, cssValue))
 -    {
--      if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
--        trailingSpace = 0;
--      else if (cssValue.IsLengthUnit())
--        trailingSpace = CalcLength(presContext, mStyleContext, cssValue);
--      mFlags |= NS_MATHML_OPERATOR_RSPACE_ATTR;
--    }
-+    ParseNumericValue(value, trailingSpace, 
-+                      nsMathMLElement::PARSE_ALLOW_UNITLESS,
-+                      presContext, mStyleContext);
-+    mFlags |= NS_MATHML_OPERATOR_RSPACE_ATTR;
++    if (nsMathMLElement::ParseNumericValue(value, cssValue, 0)) {
+       if ((eCSSUnit_Number == cssValue.GetUnit()) && !cssValue.GetFloatValue())
+         trailingSpace = 0;
+       else if (cssValue.IsLengthUnit())
+         trailingSpace = CalcLength(presContext, mStyleContext, cssValue);
+       mFlags |= NS_MATHML_OPERATOR_RSPACE_ATTR;
+     }
    }
  
-   // little extra tuning to round lspace & rspace to at least a pixel so that
-   // operators don't look as if they are colliding with their operands
-   if (leadingSpace || trailingSpace) {
-     nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
-     if (leadingSpace && leadingSpace < onePixel)
-       leadingSpace = onePixel;
-@@ -498,83 +508,78 @@ nsMathMLmoFrame::ProcessOperatorData()
+@@ -498,83 +516,78 @@ nsMathMLmoFrame::ProcessOperatorData()
    }
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::symmetric_,
                 value);
@@ -1009,7 +949,7 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
        // error - two dots encountered
        aSign = NS_MATHML_SIGN_INVALID;
        return false;
-@@ -221,69 +220,58 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
+@@ -221,69 +220,57 @@ nsMathMLmpaddedFrame::ParseAttribute(nsS
  
    PRInt32 errorCode;
    float floatValue = number.ToFloat(&errorCode);
@@ -1077,12 +1017,11 @@ diff --git a/layout/mathml/nsMathMLmpaddedFrame.cpp b/layout/mathml/nsMathMLmpad
  
      // see if the input was just a CSS value
 +    // We use a specific flag to indicate that the call is made from mpadded.
-+    // We are not supposed to have a unitless or negative value.
++    // We are not supposed to have a unitless, percent, negative or namedspace
++    // value here.
      number.Append(unit); // leave the sign out if it was there
 -    if (ParseNumericValue(number, aCSSValue))
-+    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
-+                                           nsMathMLElement::
-+                                           PARSE_CALLED_FROM_MPADDED))
++    if (nsMathMLElement::ParseNumericValue(number, aCSSValue, 0))
        return true;
    }
  
@@ -1153,7 +1092,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 -         cssValue.IsLengthUnit()) {
 -      mWidth = CalcLength(aPresContext, mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, mWidth,
++    ParseNumericValue(value, &mWidth,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      aPresContext, mStyleContext);
    }
@@ -1166,7 +1105,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 +  // default: 0ex
 +  //
 +  // The default value is "0ex", so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
++  // XXXfredw Should we forbid negative values? (bugs 411227, 716349)
 +  //
    mHeight = 0;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::height,
@@ -1177,7 +1116,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 -         cssValue.IsLengthUnit()) {
 -      mHeight = CalcLength(aPresContext, mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, mHeight,
++    ParseNumericValue(value, &mHeight,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      aPresContext, mStyleContext);
    }
@@ -1190,7 +1129,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 +  // default: 0ex
 +  //
 +  // The default value is "0ex", so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bugs 411227, 716349)
++  // XXXfredw Should we forbid negative values? (bugs 411227, 716349)
 +  //
    mDepth = 0;
    GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::depth_,
@@ -1201,7 +1140,7 @@ diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspac
 -         cssValue.IsLengthUnit()) {
 -      mDepth = CalcLength(aPresContext, mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, mDepth,
++    ParseNumericValue(value, &mDepth,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      aPresContext, mStyleContext);
    }
@@ -1252,7 +1191,7 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    nscoord subScriptShift = 0;
    nsAutoString value;
@@ -1263,7 +1202,7 @@ diff --git a/layout/mathml/nsMathMLmsubFrame.cpp b/layout/mathml/nsMathMLmsubFra
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      subScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, subScriptShift,
++    ParseNumericValue(value, &subScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }
@@ -1314,7 +1253,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    nsAutoString value;
    nscoord subScriptShift = 0;
@@ -1325,7 +1264,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      subScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, subScriptShift,
++    ParseNumericValue(value, &subScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }
@@ -1339,7 +1278,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    nscoord supScriptShift = 0;
    GetAttribute(mContent, mPresentationData.mstyle,
@@ -1349,7 +1288,7 @@ diff --git a/layout/mathml/nsMathMLmsubsupFrame.cpp b/layout/mathml/nsMathMLmsub
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      supScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, supScriptShift,
++    ParseNumericValue(value, &supScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }
@@ -1400,7 +1339,7 @@ diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFra
 +  // default: automatic
 +  //
 +  // We use 0 as the default value so unitless values can be ignored.
-+  // XXXfw Should we forbid negative values? (bug 411227)
++  // XXXfredw Should we forbid negative values? (bug 411227)
 +  //
    nsAutoString value;
    nscoord supScriptShift = 0;
@@ -1411,7 +1350,7 @@ diff --git a/layout/mathml/nsMathMLmsupFrame.cpp b/layout/mathml/nsMathMLmsupFra
 -    if (ParseNumericValue(value, cssValue) && cssValue.IsLengthUnit()) {
 -      supScriptShift = CalcLength(PresContext(), mStyleContext, cssValue);
 -    }
-+    ParseNumericValue(value, supScriptShift,
++    ParseNumericValue(value, &supScriptShift,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      PresContext(), mStyleContext);
    }

@@ -1,11 +1,10 @@
-bug-736010-fix.patch
-download-fonts-1.diff
-download-fonts-2.diff
 unify-length-and-mpadded-parsing.diff
-remove-namedspace-atoms.diff
 crashtest-398038.diff
+remove-namedspace-atoms.diff
 assertion-716349.diff
 crashtest-716349.diff
+download-fonts-1.diff
+download-fonts-2.diff
 mglyph-1.diff
 mglyph-2.diff
 mglyph-3.diff
@@ -14,9 +13,6 @@ ms-quotes-2.diff
 ms-quotes-3.diff
 remove-stix-beta.diff
 try.diff
-rewrite-mtable-1.diff
-rewrite-mtable-2.diff
-mpadded-vertical-metrics.diff
 largeop-initial-stretch.diff
 opdict-diagonal-arrows.diff
 rotate_stretchy.diff
