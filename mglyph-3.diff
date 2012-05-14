@@ -226,7 +226,7 @@ new file mode 100644
 +  GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::valign,
 +               value);
 +  if (!value.IsEmpty()) {
-+    ParseNumericValue(value, valign,
++    ParseNumericValue(value, &valign,
 +                      nsMathMLElement::PARSE_ALLOW_NEGATIVE,
 +                      aPresContext, mStyleContext);
 +  }
