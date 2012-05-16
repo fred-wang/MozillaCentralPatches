@@ -18,8 +18,6 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { unify-length-and-mpadded-parsing.diff
-  { crashtest-398038.diff
   { assertion-716349.diff
   { crashtest-716349.diff
 
