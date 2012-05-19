@@ -18,9 +18,6 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { assertion-716349.diff
-  { crashtest-716349.diff
-
   { download-fonts-1.diff
   { download-fonts-2.diff
 
@@ -29,7 +26,7 @@ stable patches below and I'll try to update them as soon as possible.
 * Work in progress patches:
 
   { remove-namedspace-atoms.diff
-    => See bug 673759 comment 16.
+    => Build errors? (See bug 673759 comment 21).
 
   { mglyph-1.diff
   { mglyph-2.diff
