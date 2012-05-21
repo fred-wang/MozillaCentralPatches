@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 91da3dcfcdba4f605cceda1811577426d9046207
+# Parent 162437a551dd8157043ae88ba76b1320873efdaf
 # User Frédéric Wang <fred.wang@free.fr>
 Add support for mglyph (bug 297465) - part 1.
 
 diff --git a/content/mathml/content/src/Makefile.in b/content/mathml/content/src/Makefile.in
 --- a/content/mathml/content/src/Makefile.in
 +++ b/content/mathml/content/src/Makefile.in
-@@ -44,16 +44,17 @@ VPATH		= @srcdir@
+@@ -11,16 +11,17 @@ VPATH		= @srcdir@
  include $(DEPTH)/config/autoconf.mk
  
  MODULE		= content
@@ -24,7 +24,7 @@ diff --git a/content/mathml/content/src/Makefile.in b/content/mathml/content/src
  # we don't want the shared lib, but we want to force the creation of a static 
  # lib.
  FORCE_STATIC_LIB = 1
-@@ -61,11 +62,12 @@ FORCE_STATIC_LIB = 1
+@@ -28,11 +29,12 @@ FORCE_STATIC_LIB = 1
  EXPORTS = \
  	$(NULL)
  
@@ -40,7 +40,7 @@ diff --git a/content/mathml/content/src/Makefile.in b/content/mathml/content/src
 diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/content/src/nsMathMLElement.h
 --- a/content/mathml/content/src/nsMathMLElement.h
 +++ b/content/mathml/content/src/nsMathMLElement.h
-@@ -67,19 +67,19 @@ public:
+@@ -32,19 +32,19 @@ public:
    // Implementation of nsISupports is inherited from nsMathMLElementBase
    NS_DECL_ISUPPORTS_INHERITED
  
@@ -66,10 +66,10 @@ diff --git a/content/mathml/content/src/nsMathMLElement.h b/content/mathml/conte
 diff --git a/content/mathml/content/src/nsMathMLElementFactory.cpp b/content/mathml/content/src/nsMathMLElementFactory.cpp
 --- a/content/mathml/content/src/nsMathMLElementFactory.cpp
 +++ b/content/mathml/content/src/nsMathMLElementFactory.cpp
-@@ -35,21 +35,29 @@
-  * the terms of any one of the MPL, the GPL or the LGPL.
-  *
-  * ***** END LICENSE BLOCK ***** */
+@@ -2,21 +2,29 @@
+ /* This Source Code Form is subject to the terms of the Mozilla Public
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #include "nsContentCreatorFunctions.h"
  #include "nsGkAtoms.h"

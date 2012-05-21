@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 59f72a060c61f27c919cd7403ecba9966ebcb622
+# Parent 7ec8d5a9a1f966e2f1dd9cb2d1a4222d81c3f07c
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 742273 - Remove table for stretchy characters in STIX 1.0 beta. r=karlt
 
 diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
 --- a/layout/mathml/Makefile.in
 +++ b/layout/mathml/Makefile.in
-@@ -93,17 +93,16 @@ include $(topsrcdir)/config/config.mk
+@@ -59,17 +59,16 @@ include $(topsrcdir)/config/config.mk
  FORCE_STATIC_LIB = 1
  
  include $(topsrcdir)/config/rules.mk
@@ -27,7 +27,7 @@ diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
 diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
 --- a/layout/mathml/mathfont.properties
 +++ b/layout/mathml/mathfont.properties
-@@ -41,19 +41,19 @@
+@@ -6,19 +6,19 @@
  #  Do not translate anything in this file
  
  # List of fonts that have corresponding properties files containing special
@@ -53,45 +53,10 @@ diff --git a/layout/mathml/mathfontSTIXSize1.properties b/layout/mathml/mathfont
 deleted file mode 100644
 --- a/layout/mathml/mathfontSTIXSize1.properties
 +++ /dev/null
-@@ -1,105 +0,0 @@
--# ***** BEGIN LICENSE BLOCK *****
--# Version: MPL 1.1/GPL 2.0/LGPL 2.1
--#
--# The contents of this file are subject to the Mozilla Public License Version
--# 1.1 (the "License"); you may not use this file except in compliance with
--# the License. You may obtain a copy of the License at
--# http://www.mozilla.org/MPL/
--#
--# Software distributed under the License is distributed on an "AS IS" basis,
--# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
--# for the specific language governing rights and limitations under the
--# License.
--#                                                                       
--# The Original Code is Mozilla MathML Project.                          
--#                                                                       
--# The Initial Developer of the Original Code is
--# The University of Queensland.
--# Portions created by the Initial Developer are Copyright (C) 2001
--# the Initial Developer. All Rights Reserved.
--#                                                                       
--# Contributor(s):                                                       
--#   Roger B. Sidje <rbs@maths.uq.edu.au>                                
--#   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
--#   Frederic Wang <fred.wang@free.fr>
--#
--# Alternatively, the contents of this file may be used under the terms of
--# either the GNU General Public License Version 2 or later (the "GPL"), or
--# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
--# in which case the provisions of the GPL or the LGPL are applicable instead
--# of those above. If you wish to allow use of your version of this file only
--# under the terms of either the GPL or the LGPL, and not to allow others to
--# use your version of this file under the terms of the MPL, indicate your
--# decision by deleting the provisions above and replace them with the notice
--# and other provisions required by the GPL or the LGPL. If you do not delete
--# the provisions above, a recipient may use your version of this file under
--# the terms of any one of the MPL, the GPL or the LGPL.
--#
--# ***** END LICENSE BLOCK *****
+@@ -1,70 +0,0 @@
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -
 -#  LOCALIZATION NOTE: FILE
 -#  Do not translate anything in this file
@@ -162,7 +127,7 @@ deleted file mode 100644
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1245,17 +1245,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1231,17 +1231,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -181,7 +146,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("images.dither", "auto");
  pref("security.directory",              "");
  
-@@ -1993,17 +1993,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2001,17 +2001,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -200,7 +165,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -2516,17 +2516,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2524,17 +2524,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -219,7 +184,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
-@@ -2565,17 +2565,17 @@ pref("mousewheel.enable_pixel_scrolling"
+@@ -2573,17 +2573,17 @@ pref("mousewheel.enable_pixel_scrolling"
  #endif
  
  #ifdef XP_OS2
