@@ -1,0 +1,93 @@
+# HG changeset patch
+# Parent 7ad09a45954435bb18a05fda404e357553a7071d
+# User Andrii Zui <prazuber@gmail.com>
+b=544001. MathML tooltip actiontype of maction implemented. r=karlt
+
+diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
+--- a/browser/base/content/browser.js
++++ b/browser/base/content/browser.js
+@@ -3023,37 +3023,40 @@ function FillInHTMLTooltip(tipElement)
+   var retVal = false;
+   // Don't show the tooltip if the tooltip node is a document or disconnected.
+   if (!tipElement.ownerDocument ||
+       (tipElement.ownerDocument.compareDocumentPosition(tipElement) & document.DOCUMENT_POSITION_DISCONNECTED))
+     return retVal;
+ 
+   const XLinkNS = "http://www.w3.org/1999/xlink";
+   const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
++  const MathMLNS = "http://www.w3.org/1998/Math/MathML";
+ 
+   var titleText = null;
+   var XLinkTitleText = null;
+   var SVGTitleText = null;
+   var lookingForSVGTitle = true;
++  var MathMLTitleText = null;
+   var direction = tipElement.ownerDocument.dir;
+ 
+   // If the element is invalid per HTML5 Forms specifications and has no title,
+   // show the constraint validation error message.
+   if ((tipElement instanceof HTMLInputElement ||
+        tipElement instanceof HTMLTextAreaElement ||
+        tipElement instanceof HTMLSelectElement ||
+        tipElement instanceof HTMLButtonElement) &&
+       !tipElement.hasAttribute('title') &&
+       (!tipElement.form || !tipElement.form.noValidate)) {
+     // If the element is barred from constraint validation or valid,
+     // the validation message will be the empty string.
+     titleText = tipElement.validationMessage;
+   }
+ 
+-  while (!titleText && !XLinkTitleText && !SVGTitleText && tipElement) {
++  while (!titleText && !XLinkTitleText && !SVGTitleText && 
++         !MathMLTitleText && tipElement) {
+     if (tipElement.nodeType == Node.ELEMENT_NODE &&
+         tipElement.namespaceURI != XULNS) {
+       titleText = tipElement.getAttribute("title");
+       if ((tipElement instanceof HTMLAnchorElement ||
+            tipElement instanceof HTMLAreaElement ||
+            tipElement instanceof HTMLLinkElement ||
+            tipElement instanceof SVGAElement) && tipElement.href) {
+         XLinkTitleText = tipElement.getAttributeNS(XLinkNS, "title");
+@@ -3068,31 +3071,41 @@ function FillInHTMLTooltip(tipElement)
+         for (let i = 0; i < length; i++) {
+           let childNode = tipElement.childNodes[i];
+           if (childNode instanceof SVGTitleElement) {
+             SVGTitleText = childNode.textContent;
+             break;
+           }
+         }
+       }
++      if (tipElement.nodeName = "maction" && tipElement.namespaceURI == MathMLNS &&
++          tipElement.getAttribute("actiontype") == "tooltip") {
++        var MathMLTooltipNode = tipElement.firstElementChild;
++        if (MathMLTooltipNode) {
++          MathMLTooltipNode = MathMLTooltipNode.nextElementSibling;
++          if (MathMLTooltipNode.nodeName == "mtext" && 
++              MathMLTooltipNode.namespaceURI == MathMLNS)
++            MathMLTitleText = MathMLTooltipNode.textContent;
++        }
++      }
+       var defView = tipElement.ownerDocument.defaultView;
+       // XXX Work around bug 350679:
+       // "Tooltips can be fired in documents with no view".
+       if (!defView)
+         return retVal;
+       direction = defView.getComputedStyle(tipElement, "")
+         .getPropertyValue("direction");
+     }
+     tipElement = tipElement.parentNode;
+   }
+ 
+   var tipNode = document.getElementById("aHTMLTooltip");
+   tipNode.style.direction = direction;
+ 
+-  [titleText, XLinkTitleText, SVGTitleText].forEach(function (t) {
++  [titleText, XLinkTitleText, SVGTitleText, MathMLTitleText].forEach(function (t) {
+     if (t && /\S/.test(t)) {
+       // Make CRLF and CR render one line break each.
+       t = t.replace(/\r\n?/g, '\n');
+ 
+       tipNode.setAttribute("label", t);
+       retVal = true;
+     }
+   });
