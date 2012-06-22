@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent fac0311da921bf14a32042a0df3c7439ad59c541
+# Parent 7be8d1cc52ac3652d88f966477d88ce7e4173a2d
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts in Firefox - part 1.
 
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -2391,16 +2391,22 @@ nsPresContext::IsRootContentDocument()
+@@ -2403,16 +2403,22 @@ nsPresContext::IsRootContentDocument()
    if (!view) {
      return true;
    }
@@ -32,7 +32,7 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -970,16 +970,18 @@ public:
+@@ -960,16 +960,18 @@ public:
  
    virtual size_t SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const;
    virtual size_t SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const {
@@ -54,7 +54,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -62,27 +62,73 @@
+@@ -26,27 +26,70 @@
  #include "nsCSSRendering.h"
  #include "prprf.h"         // For PR_snprintf()
  
@@ -65,7 +65,6 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
 +#include "nsThreadUtils.h"
 +#include "nsEventDispatcher.h"
-+#include "nsIPrivateDOMEvent.h"
 +
  using namespace mozilla;
  
@@ -105,9 +104,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +                                                    NS_LITERAL_STRING("Events"),
 +                                                    getter_AddRefs(event)))) {
 +      event->InitEvent(NS_LITERAL_STRING("DOMMissingMathMLFonts"), true, true);
-+
-+      nsCOMPtr<nsIPrivateDOMEvent> privateEvent = do_QueryInterface(event);
-+      privateEvent->SetTrusted(true);
++      event->SetTrusted(true);
 +
 +      nsEventDispatcher::DispatchDOMEvent(mPresContext->Document(),
 +                                          nsnull, event,
@@ -128,7 +125,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // can be taken in other additional fonts when stretching certain characters.
  // These supplementary fonts are referred to as "external" fonts to the table.
  //
-@@ -493,16 +539,20 @@ public:
+@@ -457,16 +500,20 @@ public:
    nsGlyphTable*
    GetGlyphTableFor(nsPresContext* aPresContext,
                     nsMathMLChar*  aChar);
@@ -149,7 +146,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      return mTableList.Length();
    }
  
-@@ -599,16 +649,32 @@ nsGlyphTableList::GetGlyphTableFor(const
+@@ -563,16 +610,32 @@ nsGlyphTableList::GetGlyphTableFor(const
      if (fontName.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
        return glyphTable;
      }
@@ -182,7 +179,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
  // Given the char code and mode of stretch, retrieve the preferred extension
  // font families.
-@@ -677,16 +743,20 @@ MathFontEnumCallback(const nsString& aFa
+@@ -641,16 +704,20 @@ MathFontEnumCallback(const nsString& aFa
  }
  
  static nsresult
@@ -203,7 +200,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
    if (NS_FAILED(rv)) {
      delete gGlyphTableList;
-@@ -717,18 +787,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -681,18 +748,16 @@ InitGlobals(nsPresContext* aPresContext)
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
    nsFont font("", 0, 0, 0, 0, 0, 0);
@@ -222,7 +219,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsStyleContext*
-@@ -1679,16 +1747,33 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1651,16 +1716,33 @@ nsMathMLChar::StretchInternal(nsPresCont
        if (!maxWidth) {
          mScaleY *= scale;
        }
@@ -259,7 +256,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/layout/style/nsFontFaceLoader.h b/layout/style/nsFontFaceLoader.h
 --- a/layout/style/nsFontFaceLoader.h
 +++ b/layout/style/nsFontFaceLoader.h
-@@ -83,16 +83,18 @@ public:
+@@ -50,16 +50,18 @@ public:
  
    nsPresContext *GetPresContext() { return mPresContext; }
  
@@ -281,8 +278,7 @@ diff --git a/layout/style/nsFontFaceLoader.h b/layout/style/nsFontFaceLoader.h
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -3537,8 +3537,11 @@ pref("memory.low_commit_space_threshold_
- // than this many mb of physical memory available on the whole machine.
+@@ -3584,12 +3584,15 @@ pref("memory.low_commit_space_threshold_
  pref("memory.low_physical_memory_threshold_mb", 0);
  
  // On Windows 32- or 64-bit, don't fire a low-memory notification because of
@@ -290,6 +286,11 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // low_memory_notification_interval_ms.
  pref("memory.low_memory_notification_interval_ms", 10000);
  #endif
-+
+ 
 +// warning for missing MathML fonts
 +pref("font.mathfont-warning", true);
++
+ // How long must we wait before declaring that a window is a "ghost" (i.e., a
+ // likely leak)?  This should be longer than it usually takes for an eligible
+ // window to be collected via the GC/CC.
+ pref("memory.ghost_window_timeout_seconds", 60);
