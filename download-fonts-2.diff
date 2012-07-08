@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent fc1d4b06d0636a814f59791369d470c7f4f42cfd
+# Parent 2c4f3b6991798b032520e61db8be1e930a4a9846
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts in Firefox - part 2.
 
 diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 --- a/browser/base/content/browser.js
 +++ b/browser/base/content/browser.js
-@@ -369,16 +369,57 @@ function findChildShell(aDocument, aDocS
+@@ -369,16 +369,50 @@ function findChildShell(aDocument, aDocS
      var docShell = node.getChildAt(i);
      docShell = findChildShell(aDocument, docShell, aSoughtURI);
      if (docShell)
@@ -31,13 +31,6 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 +  var bundle = gNavigatorBundle;
 +  var message = bundle.getString("mathFontsWarning.message");
 +  var buttons = [{
-+    label: bundle.getString("mathFontsWarning.install"),
-+    accessKey: bundle.getString("mathFontsWarning.install.accessKey"),
-+    callback: function() {
-+      openNewTabWith("https://addons.mozilla.org/en-US/firefox/addon/mathml-fonts/",
-+                     null, null, null, true);
-+    }
-+  }, {
 +    label: bundle.getString("mathFontsWarning.info"),
 +    accessKey: bundle.getString("mathFontsWarning.info.accessKey"),
 +    callback: function() {
@@ -64,7 +57,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
      if (aEvent.button != 0 || aEvent.target != this._reportButton)
        return;
  
-@@ -988,16 +1029,18 @@ var gBrowserInit = {
+@@ -988,16 +1022,18 @@ var gBrowserInit = {
      //                 [3]: postData (nsIInputStream)
      //                 [4]: allowThirdPartyFixup (bool)
      if ("arguments" in window && window.arguments[0])
@@ -86,7 +79,7 @@ diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
 diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/locales/en-US/chrome/browser/browser.properties
 --- a/browser/locales/en-US/chrome/browser/browser.properties
 +++ b/browser/locales/en-US/chrome/browser/browser.properties
-@@ -358,12 +358,21 @@ webapps.install.accesskey = I
+@@ -358,12 +358,19 @@ webapps.install.accesskey = I
  #LOCALIZATION NOTE (webapps.requestInstall) %1$S is the web app name, %2$S is the site from which the web app is installed
  webapps.requestInstall = Do you want to install "%1$S" from this site (%2$S)?
  
@@ -97,8 +90,6 @@ diff --git a/browser/locales/en-US/chrome/browser/browser.properties b/browser/l
  
 +# Missing MathML fonts warning
 +mathFontsWarning.message = Mathematical fonts are recommended to render this page correctly
-+mathFontsWarning.install = Install MathML-fonts add-on
-+mathFontsWarning.install.accessKey = I
 +mathFontsWarning.info = About math fonts
 +mathFontsWarning.info.accessKey = A
 +mathFontsWarning.dontShowAgain = Do not show again
