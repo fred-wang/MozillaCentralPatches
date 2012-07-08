@@ -18,29 +18,33 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { download-fonts-1.diff
-  { download-fonts-2.diff
-
-  { remove-stix-beta.diff
+  { None
 
 * Work in progress patches:
 
-  { remove-namedspace-atoms.diff
-    => Build errors? (See bug 673759 comment 21).
+  { None
 
-  { mglyph-1.diff
-  { mglyph-2.diff
-  { mglyph-3.diff
-    => May crash Mozilla.
+* Experimental and old patches:
+
+  - try.diff (used to push to try server)
 
   { ms-quotes-1.diff
   { ms-quotes-2.diff
   { ms-quotes-3.diff
     => Need feedback for the style part, fail dir=rtl and setAttribute tests.
 
-* Experimental and old patches:
+  { mglyph-1.diff
+  { mglyph-2.diff
+  { mglyph-3.diff
+    => May crash Mozilla.
 
-  - try.diff (used to push to try server)
+  { download-fonts-1.diff
+  { download-fonts-2.diff
+    => Not accepted
+
+  - remove-stix-beta.diff
+    => Pending
+
   - largeop-initial-stretch.diff
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff
