@@ -1,0 +1,246 @@
+# HG changeset patch
+# Parent f9a8fdb081936577a38d596b3514f1a78a0c17a0
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 663740 - migrate nsMathMLChar measuring and drawing from nsRenderingContext to gfx/thebes classes. r=karlt.
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -30,16 +30,36 @@
+ 
+ #include "nsMathMLOperators.h"
+ #include "nsMathMLChar.h"
+ 
+ using namespace mozilla;
+ 
+ //#define NOISY_SEARCH 1
+ 
++class StubPropertyProvider : public gfxTextRun::PropertyProvider {
++public:
++    virtual void GetHyphenationBreaks(PRUint32 aStart, PRUint32 aLength,
++                                      bool* aBreakBefore) {
++        NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
++    }
++    virtual PRInt8 GetHyphensOption() {
++        NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
++        return NS_STYLE_HYPHENS_NONE;
++    }
++    virtual gfxFloat GetHyphenWidth() {
++        NS_ERROR("This shouldn't be called because we never enable hyphens");
++        return 0;
++    }
++    virtual void GetSpacing(PRUint32 aStart, PRUint32 aLength,
++                            Spacing* aSpacing) {
++        NS_ERROR("This shouldn't be called because we never enable spacing");
++    }
++};
++
+ // -----------------------------------------------------------------------------
+ static const PRUnichar   kSpaceCh   = PRUnichar(' ');
+ static const nsGlyphCode kNullGlyph = {{0, 0}, 0};
+ typedef enum {eExtension_base, eExtension_variants, eExtension_parts}
+   nsMathfontPrefExtension;
+ 
+ // -----------------------------------------------------------------------------
+ // nsGlyphTable is a class that provides an interface for accessing glyphs
+@@ -1868,18 +1888,18 @@ nsMathMLChar::PaintForeground(nsPresCont
+     // Grab some metrics to adjust the placements ...
+     PRUint32 len = PRUint32(mData.Length());
+     aRenderingContext.DrawString(mData.get(), len, 0, mUnscaledAscent);
+   }
+   else {
+     // Grab some metrics to adjust the placements ...
+     // if there is a glyph of appropriate size, paint that glyph
+     if (mGlyph.Exists()) {
+-      aRenderingContext.DrawString(mGlyph.code, mGlyph.Length(),
+-                                   0, mUnscaledAscent);
++      DrawGlyph(styleContext, aRenderingContext, theFont,
++                mGlyph, 0, mUnscaledAscent);
+     }
+     else { // paint by parts
+       if (NS_STRETCH_DIRECTION_VERTICAL == mDirection)
+         PaintVertically(aPresContext, aRenderingContext, theFont, styleContext,
+                         mGlyphTable, r);
+       else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection)
+         PaintHorizontally(aPresContext, aRenderingContext, theFont,
+                           styleContext, mGlyphTable, r);
+@@ -1914,16 +1934,42 @@ SnapToDevPixels(const gfxContext* aThebe
+               NSAppUnitsToFloatPixels(aPt.y, aAppUnitsPerGfxUnit));
+   pt = aThebesContext->UserToDevice(pt);
+   pt.Round();
+   pt = aThebesContext->DeviceToUser(pt);
+   return nsPoint(NSFloatPixelsToAppUnits(pt.x, aAppUnitsPerGfxUnit),
+                  NSFloatPixelsToAppUnits(pt.y, aAppUnitsPerGfxUnit));
+ }
+ 
++void
++nsMathMLChar::DrawGlyph(nsStyleContext*     aStyleContext,
++                        nsRenderingContext& aRenderingContext,
++                        nsFont&             aFont,
++                        nsGlyphCode         aGlyph,
++                        nscoord             dx,
++                        nscoord             dy)
++{
++  nsRefPtr<gfxContext> ctx = aRenderingContext.ThebesContext();
++  nsRefPtr<nsFontMetrics> fm;
++  aRenderingContext.DeviceContext()->GetMetricsFor(aFont,
++                                                   aStyleContext->
++                                                   GetStyleFont()->mLanguage,
++                                                   aStyleContext->
++                                                   PresContext()->
++                                                   GetUserFontSet(),
++                                                   *getter_AddRefs(fm));
++  gfxTextRun *textRun =
++    fm->GetThebesFontGroup()->MakeTextRun(aGlyph.code, aGlyph.Length(),
++                                          ctx, fm->AppUnitsPerDevPixel(), 0);
++  StubPropertyProvider provider;
++  gfxPoint pt(dx, dy);
++  textRun->Draw(ctx, pt, gfxFont::GLYPH_FILL, 0, aGlyph.Length(),
++                &provider, nullptr, nullptr);
++}
++
+ // paint a stretchy char by assembling glyphs vertically
+ nsresult
+ nsMathMLChar::PaintVertically(nsPresContext*      aPresContext,
+                               nsRenderingContext& aRenderingContext,
+                               nsFont&              aFont,
+                               nsStyleContext*      aStyleContext,
+                               nsGlyphTable*        aGlyphTable,
+                               nsRect&              aRect)
+@@ -1983,17 +2029,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+     }
+     else { // middle
+       dy = aRect.y + bm.ascent + (aRect.height - (bm.ascent + bm.descent))/2;
+     }
+     // _cairo_scaled_font_show_glyphs snaps origins to device pixels.
+     // Do this now so that we can get the other dimensions right.
+     // (This may not achieve much with non-rectangular transformations.)
+     dy = SnapToDevPixels(ctx, oneDevPixel, nsPoint(dx, dy)).y;
+-    // abcissa passed to DrawString
++    // abcissa passed to DrawGlyph
+     offset[i] = dy;
+     // _cairo_scaled_font_glyph_device_extents rounds outwards to the nearest
+     // pixel, so the bm values can include 1 row of faint pixels on each edge.
+     // Don't rely on this pixel as it can look like a gap.
+     start[i] = dy - bm.ascent + oneDevPixel; // top join
+     end[i] = dy + bm.descent - oneDevPixel; // bottom join
+   }
+ 
+@@ -2038,17 +2084,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+           clipRect.y = start[i];
+           clipRect.height = end[i] - start[i];
+         }
+       }
+       if (!clipRect.IsEmpty()) {
+         AutoPushClipRect clip(aRenderingContext, clipRect);
+         SetFontFamily(aStyleContext, aRenderingContext,
+                       aFont, aGlyphTable, ch, mFamily);
+-        aRenderingContext.DrawString(ch.code, ch.Length(), dx, dy);
++        DrawGlyph(aStyleContext, aRenderingContext, aFont, ch, dx, dy);
+       }
+     }
+   }
+ 
+   ///////////////
+   // fill the gap between top and middle, and between middle and bottom.
+   if (!chGlue.Exists()) { // null glue : draw a rule
+     // figure out the dimensions of the rule to be drawn :
+@@ -2107,17 +2153,17 @@ nsMathMLChar::PaintVertically(nsPresCont
+       // Make sure not to draw outside the character
+       nscoord dy = NS_MAX(end[i], aRect.y);
+       nscoord fillEnd = NS_MIN(start[i+1], aRect.YMost());
+       while (dy < fillEnd) {
+         clipRect.y = dy;
+         clipRect.height = NS_MIN(bm.ascent + bm.descent, fillEnd - dy);
+         AutoPushClipRect clip(aRenderingContext, clipRect);
+         dy += bm.ascent;
+-        aRenderingContext.DrawString(chGlue.code, chGlue.Length(), dx, dy);
++        DrawGlyph(aStyleContext, aRenderingContext, aFont, chGlue, dx, dy);
+         dy += bm.descent;
+       }
+     }
+   }
+ #ifdef DEBUG
+   else {
+     for (i = 0; i < bottom; ++i) {
+       NS_ASSERTION(end[i] >= start[i+1],
+@@ -2192,17 +2238,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+     }
+     else { // middle
+       dx = aRect.x + (aRect.width - bm.width)/2;
+     }
+     // _cairo_scaled_font_show_glyphs snaps origins to device pixels.
+     // Do this now so that we can get the other dimensions right.
+     // (This may not achieve much with non-rectangular transformations.)
+     dx = SnapToDevPixels(ctx, oneDevPixel, nsPoint(dx, dy)).x;
+-    // abcissa passed to DrawString
++    // abcissa passed to DrawGlyph
+     offset[i] = dx;
+     // _cairo_scaled_font_glyph_device_extents rounds outwards to the nearest
+     // pixel, so the bm values can include 1 row of faint pixels on each edge.
+     // Don't rely on this pixel as it can look like a gap.
+     start[i] = dx + bm.leftBearing + oneDevPixel; // left join
+     end[i] = dx + bm.rightBearing - oneDevPixel; // right join
+   }
+ 
+@@ -2242,17 +2288,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+           clipRect.x = start[i];
+           clipRect.width = end[i] - start[i];
+         }
+       }
+       if (!clipRect.IsEmpty()) {
+         AutoPushClipRect clip(aRenderingContext, clipRect);
+         SetFontFamily(aStyleContext, aRenderingContext,
+                       aFont, aGlyphTable, ch, mFamily);
+-        aRenderingContext.DrawString(ch.code, ch.Length(), dx, dy);
++        DrawGlyph(aStyleContext, aRenderingContext, aFont, ch, dx, dy);
+       }
+     }
+   }
+ 
+   ////////////////
+   // fill the gap between left and middle, and between middle and right.
+   if (!chGlue.Exists()) { // null glue : draw a rule
+     // figure out the dimensions of the rule to be drawn :
+@@ -2309,17 +2355,17 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+       // Make sure not to draw outside the character
+       nscoord dx = NS_MAX(end[i], aRect.x);
+       nscoord fillEnd = NS_MIN(start[i+1], aRect.XMost());
+       while (dx < fillEnd) {
+         clipRect.x = dx;
+         clipRect.width = NS_MIN(bm.rightBearing - bm.leftBearing, fillEnd - dx);
+         AutoPushClipRect clip(aRenderingContext, clipRect);
+         dx -= bm.leftBearing;
+-        aRenderingContext.DrawString(chGlue.code, chGlue.Length(), dx, dy);
++        DrawGlyph(aStyleContext, aRenderingContext, aFont, chGlue, dx, dy);
+         dx += bm.rightBearing;
+       }
+     }
+   }
+ #ifdef DEBUG
+   else { // no glue
+     for (i = 0; i < right; ++i) {
+       NS_ASSERTION(end[i] >= start[i+1],
+diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
+--- a/layout/mathml/nsMathMLChar.h
++++ b/layout/mathml/nsMathMLChar.h
+@@ -227,11 +227,19 @@ private:
+                     nsRenderingContext& aRenderingContext,
+                     nsFont&              aFont,
+                     nsStyleContext*      aStyleContext,
+                     nsGlyphTable*        aGlyphTable,
+                     nsRect&              aRect);
+ 
+   void
+   ApplyTransforms(nsRenderingContext& aRenderingContext, nsRect &r);
++
++  void
++  DrawGlyph(nsStyleContext*     aStyleContext,
++            nsRenderingContext& aRenderingContext,
++            nsFont&             aFont,
++            nsGlyphCode         aGlyph,
++            nscoord             dx,
++            nscoord             dy);
+ };
+ 
+ #endif /* nsMathMLChar_h___ */

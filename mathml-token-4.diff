@@ -1,0 +1,27 @@
+# HG changeset patch
+# Parent 7c98f7b3d3db33d7898d7d2d295d2710d7347371
+# User Frédéric Wang <fred.wang@free.fr>
+Set font style and weight of MathML tokens in layout/style/. =?, r=karlt.
+
+diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
+--- a/layout/style/nsRuleNode.cpp
++++ b/layout/style/nsRuleNode.cpp
+@@ -3057,16 +3057,18 @@ nsRuleNode::SetFont(nsPresContext* aPres
+   // When we're in the loop in SetGenericFont, we must ensure that we
+   // always keep aFont->mFlags set to the correct generic.  But we have
+   // to be careful not to touch it when we're called directly from
+   // ComputeFontData, because we could have a start struct.
+   if (aGenericFontID != kGenericFont_NONE) {
+     aFont->mGenericID = aGenericFontID;
+   }
+ 
++  // -moz-math-variant resets font-style and font-weight
++
+   // font-style: enum, inherit, initial, -moz-system-font
+   SetDiscrete(*aRuleData->ValueForFontStyle(),
+               aFont->mFont.style, aCanStoreInRuleTree,
+               SETDSC_ENUMERATED | SETDSC_SYSTEM_FONT,
+               aParentFont->mFont.style,
+               defaultVariableFont->style,
+               0, 0, 0, systemFont.style);
+ 

@@ -1,3 +1,11 @@
+mathml-token-1.diff
+mathml-token-2.diff
+mathml-token-3.diff
+mathml-token-4.diff
+mathml-token-5.diff
+bug-544001-fix
+bug731667.patch
+migrate-nsMathMLChar.diff
 try.diff
 remove-stix-beta.diff
 largeop-initial-stretch.diff
