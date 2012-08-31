@@ -18,7 +18,8 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { None
+  { ms-quotes-3.diff
+  { bug-560100.diff
 
 * Work in progress patches:
 
@@ -30,7 +31,6 @@ stable patches below and I'll try to update them as soon as possible.
 
   { ms-quotes-1.diff
   { ms-quotes-2.diff
-  { ms-quotes-3.diff
     => Need feedback for the style part, fail dir=rtl and setAttribute tests.
 
   { mglyph-1.diff

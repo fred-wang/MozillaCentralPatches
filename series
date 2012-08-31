@@ -1,3 +1,7 @@
+ms-quotes-3.diff
+bug-560100.diff
+ms-quotes-1.diff
+ms-quotes-2.diff
 mathml-token-1.diff
 mathml-token-2.diff
 mathml-token-3.diff
@@ -15,9 +19,6 @@ mo-selection.diff
 mglyph-1.diff
 mglyph-2.diff
 mglyph-3.diff
-ms-quotes-1.diff
-ms-quotes-2.diff
-ms-quotes-3.diff
 download-fonts-1.diff
 download-fonts-2.diff
 math-height.diff

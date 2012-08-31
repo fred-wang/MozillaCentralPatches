@@ -1,48 +1,40 @@
 # HG changeset patch
-# Parent dee567c8896ba7afa07795acca6a95a2e4d733fc
+# Parent e0e5943d2d555719212d6b51f89b2531e486e1f8
 # User Frédéric Wang <fred.wang@free.fr>
-Reftests for bug 560100. r=karlt
+Update reftests for the <ms> element. r=karlt
 
-diff --git a/layout/reftests/mathml/dir-1-ref.html b/layout/reftests/mathml/dir-1-ref.html
---- a/layout/reftests/mathml/dir-1-ref.html
-+++ b/layout/reftests/mathml/dir-1-ref.html
-@@ -52,10 +52,16 @@
-         <mfenced open="D" close="A" separators="CB">
-           <mtext>c</mtext>
-           <mtext>b</mtext>
-           <mtext>a</mtext>
-         </mfenced>
-       </math>
-     </p>
- 
+diff --git a/layout/reftests/mathml/dir-9-ref.html b/layout/reftests/mathml/dir-9-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-9-ref.html
+@@ -0,0 +1,11 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
 +    <p>ms lquote="A" rquote="B":
 +      <math>
 +	<ms lquote="B" rquote="A">___</ms>
 +      </math>
 +    </p>
-+
-   </body>
- </html>
-diff --git a/layout/reftests/mathml/dir-1.html b/layout/reftests/mathml/dir-1.html
---- a/layout/reftests/mathml/dir-1.html
-+++ b/layout/reftests/mathml/dir-1.html
-@@ -52,10 +52,16 @@
-         <mfenced open="A" close="D" separators="BC">
-           <mtext>a</mtext>
-           <mtext>b</mtext>
-           <mtext>c</mtext>
-         </mfenced>
-       </math>
-     </p>
- 
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/dir-9.html b/layout/reftests/mathml/dir-9.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/dir-9.html
+@@ -0,0 +1,11 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Test dir=rtl</title></head>
++  <body>
 +    <p>ms lquote="A" rquote="B":
 +      <math dir="rtl">
 +	<ms lquote="A" rquote="B">___</ms>
 +      </math>
 +    </p>
-+
-   </body>
- </html>
++  </body>
++</html>
 diff --git a/layout/reftests/mathml/quotes-1-ref.xhtml b/layout/reftests/mathml/quotes-1-ref.xhtml
 --- a/layout/reftests/mathml/quotes-1-ref.xhtml
 +++ b/layout/reftests/mathml/quotes-1-ref.xhtml
@@ -109,7 +101,25 @@ diff --git a/layout/reftests/mathml/quotes-1.xhtml b/layout/reftests/mathml/quot
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -66,17 +66,17 @@ fails-if(winWidget) == mfenced-10.html m
+@@ -1,16 +1,17 @@
+ == dir-1.html dir-1-ref.html
+ == dir-2.html dir-2-ref.html
+ == dir-3.html dir-3-ref.html
+ == dir-4.html dir-4-ref.html
+ == dir-5.html dir-5-ref.html
+ fails == dir-6.html dir-6-ref.html
+ == dir-7.html dir-7-ref.html
+ fails == dir-8.html dir-8-ref.html
++fails == dir-9.html dir-9-ref.html # Bug 787215
+ == mirror-op-1.html mirror-op-1-ref.html
+ != mirror-op-2.html mirror-op-2-ref.html
+ != mirror-op-3.html mirror-op-3-ref.html
+ != mirror-op-4.html mirror-op-4-ref.html
+ == dynamic-mi.xhtml dynamic-mi-ref.xhtml
+ == mfenced-1.xhtml mfenced-1-ref.xhtml
+ == mfenced-2a.xhtml mfenced-2-ref.xhtml
+ == mfenced-2b.xhtml mfenced-2-ref.xhtml
+@@ -66,17 +67,17 @@ fails-if(winWidget) == mfenced-10.html m
  != mathbackground-1.xml mathbackground-1-ref.xml
  != mathbackground-2.xml mathbackground-2-ref.xml
  != mathbackground-3.xml mathbackground-3-ref.xml
@@ -119,7 +129,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mstyle-3.xhtml mstyle-3-ref.xhtml
  == mstyle-4.xhtml mstyle-4-ref.xhtml
 -fails == mstyle-5.xhtml mstyle-5-ref.xhtml # See bug 569125#c29
-+== mstyle-5.xhtml mstyle-5-ref.xhtml
++fails == mstyle-5.xhtml mstyle-5-ref.xhtml # Bug 787215
  == scale-stretchy-1.xhtml scale-stretchy-1-ref.xhtml
  != scale-stretchy-2.xhtml scale-stretchy-2-ref.xhtml
  == scale-stretchy-3.xhtml scale-stretchy-3-ref.xhtml
@@ -128,3 +138,15 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == math-as-mstyle-1.xhtml math-as-mstyle-1-ref.xhtml
  == mpadded-1.html mpadded-1-ref.html
  == mpadded-2.html mpadded-2-ref.html
+@@ -102,10 +103,10 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == maction-dynamic-embellished-op.html maction-dynamic-embellished-op-ref.html
+ == maction-dynamic-1.html maction-dynamic-1-ref.html
+ == maction-dynamic-2.html maction-dynamic-2-ref.html
+ == mo-lspace-rspace.html mo-lspace-rspace-ref.html
+ == maction-dynamic-3.html maction-dynamic-3-ref.html
+ == whitespace-trim-1.html whitespace-trim-1-ref.html
+ == whitespace-trim-2.html whitespace-trim-2-ref.html
+ == whitespace-trim-3.html whitespace-trim-3-ref.html
+-fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 560100
++fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
+ == whitespace-trim-5.html whitespace-trim-5-ref.html
