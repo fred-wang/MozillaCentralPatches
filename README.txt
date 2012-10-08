@@ -18,29 +18,23 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { ms-quotes-3.diff
-  { bug-560100.diff
+  { None
 
 * Work in progress patches:
 
-  { None
+  { nsMathMLChar.diff
+   => Not tested much. May change the rendering of some operators. May cause
+   memory leaks.
 
 * Experimental and old patches:
 
   - try.diff (used to push to try server)
 
-  { ms-quotes-1.diff
-  { ms-quotes-2.diff
-    => Need feedback for the style part, fail dir=rtl and setAttribute tests.
-
-  { mglyph-1.diff
-  { mglyph-2.diff
-  { mglyph-3.diff
-    => May crash Mozilla.
-
-  { download-fonts-1.diff
-  { download-fonts-2.diff
-    => Not accepted
+  { mathml-token-1.diff
+  { mathml-token-2.diff
+  { mathml-token-3.diff
+  { mathml-token-4.diff
+  { mathml-token-5.diff
 
   - remove-stix-beta.diff
     => Pending
@@ -49,6 +43,20 @@ stable patches below and I'll try to update them as soon as possible.
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff
   - mo-selection.diff
+
+  { mglyph-1.diff
+  { mglyph-2.diff
+  { mglyph-3.diff
+    => May crash Mozilla.
+
+  { ms-quotes-1.diff
+  { ms-quotes-2.diff
+    => Need feedback for the style part, fail dir=rtl and setAttribute tests.
+
+  { download-fonts-1.diff
+  { download-fonts-2.diff
+    => Not accepted
+
   - math-height.diff
   - mathml_localize.diff
   - mathml_linebreak.diff
