@@ -23,8 +23,7 @@ stable patches below and I'll try to update them as soon as possible.
 * Work in progress patches:
 
   { nsMathMLChar.diff
-   => Not tested much. May change the rendering of some operators. May cause
-   memory leaks.
+   => Not tested much (may change the rendering of some operators).
 
 * Experimental and old patches:
 
