@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 3621795c03e1cea38ed5a64d48d3eb331fcbbf4b
+# Parent 7a52ba9b15428708096c21d37d7eb1193c7edf83
 # User Frédéric Wang <fred.wang@free.fr>
 Improve how <semantics> determine the visible child. b=745131, r=karlt.
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
 --- a/layout/base/nsCSSFrameConstructor.cpp
 +++ b/layout/base/nsCSSFrameConstructor.cpp
-@@ -4691,16 +4691,18 @@ nsCSSFrameConstructor::FindMathMLData(El
+@@ -4692,16 +4692,18 @@ nsCSSFrameConstructor::FindMathMLData(El
                    FCDATA_IS_LINE_PARTICIPANT |
                    FCDATA_WRAP_KIDS_IN_BLOCKS,
                    NS_NewMathMLmathInlineFrame);
@@ -697,6 +697,29 @@ copy to layout/mathml/nsMathMLSelectedFrame.h
  
 -#endif /* nsMathMLmactionFrame_h___ */
 +#endif /* nsMathMLSelectedFrame_h___ */
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -26,17 +26,18 @@ nsMathMLTokenFrame::~nsMathMLTokenFrame(
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
+ {
+   // let the base class get the default from our parent
+   nsMathMLContainerFrame::InheritAutomaticData(aParent);
+ 
+-  if (mContent->Tag() != nsGkAtoms::mspace_) {
++  if (mContent->Tag() != nsGkAtoms::mspace_ &&
++      mContent->Tag() != nsGkAtoms::annotation_) {
+     // see if the directionality attribute is there
+     nsMathMLFrame::FindAttrDirectionality(mContent, mPresentationData);
+   }
+ 
+   ProcessTextData();
+ 
+   return NS_OK;
+ }
 diff --git a/layout/mathml/nsMathMLmactionFrame.cpp b/layout/mathml/nsMathMLmactionFrame.cpp
 --- a/layout/mathml/nsMathMLmactionFrame.cpp
 +++ b/layout/mathml/nsMathMLmactionFrame.cpp
