@@ -18,7 +18,10 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { None
+  { semantics.diff
+  { semantics-reftests.diff
+
+  => In testing and need review + discussions with Math WG
 
 * Work in progress patches:
 

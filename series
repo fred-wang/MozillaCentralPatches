@@ -1,5 +1,7 @@
-nsMathMLChar.diff
+semantics.diff
+semantics-reftests.diff
 try.diff
+nsMathMLChar.diff
 mathml-token-1.diff
 mathml-token-2.diff
 mathml-token-3.diff
