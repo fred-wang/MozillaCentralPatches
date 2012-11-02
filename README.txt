@@ -25,6 +25,9 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Work in progress patches:
 
+  { mathml-clipboard-1.diff
+   => Add <semantics> flavor, keep <math> attributes? etc
+
   { nsMathMLChar.diff
    => Not tested much (may change the rendering of some operators).
 

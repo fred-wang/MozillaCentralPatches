@@ -1,5 +1,6 @@
 semantics.diff
 semantics-reftests.diff
+mathml-clipboard-1.diff
 try.diff
 nsMathMLChar.diff
 mathml-token-1.diff
