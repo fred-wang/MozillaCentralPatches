@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 99b3de5790b2275269a4c3d6d2eba23478ac1871
+# Parent f8ea907abea13f2837fd4e8b4590ffe7ecd38fa5
 # User Frédéric Wang <fred.wang@free.fr>
 Implement MathML 3 clipboard specification. b=539506, r=?
 
@@ -166,7 +166,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
    docEncoder = do_CreateInstance(NS_HTMLCOPY_ENCODER_CONTRACTID);
    NS_ENSURE_TRUE(docEncoder, NS_ERROR_FAILURE);
  
-@@ -115,64 +181,149 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -115,64 +181,151 @@ SelectionCopyHelper(nsISelection *aSel, 
    if (NS_FAILED(rv)) 
      return rv;
  
@@ -294,25 +294,27 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +      //
 +      // See http://www.w3.org/TR/MathML/chapter6.html#world-int-transf-flavors
 +      //
-+      // ConvertAndWrite in nsDocumentEncoder.cpp tries to generate either a
-+      // unicode code point or a numeric character reference so we follow 5).
-+      // We will also follow 2) and 3) and ignore the optional 4).
-+      // 1) is optional too but the examples in the REC use this XML declaration
++      // 1) is optional but the examples in the REC use this XML declaration
 +      // for the presentation MathML flavor while the REC recommends not to use
 +      // it for the plain text flavor:
 +      //
 +      // "Since some older MathML processors expect MathML instances
 +      // transferred as plain text to begin with a math element, the text
 +      // version SHOULD generally omit the XML declaration"
-+      // 
-+      // XXXfredw: I guess we follow 6) too but haven't verified.
++      //
++      // We will follow 2), 3) and ignore the optional 4). ConvertAndWrite in
++      // nsDocumentEncoder.cpp tries to generate either a unicode code point
++      // or a numeric character reference so we follow 5). Regarding 6), we use
++      // a BOM character.
 +      //
 +      plaintextBuffer.
 +        AssignLiteral("<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n");
 +      plaintextBuffer.Append(buffer);
 +      plaintextBuffer.AppendLiteral("\n</math>");
 +
-+      mathmlBuffer.AssignLiteral("<?xml version=\"1.0\"?>\n");
++      PRUnichar bom = 0xFEFF;
++      mathmlBuffer.Assign(bom);
++      mathmlBuffer.AppendLiteral("<?xml version=\"1.0\"?>\n");
 +      mathmlBuffer.Append(plaintextBuffer);
 +
 +      rv = docEncoder->Init(domDoc, mimeType, flags);
@@ -334,7 +336,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
      clipboard = do_GetService(kCClipboardCID, &rv);
      if (NS_FAILED(rv))
        return rv;
-@@ -185,19 +336,32 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -185,19 +338,32 @@ SelectionCopyHelper(nsISelection *aSel, 
        trans->Init(aDoc->GetLoadContext());
        if (bIsHTMLCopy) {
          // Set up a format converter so that clipboard flavor queries work.
@@ -368,7 +370,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
          // be attached to the transferable
          rv = AppendString(trans, parents, kHTMLContext);
          NS_ENSURE_SUCCESS(rv, rv);
-@@ -341,107 +505,32 @@ nsresult nsCopySupport::DoHooks(nsIDocum
+@@ -341,107 +507,32 @@ nsresult nsCopySupport::DoHooks(nsIDocum
        if (!*aDoPutOnClipboard)
          break;
      }
@@ -477,7 +479,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
    NS_ASSERTION(domDoc, "Need a document");
  
    rv = docEncoder->Init(domDoc, unicodeMimeType, flags);
-@@ -573,32 +662,32 @@ static nsresult AppendDOMNode(nsITransfe
+@@ -573,32 +664,32 @@ static nsresult AppendDOMNode(nsITransfe
    // properly (all the copy code for non-plaintext assumes using HTML
    // serializers and parsers is OK, and those mess up XHTML).
    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(domDocument, &rv);
@@ -961,3 +963,25 @@ diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
  
  //-------------------------------------------------------------------------
  nsresult nsClipboard::CreateNativeDataObject(nsITransferable * aTransferable, IDataObject ** aDataObj, nsIURI * uri)
+diff --git a/widget/windows/nsClipboard.h b/widget/windows/nsClipboard.h
+--- a/widget/windows/nsClipboard.h
++++ b/widget/windows/nsClipboard.h
+@@ -42,16 +42,18 @@ public:
+                                         nsIWidget       * aWindow,
+                                         nsITransferable * aTransferable);
+   static nsresult GetNativeDataOffClipboard(nsIWidget * aWindow, UINT aIndex, UINT aFormat, void ** aData, uint32_t * aLen);
+   static nsresult GetNativeDataOffClipboard(IDataObject * aDataObject, UINT aIndex, UINT aFormat, const char * aMIMEImageFormat, void ** aData, uint32_t * aLen);
+   static nsresult GetGlobalData(HGLOBAL aHGBL, void ** aData, uint32_t * aLen);
+   static UINT     GetFormat(const char* aMimeStr);
+ 
+   static UINT     CF_HTML;
++  static UINT     CF_MATHML;
++  static UINT     CF_TEX;
+   
+ protected:
+   NS_IMETHOD SetNativeClipboardData ( int32_t aWhichClipboard );
+   NS_IMETHOD GetNativeClipboardData ( nsITransferable * aTransferable, int32_t aWhichClipboard );
+   
+   static bool IsInternetShortcut ( const nsAString& inFileName ) ;
+   static bool FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen ) ;
+   static bool FindURLFromNativeURL ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen ) ;
