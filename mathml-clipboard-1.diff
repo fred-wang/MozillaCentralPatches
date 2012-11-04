@@ -166,7 +166,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
    docEncoder = do_CreateInstance(NS_HTMLCOPY_ENCODER_CONTRACTID);
    NS_ENSURE_TRUE(docEncoder, NS_ERROR_FAILURE);
  
-@@ -115,64 +181,151 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -115,64 +181,152 @@ SelectionCopyHelper(nsISelection *aSel, 
    if (NS_FAILED(rv)) 
      return rv;
  
@@ -305,7 +305,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +      // We will follow 2), 3) and ignore the optional 4). ConvertAndWrite in
 +      // nsDocumentEncoder.cpp tries to generate either a unicode code point
 +      // or a numeric character reference so we follow 5). Regarding 6), we use
-+      // a BOM character.
++      // a BOM character and an explicit encoding="UTF-16".
 +      //
 +      plaintextBuffer.
 +        AssignLiteral("<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n");
@@ -314,7 +314,8 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +
 +      PRUnichar bom = 0xFEFF;
 +      mathmlBuffer.Assign(bom);
-+      mathmlBuffer.AppendLiteral("<?xml version=\"1.0\"?>\n");
++      mathmlBuffer.
++        AppendLiteral("<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n");
 +      mathmlBuffer.Append(plaintextBuffer);
 +
 +      rv = docEncoder->Init(domDoc, mimeType, flags);
@@ -336,7 +337,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
      clipboard = do_GetService(kCClipboardCID, &rv);
      if (NS_FAILED(rv))
        return rv;
-@@ -185,19 +338,32 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -185,19 +339,32 @@ SelectionCopyHelper(nsISelection *aSel, 
        trans->Init(aDoc->GetLoadContext());
        if (bIsHTMLCopy) {
          // Set up a format converter so that clipboard flavor queries work.
@@ -370,7 +371,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
          // be attached to the transferable
          rv = AppendString(trans, parents, kHTMLContext);
          NS_ENSURE_SUCCESS(rv, rv);
-@@ -341,107 +507,32 @@ nsresult nsCopySupport::DoHooks(nsIDocum
+@@ -341,107 +508,32 @@ nsresult nsCopySupport::DoHooks(nsIDocum
        if (!*aDoPutOnClipboard)
          break;
      }
@@ -479,7 +480,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
    NS_ASSERTION(domDoc, "Need a document");
  
    rv = docEncoder->Init(domDoc, unicodeMimeType, flags);
-@@ -573,32 +664,32 @@ static nsresult AppendDOMNode(nsITransfe
+@@ -573,32 +665,32 @@ static nsresult AppendDOMNode(nsITransfe
    // properly (all the copy code for non-plaintext assumes using HTML
    // serializers and parsers is OK, and those mess up XHTML).
    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(domDocument, &rv);
