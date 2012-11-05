@@ -1,0 +1,253 @@
+# HG changeset patch
+# Parent 7a13ff9650c0c8e744459783763e857c22b7f457
+# User Frédéric Wang <fred.wang@free.fr>
+Improve how some MathML elements are drawn when selected - part 1. Fix bug 175845, bug 175850 and bug 487587. r=karlt.
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1749,17 +1749,17 @@ void nsDisplayMathMLCharDebug::Paint(nsD
+ #endif
+ 
+ 
+ nsresult
+ nsMathMLChar::Display(nsDisplayListBuilder*   aBuilder,
+                       nsIFrame*               aForFrame,
+                       const nsDisplayListSet& aLists,
+                       uint32_t                aIndex,
+-                      const nsRect*           aSelectedRect)
++                      bool                    aIsSelected)
+ {
+   nsresult rv = NS_OK;
+   nsStyleContext* parentContext = mStyleContext->GetParent();
+   nsStyleContext* styleContext = mStyleContext;
+ 
+   if (mDrawNormal) {
+     // normal drawing if there is nothing special about this char
+     // Set default context to the parent context
+@@ -1768,19 +1768,19 @@ nsMathMLChar::Display(nsDisplayListBuild
+ 
+   if (!styleContext->GetStyleVisibility()->IsVisible())
+     return NS_OK;
+ 
+   // if the leaf style context that we use for stretchy chars has a background
+   // color we use it -- this feature is mostly used for testing and debugging
+   // purposes. Normally, users will set the background on the container frame.
+   // paint the selection background -- beware MathML frames overlap a lot
+-  if (aSelectedRect && !aSelectedRect->IsEmpty()) {
++  if (aIsSelected && !mRect.IsEmpty()) {
+     rv = aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
+-        nsDisplayMathMLSelectionRect(aBuilder, aForFrame, *aSelectedRect));
++        nsDisplayMathMLSelectionRect(aBuilder, aForFrame, mRect));
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+   else if (mRect.width && mRect.height) {
+     const nsStyleBackground* backg = styleContext->GetStyleBackground();
+     if (styleContext != parentContext &&
+         NS_GET_A(backg->mBackgroundColor) > 0) {
+       rv = aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
+           nsDisplayMathMLCharBackground(aBuilder, aForFrame, mRect,
+@@ -1795,18 +1795,17 @@ nsMathMLChar::Display(nsDisplayListBuild
+     rv = aLists.BorderBackground()->AppendToTop(new (aBuilder)
+         nsDisplayMathMLCharDebug(aBuilder, aForFrame, mRect));
+     NS_ENSURE_SUCCESS(rv, rv);
+ #endif
+   }
+   return aLists.Content()->AppendNewToTop(new (aBuilder)
+         nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
+                                       aIndex,
+-                                      aSelectedRect &&
+-                                      !aSelectedRect->IsEmpty()));
++                                      aIsSelected && !mRect.IsEmpty()));
+ }
+ 
+ void
+ nsMathMLChar::ApplyTransforms(nsRenderingContext& aRenderingContext, nsRect &r)
+ {
+   // apply the transforms
+   if (mMirrored) {
+     aRenderingContext.Translate(r.TopRight());
+diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
+--- a/layout/mathml/nsMathMLChar.h
++++ b/layout/mathml/nsMathMLChar.h
+@@ -76,17 +76,17 @@ public:
+     mStyleContext->Release();
+   }
+ 
+   nsresult
+   Display(nsDisplayListBuilder*   aBuilder,
+           nsIFrame*               aForFrame,
+           const nsDisplayListSet& aLists,
+           uint32_t                aIndex,
+-          const nsRect*           aSelectedRect = nullptr);
++          bool                    aIsSelected);
+           
+   void PaintForeground(nsPresContext* aPresContext,
+                        nsRenderingContext& aRenderingContext,
+                        nsPoint aPt,
+                        bool aIsSelected);
+ 
+   // This is the method called to ask the char to stretch itself.
+   // @param aContainerSize - IN - suggested size for the stretched char
+diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
+--- a/layout/mathml/nsMathMLmencloseFrame.cpp
++++ b/layout/mathml/nsMathMLmencloseFrame.cpp
+@@ -179,44 +179,48 @@ nsMathMLmencloseFrame::TransmitAutomatic
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                         const nsRect&           aDirtyRect,
+                                         const nsDisplayListSet& aLists)
+ {
++  bool isSelected = IsSelected();
++
+   /////////////
+   // paint the menclosed content
+   nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect,
+                                                          aLists);
+ 
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+   if (NS_MATHML_HAS_ERROR(mPresentationData.flags))
+     return rv;
+ 
+   nsRect mencloseRect = nsIFrame::GetRect();
+   mencloseRect.x = mencloseRect.y = 0;
+ 
+   if (IsToDraw(NOTATION_RADICAL)) {
+-    rv = mMathMLChar[mRadicalCharIndex].Display(aBuilder, this, aLists, 0);
++    rv = mMathMLChar[mRadicalCharIndex].Display(aBuilder, this, aLists, 0,
++                                                isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
+     nsRect rect;
+     mMathMLChar[mRadicalCharIndex].GetRect(rect);
+     rect.MoveBy(NS_MATHML_IS_RTL(mPresentationData.flags) ?
+                 -mContentWidth : rect.width, 0);
+     rect.SizeTo(mContentWidth, mRuleThickness);
+     rv = DisplayBar(aBuilder, this, rect, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_LONGDIV)) {
+-    rv = mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1);
++    rv = mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1,
++                                                isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
+     nsRect rect;
+     mMathMLChar[mLongDivCharIndex].GetRect(rect);
+     rect.SizeTo(rect.width + mContentWidth, mRuleThickness);
+     rv = DisplayBar(aBuilder, this, rect, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
+--- a/layout/mathml/nsMathMLmfencedFrame.cpp
++++ b/layout/mathml/nsMathMLmfencedFrame.cpp
+@@ -171,36 +171,41 @@ nsMathMLmfencedFrame::CreateFencesAndSep
+   }
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmfencedFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                        const nsRect&           aDirtyRect,
+                                        const nsDisplayListSet& aLists)
+ {
++  bool isSelected = IsSelected();
++
+   /////////////
+   // display the content
+   nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+   NS_ENSURE_SUCCESS(rv, rv);
+   
+   ////////////
+   // display fences and separators
+   uint32_t count = 0;
+   if (mOpenChar) {
+-    rv = mOpenChar->Display(aBuilder, this, aLists, count++);
++    rv = mOpenChar->Display(aBuilder, this, aLists, count++,
++                            isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+   
+   if (mCloseChar) {
+-    rv = mCloseChar->Display(aBuilder, this, aLists, count++);
++    rv = mCloseChar->Display(aBuilder, this, aLists, count++,
++                             isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+   
+   for (int32_t i = 0; i < mSeparatorsCount; i++) {
+-    rv = mSeparatorsChar[i].Display(aBuilder, this, aLists, count++);
++    rv = mSeparatorsChar[i].Display(aBuilder, this, aLists, count++,
++                                    isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmfencedFrame::Reflow(nsPresContext*          aPresContext,
+                              nsHTMLReflowMetrics&     aDesiredSize,
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -92,23 +92,21 @@ nsMathMLmoFrame::BuildDisplayList(nsDisp
+     rv = nsMathMLTokenFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+   } else {
+     rv = DisplayBorderBackgroundOutline(aBuilder, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+     
+     // make our char selected if our inner child text frame is selected
+     bool isSelected = false;
+-    nsRect selectedRect;
+     nsIFrame* firstChild = mFrames.FirstChild();
+     if (IsFrameInSelection(firstChild)) {
+-      selectedRect = firstChild->GetRect();
+       isSelected = true;
+     }
+-    rv = mMathMLChar.Display(aBuilder, this, aLists, 0, isSelected ? &selectedRect : nullptr);
++    rv = mMathMLChar.Display(aBuilder, this, aLists, 0, isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+   
+ #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
+     // for visual debug
+     rv = DisplayBoundingMetrics(aBuilder, this, mReference, mBoundingMetrics, aLists);
+ #endif
+   }
+   return rv;
+diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
+--- a/layout/mathml/nsMathMLmrootFrame.cpp
++++ b/layout/mathml/nsMathMLmrootFrame.cpp
+@@ -85,25 +85,27 @@ nsMathMLmrootFrame::TransmitAutomaticDat
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                      const nsRect&           aDirtyRect,
+                                      const nsDisplayListSet& aLists)
+ {
++  bool isSelected = IsSelected();
++
+   /////////////
+   // paint the content we are square-rooting
+   nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+   NS_ENSURE_SUCCESS(rv, rv);
+   
+   /////////////
+   // paint the sqrt symbol
+   if (!NS_MATHML_HAS_ERROR(mPresentationData.flags)) {
+-    rv = mSqrChar.Display(aBuilder, this, aLists, 0);
++    rv = mSqrChar.Display(aBuilder, this, aLists, 0, isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
+     rv = DisplayBar(aBuilder, this, mBarRect, aLists);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
+ #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
+     // for visual debug
+     nsRect rect;

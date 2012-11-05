@@ -23,6 +23,8 @@ stable patches below and I'll try to update them as soon as possible.
 
   => In testing and need review + discussions with Math WG
 
+  { mo-selection.diff
+
 * Work in progress patches:
 
   { mathml-clipboard-1.diff
@@ -34,6 +36,14 @@ stable patches below and I'll try to update them as soon as possible.
 * Experimental and old patches:
 
   - try.diff (used to push to try server)
+
+  { mathml-selection-1.diff
+  { mathml-selection-2.diff
+  { mathml-selection-3.diff
+
+  => Attempt to fix bugs 175845 and 17585 by adding a background selection
+  around each graphical components and nsMathMLchars. But that may not be
+  the best approach (see comments on these bugs).
 
   { mathml-token-1.diff
   { mathml-token-2.diff

@@ -1,49 +1,29 @@
 # HG changeset patch
-# Parent 6a81ea3869591c1565b7b572e44c79dbd687aceb
+# Parent d6c25ad8e7a1cdd281fb916f10b81f72cb2ff554
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 487587 - In mathml formulas the content of many <mo> elements is not highlighted when selected.
+Bug 487587 - In mathml formulas the content of many <mo> elements is not highlighted when selected. r=roc
 
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
-@@ -90,21 +90,16 @@ nsMathMLmoFrame::GetMathMLFrameType()
- // its selected state bit, and use this little helper to double check.
- PRBool
- nsMathMLmoFrame::IsFrameInSelection(nsIFrame* aFrame)
- {
-   NS_ASSERTION(aFrame, "null arg");
-   if (!aFrame)
-     return PR_FALSE;
- 
--  PRBool isSelected = PR_FALSE;
--  aFrame->GetSelected(&isSelected);
--  if (!isSelected)
--    return PR_FALSE;
--
-   const nsFrameSelection* frameSelection = aFrame->GetConstFrameSelection();
-   SelectionDetails* details =
-     frameSelection->LookUpSelection(aFrame->GetContent(), 0, 1, PR_TRUE);
- 
-   if (!details)
-     return PR_FALSE;
- 
-   while (details) {
-@@ -140,17 +135,17 @@ nsMathMLmoFrame::BuildDisplayList(nsDisp
+@@ -95,17 +95,19 @@ nsMathMLmoFrame::BuildDisplayList(nsDisp
      rv = DisplayBorderBackgroundOutline(aBuilder, aLists);
      NS_ENSURE_SUCCESS(rv, rv);
      
      // make our char selected if our inner child text frame is selected
-     PRBool isSelected = PR_FALSE;
+     bool isSelected = false;
      nsRect selectedRect;
      nsIFrame* firstChild = mFrames.FirstChild();
      if (IsFrameInSelection(firstChild)) {
 -      selectedRect = firstChild->GetRect();
 +      mMathMLChar.GetRect(selectedRect);
-       isSelected = PR_TRUE;
++      // add a one pixel border (it renders better for operators like minus)
++      selectedRect.Inflate(nsPresContext::CSSPixelsToAppUnits(1));
+       isSelected = true;
      }
-     rv = mMathMLChar.Display(aBuilder, this, aLists, isSelected ? &selectedRect : nsnull);
+     rv = mMathMLChar.Display(aBuilder, this, aLists, 0, isSelected ? &selectedRect : nullptr);
      NS_ENSURE_SUCCESS(rv, rv);
    
- #if defined(NS_DEBUG) && defined(SHOW_BOUNDING_BOX)
+ #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
      // for visual debug
      rv = DisplayBoundingMetrics(aBuilder, this, mReference, mBoundingMetrics, aLists);

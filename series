@@ -1,7 +1,11 @@
 semantics.diff
 semantics-reftests.diff
+mo-selection.diff
 mathml-clipboard-1.diff
 try.diff
+mathml-selection-1.diff
+mathml-selection-2.diff
+mathml-selection-3.diff
 nsMathMLChar.diff
 mathml-token-1.diff
 mathml-token-2.diff
@@ -12,7 +16,6 @@ remove-stix-beta.diff
 largeop-initial-stretch.diff
 opdict-diagonal-arrows.diff
 rotate_stretchy.diff
-mo-selection.diff
 mglyph-1.diff
 mglyph-2.diff
 mglyph-3.diff

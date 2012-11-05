@@ -1,3 +1,4 @@
-780be9a3c7dc5e9211a924b006917c0aa572c64d:semantics.diff
-99b3de5790b2275269a4c3d6d2eba23478ac1871:semantics-reftests.diff
-1444977c7090c43126a1aff61118485bf5f0a822:mathml-clipboard-1.diff
+0f769486dff96d61a77e736d1b4343d763493839:semantics.diff
+f8ea907abea13f2837fd4e8b4590ffe7ecd38fa5:semantics-reftests.diff
+f62d0f5c005e237d0ecb9be7a9626618d49dff81:mo-selection.diff
+448fc0d7acbdb6509c9fb751651cf6c0ff1993a6:mathml-clipboard-1.diff

@@ -1,0 +1,356 @@
+# HG changeset patch
+# Parent 277985625b5a77eef2c3bb496b49ae2cbd84e43d
+# User Frédéric Wang <fred.wang@free.fr>
+Improve how some MathML elements are drawn when selected - part 3. Fix bug 175845, bug 175850 and bug 487587. r=karlt.
+
+diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
+--- a/layout/mathml/nsMathMLmencloseFrame.cpp
++++ b/layout/mathml/nsMathMLmencloseFrame.cpp
+@@ -179,129 +179,159 @@ nsMathMLmencloseFrame::TransmitAutomatic
+                                       NS_MATHML_COMPRESSED,
+                                       NS_MATHML_COMPRESSED);
+   }
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+-nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+-                                        const nsRect&           aDirtyRect,
+-                                        const nsDisplayListSet& aLists)
++nsMathMLmencloseFrame::PaintNotations(nsDisplayListBuilder*   aBuilder,
++                                      const nsRect&           aDirtyRect,
++                                      const nsDisplayListSet& aLists,
++                                      nsDisplayItemType       aType)
+ {
+-  bool isSelected = IsSelected();
+-
+-  /////////////
+-  // paint the menclosed content
+-  nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect,
+-                                                         aLists);
+-  NS_ENSURE_SUCCESS(rv, rv);
+-
+-  if (NS_MATHML_HAS_ERROR(mPresentationData.flags))
+-    return rv;
++  nsresult rv = NS_OK;
+ 
+   nsRect mencloseRect = nsIFrame::GetRect();
+   mencloseRect.x = mencloseRect.y = 0;
+ 
+-  nsDisplayItemType type = isSelected ?
+-    NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND : NS_DISPLAY_ITEM_DRAW_FOREGROUND;
+-
+   if (IsToDraw(NOTATION_RADICAL)) {
+-    rv = mMathMLChar[mRadicalCharIndex].Display(aBuilder, this, aLists, 0,
+-                                                isSelected);
+-    NS_ENSURE_SUCCESS(rv, rv);
++    if (aType == NS_DISPLAY_ITEM_DRAW_FOREGROUND ||
++        aType == NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND) {
++      rv = mMathMLChar[mRadicalCharIndex].
++        Display(aBuilder, this, aLists, 0,
++                aType == NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND);
++      NS_ENSURE_SUCCESS(rv, rv);
++    }
+ 
+     nsRect rect;
+     mMathMLChar[mRadicalCharIndex].GetRect(rect);
+     rect.MoveBy(NS_MATHML_IS_RTL(mPresentationData.flags) ?
+                 -mContentWidth : rect.width, 0);
+     rect.SizeTo(mContentWidth, mRuleThickness);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_LONGDIV)) {
+-    rv = mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1,
+-                                                isSelected);
+-    NS_ENSURE_SUCCESS(rv, rv);
++    if (aType == NS_DISPLAY_ITEM_DRAW_FOREGROUND ||
++        aType == NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND) {
++      rv = mMathMLChar[mLongDivCharIndex].
++        Display(aBuilder, this, aLists, 1,
++                aType == NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND);
++      NS_ENSURE_SUCCESS(rv, rv);
++    }
+ 
+     nsRect rect;
+     mMathMLChar[mLongDivCharIndex].GetRect(rect);
+     rect.SizeTo(rect.width + mContentWidth, mRuleThickness);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_TOP)) {
+     nsRect rect(0, 0, mencloseRect.width, mRuleThickness);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_BOTTOM)) {
+     nsRect rect(0, mencloseRect.height - mRuleThickness,
+                 mencloseRect.width, mRuleThickness);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_LEFT)) {
+     nsRect rect(0, 0, mRuleThickness, mencloseRect.height);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_RIGHT)) {
+     nsRect rect(mencloseRect.width - mRuleThickness, 0,
+                 mRuleThickness, mencloseRect.height);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_ROUNDEDBOX)) {
+-    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, type,
++    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, aType,
+                          mRuleThickness, NOTATION_ROUNDEDBOX);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_CIRCLE)) {
+-    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, type,
++    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, aType,
+                          mRuleThickness, NOTATION_CIRCLE);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_UPDIAGONALSTRIKE)) {
+-    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, type,
++    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, aType,
+                          mRuleThickness, NOTATION_UPDIAGONALSTRIKE);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_DOWNDIAGONALSTRIKE)) {
+-    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, type,
++    rv = DisplayNotation(aBuilder, this, mencloseRect, aLists, aType,
+                          mRuleThickness, NOTATION_DOWNDIAGONALSTRIKE);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_HORIZONTALSTRIKE)) {
+     nsRect rect(0, mencloseRect.height / 2 - mRuleThickness / 2,
+                 mencloseRect.width, mRuleThickness);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
+   if (IsToDraw(NOTATION_VERTICALSTRIKE)) {
+     nsRect rect(mencloseRect.width / 2 - mRuleThickness / 2, 0,
+                 mRuleThickness, mencloseRect.height);
+-    rv = DisplayBar(aBuilder, this, rect, aLists, type);
++    rv = DisplayBar(aBuilder, this, rect, aLists, aType);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+   return rv;
+ }
+ 
++NS_IMETHODIMP
++nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
++                                        const nsRect&           aDirtyRect,
++                                        const nsDisplayListSet& aLists)
++{
++  nsresult rv = NS_OK;
++  bool isSelected = IsSelected();
++
++  if (isSelected) {
++    // paint the background
++    rv = nsMathMLmencloseFrame::PaintNotations(aBuilder, aDirtyRect, aLists,
++                                               NS_DISPLAY_ITEM_DRAW_BACKGROUND);
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
++  /////////////
++  // paint the menclosed content
++  rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  if (NS_MATHML_HAS_ERROR(mPresentationData.flags))
++    return rv;
++
++  // paint the notations
++  rv = nsMathMLmencloseFrame::
++    PaintNotations(aBuilder, aDirtyRect, aLists,
++                   isSelected ?
++                   NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND :
++                   NS_DISPLAY_ITEM_DRAW_FOREGROUND);
++
++  return rv;
++}
++
+ /* virtual */ nsresult
+ nsMathMLmencloseFrame::MeasureForWidth(nsRenderingContext& aRenderingContext,
+                                        nsHTMLReflowMetrics& aDesiredSize)
+ {
+   return PlaceInternal(aRenderingContext, false, aDesiredSize, true);
+ }
+ 
+ /* virtual */ nsresult
+diff --git a/layout/mathml/nsMathMLmencloseFrame.h b/layout/mathml/nsMathMLmencloseFrame.h
+--- a/layout/mathml/nsMathMLmencloseFrame.h
++++ b/layout/mathml/nsMathMLmencloseFrame.h
+@@ -102,16 +102,22 @@ protected:
+   }
+ 
+   nscoord mRuleThickness;
+   nsTArray<nsMathMLChar> mMathMLChar;
+   int8_t mLongDivCharIndex, mRadicalCharIndex;
+   nscoord mContentWidth;
+   nsresult AllocateMathMLChar(nsMencloseNotation mask);
+ 
++  NS_IMETHODIMP
++  PaintNotations(nsDisplayListBuilder*   aBuilder,
++                 const nsRect&           aDirtyRect,
++                 const nsDisplayListSet& aLists,
++                 nsDisplayItemType       aType);
++
+   // Display a frame of the specified type.
+   // @param aType Type of frame to display
+   nsresult DisplayNotation(nsDisplayListBuilder* aBuilder,
+                            nsIFrame* aFrame, const nsRect& aRect,
+                            const nsDisplayListSet& aLists,
+                            nsDisplayItemType aType,
+                            nscoord aThickness, nsMencloseNotation aNotation);
+ };
+diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
+--- a/layout/mathml/nsMathMLmfracFrame.cpp
++++ b/layout/mathml/nsMathMLmfracFrame.cpp
+@@ -130,37 +130,56 @@ nsMathMLmfracFrame::CalcLineThickness(ns
+   // use minimum if the lineThickness is a non-zero value less than minimun
+   if (lineThickness && lineThickness < minimumThickness) 
+     lineThickness = minimumThickness;
+ 
+   return lineThickness;
+ }
+ 
+ NS_IMETHODIMP
++nsMathMLmfracFrame::PaintFractionBar(nsDisplayListBuilder*   aBuilder,
++                                     const nsRect&           aDirtyRect,
++                                     const nsDisplayListSet& aLists,
++                                     nsDisplayItemType       aType)
++{
++  nsresult rv = NS_OK;
++  if (mIsBevelled) {
++    rv = DisplaySlash(aBuilder, this, mLineRect, mLineThickness, aLists, aType);
++  } else {
++    rv = DisplayBar(aBuilder, this, mLineRect, aLists, aType);
++  }
++  return rv;
++}
++
++NS_IMETHODIMP
+ nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                      const nsRect&           aDirtyRect,
+                                      const nsDisplayListSet& aLists)
+ {
++  nsresult rv = NS_OK;
+   bool isSelected = IsSelected();
+ 
++  if (isSelected) {
++    // paint the background
++    rv = PaintFractionBar(aBuilder, aDirtyRect, aLists,
++                          NS_DISPLAY_ITEM_DRAW_BACKGROUND);
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
+   /////////////
+   // paint the numerator and denominator
+-  nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
++  rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+   NS_ENSURE_SUCCESS(rv, rv);
+   
+   /////////////
+   // paint the fraction line
+-  nsDisplayItemType type = isSelected ?
+-    NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND : NS_DISPLAY_ITEM_DRAW_FOREGROUND;
+-
+-  if (mIsBevelled) {
+-    rv = DisplaySlash(aBuilder, this, mLineRect, mLineThickness, aLists, type);
+-  } else {
+-    rv = DisplayBar(aBuilder, this, mLineRect, aLists, type);
+-  }
++  rv = PaintFractionBar(aBuilder, aDirtyRect, aLists,
++                        isSelected ?
++                        NS_DISPLAY_ITEM_DRAW_SELECTED_FOREGROUND :
++                        NS_DISPLAY_ITEM_DRAW_FOREGROUND);
+ 
+   return rv;
+ }
+ 
+ /* virtual */ nsresult
+ nsMathMLmfracFrame::MeasureForWidth(nsRenderingContext& aRenderingContext,
+                                     nsHTMLReflowMetrics& aDesiredSize)
+ {
+diff --git a/layout/mathml/nsMathMLmfracFrame.h b/layout/mathml/nsMathMLmfracFrame.h
+--- a/layout/mathml/nsMathMLmfracFrame.h
++++ b/layout/mathml/nsMathMLmfracFrame.h
+@@ -98,16 +98,22 @@ protected:
+   
+   virtual int GetSkipSides() const { return 0; }
+ 
+   nsresult PlaceInternal(nsRenderingContext& aRenderingContext,
+                          bool                 aPlaceOrigin,
+                          nsHTMLReflowMetrics& aDesiredSize,
+                          bool                 aWidthOnly);
+ 
++  NS_IMETHODIMP
++  PaintFractionBar(nsDisplayListBuilder*   aBuilder,
++                   const nsRect&           aDirtyRect,
++                   const nsDisplayListSet& aLists,
++                   nsDisplayItemType       aType);
++
+   // Display a slash
+   nsresult DisplaySlash(nsDisplayListBuilder* aBuilder,
+                         nsIFrame* aFrame, const nsRect& aRect,
+                         nscoord aThickness,
+                         const nsDisplayListSet& aLists,
+                         nsDisplayItemType aType);
+ 
+   nsRect        mLineRect;
+diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
+--- a/layout/mathml/nsMathMLmrootFrame.cpp
++++ b/layout/mathml/nsMathMLmrootFrame.cpp
+@@ -85,21 +85,28 @@ nsMathMLmrootFrame::TransmitAutomaticDat
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                      const nsRect&           aDirtyRect,
+                                      const nsDisplayListSet& aLists)
+ {
++  nsresult rv = NS_OK;
+   bool isSelected = IsSelected();
+ 
++  if (isSelected) {
++    rv = DisplayBar(aBuilder, this, mBarRect, aLists,
++                    NS_DISPLAY_ITEM_DRAW_BACKGROUND);
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
+   /////////////
+   // paint the content we are square-rooting
+-  nsresult rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
++  rv = nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+   NS_ENSURE_SUCCESS(rv, rv);
+   
+   /////////////
+   // paint the sqrt symbol
+   if (!NS_MATHML_HAS_ERROR(mPresentationData.flags)) {
+     rv = mSqrChar.Display(aBuilder, this, aLists, 0, isSelected);
+     NS_ENSURE_SUCCESS(rv, rv);
+ 
