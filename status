@@ -1,4 +1,7 @@
 0f769486dff96d61a77e736d1b4343d763493839:semantics.diff
 f8ea907abea13f2837fd4e8b4590ffe7ecd38fa5:semantics-reftests.diff
 f62d0f5c005e237d0ecb9be7a9626618d49dff81:mo-selection.diff
-448fc0d7acbdb6509c9fb751651cf6c0ff1993a6:mathml-clipboard-1.diff
+79a9ab24020c5fcf53db93ffb9c6175720f8f192:mathml-clipboard-1.diff
+97febd653f531163496d9f01953f7c49d6402d8d:mathml-clipboard-2.diff
+6935adbb2c6c9c142489d583dbebdde539a7e6a0:mathml-clipboard-3.diff
+2eb36e72ec1a58ffa58df7fd7d2e45c5f0cb811c:mathml-clipboard-remove-flavors.diff

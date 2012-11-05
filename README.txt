@@ -28,7 +28,11 @@ stable patches below and I'll try to update them as soon as possible.
 * Work in progress patches:
 
   { mathml-clipboard-1.diff
-   => Add <semantics> flavor, keep <math> attributes? etc
+  { mathml-clipboard-2.diff
+  { mathml-clipboard-3.diff
+  { mathml-clipboard-remove-flavors.diff
+   => Add a copy MathML command? Test exportation to other applications?
+      Register Mac flavors? Implement MathML paste in editor?
 
   { nsMathMLChar.diff
    => Not tested much (may change the rendering of some operators).

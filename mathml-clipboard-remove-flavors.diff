@@ -1,0 +1,87 @@
+# HG changeset patch
+# Parent 6935adbb2c6c9c142489d583dbebdde539a7e6a0
+# User Frédéric Wang <fred.wang@free.fr>
+Experimental patch to remove non-MathML flavors when doing a MathML copy.
+
+diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport.cpp
+--- a/content/base/src/nsCopySupport.cpp
++++ b/content/base/src/nsCopySupport.cpp
+@@ -286,70 +286,72 @@ SelectionCopyHelper(nsISelection *aSel, 
+ 
+         if (bIsMathMLContext) {
+           if (!mathmlBuffer.IsEmpty()) {
+             // Add the MathML DataFlavor to the transferable
+             rv = AppendString(trans, mathmlBuffer, APPLICATION_MATHML_XML);
+             NS_ENSURE_SUCCESS(rv, rv);
+           }
+ 
+-          if (!texBuffer.IsEmpty()) {
++          if (!bIsMathMLContext && !texBuffer.IsEmpty()) {
+             // Add the TeX DataFlavor to the transferable
+             rv = AppendString(trans, texBuffer, APPLICATION_TEX);
+           }
+         }
+ 
+-        if (!buffer.IsEmpty()) {
++        if (!bIsMathMLContext && !buffer.IsEmpty()) {
+           // Add the html DataFlavor to the transferable
+           rv = AppendString(trans, buffer, kHTMLMime);
+           NS_ENSURE_SUCCESS(rv, rv);
+         }
+ 
++        if (!bIsMathMLContext) {
+         // Add the htmlcontext DataFlavor to the transferable
+         // Even if parents is empty string, this flavor should
+         // be attached to the transferable
+         rv = AppendString(trans, parents, kHTMLContext);
+         NS_ENSURE_SUCCESS(rv, rv);
++        }
+ 
+-        if (!info.IsEmpty()) {
++        if (!bIsMathMLContext && !info.IsEmpty()) {
+           // Add the htmlinfo DataFlavor to the transferable
+           rv = AppendString(trans, info, kHTMLInfo);
+           NS_ENSURE_SUCCESS(rv, rv);
+         }
+ 
+-        if (!plaintextBuffer.IsEmpty()) {
++        if (!bIsMathMLContext && !plaintextBuffer.IsEmpty()) {
+           // unicode text
+           // Add the unicode DataFlavor to the transferable
+           // If we didn't have this, then nsDataObj::GetData matches text/unicode against
+           // the kURLMime flavour which is not desirable (eg. when pasting into Notepad)
+           rv = AppendString(trans, plaintextBuffer, kUnicodeMime);
+           NS_ENSURE_SUCCESS(rv, rv);
+         }
+ 
+         // Try and get source URI of the items that are being dragged
+         nsIURI *uri = aDoc->GetDocumentURI();
+         if (uri) {
+           nsAutoCString spec;
+           uri->GetSpec(spec);
+-          if (!spec.IsEmpty()) {
++          if (!bIsMathMLContext && !spec.IsEmpty()) {
+             nsAutoString shortcut;
+             AppendUTF8toUTF16(spec, shortcut);
+ 
+             // Add the URL DataFlavor to the transferable. Don't use kURLMime, as it will
+             // cause an unnecessary UniformResourceLocator to be added which confuses
+             // some apps eg. Outlook 2000 - (See Bug 315370). Don't use
+             // kURLDataMime, as it will cause a bogus 'url ' flavor to
+             // show up on the Mac clipboard, confusing other apps, like
+             // Terminal (see bug 336012).
+             rv = AppendString(trans, shortcut, kURLPrivateMime);
+             NS_ENSURE_SUCCESS(rv, rv);
+           }
+         }
+       } else {
+-        if (!textBuffer.IsEmpty()) {
++        if (!bIsMathMLContext && !textBuffer.IsEmpty()) {
+           // Add the unicode DataFlavor to the transferable
+           rv = AppendString(trans, textBuffer, kUnicodeMime);
+           NS_ENSURE_SUCCESS(rv, rv);
+         }
+       }
+ 
+       if (doPutOnClipboard && clipboard) {
+         bool actuallyPutOnClipboard = true;

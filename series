@@ -2,6 +2,9 @@ semantics.diff
 semantics-reftests.diff
 mo-selection.diff
 mathml-clipboard-1.diff
+mathml-clipboard-2.diff
+mathml-clipboard-3.diff
+mathml-clipboard-remove-flavors.diff
 try.diff
 mathml-selection-1.diff
 mathml-selection-2.diff

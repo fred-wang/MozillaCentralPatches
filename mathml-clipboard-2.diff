@@ -1,0 +1,322 @@
+# HG changeset patch
+# Parent 79a9ab24020c5fcf53db93ffb9c6175720f8f192
+# User Frédéric Wang <fred.wang@free.fr>
+Prepare nsIDocumentEncoder interface to support copying math. b=539506, r=?
+
+diff --git a/content/base/public/nsIDocumentEncoder.idl b/content/base/public/nsIDocumentEncoder.idl
+--- a/content/base/public/nsIDocumentEncoder.idl
++++ b/content/base/public/nsIDocumentEncoder.idl
+@@ -30,17 +30,17 @@ interface nsIDocumentEncoderNodeFixup : 
+    * @param [OUT] aSerializeCloneKids True if the document encoder should
+    * apply recursive serialization to the children of the fixed up node
+    * instead of the children of the original node.
+    * @return The resulting fixed up node.
+    */
+   nsIDOMNode fixupNode(in nsIDOMNode aNode, out boolean aSerializeCloneKids);
+ };
+ 
+-[scriptable, uuid(c5cce872-2793-11e2-ac2d-0090f59acadc)]
++[scriptable, uuid(05573c5e-2794-11e2-8348-0090f59acadc)]
+ interface nsIDocumentEncoder : nsISupports
+ {
+   // Output methods flag bits. There are a frightening number of these,
+   // because everyone wants something a little bit different
+    
+ 
+   /** 
+    * Output only the selection (as opposed to the whole document).
+@@ -313,20 +313,31 @@ interface nsIDocumentEncoder : nsISuppor
+    * @param [OUT] aInfoString The string where extra context info will
+    *              be stored.
+    * @return The document encoded as a string.
+    * 
+    */
+   AString encodeToStringWithContext( out AString aContextString,
+                                      out AString aInfoString);
+ 
++  /*
++   * Encode a <semantics> MathML fragment by picking an annotation child with
++   * the specified encoding.
++   * @param aEncoding the encoding to find.
++   *
++   * @return The annotation encoded as a string.
++   */
++  AString encodeMathMLAnnotationToString(in AString aEncoding);
++
+   /**
+    * Set the fixup object associated with node persistence.
+    * @param aFixup The fixup object.
+    */
+   void setNodeFixup(in nsIDocumentEncoderNodeFixup aFixup);
+ 
+   /**
+    * Determine whether the selection is inside a special context.
+    * @param aIsPlainTextContext whether the selection is in a plain text context
++   * @param aIsMathMLContext whether the selection is in a MathML context
+    */
+-  void getContextParameters(out boolean aIsPlainTextContext);
++  void getContextParameters(out boolean aIsPlainTextContext,
++                            out boolean aIsMathMLContext);
+ };
+diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport.cpp
+--- a/content/base/src/nsCopySupport.cpp
++++ b/content/base/src/nsCopySupport.cpp
+@@ -110,19 +110,20 @@ SelectionCopyHelper(nsISelection *aSel, 
+ 
+   rv = docEncoder->SetSelection(aSel);
+   if (NS_FAILED(rv)) 
+     return rv;
+ 
+   // If the selection is in a special context, the corresponding parameters
+   // have been set by the call to nsHTMLCopyEncoder::SetSelection above.
+   // Thus we can now retrieve these parameters.
+-  bool bIsPlainTextContext = false;
++  bool bIsPlainTextContext = false, bIsMathMLContext = false;
+ 
+-  rv = docEncoder->GetContextParameters(&bIsPlainTextContext);
++  rv = docEncoder->GetContextParameters(&bIsPlainTextContext,
++                                        &bIsMathMLContext);
+   if (NS_FAILED(rv))
+     return rv;
+ 
+   bool bIsHTMLCopy = !bIsPlainTextContext;
+ 
+   nsAutoString buffer, parents, info, textBuffer, plaintextBuffer;
+ 
+   rv = docEncoder->EncodeToString(textBuffer);
+diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumentEncoder.cpp
+--- a/content/base/src/nsDocumentEncoder.cpp
++++ b/content/base/src/nsDocumentEncoder.cpp
+@@ -1221,24 +1221,32 @@ NS_IMETHODIMP
+ nsDocumentEncoder::EncodeToStringWithContext(nsAString& aContextString,
+                                              nsAString& aInfoString,
+                                              nsAString& aEncodedString)
+ {
+   return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ NS_IMETHODIMP
++nsDocumentEncoder::EncodeMathMLAnnotationToString(const nsAString& aEncoding,
++                                                  nsAString& aEncodedString)
++{
++  return NS_ERROR_NOT_IMPLEMENTED;
++}
++
++NS_IMETHODIMP
+ nsDocumentEncoder::SetNodeFixup(nsIDocumentEncoderNodeFixup *aFixup)
+ {
+   mNodeFixup = aFixup;
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+-nsDocumentEncoder::GetContextParameters(bool* aIsPlainTextContext)
++nsDocumentEncoder::GetContextParameters(bool* aIsPlainTextContext,
++                                        bool* aIsMathMLContext)
+ {
+   return NS_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ nsresult NS_NewTextEncoder(nsIDocumentEncoder** aResult); // make mac compiler happy
+ 
+ nsresult
+ NS_NewTextEncoder(nsIDocumentEncoder** aResult)
+@@ -1259,17 +1267,18 @@ public:
+ 
+   NS_IMETHOD Init(nsIDOMDocument* aDocument, const nsAString& aMimeType, uint32_t aFlags);
+ 
+   // overridden methods from nsDocumentEncoder
+   NS_IMETHOD SetSelection(nsISelection* aSelection);
+   NS_IMETHOD EncodeToStringWithContext(nsAString& aContextString,
+                                        nsAString& aInfoString,
+                                        nsAString& aEncodedString);
+-  NS_IMETHOD GetContextParameters(bool* aIsPlainTextContext);
++  NS_IMETHOD GetContextParameters(bool* aIsPlainTextContext,
++                                  bool* aIsMathMLContext);
+ 
+ protected:
+ 
+   enum Endpoint
+   {
+     kStart,
+     kEnd
+   };
+@@ -1287,36 +1296,39 @@ protected:
+   bool IsFirstNode(nsIDOMNode *aNode);
+   bool IsLastNode(nsIDOMNode *aNode);
+   bool IsEmptyTextContent(nsIDOMNode* aNode);
+   virtual bool IncludeInContext(nsINode *aNode);
+   virtual int32_t
+   GetImmediateContextCount(const nsTArray<nsINode*>& aAncestorArray);
+ 
+   bool mIsTextWidget;
++  bool mIsMathMLContext;
+ };
+ 
+ nsHTMLCopyEncoder::nsHTMLCopyEncoder()
+ {
+   mIsTextWidget = false;
++  mIsMathMLContext = false;
+ }
+ 
+ nsHTMLCopyEncoder::~nsHTMLCopyEncoder()
+ {
+ }
+ 
+ NS_IMETHODIMP
+ nsHTMLCopyEncoder::Init(nsIDOMDocument* aDocument,
+                         const nsAString& aMimeType,
+                         uint32_t aFlags)
+ {
+   if (!aDocument)
+     return NS_ERROR_INVALID_ARG;
+ 
+   mIsTextWidget = false;
++  mIsMathMLContext = false;
+   Initialize();
+ 
+   mIsCopying = true;
+   mDocument = do_QueryInterface(aDocument);
+   NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+ 
+   // Hack, hack! Traditionally, the caller passes text/unicode, which is
+   // treated as "guess text/html or text/plain" in this context. (It has a
+@@ -1336,20 +1348,16 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* 
+     mFlags |= OutputNoScriptContent;
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
+ {
+-  // check for text widgets: we need to recognize these so that
+-  // we don't tweak the selection to be outside of the magic
+-  // div that ender-lite text widgets are embedded in.
+-  
+   if (!aSelection) 
+     return NS_ERROR_NULL_POINTER;
+   
+   nsCOMPtr<nsIDOMRange> range;
+   nsCOMPtr<nsIDOMNode> commonParent;
+   int32_t count = 0;
+ 
+   nsresult rv = aSelection->GetRangeCount(&count);
+@@ -1363,60 +1371,63 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+   // here that multi-range selections are table cell selections, in which case
+   // the common parent is somewhere in the table and we don't really care where.
+   rv = aSelection->GetRangeAt(0, getter_AddRefs(range));
+   NS_ENSURE_SUCCESS(rv, rv);
+   if (!range)
+     return NS_ERROR_NULL_POINTER;
+   range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
+ 
+-  for (nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
+-       selContent;
+-       selContent = selContent->GetParent())
+-  {
+-    // checking for selection inside a plaintext form widget
++  nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
++  
++  if (selContent->IsMathML()) {
++    // If the (first range of) selection is inside a MathML tree, we will only
++    // serialize the corresponding MathML subset.
++    mIsMathMLContext = true;
++  } else {
++    // check for text widgets: we need to recognize these so that
++    // we don't tweak the selection to be outside of the magic
++    // div that ender-lite text widgets are embedded in.
++    for ( ; selContent; selContent = selContent->GetParent()) {
+ 
+-    if (!selContent->IsHTML()) {
+-      continue;
+-    }
++      if (!selContent->IsHTML()) {
++        continue;
++      }
+ 
+-    nsIAtom *atom = selContent->Tag();
+-    if (atom == nsGkAtoms::input ||
+-        atom == nsGkAtoms::textarea)
+-    {
+-      mIsTextWidget = true;
+-      break;
+-    }
+-    else if (atom == nsGkAtoms::body)
+-    {
+-      // check for moz prewrap style on body.  If it's there we are 
+-      // in a plaintext editor.  This is pretty cheezy but I haven't 
+-      // found a good way to tell if we are in a plaintext editor.
+-      nsCOMPtr<nsIDOMElement> bodyElem = do_QueryInterface(selContent);
+-      nsAutoString wsVal;
+-      rv = bodyElem->GetAttribute(NS_LITERAL_STRING("style"), wsVal);
+-      if (NS_SUCCEEDED(rv) && (kNotFound != wsVal.Find(NS_LITERAL_STRING("pre-wrap"))))
+-      {
++      nsIAtom *atom = selContent->Tag();
++      if (atom == nsGkAtoms::input ||
++          atom == nsGkAtoms::textarea) {
+         mIsTextWidget = true;
+         break;
++      } else if (atom == nsGkAtoms::body) {
++        // check for moz prewrap style on body.  If it's there we are 
++        // in a plaintext editor.  This is pretty cheezy but I haven't 
++        // found a good way to tell if we are in a plaintext editor.
++        nsCOMPtr<nsIDOMElement> bodyElem = do_QueryInterface(selContent);
++        nsAutoString wsVal;
++        rv = bodyElem->GetAttribute(NS_LITERAL_STRING("style"), wsVal);
++        if (NS_SUCCEEDED(rv) &&
++            (kNotFound != wsVal.Find(NS_LITERAL_STRING("pre-wrap")))) {
++          mIsTextWidget = true;
++          break;
++        }
+       }
+     }
+-  }
++    // also consider ourselves in a text widget if we can't find an
++    // html document
++    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
++    if (!(htmlDoc && mDocument->IsHTML()))
++      mIsTextWidget = true;
+   
+-  // also consider ourselves in a text widget if we can't find an html document
+-  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
+-  if (!(htmlDoc && mDocument->IsHTML()))
+-    mIsTextWidget = true;
+-  
+-  // normalize selection if we are not in a widget
+-  if (mIsTextWidget) 
+-  {
+-    mSelection = aSelection;
+-    mMimeType.AssignLiteral("text/plain");
+-    return NS_OK;
++    // normalize selection if we are not in a widget
++    if (mIsTextWidget) {
++      mSelection = aSelection;
++      mMimeType.AssignLiteral("text/plain");
++      return NS_OK;
++    }
+   }
+   
+   // there's no Clone() for selection! fix...
+   //nsresult rv = aSelection->Clone(getter_AddRefs(mSelection);
+   //NS_ENSURE_SUCCESS(rv, rv);
+   NS_NewDomSelection(getter_AddRefs(mSelection));
+   NS_ENSURE_TRUE(mSelection, NS_ERROR_FAILURE);
+   nsCOMPtr<nsISelectionPrivate> privSelection( do_QueryInterface(aSelection) );
+@@ -2027,13 +2038,15 @@ nsHTMLCopyEncoder::GetImmediateContextCo
+       break;
+     }
+     ++j;
+   }
+   return j;
+ }
+ 
+ NS_IMETHODIMP
+-nsHTMLCopyEncoder::GetContextParameters(bool* aIsPlainTextContext)
++nsHTMLCopyEncoder::GetContextParameters(bool* aIsPlainTextContext,
++                                        bool* aIsMathMLContext)
+ {
+   *aIsPlainTextContext = mIsTextWidget;
++  *aIsMathMLContext = mIsMathMLContext;
+   return NS_OK;
+ }
