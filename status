@@ -2,6 +2,7 @@
 f8ea907abea13f2837fd4e8b4590ffe7ecd38fa5:semantics-reftests.diff
 f62d0f5c005e237d0ecb9be7a9626618d49dff81:mo-selection.diff
 79a9ab24020c5fcf53db93ffb9c6175720f8f192:mathml-clipboard-1.diff
-97febd653f531163496d9f01953f7c49d6402d8d:mathml-clipboard-2.diff
-6935adbb2c6c9c142489d583dbebdde539a7e6a0:mathml-clipboard-3.diff
-2eb36e72ec1a58ffa58df7fd7d2e45c5f0cb811c:mathml-clipboard-remove-flavors.diff
+79e7e56a3094bd8ae92b5558afca10a9e29f9edc:mathml-clipboard-2.diff
+0632cd77f9f215868561de556b93782875f03580:mathml-clipboard-3.diff
+4cf3413f14c8fbb1eff671621edf95ecc9053212:mathml-clipboard-4.diff
+aa8ee25f0d238f4d8f5750324e2bc94c4f14b2a1:mathml-clipboard-remove-flavors.diff
