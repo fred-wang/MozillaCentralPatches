@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 0632cd77f9f215868561de556b93782875f03580
+# Parent 189fbd4f365e61c28fdbe0ae7f04a8dc832a2550
 # User Frédéric Wang <fred.wang@free.fr>
-Handle platform-specific copy for MathML and TeX. b=539506, r=?
+Implement copy operation for MathML and TeX - part 3. b=539506, r=?
 
 diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
 --- a/widget/windows/nsClipboard.cpp
 +++ b/widget/windows/nsClipboard.cpp
-@@ -27,24 +27,29 @@
+@@ -27,24 +27,33 @@
  #include "nsPrimitiveHelpers.h"
  #include "nsImageClipboard.h"
  #include "nsIWidget.h"
@@ -26,7 +26,11 @@ diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
  
 +// Some clipboard formats used to copy MathML formulas
 +// See http://www.w3.org/TR/MathML3/chapter6.html
-+UINT nsClipboard::CF_MATHML = ::RegisterClipboardFormatW(L"MathML Presentation");
++UINT nsClipboard::CF_MATHML = ::RegisterClipboardFormatW(L"MathML");
++UINT nsClipboard::CF_MATHML_PRESENTATION =
++  ::RegisterClipboardFormatW(L"MathML Presentation");
++UINT nsClipboard::CF_MATHML_CONTENT =
++  ::RegisterClipboardFormatW(L"MathML Content");
 +UINT nsClipboard::CF_TEX = ::RegisterClipboardFormatW(L"TeX");
  
  //-------------------------------------------------------------------------
@@ -36,7 +40,7 @@ diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
  //-------------------------------------------------------------------------
  nsClipboard::nsClipboard() : nsBaseClipboard()
  {
-@@ -79,16 +84,20 @@ UINT nsClipboard::GetFormat(const char* 
+@@ -79,16 +88,24 @@ UINT nsClipboard::GetFormat(const char* 
             strcmp(aMimeStr, kJPGImageMime) == 0 ||
             strcmp(aMimeStr, kPNGImageMime) == 0)
      format = CF_DIBV5;
@@ -47,6 +51,10 @@ diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
      format = CF_HTML;
 +  else if (strcmp(aMimeStr, APPLICATION_MATHML_XML) == 0)
 +    format = CF_MATHML;
++  else if (strcmp(aMimeStr, APPLICATION_MATHML_PRESENTATION_XML) == 0)
++    format = CF_MATHML_PRESENTATION;
++  else if (strcmp(aMimeStr, APPLICATION_MATHML_CONTENT_XML) == 0)
++    format = CF_MATHML_CONTENT;
 +  else if (strcmp(aMimeStr, APPLICATION_TEX) == 0)
 +    format = CF_TEX;
    else
@@ -60,7 +68,7 @@ diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
 diff --git a/widget/windows/nsClipboard.h b/widget/windows/nsClipboard.h
 --- a/widget/windows/nsClipboard.h
 +++ b/widget/windows/nsClipboard.h
-@@ -42,16 +42,18 @@ public:
+@@ -42,16 +42,20 @@ public:
                                          nsIWidget       * aWindow,
                                          nsITransferable * aTransferable);
    static nsresult GetNativeDataOffClipboard(nsIWidget * aWindow, UINT aIndex, UINT aFormat, void ** aData, uint32_t * aLen);
@@ -70,6 +78,8 @@ diff --git a/widget/windows/nsClipboard.h b/widget/windows/nsClipboard.h
  
    static UINT     CF_HTML;
 +  static UINT     CF_MATHML;
++  static UINT     CF_MATHML_PRESENTATION;
++  static UINT     CF_MATHML_CONTENT;
 +  static UINT     CF_TEX;
    
  protected:

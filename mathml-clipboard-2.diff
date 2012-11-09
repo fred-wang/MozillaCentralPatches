@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 79a9ab24020c5fcf53db93ffb9c6175720f8f192
+# Parent dff1243180e7d2aaf2a45af606bb65c5344a2a51
 # User Frédéric Wang <fred.wang@free.fr>
-Prepare nsIDocumentEncoder interface to support copying math. b=539506, r=?
+Implement copy operation for MathML and TeX - part 1. b=539506, r=?
 
 diff --git a/content/base/public/nsIDocumentEncoder.idl b/content/base/public/nsIDocumentEncoder.idl
 --- a/content/base/public/nsIDocumentEncoder.idl
@@ -25,7 +25,7 @@ diff --git a/content/base/public/nsIDocumentEncoder.idl b/content/base/public/ns
  
    /** 
     * Output only the selection (as opposed to the whole document).
-@@ -313,20 +313,31 @@ interface nsIDocumentEncoder : nsISuppor
+@@ -313,20 +313,32 @@ interface nsIDocumentEncoder : nsISuppor
     * @param [OUT] aInfoString The string where extra context info will
     *              be stored.
     * @return The document encoded as a string.
@@ -41,7 +41,8 @@ diff --git a/content/base/public/nsIDocumentEncoder.idl b/content/base/public/ns
 +   *
 +   * @return The annotation encoded as a string.
 +   */
-+  AString encodeMathMLAnnotationToString(in AString aEncoding);
++  AString encodeMathMLAnnotationToString(in AString aEncoding,
++                                         in boolean aIsXML);
 +
    /**
     * Set the fixup object associated with node persistence.
@@ -87,7 +88,29 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumentEncoder.cpp
 --- a/content/base/src/nsDocumentEncoder.cpp
 +++ b/content/base/src/nsDocumentEncoder.cpp
-@@ -1221,24 +1221,32 @@ NS_IMETHODIMP
+@@ -1081,17 +1081,20 @@ nsDocumentEncoder::EncodeToString(nsAStr
+       if (node != prevNode) {
+         nsCOMPtr<nsINode> p;
+         if (prevNode) {
+           p = do_QueryInterface(prevNode);
+           rv = SerializeNodeEnd(p, output);
+           NS_ENSURE_SUCCESS(rv, rv);
+         }
+         nsCOMPtr<nsIContent> content = do_QueryInterface(node);
+-        if (content && content->IsHTML(nsGkAtoms::tr)) {
++        if (content &&
++            (content->IsHTML(nsGkAtoms::tr) ||
++             content->IsMathML(nsGkAtoms::mtr_) ||
++             content->IsMathML(nsGkAtoms::mlabeledtr_))) {
+           nsINode* n = content;
+           if (!prevNode) {
+             // Went from a non-<tr> to a <tr>
+             mCommonAncestors.Clear();
+             nsContentUtils::GetAncestors(n->GetParentNode(), mCommonAncestors);
+             rv = SerializeRangeContextStart(mCommonAncestors, output);
+             NS_ENSURE_SUCCESS(rv, rv);
+             // Don't let SerializeRangeToString serialize the context again
+@@ -1221,24 +1224,33 @@ NS_IMETHODIMP
  nsDocumentEncoder::EncodeToStringWithContext(nsAString& aContextString,
                                               nsAString& aInfoString,
                                               nsAString& aEncodedString)
@@ -97,6 +120,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  
  NS_IMETHODIMP
 +nsDocumentEncoder::EncodeMathMLAnnotationToString(const nsAString& aEncoding,
++                                                  bool aIsXML,
 +                                                  nsAString& aEncodedString)
 +{
 +  return NS_ERROR_NOT_IMPLEMENTED;
@@ -121,7 +145,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  
  nsresult
  NS_NewTextEncoder(nsIDocumentEncoder** aResult)
-@@ -1259,17 +1267,18 @@ public:
+@@ -1259,17 +1271,21 @@ public:
  
    NS_IMETHOD Init(nsIDOMDocument* aDocument, const nsAString& aMimeType, uint32_t aFlags);
  
@@ -131,6 +155,9 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
                                         nsAString& aInfoString,
                                         nsAString& aEncodedString);
 -  NS_IMETHOD GetContextParameters(bool* aIsPlainTextContext);
++  NS_IMETHOD EncodeMathMLAnnotationToString(const nsAString& aEncoding,
++                                            bool aIsXML,
++                                            nsAString& aEncodedString);
 +  NS_IMETHOD GetContextParameters(bool* aIsPlainTextContext,
 +                                  bool* aIsMathMLContext);
  
@@ -141,13 +168,17 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
      kStart,
      kEnd
    };
-@@ -1287,36 +1296,39 @@ protected:
+@@ -1285,38 +1301,43 @@ protected:
+   nsresult GetNodeLocation(nsIDOMNode *inChild, nsCOMPtr<nsIDOMNode> *outParent, int32_t *outOffset);
+   bool IsRoot(nsIDOMNode* aNode);
    bool IsFirstNode(nsIDOMNode *aNode);
    bool IsLastNode(nsIDOMNode *aNode);
    bool IsEmptyTextContent(nsIDOMNode* aNode);
    virtual bool IncludeInContext(nsINode *aNode);
    virtual int32_t
    GetImmediateContextCount(const nsTArray<nsINode*>& aAncestorArray);
++  nsresult SerializeMathRoot(nsINode* aMathRoot,
++                             nsAString& aEncodedString);
  
    bool mIsTextWidget;
 +  bool mIsMathMLContext;
@@ -181,7 +212,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  
    // Hack, hack! Traditionally, the caller passes text/unicode, which is
    // treated as "guess text/html or text/plain" in this context. (It has a
-@@ -1336,20 +1348,16 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* 
+@@ -1336,34 +1357,33 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* 
      mFlags |= OutputNoScriptContent;
  
    return NS_OK;
@@ -202,7 +233,16 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
    int32_t count = 0;
  
    nsresult rv = aSelection->GetRangeCount(&count);
-@@ -1363,60 +1371,63 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+   // if selection is uninitialized return
+   if (!count)
+     return NS_ERROR_FAILURE;
+   
++  // check for text widgets: we need to recognize these so that
++  // we don't tweak the selection to be outside of the magic
++  // div that ender-lite text widgets are embedded in.
+   // we'll just use the common parent of the first range.  Implicit assumption
    // here that multi-range selections are table cell selections, in which case
    // the common parent is somewhere in the table and we don't really care where.
    rv = aSelection->GetRangeAt(0, getter_AddRefs(range));
@@ -210,102 +250,209 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
    if (!range)
      return NS_ERROR_NULL_POINTER;
    range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
- 
--  for (nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
--       selContent;
--       selContent = selContent->GetParent())
--  {
--    // checking for selection inside a plaintext form widget
-+  nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
-+  
-+  if (selContent->IsMathML()) {
-+    // If the (first range of) selection is inside a MathML tree, we will only
-+    // serialize the corresponding MathML subset.
-+    mIsMathMLContext = true;
-+  } else {
-+    // check for text widgets: we need to recognize these so that
-+    // we don't tweak the selection to be outside of the magic
-+    // div that ender-lite text widgets are embedded in.
-+    for ( ; selContent; selContent = selContent->GetParent()) {
- 
--    if (!selContent->IsHTML()) {
--      continue;
--    }
-+      if (!selContent->IsHTML()) {
-+        continue;
-+      }
- 
--    nsIAtom *atom = selContent->Tag();
--    if (atom == nsGkAtoms::input ||
--        atom == nsGkAtoms::textarea)
--    {
--      mIsTextWidget = true;
--      break;
--    }
--    else if (atom == nsGkAtoms::body)
--    {
--      // check for moz prewrap style on body.  If it's there we are 
--      // in a plaintext editor.  This is pretty cheezy but I haven't 
--      // found a good way to tell if we are in a plaintext editor.
--      nsCOMPtr<nsIDOMElement> bodyElem = do_QueryInterface(selContent);
--      nsAutoString wsVal;
--      rv = bodyElem->GetAttribute(NS_LITERAL_STRING("style"), wsVal);
--      if (NS_SUCCEEDED(rv) && (kNotFound != wsVal.Find(NS_LITERAL_STRING("pre-wrap"))))
--      {
-+      nsIAtom *atom = selContent->Tag();
-+      if (atom == nsGkAtoms::input ||
-+          atom == nsGkAtoms::textarea) {
-         mIsTextWidget = true;
-         break;
-+      } else if (atom == nsGkAtoms::body) {
-+        // check for moz prewrap style on body.  If it's there we are 
-+        // in a plaintext editor.  This is pretty cheezy but I haven't 
-+        // found a good way to tell if we are in a plaintext editor.
-+        nsCOMPtr<nsIDOMElement> bodyElem = do_QueryInterface(selContent);
-+        nsAutoString wsVal;
-+        rv = bodyElem->GetAttribute(NS_LITERAL_STRING("style"), wsVal);
-+        if (NS_SUCCEEDED(rv) &&
-+            (kNotFound != wsVal.Find(NS_LITERAL_STRING("pre-wrap")))) {
-+          mIsTextWidget = true;
-+          break;
-+        }
-       }
-     }
--  }
-+    // also consider ourselves in a text widget if we can't find an
-+    // html document
-+    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
-+    if (!(htmlDoc && mDocument->IsHTML()))
-+      mIsTextWidget = true;
-   
--  // also consider ourselves in a text widget if we can't find an html document
--  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
--  if (!(htmlDoc && mDocument->IsHTML()))
--    mIsTextWidget = true;
--  
--  // normalize selection if we are not in a widget
--  if (mIsTextWidget) 
--  {
--    mSelection = aSelection;
--    mMimeType.AssignLiteral("text/plain");
--    return NS_OK;
-+    // normalize selection if we are not in a widget
-+    if (mIsTextWidget) {
-+      mSelection = aSelection;
-+      mMimeType.AssignLiteral("text/plain");
-+      return NS_OK;
-+    }
+@@ -1409,16 +1429,88 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+   // normalize selection if we are not in a widget
+   if (mIsTextWidget) 
+   {
+     mSelection = aSelection;
+     mMimeType.AssignLiteral("text/plain");
+     return NS_OK;
    }
    
++  // For simplicity, we only consider single-range MathML selection.
++  // It is often difficult to select the whole <math> with the mouse and
++  // consequently, we consider some adjustments. In particular, we handle the
++  // following cases:
++  // 1) Selection inside the <math>: <math>...|...|...</math>
++  // 2) Endpoints inside & outside the <math>: |<math>...|...</math>
++  // 3) Whole <math> selected: |<math>...</math>|
++  // 4) Same modulo endpoint promotions: ...|  </p><math>...</math><span>|...
++  if (count == 1) {
++    nsCOMPtr<nsIDOMRange> myRange;
++    range->CloneRange(getter_AddRefs(myRange));
++    NS_ENSURE_TRUE(myRange, NS_ERROR_FAILURE);
++
++    nsCOMPtr<nsIDOMNode> startNode, endNode;
++    int32_t startOffset, endOffset;
++    rv = myRange->GetStartContainer(getter_AddRefs(startNode));
++    NS_ENSURE_SUCCESS(rv, rv);
++    rv = myRange->GetEndContainer(getter_AddRefs(endNode));
++    NS_ENSURE_SUCCESS(rv, rv);
++    rv = myRange->GetStartOffset(&startOffset);
++    NS_ENSURE_SUCCESS(rv, rv);
++    rv = myRange->GetEndOffset(&endOffset);
++    NS_ENSURE_SUCCESS(rv, rv);
++
++    nsCOMPtr<nsIDOMNode> opStartNode, opEndNode;
++    int32_t opStartOffset, opEndOffset;
++    rv = GetPromotedPoint(kEnd, startNode, startOffset,
++                          address_of(opStartNode), &opStartOffset,
++                          commonParent);
++    NS_ENSURE_SUCCESS(rv, rv);
++    rv = GetPromotedPoint(kStart, endNode, endOffset,
++                          address_of(opEndNode), &opEndOffset,
++                          commonParent);
++    NS_ENSURE_SUCCESS(rv, rv);
++
++    nsCOMPtr<nsIDOMNode> node; nsCOMPtr<nsIContent> content;
++    node = GetChildAt(opStartNode, opStartOffset);
++    content = do_QueryInterface(node);
++    if (content && content->IsMathML(nsGkAtoms::math)) {
++      opStartNode = node;
++      opStartOffset = 0;
++      myRange->SetStart(opStartNode, opStartOffset);
++    }
++    if (endOffset > 0) {
++      node = GetChildAt(opEndNode, opEndOffset-1);
++      content = do_QueryInterface(node);
++      if (content && content->IsMathML(nsGkAtoms::math)) {
++        opEndNode = node;
++        opEndOffset = content->Length();
++        myRange->SetEnd(opEndNode, opEndOffset);
++      }
++    }
++    
++    myRange->GetCommonAncestorContainer(getter_AddRefs(commonParent));
++    content = do_QueryInterface(commonParent);
++    if (content && content->IsMathML()) {
++      // The selection stricly included in a MathML subtree.
++      // Set mIsMathMLContext now, so that this inclusion will still hold after
++      // the PromoteCall below.
++      mIsMathMLContext = true;
++
++      NS_NewDomSelection(getter_AddRefs(mSelection));
++      NS_ENSURE_TRUE(mSelection, NS_ERROR_FAILURE);
++
++      rv = PromoteRange(myRange);
++      NS_ENSURE_SUCCESS(rv, rv);
++    
++      rv = mSelection->AddRange(myRange);
++      return rv;
++    }
++  }
++
    // there's no Clone() for selection! fix...
    //nsresult rv = aSelection->Clone(getter_AddRefs(mSelection);
    //NS_ENSURE_SUCCESS(rv, rv);
    NS_NewDomSelection(getter_AddRefs(mSelection));
    NS_ENSURE_TRUE(mSelection, NS_ERROR_FAILURE);
    nsCOMPtr<nsISelectionPrivate> privSelection( do_QueryInterface(aSelection) );
-@@ -2027,13 +2038,15 @@ nsHTMLCopyEncoder::GetImmediateContextCo
+   NS_ENSURE_TRUE(privSelection, NS_ERROR_FAILURE);
+   
+@@ -1459,16 +1551,34 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+ NS_IMETHODIMP
+ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
+                                              nsAString& aInfoString,
+                                              nsAString& aEncodedString)
+ {
+   nsresult rv = EncodeToString(aEncodedString);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
++  if (mIsMathMLContext) {
++    // Serialize the <math> root to make an actual MathML document
++    int32_t len = mCommonAncestors.Length();
++
++    for (int32_t i = 0; i < len; i++) {
++
++      nsINode *node = mCommonAncestors.ElementAt(i);
++      if (!node) break;
++
++      nsCOMPtr<nsIContent> content(do_QueryInterface(node));
++      if (content && content->IsMathML(nsGkAtoms::math)) {
++        rv = SerializeMathRoot(node, aEncodedString);
++        NS_ENSURE_SUCCESS(rv, rv);
++        break;
++      }
++    }
++  }
++
+   // do not encode any context info or range hints if we are in a text widget.
+   if (mIsTextWidget) return NS_OK;
+ 
+   // now encode common ancestors into aContextString.  Note that the common ancestors
+   // will be for the last range in the selection in the case of multirange selections.
+   // encoding ancestors every range in a multirange selection in a way that could be 
+   // understood by the paste code would be a lot more work to do.  As a practical matter,
+   // selections are single range, and the ones that aren't are table cell selections
+@@ -1522,16 +1632,25 @@ nsHTMLCopyEncoder::IncludeInContext(nsIN
+ {
+   nsCOMPtr<nsIContent> content(do_QueryInterface(aNode));
+ 
+   if (!content)
+     return false;
+ 
+   nsIAtom *tag = content->Tag();
+ 
++  if (mIsMathMLContext) {
++    // Include the token elements
++    return (tag == nsGkAtoms::mi_ ||
++            tag == nsGkAtoms::mn_ ||
++            tag == nsGkAtoms::mo_ ||
++            tag == nsGkAtoms::ms_ ||
++            tag == nsGkAtoms::mtext_);
++  }
++
+   return (tag == nsGkAtoms::b        ||
+           tag == nsGkAtoms::i        ||
+           tag == nsGkAtoms::u        ||
+           tag == nsGkAtoms::a        ||
+           tag == nsGkAtoms::tt       ||
+           tag == nsGkAtoms::s        ||
+           tag == nsGkAtoms::big      ||
+           tag == nsGkAtoms::small    ||
+@@ -1892,16 +2011,20 @@ bool
+ nsHTMLCopyEncoder::IsRoot(nsIDOMNode* aNode)
+ {
+   nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
+   if (content)
+   {
+     if (mIsTextWidget) 
+       return (IsTag(content, nsGkAtoms::div));
+ 
++    if (mIsMathMLContext)
++      return (IsTag(content, nsGkAtoms::math) ||
++              IsTag(content, nsGkAtoms::mtd_));
++
+     return (IsTag(content, nsGkAtoms::body) ||
+             IsTag(content, nsGkAtoms::td)   ||
+             IsTag(content, nsGkAtoms::th));
+   }
+   return false;
+ }
+ 
+ bool
+@@ -2014,26 +2137,156 @@ nsHTMLCopyEncoder::GetImmediateContextCo
+ {
+   int32_t i = aAncestorArray.Length(), j = 0;
+   while (j < i) {
+     nsINode *node = aAncestorArray.ElementAt(j);
+     if (!node) {
        break;
      }
+     nsCOMPtr<nsIContent> content(do_QueryInterface(node));
+-    if (!content || !content->IsHTML() || (content->Tag() != nsGkAtoms::tr    &&
+-                                           content->Tag() != nsGkAtoms::thead &&
+-                                           content->Tag() != nsGkAtoms::tbody &&
+-                                           content->Tag() != nsGkAtoms::tfoot &&
+-                                           content->Tag() != nsGkAtoms::table)) {
++    if (!content) {
+       break;
+     }
++    if (mIsMathMLContext) {
++      if (!content->IsMathML() || (content->Tag() != nsGkAtoms::mtr_ &&
++                                   content->Tag() != nsGkAtoms::mlabeledtr_ &&
++                                   content->Tag() != nsGkAtoms::mtable_)) {
++        break;
++      }
++    } else {
++      if (!content->IsHTML() || (content->Tag() != nsGkAtoms::tr    &&
++                                 content->Tag() != nsGkAtoms::thead &&
++                                 content->Tag() != nsGkAtoms::tbody &&
++                                 content->Tag() != nsGkAtoms::tfoot &&
++                                 content->Tag() != nsGkAtoms::table)) {
++        break;
++      }
++    }
      ++j;
    }
    return j;
@@ -320,3 +467,120 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
 +  *aIsMathMLContext = mIsMathMLContext;
    return NS_OK;
  }
++
++NS_IMETHODIMP
++nsHTMLCopyEncoder::EncodeMathMLAnnotationToString(const nsAString& aEncoding,
++                                                  bool aIsXML,
++                                                  nsAString& aEncodedString)
++{
++  NS_ASSERTION(mIsMathMLContext, "This should be called in a MathML context");
++
++  if (!mDocument || !mSelection)
++    return NS_ERROR_NOT_INITIALIZED;
++
++  int32_t count = 0;
++  nsresult rv = mSelection->GetRangeCount(&count);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  // We only consider single range selection
++  if (count != 1)
++    return NS_ERROR_FAILURE;
++
++  aEncodedString.Truncate();
++  
++  nsCOMPtr<nsIDOMRange> range;
++  rv = mSelection->GetRangeAt(0, getter_AddRefs(range));
++  NS_ENSURE_SUCCESS(rv, rv);
++  if (!range)
++    return NS_ERROR_NULL_POINTER;
++
++  nsCOMPtr<nsIDOMNode> commonParent;
++  range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
++
++  nsCOMPtr<nsIContent> content(do_QueryInterface(commonParent));
++
++  // Try to find a <semantics> ancestor
++  bool found;
++  for (found = false ; content && content->IsMathML();
++       content = content->GetParent()) {
++    if (content->Tag() == nsGkAtoms::semantics_) {
++      found = true;
++      break;
++    }
++  }
++  if (!found)
++    return NS_OK;
++
++  // Now look at the children of the <semantics> to see if there is an
++  // annotation with the desired encoding and serialize it.
++  nsIAtom* annotationElement =
++    aIsXML ? nsGkAtoms::annotation_xml_ : nsGkAtoms::annotation_;
++
++  for (content = content->GetFirstChild(); content;
++       content = content->GetNextSibling()) {
++    if (content->IsMathML(annotationElement)) {
++      // Only consider "encoding" and don't bother with the annotation key
++      nsAutoString value;
++      content->GetAttr(kNameSpaceID_None, nsGkAtoms::encoding, value);
++      if (value.Equals(aEncoding)) break;
++    }
++  }
++
++  if (!content)
++    return NS_OK;
++
++  if (aIsXML) {
++    // Serialize the node content.
++    // Set mSelection to nullptr so that EncodeToString can serialize mNode,
++    // but put it back to its old value afterward so that one can do
++    // several consecutive calls to EncodeMathMLAnnotationToString
++    nsCOMPtr<nsISelection> oldSelection = mSelection;
++    mSelection = nullptr;
++    mRange = nullptr;
++    mNode = do_QueryInterface(content);
++    EncodeToString(aEncodedString);
++    mSelection = oldSelection;
++
++    // Serialize the <math> root to make an actual MathML document
++    for ( ; content && content->IsMathML(); content = content->GetParent()) {
++      if (content->Tag() == nsGkAtoms::math) {
++        nsCOMPtr<nsIContent> math(do_QueryInterface(content));
++        rv = SerializeMathRoot(math, aEncodedString);
++        return rv;
++      }
++    }
++    return NS_ERROR_FAILURE;
++  }
++
++  // Get the node content as text
++  nsContentUtils::GetNodeTextContent(content, false, aEncodedString);
++  return NS_OK;
++}
++
++nsresult
++nsHTMLCopyEncoder::SerializeMathRoot(nsINode* aMathRoot,
++                                     nsAString& aEncodedString)
++{
++
++  nsAutoString aStartMathString;
++  nsresult rv = SerializeNodeStart(aMathRoot, 0, -1, aStartMathString);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  // The MathML REC says that we must declare the MathML namespace on
++  // the root <math> element when transferring.
++  // See http://www.w3.org/TR/MathML3/chapter6.html#world-int-transf-flavors
++  nsCOMPtr<nsIContent> content(do_QueryInterface(aMathRoot));
++  if (!content->HasAttr(kNameSpaceID_None, nsGkAtoms::xmlns)) {
++    int32_t end = aStartMathString.RFindChar('>');
++    NS_ENSURE_TRUE(end >= 0, NS_ERROR_FAILURE);
++    aStartMathString.SetLength(end);
++    aStartMathString.
++      AppendLiteral(" xmlns=\"http://www.w3.org/1998/Math/MathML\">");
++  }
++
++  aEncodedString.Insert(aStartMathString, 0);
++  rv = SerializeNodeEnd(aMathRoot, aEncodedString);
++  return rv;
++
++  return NS_ERROR_FAILURE;
++}

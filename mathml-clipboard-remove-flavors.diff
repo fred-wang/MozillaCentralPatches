@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 6935adbb2c6c9c142489d583dbebdde539a7e6a0
+# Parent fda7888ebd8710ec1790d137547702df64398fed
 # User Frédéric Wang <fred.wang@free.fr>
 Experimental patch to remove non-MathML flavors when doing a MathML copy.
 

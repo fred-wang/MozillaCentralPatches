@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 97febd653f531163496d9f01953f7c49d6402d8d
+# Parent f713ac4a0867ba20395aebf67f7c6425f7604576
 # User Frédéric Wang <fred.wang@free.fr>
-Implement copy operation for MathML and TeX. b=539506, r=?
+Implement copy operation for MathML and TeX - part 2. b=539506, r=?
 
 diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport.cpp
 --- a/content/base/src/nsCopySupport.cpp
@@ -24,7 +24,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  static NS_DEFINE_CID(kCClipboardCID,           NS_CLIPBOARD_CID);
  static NS_DEFINE_CID(kCTransferableCID,        NS_TRANSFERABLE_CID);
  static NS_DEFINE_CID(kHTMLConverterCID,        NS_HTMLFORMATCONVERTER_CID);
-@@ -120,64 +121,152 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -120,64 +121,162 @@ SelectionCopyHelper(nsISelection *aSel, 
    rv = docEncoder->GetContextParameters(&bIsPlainTextContext,
                                          &bIsMathMLContext);
    if (NS_FAILED(rv))
@@ -34,6 +34,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  
    nsAutoString buffer, parents, info, textBuffer, plaintextBuffer;
 +  nsAutoString mathmlBuffer, texBuffer;
++  nsAutoString mathmlPresentationBuffer, mathmlContentBuffer;
  
    rv = docEncoder->EncodeToString(textBuffer);
    if (NS_FAILED(rv)) 
@@ -50,15 +51,12 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +  // precisely, we try to adhere to the "Recommended Behaviors when
 +  // Transferring" and take the following approach:
 +  //
-+  // - We don't distinguish between presentation and content MathML. We
-+  //   always export a generic MathML flavor (APPLICATION_MATHML_XML) containing
-+  //   the source code of the selected MathML fragment.
++  // - We always export a generic "MathML" flavor (APPLICATION_MATHML_XML)
++  //   containing the source code of the selected MathML fragment.
 +  //
-+  // - When this MathML fragment contains only a single <semantics> element we
-+  //   try to export additional flavors described by this element. For
-+  //   simplicity we only consider <annotation> elements and don't bother with
-+  //   the annotation key. Currently we only export the TeX flavor
-+  //   (APPLICATION_TEX) which seems the most important use case.
++  // - If this fragment has a <semantics> ancestor, we use the innermost one
++  //   to export MathML Presentation", "MathML Content" and "TeX" flavors.
++  //   We don't bother with the annotation key.
 +  //
 +  // - Finally, we export a plain text flavor with the MathML source code as
 +  //   proposed in the MathML REC. This is not the same as the HTML case where
@@ -159,15 +157,13 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +      // transferred as plain text to begin with a math element, the text
 +      // version SHOULD generally omit the XML declaration"
 +      //
-+      // We will follow 2), 3) and ignore the optional 4). ConvertAndWrite in
++      // 2) and 3) are guaranteed by nsHTMLCopyEncoder::SerializeMathRoot
++      // and we ignore the optional 4). ConvertAndWrite in
 +      // nsDocumentEncoder.cpp tries to generate either a unicode code point
-+      // or a numeric character reference 5) holds too. Regarding 6), we use
++      // or a numeric character reference so 5) holds too. Regarding 6), we use
 +      // a BOM character and an explicit encoding="UTF-16".
 +      //
-+      plaintextBuffer.
-+        AssignLiteral("<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n");
-+      plaintextBuffer.Append(buffer);
-+      plaintextBuffer.AppendLiteral("\n</math>");
++      plaintextBuffer.Assign(buffer);
 +
 +      PRUnichar bom = 0xFEFF;
 +      mathmlBuffer.Assign(bom);
@@ -175,14 +171,28 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +        AppendLiteral("<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n");
 +      mathmlBuffer.Append(plaintextBuffer);
 +
++      // 
 +      rv = docEncoder->Init(domDoc, mimeType, flags);
 +      NS_ENSURE_SUCCESS(rv, rv);
 +
 +      rv = docEncoder->SetSelection(aSel);
 +      NS_ENSURE_SUCCESS(rv, rv);
 +
++      rv = docEncoder->EncodeMathMLAnnotationToString(
++                       NS_LITERAL_STRING(APPLICATION_MATHML_PRESENTATION_XML),
++                       true,
++                       mathmlPresentationBuffer);
++      NS_ENSURE_SUCCESS(rv, rv);
++
++      rv = docEncoder->EncodeMathMLAnnotationToString(
++                       NS_LITERAL_STRING(APPLICATION_MATHML_CONTENT_XML),
++                       true,
++                       mathmlContentBuffer);
++      NS_ENSURE_SUCCESS(rv, rv);
++
 +      rv = docEncoder->
 +        EncodeMathMLAnnotationToString(NS_LITERAL_STRING(APPLICATION_TEX),
++                                       false,
 +                                       texBuffer);
 +      NS_ENSURE_SUCCESS(rv, rv);
 +    }
@@ -194,7 +204,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
      clipboard = do_GetService(kCClipboardCID, &rv);
      if (NS_FAILED(rv))
        return rv;
-@@ -190,16 +279,29 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -190,16 +289,50 @@ SelectionCopyHelper(nsISelection *aSel, 
        trans->Init(aDoc->GetLoadContext());
        if (bIsHTMLCopy) {
          // Set up a format converter so that clipboard flavor queries work.
@@ -204,9 +214,30 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
          trans->SetConverter(htmlConverter);
  
 +        if (bIsMathMLContext) {
++          // The MathML REC seems to suggest the order of preference
++          // MathML-Presentation, MathML-content, MathML, TeX, text/unicode
++          // However, our MathML flavor is more precise than the
++          // MathML-Presentation & MathML-content flavors because it
++          // represents the selected subtree rather than the one given by a
++          // <semantics> ancestor. Hence we put the MathML flavor first.
++          // 
 +          if (!mathmlBuffer.IsEmpty()) {
 +            // Add the MathML DataFlavor to the transferable
 +            rv = AppendString(trans, mathmlBuffer, APPLICATION_MATHML_XML);
++            NS_ENSURE_SUCCESS(rv, rv);
++          }
++
++          if (!mathmlPresentationBuffer.IsEmpty()) {
++            // Add the MathML Presentation DataFlavor to the transferable
++            rv = AppendString(trans, mathmlPresentationBuffer,
++                              APPLICATION_MATHML_PRESENTATION_XML);
++            NS_ENSURE_SUCCESS(rv, rv);
++          }
++
++          if (!mathmlContentBuffer.IsEmpty()) {
++            // Add the MathML Content DataFlavor to the transferable
++            rv = AppendString(trans, mathmlContentBuffer,
++                              APPLICATION_MATHML_PRESENTATION_XML);
 +            NS_ENSURE_SUCCESS(rv, rv);
 +          }
 +
@@ -224,197 +255,10 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  
          // Add the htmlcontext DataFlavor to the transferable
          // Even if parents is empty string, this flavor should
-diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumentEncoder.cpp
---- a/content/base/src/nsDocumentEncoder.cpp
-+++ b/content/base/src/nsDocumentEncoder.cpp
-@@ -1081,17 +1081,20 @@ nsDocumentEncoder::EncodeToString(nsAStr
-       if (node != prevNode) {
-         nsCOMPtr<nsINode> p;
-         if (prevNode) {
-           p = do_QueryInterface(prevNode);
-           rv = SerializeNodeEnd(p, output);
-           NS_ENSURE_SUCCESS(rv, rv);
-         }
-         nsCOMPtr<nsIContent> content = do_QueryInterface(node);
--        if (content && content->IsHTML(nsGkAtoms::tr)) {
-+        if (content &&
-+            (content->IsHTML(nsGkAtoms::tr) ||
-+             content->IsMathML(nsGkAtoms::mtr_) ||
-+             content->IsMathML(nsGkAtoms::mlabeledtr_))) {
-           nsINode* n = content;
-           if (!prevNode) {
-             // Went from a non-<tr> to a <tr>
-             mCommonAncestors.Clear();
-             nsContentUtils::GetAncestors(n->GetParentNode(), mCommonAncestors);
-             rv = SerializeRangeContextStart(mCommonAncestors, output);
-             NS_ENSURE_SUCCESS(rv, rv);
-             // Don't let SerializeRangeToString serialize the context again
-@@ -1267,16 +1270,18 @@ public:
- 
-   NS_IMETHOD Init(nsIDOMDocument* aDocument, const nsAString& aMimeType, uint32_t aFlags);
- 
-   // overridden methods from nsDocumentEncoder
-   NS_IMETHOD SetSelection(nsISelection* aSelection);
-   NS_IMETHOD EncodeToStringWithContext(nsAString& aContextString,
-                                        nsAString& aInfoString,
-                                        nsAString& aEncodedString);
-+  NS_IMETHOD EncodeMathMLAnnotationToString(const nsAString& aEncoding,
-+                                            nsAString& aEncodedString);
-   NS_IMETHOD GetContextParameters(bool* aIsPlainTextContext,
-                                   bool* aIsMathMLContext);
- 
- protected:
- 
-   enum Endpoint
-   {
-     kStart,
-@@ -1522,16 +1527,81 @@ nsHTMLCopyEncoder::EncodeToStringWithCon
-   infoString.AppendInt(mStartDepth);
-   infoString.Append(PRUnichar(','));
-   infoString.AppendInt(mEndDepth);
-   aInfoString = infoString;
-   
-   return NS_OK;
- }
- 
-+NS_IMETHODIMP
-+nsHTMLCopyEncoder::EncodeMathMLAnnotationToString(const nsAString& aEncoding,
-+                                                  nsAString& aEncodedString)
-+{
-+  // Nothing to do if we are not in a MathML tree.
-+  if (!mIsMathMLContext)
-+    return NS_OK;
-+
-+  if (!mDocument || !mSelection)
-+    return NS_ERROR_NOT_INITIALIZED;
-+
-+  nsCOMPtr<nsIDOMRange> range;
-+  nsCOMPtr<nsIDOMNode> commonParent;
-+  int32_t count = 0;
-+
-+  nsresult rv = mSelection->GetRangeCount(&count);
-+  NS_ENSURE_SUCCESS(rv, rv);
-+
-+  // if selection is uninitialized return
-+  if (!count)
-+    return NS_ERROR_FAILURE;
-+  
-+  // we'll just use the common parent of the first range.
-+  // See the remark in nsHTMLCopyEncoder::SetSelection
-+  rv = mSelection->GetRangeAt(0, getter_AddRefs(range));
-+  NS_ENSURE_SUCCESS(rv, rv);
-+  if (!range)
-+    return NS_ERROR_NULL_POINTER;
-+  range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
-+
-+  nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
-+
-+  // Try to find a <semantics> ancestor
-+  for ( ; selContent; selContent = selContent->GetParent()) {
-+    if (!selContent->IsMathML() ||
-+        selContent->Tag() == nsGkAtoms::math) {
-+      // No <semantics> found. Stop here.
-+      return NS_OK;
-+    }
-+    if (selContent->Tag() == nsGkAtoms::semantics_) {
-+      break;
-+    }
-+  }
-+
-+  if (!selContent) {
-+    // No <semantics> found.
-+    return NS_OK;
-+  }
-+
-+  // Now look at the children of the <semantics> to see if there is an
-+  // annotation with the desired encoding and serialize it.
-+  for (selContent = selContent->GetFirstChild(); selContent;
-+       selContent = selContent->GetNextSibling()) {
-+    if (selContent->IsMathML(nsGkAtoms::annotation_)) {
-+      nsAutoString value;
-+      selContent->GetAttr(kNameSpaceID_None, nsGkAtoms::encoding, value);
-+      if (value.Equals(aEncoding)) {
-+        nsContentUtils::GetNodeTextContent(selContent, false, aEncodedString);
-+        break;
-+      }
-+    }
-+  }
-+
-+  return NS_OK;
-+}
- 
- bool
- nsHTMLCopyEncoder::IncludeInContext(nsINode *aNode)
- {
-   nsCOMPtr<nsIContent> content(do_QueryInterface(aNode));
- 
-   if (!content)
-     return false;
-@@ -1903,16 +1973,20 @@ bool
- nsHTMLCopyEncoder::IsRoot(nsIDOMNode* aNode)
- {
-   nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-   if (content)
-   {
-     if (mIsTextWidget) 
-       return (IsTag(content, nsGkAtoms::div));
- 
-+    if (mIsMathMLContext)
-+      return (IsTag(content, nsGkAtoms::math) ||
-+              IsTag(content, nsGkAtoms::mtd_));
-+
-     return (IsTag(content, nsGkAtoms::body) ||
-             IsTag(content, nsGkAtoms::td)   ||
-             IsTag(content, nsGkAtoms::th));
-   }
-   return false;
- }
- 
- bool
-@@ -2025,23 +2099,34 @@ nsHTMLCopyEncoder::GetImmediateContextCo
- {
-   int32_t i = aAncestorArray.Length(), j = 0;
-   while (j < i) {
-     nsINode *node = aAncestorArray.ElementAt(j);
-     if (!node) {
-       break;
-     }
-     nsCOMPtr<nsIContent> content(do_QueryInterface(node));
--    if (!content || !content->IsHTML() || (content->Tag() != nsGkAtoms::tr    &&
--                                           content->Tag() != nsGkAtoms::thead &&
--                                           content->Tag() != nsGkAtoms::tbody &&
--                                           content->Tag() != nsGkAtoms::tfoot &&
--                                           content->Tag() != nsGkAtoms::table)) {
-+    if (!content) {
-       break;
-     }
-+    if (mIsMathMLContext) {
-+      if (!content->IsMathML() || (content->Tag() != nsGkAtoms::mtr_ &&
-+                                   content->Tag() != nsGkAtoms::mlabeledtr_ &&
-+                                   content->Tag() != nsGkAtoms::mtable_)) {
-+        break;
-+      }
-+    } else {
-+      if (!content->IsHTML() || (content->Tag() != nsGkAtoms::tr    &&
-+                                 content->Tag() != nsGkAtoms::thead &&
-+                                 content->Tag() != nsGkAtoms::tbody &&
-+                                 content->Tag() != nsGkAtoms::tfoot &&
-+                                 content->Tag() != nsGkAtoms::table)) {
-+        break;
-+      }
-+    }
-     ++j;
-   }
-   return j;
- }
- 
- NS_IMETHODIMP
- nsHTMLCopyEncoder::GetContextParameters(bool* aIsPlainTextContext,
-                                         bool* aIsMathMLContext)
 diff --git a/netwerk/mime/nsMimeTypes.h b/netwerk/mime/nsMimeTypes.h
 --- a/netwerk/mime/nsMimeTypes.h
 +++ b/netwerk/mime/nsMimeTypes.h
-@@ -64,16 +64,17 @@
+@@ -64,16 +64,19 @@
  #define APPLICATION_JAVAARCHIVE             "application/java-archive"
  #define APPLICATION_MARIMBA                 "application/marimba"
  #define APPLICATION_XMARIMBA                "application/x-marimba"
@@ -423,6 +267,8 @@ diff --git a/netwerk/mime/nsMimeTypes.h b/netwerk/mime/nsMimeTypes.h
  #define APPLICATION_XHTML_XML               "application/xhtml+xml"
  #define APPLICATION_XSLT_XML                "application/xslt+xml"
  #define APPLICATION_MATHML_XML              "application/mathml+xml"
++#define APPLICATION_MATHML_PRESENTATION_XML "application/mathml-presentation+xml"
++#define APPLICATION_MATHML_CONTENT_XML      "application/mathml-content+xml"
 +#define APPLICATION_TEX                     "application/x-tex"
  #define APPLICATION_RDF_XML                 "application/rdf+xml"
  
@@ -432,4 +278,3 @@ diff --git a/netwerk/mime/nsMimeTypes.h b/netwerk/mime/nsMimeTypes.h
  #define AUDIO_WEBM                          "audio/webm"
  #define AUDIO_MP3                           "audio/mpeg"
  
-

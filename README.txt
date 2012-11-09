@@ -30,7 +30,7 @@ stable patches below and I'll try to update them as soon as possible.
   { mathml-clipboard-1.diff
   { mathml-clipboard-2.diff
   { mathml-clipboard-3.diff
-  { mathml-clipboard-remove-flavors.diff
+  { mathml-clipboard-4.diff
    => Add a copy MathML command? Test exportation to other applications?
       Register Mac flavors? Implement MathML paste in editor?
 
