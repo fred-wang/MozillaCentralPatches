@@ -1,22 +1,15 @@
 # HG changeset patch
-# Parent fda7888ebd8710ec1790d137547702df64398fed
+# Parent 0bcc07bfbf32410d3c8f547243bfcc580b2f2d6a
 # User Frédéric Wang <fred.wang@free.fr>
 Experimental patch to remove non-MathML flavors when doing a MathML copy.
 
 diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport.cpp
 --- a/content/base/src/nsCopySupport.cpp
 +++ b/content/base/src/nsCopySupport.cpp
-@@ -286,70 +286,72 @@ SelectionCopyHelper(nsISelection *aSel, 
- 
-         if (bIsMathMLContext) {
-           if (!mathmlBuffer.IsEmpty()) {
-             // Add the MathML DataFlavor to the transferable
-             rv = AppendString(trans, mathmlBuffer, APPLICATION_MATHML_XML);
-             NS_ENSURE_SUCCESS(rv, rv);
+@@ -323,64 +323,66 @@ SelectionCopyHelper(nsISelection *aSel, 
            }
  
--          if (!texBuffer.IsEmpty()) {
-+          if (!bIsMathMLContext && !texBuffer.IsEmpty()) {
+           if (!texBuffer.IsEmpty()) {
              // Add the TeX DataFlavor to the transferable
              rv = AppendString(trans, texBuffer, APPLICATION_TEX);
            }
@@ -29,10 +22,10 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
            NS_ENSURE_SUCCESS(rv, rv);
          }
  
-+        if (!bIsMathMLContext) {
          // Add the htmlcontext DataFlavor to the transferable
          // Even if parents is empty string, this flavor should
          // be attached to the transferable
++        if (!bIsMathMLContext) {
          rv = AppendString(trans, parents, kHTMLContext);
          NS_ENSURE_SUCCESS(rv, rv);
 +        }

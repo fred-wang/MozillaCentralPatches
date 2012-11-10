@@ -1,0 +1,87 @@
+# HG changeset patch
+# Parent f1714e9adc10bc4119106ef4d7d4f7d9c55248a2
+# User Frédéric Wang <fred.wang@free.fr>
+Implement paste operation for MathML. b=539506, r=?
+
+diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/html/nsHTMLDataTransfer.cpp
+--- a/editor/libeditor/html/nsHTMLDataTransfer.cpp
++++ b/editor/libeditor/html/nsHTMLDataTransfer.cpp
+@@ -85,16 +85,17 @@
+ #include "nsStringIterator.h"
+ #include "nsSubstringTuple.h"
+ #include "nsTextEditRules.h"
+ #include "nsTextEditUtils.h"
+ #include "nsTreeSanitizer.h"
+ #include "nsWSRunObject.h"
+ #include "nsXPCOM.h"
+ #include "nscore.h"
++#include "nsMimeTypes.h"
+ 
+ class nsIAtom;
+ class nsILoadContext;
+ class nsISupports;
+ 
+ using namespace mozilla;
+ 
+ const PRUnichar nbsp = 160;
+@@ -982,16 +983,19 @@ NS_IMETHODIMP nsHTMLEditor::PrepareHTMLT
+     nsILoadContext* loadContext = destdoc ? destdoc->GetLoadContext() : nullptr;
+     (*aTransferable)->Init(loadContext);
+ 
+     // Create the desired DataFlavor for the type of data
+     // we want to get out of the transferable
+     // This should only happen in html editors, not plaintext
+     if (!IsPlaintextEditor())
+     {
++      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_XML);
++      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_PRESENTATION_XML);
++
+       if (!aHavePrivFlavor) 
+       {
+         (*aTransferable)->AddDataFlavor(kNativeHTMLMime);
+       }
+       (*aTransferable)->AddDataFlavor(kHTMLMime);
+       (*aTransferable)->AddDataFlavor(kFileMime);
+ 
+       switch (Preferences::GetInt("clipboard.paste_image_type", 1))
+@@ -1308,17 +1312,20 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
+           // application/x-moz-nativehtml).  In this case, treat the data
+           // to be pasted as mere HTML to get the best chance of pasting it
+           // correctly.
+           bestFlavor.AssignLiteral(kHTMLMime);
+           // Fall through the next case
+         }
+       }
+     }
+-    if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
++    bool isMathML = (0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
++                     0 == nsCRT::strcmp(bestFlavor,
++                                        APPLICATION_MATHML_PRESENTATION_XML));
++    if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) || isMathML ||
+         0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
+         0 == nsCRT::strcmp(bestFlavor, kMozTextInternal)) {
+       nsCOMPtr<nsISupportsString> textDataObj = do_QueryInterface(genericDataObj);
+       if (textDataObj && len > 0) {
+         nsAutoString text;
+         textDataObj->GetData(text);
+         NS_ASSERTION(text.Length() <= (len/2), "Invalid length!");
+         stuffToPaste.Assign(text.get(), len / 2);
+@@ -1329,17 +1336,17 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
+           textDataObj->GetData(text);
+           NS_ASSERTION(text.Length() <= len, "Invalid length!");
+           stuffToPaste.Assign(NS_ConvertUTF8toUTF16(Substring(text, 0, len)));
+         }
+       }
+ 
+       if (!stuffToPaste.IsEmpty()) {
+         nsAutoEditBatch beginBatching(this);
+-        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime)) {
++        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) || isMathML) {
+           rv = DoInsertHTMLWithContext(stuffToPaste,
+                                        aContextStr, aInfoStr, flavor,
+                                        aSourceDoc,
+                                        aDestinationNode, aDestOffset,
+                                        aDoDeleteSelection,
+                                        isSafe);
+         } else {
+           rv = InsertTextAt(stuffToPaste, aDestinationNode, aDestOffset, aDoDeleteSelection);

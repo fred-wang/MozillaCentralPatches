@@ -31,8 +31,9 @@ stable patches below and I'll try to update them as soon as possible.
   { mathml-clipboard-2.diff
   { mathml-clipboard-3.diff
   { mathml-clipboard-4.diff
-   => Add a copy MathML command? Test exportation to other applications?
-      Register Mac flavors? Implement MathML paste in editor?
+  { mathml-clipboard-5.diff
+   => Add a copy MathML command?
+      Register Mac flavors? Implement TeX paste in plain text editor?
 
   { nsMathMLChar.diff
    => Not tested much (may change the rendering of some operators).
