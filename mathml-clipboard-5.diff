@@ -44,8 +44,7 @@ diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/htm
        (*aTransferable)->AddDataFlavor(kFileMime);
  
        switch (Preferences::GetInt("clipboard.paste_image_type", 1))
-@@ -1308,17 +1312,20 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
-           // application/x-moz-nativehtml).  In this case, treat the data
+@@ -1309,16 +1313,18 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
            // to be pasted as mere HTML to get the best chance of pasting it
            // correctly.
            bestFlavor.AssignLiteral(kHTMLMime);
@@ -53,11 +52,9 @@ diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/htm
          }
        }
      }
--    if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
-+    bool isMathML = (0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
-+                     0 == nsCRT::strcmp(bestFlavor,
-+                                        APPLICATION_MATHML_PRESENTATION_XML));
-+    if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) || isMathML ||
+     if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
++        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
++        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_PRESENTATION_XML) ||
          0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
          0 == nsCRT::strcmp(bestFlavor, kMozTextInternal)) {
        nsCOMPtr<nsISupportsString> textDataObj = do_QueryInterface(genericDataObj);
@@ -66,7 +63,7 @@ diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/htm
          textDataObj->GetData(text);
          NS_ASSERTION(text.Length() <= (len/2), "Invalid length!");
          stuffToPaste.Assign(text.get(), len / 2);
-@@ -1329,17 +1336,17 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
+@@ -1329,17 +1335,20 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
            textDataObj->GetData(text);
            NS_ASSERTION(text.Length() <= len, "Invalid length!");
            stuffToPaste.Assign(NS_ConvertUTF8toUTF16(Substring(text, 0, len)));
@@ -76,7 +73,10 @@ diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/htm
        if (!stuffToPaste.IsEmpty()) {
          nsAutoEditBatch beginBatching(this);
 -        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime)) {
-+        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) || isMathML) {
++        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
++            0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
++            0 == nsCRT::strcmp(bestFlavor,
++                               APPLICATION_MATHML_PRESENTATION_XML)) {
            rv = DoInsertHTMLWithContext(stuffToPaste,
                                         aContextStr, aInfoStr, flavor,
                                         aSourceDoc,
@@ -85,3 +85,34 @@ diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/htm
                                         isSafe);
          } else {
            rv = InsertTextAt(stuffToPaste, aDestinationNode, aDestOffset, aDoDeleteSelection);
+@@ -1416,24 +1425,28 @@ nsresult nsHTMLEditor::InsertFromDataTra
+           return DoInsertHTMLWithContext(cffragment,
+                                          cfcontext, cfselection, type,
+                                          aSourceDoc,
+                                          aDestinationNode, aDestOffset,
+                                          aDoDeleteSelection,
+                                          isSafe);
+         }
+       }
+-      else if (type.EqualsLiteral(kHTMLMime)) {
++      else if (type.EqualsLiteral(kHTMLMime) ||
++               type.EqualsLiteral(APPLICATION_MATHML_XML) ||
++               type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
+         nsAutoString text, contextString, infoString;
+         GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
+         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLContext), aIndex, contextString);
+         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLInfo), aIndex, infoString);
+ 
+         nsAutoEditBatch beginBatching(this);
+-        if (type.EqualsLiteral(kHTMLMime)) {
++        if (type.EqualsLiteral(kHTMLMime) ||
++            type.EqualsLiteral(APPLICATION_MATHML_XML) ||
++            type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
+           return DoInsertHTMLWithContext(text,
+                                          contextString, infoString, type,
+                                          aSourceDoc,
+                                          aDestinationNode, aDestOffset,
+                                          aDoDeleteSelection,
+                                          isSafe);
+         }
+       }
