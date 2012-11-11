@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent dff1243180e7d2aaf2a45af606bb65c5344a2a51
+# Parent 7f6bd17ec5e2b587e2c8d5310645187f19cd244d
 # User Frédéric Wang <fred.wang@free.fr>
 Implement copy operation for MathML and TeX - part 1. b=539506, r=?
 
@@ -88,7 +88,25 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumentEncoder.cpp
 --- a/content/base/src/nsDocumentEncoder.cpp
 +++ b/content/base/src/nsDocumentEncoder.cpp
-@@ -1081,17 +1081,20 @@ nsDocumentEncoder::EncodeToString(nsAStr
+@@ -48,16 +48,17 @@
+ #include "nsTArray.h"
+ #include "nsIFrame.h"
+ #include "nsStringBuffer.h"
+ #include "mozilla/dom/Element.h"
+ #include "nsIEditorDocShell.h"
+ #include "nsIEditor.h"
+ #include "nsIHTMLEditor.h"
+ #include "nsIDocShell.h"
++#include "nsMimeTypes.h"
+ 
+ using namespace mozilla;
+ using namespace mozilla::dom;
+ 
+ nsresult NS_NewDomSelection(nsISelection **aDomSelection);
+ 
+ enum nsRangeIterationDirection {
+   kDirectionOut = -1,
+@@ -1081,17 +1082,20 @@ nsDocumentEncoder::EncodeToString(nsAStr
        if (node != prevNode) {
          nsCOMPtr<nsINode> p;
          if (prevNode) {
@@ -110,7 +128,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
              rv = SerializeRangeContextStart(mCommonAncestors, output);
              NS_ENSURE_SUCCESS(rv, rv);
              // Don't let SerializeRangeToString serialize the context again
-@@ -1221,24 +1224,33 @@ NS_IMETHODIMP
+@@ -1221,24 +1225,33 @@ NS_IMETHODIMP
  nsDocumentEncoder::EncodeToStringWithContext(nsAString& aContextString,
                                               nsAString& aInfoString,
                                               nsAString& aEncodedString)
@@ -145,7 +163,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  
  nsresult
  NS_NewTextEncoder(nsIDocumentEncoder** aResult)
-@@ -1259,17 +1271,21 @@ public:
+@@ -1259,17 +1272,21 @@ public:
  
    NS_IMETHOD Init(nsIDOMDocument* aDocument, const nsAString& aMimeType, uint32_t aFlags);
  
@@ -168,7 +186,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
      kStart,
      kEnd
    };
-@@ -1285,38 +1301,43 @@ protected:
+@@ -1285,38 +1302,43 @@ protected:
    nsresult GetNodeLocation(nsIDOMNode *inChild, nsCOMPtr<nsIDOMNode> *outParent, int32_t *outOffset);
    bool IsRoot(nsIDOMNode* aNode);
    bool IsFirstNode(nsIDOMNode *aNode);
@@ -212,7 +230,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  
    // Hack, hack! Traditionally, the caller passes text/unicode, which is
    // treated as "guess text/html or text/plain" in this context. (It has a
-@@ -1336,34 +1357,33 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* 
+@@ -1336,34 +1358,33 @@ nsHTMLCopyEncoder::Init(nsIDOMDocument* 
      mFlags |= OutputNoScriptContent;
  
    return NS_OK;
@@ -250,7 +268,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
    if (!range)
      return NS_ERROR_NULL_POINTER;
    range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
-@@ -1409,16 +1429,88 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+@@ -1409,16 +1430,82 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
    // normalize selection if we are not in a widget
    if (mIsTextWidget) 
    {
@@ -259,19 +277,22 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
      return NS_OK;
    }
    
-+  // For simplicity, we only consider single-range MathML selection.
-+  // It is often difficult to select the whole <math> with the mouse and
-+  // consequently, we consider some adjustments. In particular, we handle the
-+  // following cases:
-+  // 1) Selection inside the <math>: <math>...|...|...</math>
-+  // 2) Endpoints inside & outside the <math>: |<math>...|...</math>
-+  // 3) Whole <math> selected: |<math>...</math>|
-+  // 4) Same modulo endpoint promotions: ...|  </p><math>...</math><span>|...
++  // For simplicity, we only consider single-range MathML selection. We handle
++  // the following cases:
++  //
++  //   1) Selection inside the <math>: <math>...|...|...</math>
++  //   2) Endpoints inside & outside the <math>: |<math>...|...</math>
++  //   3) Whole <math> selected: |<math>...</math>|
++  //
++  // Still, it remains difficult to select the whole <math> element with the
++  // mouse.
++  // XXXfredw Add a copy formula command?
 +  if (count == 1) {
 +    nsCOMPtr<nsIDOMRange> myRange;
 +    range->CloneRange(getter_AddRefs(myRange));
 +    NS_ENSURE_TRUE(myRange, NS_ERROR_FAILURE);
 +
++    // Get the nodes and offsets describing the selection endpoints
 +    nsCOMPtr<nsIDOMNode> startNode, endNode;
 +    int32_t startOffset, endOffset;
 +    rv = myRange->GetStartContainer(getter_AddRefs(startNode));
@@ -283,39 +304,30 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
 +    rv = myRange->GetEndOffset(&endOffset);
 +    NS_ENSURE_SUCCESS(rv, rv);
 +
-+    nsCOMPtr<nsIDOMNode> opStartNode, opEndNode;
-+    int32_t opStartOffset, opEndOffset;
-+    rv = GetPromotedPoint(kEnd, startNode, startOffset,
-+                          address_of(opStartNode), &opStartOffset,
-+                          commonParent);
-+    NS_ENSURE_SUCCESS(rv, rv);
-+    rv = GetPromotedPoint(kStart, endNode, endOffset,
-+                          address_of(opEndNode), &opEndOffset,
-+                          commonParent);
-+    NS_ENSURE_SUCCESS(rv, rv);
-+
++    // Reduce from 2) & 3) to 1). 
 +    nsCOMPtr<nsIDOMNode> node; nsCOMPtr<nsIContent> content;
-+    node = GetChildAt(opStartNode, opStartOffset);
++    node = GetChildAt(startNode, startOffset);
 +    content = do_QueryInterface(node);
 +    if (content && content->IsMathML(nsGkAtoms::math)) {
-+      opStartNode = node;
-+      opStartOffset = 0;
-+      myRange->SetStart(opStartNode, opStartOffset);
++      startNode = node;
++      startOffset = 0;
++      myRange->SetStart(startNode, startOffset);
 +    }
 +    if (endOffset > 0) {
-+      node = GetChildAt(opEndNode, opEndOffset-1);
++      node = GetChildAt(endNode, endOffset-1);
 +      content = do_QueryInterface(node);
 +      if (content && content->IsMathML(nsGkAtoms::math)) {
-+        opEndNode = node;
-+        opEndOffset = content->Length();
-+        myRange->SetEnd(opEndNode, opEndOffset);
++        endNode = node;
++        endOffset = content->Length();
++        myRange->SetEnd(endNode, endOffset);
 +      }
 +    }
 +    
++    // Now, verify if we are in case 1)
 +    myRange->GetCommonAncestorContainer(getter_AddRefs(commonParent));
 +    content = do_QueryInterface(commonParent);
 +    if (content && content->IsMathML()) {
-+      // The selection stricly included in a MathML subtree.
++      // The selection strictly included in a MathML subtree.
 +      // Set mIsMathMLContext now, so that this inclusion will still hold after
 +      // the PromoteCall below.
 +      mIsMathMLContext = true;
@@ -339,7 +351,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
    nsCOMPtr<nsISelectionPrivate> privSelection( do_QueryInterface(aSelection) );
    NS_ENSURE_TRUE(privSelection, NS_ERROR_FAILURE);
    
-@@ -1459,16 +1551,34 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
+@@ -1459,16 +1546,38 @@ nsHTMLCopyEncoder::SetSelection(nsISelec
  NS_IMETHODIMP
  nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
                                               nsAString& aInfoString,
@@ -364,6 +376,10 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
 +        break;
 +      }
 +    }
++
++    // Do not encode any context info or range hints if we are in a MathML
++    // context.
++    return NS_OK;
 +  }
 +
    // do not encode any context info or range hints if we are in a text widget.
@@ -374,7 +390,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
    // encoding ancestors every range in a multirange selection in a way that could be 
    // understood by the paste code would be a lot more work to do.  As a practical matter,
    // selections are single range, and the ones that aren't are table cell selections
-@@ -1522,16 +1632,25 @@ nsHTMLCopyEncoder::IncludeInContext(nsIN
+@@ -1522,16 +1631,25 @@ nsHTMLCopyEncoder::IncludeInContext(nsIN
  {
    nsCOMPtr<nsIContent> content(do_QueryInterface(aNode));
  
@@ -400,7 +416,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
            tag == nsGkAtoms::s        ||
            tag == nsGkAtoms::big      ||
            tag == nsGkAtoms::small    ||
-@@ -1892,16 +2011,20 @@ bool
+@@ -1892,16 +2010,20 @@ bool
  nsHTMLCopyEncoder::IsRoot(nsIDOMNode* aNode)
  {
    nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
@@ -421,7 +437,7 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
  }
  
  bool
-@@ -2014,26 +2137,156 @@ nsHTMLCopyEncoder::GetImmediateContextCo
+@@ -2014,26 +2136,163 @@ nsHTMLCopyEncoder::GetImmediateContextCo
  {
    int32_t i = aAncestorArray.Length(), j = 0;
    while (j < i) {
@@ -523,6 +539,13 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
 +      nsAutoString value;
 +      content->GetAttr(kNameSpaceID_None, nsGkAtoms::encoding, value);
 +      if (value.Equals(aEncoding)) break;
++      if (aIsXML) {
++        // Handle MathML2 encoding values for backward compatibility. 
++        if ((value.EqualsLiteral("MathML-Presentation") &&
++             aEncoding.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) ||
++            (value.EqualsLiteral("MathML-Content") &&
++             aEncoding.EqualsLiteral(APPLICATION_MATHML_CONTENT_XML))) break;
++      }
 +    }
 +  }
 +
@@ -584,3 +607,26 @@ diff --git a/content/base/src/nsDocumentEncoder.cpp b/content/base/src/nsDocumen
 +
 +  return NS_ERROR_FAILURE;
 +}
+diff --git a/netwerk/mime/nsMimeTypes.h b/netwerk/mime/nsMimeTypes.h
+--- a/netwerk/mime/nsMimeTypes.h
++++ b/netwerk/mime/nsMimeTypes.h
+@@ -64,16 +64,19 @@
+ #define APPLICATION_JAVAARCHIVE             "application/java-archive"
+ #define APPLICATION_MARIMBA                 "application/marimba"
+ #define APPLICATION_XMARIMBA                "application/x-marimba"
+ #define APPLICATION_XPINSTALL               "application/x-xpinstall"
+ #define APPLICATION_XML                     "application/xml"
+ #define APPLICATION_XHTML_XML               "application/xhtml+xml"
+ #define APPLICATION_XSLT_XML                "application/xslt+xml"
+ #define APPLICATION_MATHML_XML              "application/mathml+xml"
++#define APPLICATION_MATHML_PRESENTATION_XML "application/mathml-presentation+xml"
++#define APPLICATION_MATHML_CONTENT_XML      "application/mathml-content+xml"
++#define APPLICATION_TEX                     "application/x-tex"
+ #define APPLICATION_RDF_XML                 "application/rdf+xml"
+ 
+ #define AUDIO_BASIC                         "audio/basic"
+ #define AUDIO_OGG                           "audio/ogg"
+ #define AUDIO_WAV                           "audio/x-wav"
+ #define AUDIO_WEBM                          "audio/webm"
+ #define AUDIO_MP3                           "audio/mpeg"
+ 

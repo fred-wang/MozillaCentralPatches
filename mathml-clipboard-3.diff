@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent f713ac4a0867ba20395aebf67f7c6425f7604576
+# Parent 4ca83396a83811d0606793665b2396ded83b53c8
 # User Frédéric Wang <fred.wang@free.fr>
 Implement copy operation for MathML and TeX - part 2. b=539506, r=?
 
@@ -24,7 +24,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  static NS_DEFINE_CID(kCClipboardCID,           NS_CLIPBOARD_CID);
  static NS_DEFINE_CID(kCTransferableCID,        NS_TRANSFERABLE_CID);
  static NS_DEFINE_CID(kHTMLConverterCID,        NS_HTMLFORMATCONVERTER_CID);
-@@ -120,64 +121,162 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -120,64 +121,163 @@ SelectionCopyHelper(nsISelection *aSel, 
    rv = docEncoder->GetContextParameters(&bIsPlainTextContext,
                                          &bIsMathMLContext);
    if (NS_FAILED(rv))
@@ -171,7 +171,8 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +        AppendLiteral("<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n");
 +      mathmlBuffer.Append(plaintextBuffer);
 +
-+      // 
++      // If there is a <semantics> ancestor, encode annotation for
++      // Presentation MathML, Content MathML and TeX.
 +      rv = docEncoder->Init(domDoc, mimeType, flags);
 +      NS_ENSURE_SUCCESS(rv, rv);
 +
@@ -204,7 +205,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
      clipboard = do_GetService(kCClipboardCID, &rv);
      if (NS_FAILED(rv))
        return rv;
-@@ -190,16 +289,50 @@ SelectionCopyHelper(nsISelection *aSel, 
+@@ -190,16 +290,50 @@ SelectionCopyHelper(nsISelection *aSel, 
        trans->Init(aDoc->GetLoadContext());
        if (bIsHTMLCopy) {
          // Set up a format converter so that clipboard flavor queries work.
@@ -237,7 +238,7 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
 +          if (!mathmlContentBuffer.IsEmpty()) {
 +            // Add the MathML Content DataFlavor to the transferable
 +            rv = AppendString(trans, mathmlContentBuffer,
-+                              APPLICATION_MATHML_PRESENTATION_XML);
++                              APPLICATION_MATHML_CONTENT_XML);
 +            NS_ENSURE_SUCCESS(rv, rv);
 +          }
 +
@@ -255,26 +256,4 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  
          // Add the htmlcontext DataFlavor to the transferable
          // Even if parents is empty string, this flavor should
-diff --git a/netwerk/mime/nsMimeTypes.h b/netwerk/mime/nsMimeTypes.h
---- a/netwerk/mime/nsMimeTypes.h
-+++ b/netwerk/mime/nsMimeTypes.h
-@@ -64,16 +64,19 @@
- #define APPLICATION_JAVAARCHIVE             "application/java-archive"
- #define APPLICATION_MARIMBA                 "application/marimba"
- #define APPLICATION_XMARIMBA                "application/x-marimba"
- #define APPLICATION_XPINSTALL               "application/x-xpinstall"
- #define APPLICATION_XML                     "application/xml"
- #define APPLICATION_XHTML_XML               "application/xhtml+xml"
- #define APPLICATION_XSLT_XML                "application/xslt+xml"
- #define APPLICATION_MATHML_XML              "application/mathml+xml"
-+#define APPLICATION_MATHML_PRESENTATION_XML "application/mathml-presentation+xml"
-+#define APPLICATION_MATHML_CONTENT_XML      "application/mathml-content+xml"
-+#define APPLICATION_TEX                     "application/x-tex"
- #define APPLICATION_RDF_XML                 "application/rdf+xml"
- 
- #define AUDIO_BASIC                         "audio/basic"
- #define AUDIO_OGG                           "audio/ogg"
- #define AUDIO_WAV                           "audio/x-wav"
- #define AUDIO_WEBM                          "audio/webm"
- #define AUDIO_MP3                           "audio/mpeg"
- 
+
