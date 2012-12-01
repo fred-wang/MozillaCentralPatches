@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0bcc07bfbf32410d3c8f547243bfcc580b2f2d6a
+# Parent 692675b002c78ab70100a06983bf5089f6cc39b9
 # User Frédéric Wang <fred.wang@free.fr>
 Experimental patch to remove non-MathML flavors when doing a MathML copy.
 
@@ -78,3 +78,4 @@ diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport
  
        if (doPutOnClipboard && clipboard) {
          bool actuallyPutOnClipboard = true;
+

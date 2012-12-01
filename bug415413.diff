@@ -1,0 +1,299 @@
+# HG changeset patch
+# Parent e3b78a647bb3d97cb03be782b7d3185664ce8f6d
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 415413 - Incorrect widths and heights of MathML with italics in table cells
+
+diff --git a/layout/generic/nsTextFrame.h b/layout/generic/nsTextFrame.h
+--- a/layout/generic/nsTextFrame.h
++++ b/layout/generic/nsTextFrame.h
+@@ -16,19 +16,18 @@
+ 
+ class nsTextPaintStyle;
+ class PropertyProvider;
+ 
+ // This state bit is set on frames that have some non-collapsed characters after
+ // reflow
+ #define TEXT_HAS_NONCOLLAPSED_CHARACTERS NS_FRAME_STATE_BIT(31)
+ 
+-// This state bit is set on frames which are forced to trim their leading and
+-// trailing whitespaces
+-#define TEXT_FORCE_TRIM_WHITESPACE       NS_FRAME_STATE_BIT(32)
++// This state bit is set on children of token MathML elements
++#define TEXT_IS_IN_TOKEN_MATHML          NS_FRAME_STATE_BIT(59)
+ 
+ #define TEXT_HAS_FONT_INFLATION          NS_FRAME_STATE_BIT(61)
+ 
+ typedef nsFrame nsTextFrameBase;
+ 
+ class nsDisplayTextGeometry;
+ class nsDisplayText;
+ 
+diff --git a/layout/generic/nsTextFrameThebes.cpp b/layout/generic/nsTextFrameThebes.cpp
+--- a/layout/generic/nsTextFrameThebes.cpp
++++ b/layout/generic/nsTextFrameThebes.cpp
+@@ -193,17 +193,17 @@ NS_DECLARE_FRAME_PROPERTY(FontSizeInflat
+ 
+ // Set when this text frame is mentioned in the userdata for mTextRun
+ #define TEXT_IN_TEXTRUN_USER_DATA  NS_FRAME_STATE_BIT(30)
+ 
+ // nsTextFrame.h has
+ // #define TEXT_HAS_NONCOLLAPSED_CHARACTERS NS_FRAME_STATE_BIT(31)
+ 
+ // nsTextFrame.h has
+-// #define TEXT_FORCE_TRIM_WHITESPACE       NS_FRAME_STATE_BIT(32)
++// #define TEXT_IS_IN_TOKEN_MATHML          NS_FRAME_STATE_BIT(59)
+ 
+ // Set when this text frame is mentioned in the userdata for the
+ // uninflated textrun property
+ #define TEXT_IN_UNINFLATED_TEXTRUN_USER_DATA NS_FRAME_STATE_BIT(60)
+ 
+ // nsTextFrame.h has
+ // #define TEXT_HAS_FONT_INFLATION          NS_FRAME_STATE_BIT(61)
+ 
+@@ -7000,18 +7000,30 @@ nsTextFrame::AddInlineMinWidthForFlow(ns
+           (!hyphBreakBefore || !hyphBreakBefore[i - start]))
+       {
+         // we can't break here (and it's not the end of the flow)
+         continue;
+       }
+     }
+ 
+     if (i > wordStart) {
+-      nscoord width =
+-        NSToCoordCeilClamped(textRun->GetAdvanceWidth(wordStart, i - wordStart, &provider));
++      nscoord width;
++      if (GetStateBits() & TEXT_IS_IN_TOKEN_MATHML) {
++        gfxTextRun::Metrics metrics =
++          textRun->MeasureText(wordStart,
++                               i - wordStart,
++                               gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS,
++                               ctx, &provider);
++        gfxRect r = metrics.mBoundingBox;
++        width = NSToCoordCeil(r.XMost()) - NSToCoordFloor(r.X());
++      } else {
++        width = NSToCoordCeilClamped(textRun->GetAdvanceWidth(wordStart,
++                                                              i - wordStart,
++                                                              &provider));
++      }
+       aData->currentLine = NSCoordSaturatingAdd(aData->currentLine, width);
+       aData->atStartOfLine = false;
+ 
+       if (collapseWhitespace) {
+         uint32_t trimStart = GetEndOfTrimmedText(frag, textStyle, wordStart, i, &iter);
+         if (trimStart == start) {
+           // This is *all* trimmable whitespace, so whatever trailingWhitespace
+           // we saw previously is still trailing...
+@@ -7153,18 +7165,30 @@ nsTextFrame::AddInlinePrefWidthForFlow(n
+       preformattedTab = preformatTabs && textRun->CharIsTab(i);
+       if (!preformattedNewline && !preformattedTab) {
+         // we needn't break here (and it's not the end of the flow)
+         continue;
+       }
+     }
+ 
+     if (i > lineStart) {
+-      nscoord width =
+-        NSToCoordCeilClamped(textRun->GetAdvanceWidth(lineStart, i - lineStart, &provider));
++      nscoord width;
++      if (GetStateBits() & TEXT_IS_IN_TOKEN_MATHML) {
++        gfxTextRun::Metrics metrics =
++          textRun->MeasureText(lineStart,
++                               i - lineStart,
++                               gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS,
++                               ctx, &provider);
++        gfxRect r = metrics.mBoundingBox;
++        width = NSToCoordCeil(r.XMost()) - NSToCoordFloor(r.X());
++      } else {
++        width = NSToCoordCeilClamped(textRun->GetAdvanceWidth(lineStart,
++                                                              i - lineStart,
++                                                              &provider));
++      }
+       aData->currentLine = NSCoordSaturatingAdd(aData->currentLine, width);
+ 
+       if (collapseWhitespace) {
+         uint32_t trimStart = GetEndOfTrimmedText(frag, textStyle, lineStart, i, &iter);
+         if (trimStart == start) {
+           // This is *all* trimmable whitespace, so whatever trailingWhitespace
+           // we saw previously is still trailing...
+           aData->trailingWhitespace += width;
+@@ -7676,17 +7700,17 @@ nsTextFrame::ReflowText(nsLineLayout& aL
+       */
+       newLineOffset = contentNewLineOffset;
+     }
+     if (newLineOffset >= 0) {
+       length = newLineOffset + 1 - offset;
+     }
+   }
+   if ((atStartOfLine && !textStyle->WhiteSpaceIsSignificant()) ||
+-      (GetStateBits() & TEXT_FORCE_TRIM_WHITESPACE)) {
++      (GetStateBits() & TEXT_IS_IN_TOKEN_MATHML)) {
+     // Skip leading whitespace. Make sure we don't skip a 'pre-line'
+     // newline if there is one.
+     int32_t skipLength = newLineOffset >= 0 ? length - 1 : length;
+     int32_t whitespaceCount =
+       GetTrimmableWhitespaceCount(frag, offset, skipLength, 1);
+     if (whitespaceCount) {
+       offset += whitespaceCount;
+       length -= whitespaceCount;
+@@ -7803,19 +7827,19 @@ nsTextFrame::ReflowText(nsLineLayout& aL
+     : -1;
+   PropertyProvider provider(mTextRun, textStyle, frag, this, iter, length,
+       lineContainer, xOffsetForTabs, nsTextFrame::eInflated);
+ 
+   uint32_t transformedOffset = provider.GetStart().GetSkippedOffset();
+ 
+   // The metrics for the text go in here
+   gfxTextRun::Metrics textMetrics;
+-  gfxFont::BoundingBoxType boundingBoxType = IsFloatingFirstLetterChild() ?
+-                                               gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS :
+-                                               gfxFont::LOOSE_INK_EXTENTS;
++  gfxFont::BoundingBoxType boundingBoxType =
++    (IsFloatingFirstLetterChild() || GetStateBits() & TEXT_IS_IN_TOKEN_MATHML ?
++     gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS : gfxFont::LOOSE_INK_EXTENTS);
+   NS_ASSERTION(!(NS_REFLOW_CALC_BOUNDING_METRICS & aMetrics.mFlags),
+                "We shouldn't be passed NS_REFLOW_CALC_BOUNDING_METRICS anymore");
+ 
+   int32_t limitLength = length;
+   int32_t forceBreak = aLineLayout.GetForcedBreakPosition(mContent);
+   bool forceBreakAfter = false;
+   if (forceBreak >= offset + length) {
+     forceBreakAfter = forceBreak == offset + length;
+@@ -7842,17 +7866,17 @@ nsTextFrame::ReflowText(nsLineLayout& aL
+     iter.SetOriginalOffset(offset + limitLength);
+     transformedLength = iter.GetSkippedOffset() - transformedOffset;
+   }
+   uint32_t transformedLastBreak = 0;
+   bool usedHyphenation;
+   gfxFloat trimmedWidth = 0;
+   gfxFloat availWidth = aAvailableWidth;
+   bool canTrimTrailingWhitespace = !textStyle->WhiteSpaceIsSignificant() ||
+-                                   (GetStateBits() & TEXT_FORCE_TRIM_WHITESPACE);
++                                   (GetStateBits() & TEXT_IS_IN_TOKEN_MATHML);
+   int32_t unusedOffset;  
+   gfxBreakPriority breakPriority;
+   aLineLayout.GetLastOptionalBreakPosition(&unusedOffset, &breakPriority);
+   uint32_t transformedCharsFit =
+     mTextRun->BreakAndMeasureText(transformedOffset, transformedLength,
+                                   (GetStateBits() & TEXT_START_OF_LINE) != 0,
+                                   availWidth,
+                                   &provider, !aLineLayout.LineIsBreakable(),
+@@ -7912,21 +7936,21 @@ nsTextFrame::ReflowText(nsLineLayout& aL
+   if (canTrimTrailingWhitespace) {
+     // Optimization: if we trimmed trailing whitespace, and we can be sure
+     // this frame will be at the end of the line, then leave it trimmed off.
+     // Otherwise we have to undo the trimming, in case we're not at the end of
+     // the line. (If we actually do end up at the end of the line, we'll have
+     // to trim it off again in TrimTrailingWhiteSpace, and we'd like to avoid
+     // having to re-do it.)
+     if (brokeText ||
+-        (GetStateBits() & TEXT_FORCE_TRIM_WHITESPACE)) {
++        (GetStateBits() & TEXT_IS_IN_TOKEN_MATHML)) {
+       // We're definitely going to break so our trailing whitespace should
+       // definitely be trimmed. Record that we've already done it.
+       AddStateBits(TEXT_TRIMMED_TRAILING_WHITESPACE);
+-    } else if (!(GetStateBits() & TEXT_FORCE_TRIM_WHITESPACE)) {
++    } else if (!(GetStateBits() & TEXT_IS_IN_TOKEN_MATHML)) {
+       // We might not be at the end of the line. (Note that even if this frame
+       // ends in breakable whitespace, it might not be at the end of the line
+       // because it might be followed by breakable, but preformatted, whitespace.)
+       // Undo the trimming.
+       textMetrics.mAdvanceWidth += trimmedWidth;
+       trimmableWidth = trimmedWidth;
+       if (mTextRun->IsRightToLeft()) {
+         // Space comes before text, so the bounding box is moved to the
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -84,67 +84,68 @@ nsMathMLTokenFrame::GetMathMLFrameType()
+     default:
+       ; // fall through to upright
+     }
+   }
+   return eMathMLFrameType_UprightIdentifier;
+ }
+ 
+ void
+-nsMathMLTokenFrame::ForceTrimChildTextFrames()
++nsMathMLTokenFrame::MarkTextFramesAsTokenMathML()
+ {
+-  // Set flags on child text frames to force them to trim their leading and
+-  // trailing whitespaces.
++  // Set flags on child text frames to:
++  // - force them to trim their leading and trailing whitespaces
++  // - include tight ink overflow
+   for (nsIFrame* childFrame = GetFirstPrincipalChild(); childFrame;
+        childFrame = childFrame->GetNextSibling()) {
+     if (childFrame->GetType() == nsGkAtoms::textFrame) {
+-      childFrame->AddStateBits(TEXT_FORCE_TRIM_WHITESPACE);
++      childFrame->AddStateBits(TEXT_IS_IN_TOKEN_MATHML);
+     }
+   }
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::SetInitialChildList(ChildListID     aListID,
+                                         nsFrameList&    aChildList)
+ {
+   // First, let the base class do its work
+   nsresult rv = nsMathMLContainerFrame::SetInitialChildList(aListID, aChildList);
+   if (NS_FAILED(rv))
+     return rv;
+ 
+-  ForceTrimChildTextFrames();
++  MarkTextFramesAsTokenMathML();
+ 
+   ProcessTextData();
+   return rv;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::AppendFrames(ChildListID aListID,
+                                  nsFrameList& aChildList)
+ {
+   nsresult rv = nsMathMLContainerFrame::AppendFrames(aListID, aChildList);
+   if (NS_FAILED(rv))
+     return rv;
+ 
+-  ForceTrimChildTextFrames();
++  MarkTextFramesAsTokenMathML();
+ 
+   return rv;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLTokenFrame::InsertFrames(ChildListID aListID,
+                                  nsIFrame* aPrevFrame,
+                                  nsFrameList& aChildList)
+ {
+   nsresult rv = nsMathMLContainerFrame::InsertFrames(aListID, aPrevFrame,
+                                                      aChildList);
+   if (NS_FAILED(rv))
+     return rv;
+ 
+-  ForceTrimChildTextFrames();
++  MarkTextFramesAsTokenMathML();
+ 
+   return rv;
+ }
+ 
+ nsresult
+ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
+                            nsHTMLReflowMetrics&     aDesiredSize,
+                            const nsHTMLReflowState& aReflowState,
+diff --git a/layout/mathml/nsMathMLTokenFrame.h b/layout/mathml/nsMathMLTokenFrame.h
+--- a/layout/mathml/nsMathMLTokenFrame.h
++++ b/layout/mathml/nsMathMLTokenFrame.h
+@@ -76,12 +76,12 @@ protected:
+ 
+   // hook to perform MathML-specific actions depending on the tag
+   virtual void ProcessTextData();
+ 
+   // helper to set the style of <mi> which has to be italic or normal
+   // depending on its textual content
+   bool SetTextStyle();
+ 
+-  void ForceTrimChildTextFrames();
++  void MarkTextFramesAsTokenMathML();
+ };
+ 
+ #endif /* nsMathMLTokentFrame_h___ */

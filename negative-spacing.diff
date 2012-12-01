@@ -1,0 +1,88 @@
+# HG changeset patch
+# Parent 4904985e03b91bdfb4636643f71620063c295806
+# User Frédéric Wang <fred.wang@free.fr>
+Partial support for negative mspace@width. b=717546. r=karlt
+
+diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
+--- a/layout/mathml/nsIMathMLFrame.h
++++ b/layout/mathml/nsIMathMLFrame.h
+@@ -248,20 +248,24 @@ struct nsPresentationData {
+   // handy pointer on our base child (the 'nucleus' in TeX), but it may be
+   // null here (e.g., tags like <mrow>, <mfrac>, <mtable>, etc, won't
+   // pick a particular child in their child list to be the base)
+   nsIFrame* baseFrame;
+ 
+   // up-pointer on the mstyle frame, if any, that defines the scope
+   nsIFrame* mstyle;
+ 
++  // negative leading space of the frame.
++  nscoord negativeLeadingSpace;
++
+   nsPresentationData() {
+     flags = 0;
+     baseFrame = nullptr;
+     mstyle = nullptr;
++    negativeLeadingSpace = 0;
+   }
+ };
+ 
+ // ==========================================================================
+ // Bits used for the presentation flags -- these bits are set
+ // in their relevant situation as they become available
+ 
+ // This bit is set if the frame is in the *context* of displaystyle=true.
+diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
+--- a/layout/mathml/nsMathMLContainerFrame.cpp
++++ b/layout/mathml/nsMathMLContainerFrame.cpp
+@@ -1205,22 +1205,29 @@ public:
+     InitMetricsForChild();
+ 
+     // add inter frame spacing
+     const nsStyleFont* font = mParentFrame->GetStyleFont();
+     nscoord space =
+       GetInterFrameSpacing(font->mScriptLevel,
+                            prevFrameType, mChildFrameType,
+                            &mFromFrameType, &mCarrySpace);
++    
++    nsIMathMLFrame* mathMLFrame = do_QueryFrame(mChildFrame);
++    if (mathMLFrame) {
++      nsPresentationData presentationData;
++      mathMLFrame->GetPresentationData(presentationData);
++      mX -= presentationData.negativeLeadingSpace;
++    }
+     mX += space * GetThinSpace(font);
+     return *this;
+   }
+ 
+   nsIFrame* Frame() const { return mChildFrame; }
+-  nscoord X() const { return mX; }
++  nscoord X() const { return NS_MAX(0, mX); }
+   const nsHTMLReflowMetrics& ReflowMetrics() const { return mSize; }
+   nscoord Ascent() const { return mSize.ascent; }
+   nscoord Descent() const { return mSize.height - mSize.ascent; }
+   const nsBoundingMetrics& BoundingMetrics() const {
+     return mSize.mBoundingMetrics;
+   }
+ 
+ private:
+diff --git a/layout/mathml/nsMathMLmspaceFrame.cpp b/layout/mathml/nsMathMLmspaceFrame.cpp
+--- a/layout/mathml/nsMathMLmspaceFrame.cpp
++++ b/layout/mathml/nsMathMLmspaceFrame.cpp
+@@ -55,16 +55,17 @@ nsMathMLmspaceFrame::ProcessAttributes(n
+   mWidth = 0;
+   GetAttribute(mContent, mPresentationData.mstyle, nsGkAtoms::width,
+                value);
+   if (!value.IsEmpty()) {
+     ParseNumericValue(value, &mWidth,
+                       nsMathMLElement::PARSE_ALLOW_NEGATIVE,
+                       aPresContext, mStyleContext);
+   }
++  mPresentationData.negativeLeadingSpace = NS_MAX(0, -mWidth);
+ 
+   // height
+   //
+   // "Specifies the desired height (above the baseline) of the space."
+   //
+   // values: length
+   // default: 0ex
+   //

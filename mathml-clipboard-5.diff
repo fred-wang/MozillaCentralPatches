@@ -1,118 +1,504 @@
 # HG changeset patch
-# Parent f1714e9adc10bc4119106ef4d7d4f7d9c55248a2
+# Parent 4ce4077a317c9dda9bff83061f5d68b27e7be292
 # User Frédéric Wang <fred.wang@free.fr>
-Implement MathML paste and drop operations for the HTML editor. b=539506, r=?
+Part 5: Add a method nsContentUtils::ParseDocumentXML. b=539506, r=hsivonen.
 
-diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/html/nsHTMLDataTransfer.cpp
---- a/editor/libeditor/html/nsHTMLDataTransfer.cpp
-+++ b/editor/libeditor/html/nsHTMLDataTransfer.cpp
-@@ -85,16 +85,17 @@
- #include "nsStringIterator.h"
- #include "nsSubstringTuple.h"
- #include "nsTextEditRules.h"
- #include "nsTextEditUtils.h"
- #include "nsTreeSanitizer.h"
- #include "nsWSRunObject.h"
- #include "nsXPCOM.h"
- #include "nscore.h"
-+#include "nsMimeTypes.h"
+diff --git a/content/base/public/nsContentUtils.h b/content/base/public/nsContentUtils.h
+--- a/content/base/public/nsContentUtils.h
++++ b/content/base/public/nsContentUtils.h
+@@ -25,16 +25,17 @@
+ #include "nsIDOMEvent.h"
+ #include "nsTArray.h"
+ #include "nsReadableUtils.h"
+ #include "nsINode.h"
+ #include "nsIDOMNode.h"
+ #include "nsHtml5StringParser.h"
+ #include "nsIDocument.h"
+ #include "nsContentSink.h"
++#include "nsIXMLContentSink.h"
+ #include "nsMathUtils.h"
+ #include "nsThreadUtils.h"
+ #include "nsIContent.h"
+ #include "nsCharSeparatedTokenizer.h"
+ #include "gfxContext.h"
+ #include "gfxFont.h"
+ #include "nsContentList.h"
  
- class nsIAtom;
- class nsILoadContext;
- class nsISupports;
+@@ -1158,16 +1159,28 @@ public:
+    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
+    *         long and NS_OK otherwise.
+    */
+   static nsresult ParseDocumentHTML(const nsAString& aSourceBuffer,
+                                     nsIDocument* aTargetDocument,
+                                     bool aScriptingEnabledForNoscriptParsing);
  
- using namespace mozilla;
- 
- const PRUnichar nbsp = 160;
-@@ -982,16 +983,19 @@ NS_IMETHODIMP nsHTMLEditor::PrepareHTMLT
-     nsILoadContext* loadContext = destdoc ? destdoc->GetLoadContext() : nullptr;
-     (*aTransferable)->Init(loadContext);
- 
-     // Create the desired DataFlavor for the type of data
-     // we want to get out of the transferable
-     // This should only happen in html editors, not plaintext
-     if (!IsPlaintextEditor())
-     {
-+      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_XML);
-+      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_PRESENTATION_XML);
+   /**
++   * Parse a string into a document using the XML parser.
++   *
++   * @param aSourceBuffer the string to parse as an XML document
++   * @param aDocument the resulting document object
++   * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
++   *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
++   *         long and NS_OK otherwise.
++   */
++  static nsresult ParseDocumentXML(const nsAString& aSourceBuffer,
++                                   nsIDocument** aDocument);
 +
-       if (!aHavePrivFlavor) 
-       {
-         (*aTransferable)->AddDataFlavor(kNativeHTMLMime);
-       }
-       (*aTransferable)->AddDataFlavor(kHTMLMime);
-       (*aTransferable)->AddDataFlavor(kFileMime);
++  /**
+    * Converts HTML source to plain text by parsing the source and using the
+    * plain text serializer on the resulting tree.
+    *
+    * @param aSourceBuffer the string to parse as an HTML document
+    * @param aResultBuffer the string where the plain text result appears;
+    *                      may be the same string as aSourceBuffer
+    * @param aFlags Flags from nsIDocumentEncoder.
+    * @param aWrapCol Number of columns after which to line wrap; 0 for no
+@@ -2261,16 +2274,17 @@ private:
+   static bool sIsFullScreenApiEnabled;
+   static bool sTrustedFullScreenOnly;
+   static uint32_t sHandlingInputTimeout;
+   static bool sIsIdleObserverAPIEnabled;
  
-       switch (Preferences::GetInt("clipboard.paste_image_type", 1))
-@@ -1309,16 +1313,18 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
-           // to be pasted as mere HTML to get the best chance of pasting it
-           // correctly.
-           bestFlavor.AssignLiteral(kHTMLMime);
-           // Fall through the next case
-         }
-       }
-     }
-     if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
-+        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
-+        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_PRESENTATION_XML) ||
-         0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
-         0 == nsCRT::strcmp(bestFlavor, kMozTextInternal)) {
-       nsCOMPtr<nsISupportsString> textDataObj = do_QueryInterface(genericDataObj);
-       if (textDataObj && len > 0) {
-         nsAutoString text;
-         textDataObj->GetData(text);
-         NS_ASSERTION(text.Length() <= (len/2), "Invalid length!");
-         stuffToPaste.Assign(text.get(), len / 2);
-@@ -1329,17 +1335,20 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
-           textDataObj->GetData(text);
-           NS_ASSERTION(text.Length() <= len, "Invalid length!");
-           stuffToPaste.Assign(NS_ConvertUTF8toUTF16(Substring(text, 0, len)));
-         }
-       }
+   static nsHtml5StringParser* sHTMLFragmentParser;
+   static nsIParser* sXMLFragmentParser;
+   static nsIFragmentContentSink* sXMLFragmentSink;
++  static nsIXMLContentSink* sXMLContentSink;
  
-       if (!stuffToPaste.IsEmpty()) {
-         nsAutoEditBatch beginBatching(this);
--        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime)) {
-+        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
-+            0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
-+            0 == nsCRT::strcmp(bestFlavor,
-+                               APPLICATION_MATHML_PRESENTATION_XML)) {
-           rv = DoInsertHTMLWithContext(stuffToPaste,
-                                        aContextStr, aInfoStr, flavor,
-                                        aSourceDoc,
-                                        aDestinationNode, aDestOffset,
-                                        aDoDeleteSelection,
-                                        isSafe);
-         } else {
-           rv = InsertTextAt(stuffToPaste, aDestinationNode, aDestOffset, aDoDeleteSelection);
-@@ -1416,24 +1425,28 @@ nsresult nsHTMLEditor::InsertFromDataTra
-           return DoInsertHTMLWithContext(cffragment,
-                                          cfcontext, cfselection, type,
-                                          aSourceDoc,
-                                          aDestinationNode, aDestOffset,
-                                          aDoDeleteSelection,
-                                          isSafe);
-         }
-       }
--      else if (type.EqualsLiteral(kHTMLMime)) {
-+      else if (type.EqualsLiteral(kHTMLMime) ||
-+               type.EqualsLiteral(APPLICATION_MATHML_XML) ||
-+               type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
-         nsAutoString text, contextString, infoString;
-         GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
-         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLContext), aIndex, contextString);
-         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLInfo), aIndex, infoString);
+   /**
+    * True if there's a fragment parser activation on the stack.
+    */
+   static bool sFragmentParsingActive;
  
-         nsAutoEditBatch beginBatching(this);
--        if (type.EqualsLiteral(kHTMLMime)) {
-+        if (type.EqualsLiteral(kHTMLMime) ||
-+            type.EqualsLiteral(APPLICATION_MATHML_XML) ||
-+            type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
-           return DoInsertHTMLWithContext(text,
-                                          contextString, infoString, type,
-                                          aSourceDoc,
-                                          aDestinationNode, aDestOffset,
-                                          aDoDeleteSelection,
-                                          isSafe);
-         }
-       }
+   static nsString* sShiftText;
+   static nsString* sControlText;
+diff --git a/content/base/src/nsContentUtils.cpp b/content/base/src/nsContentUtils.cpp
+--- a/content/base/src/nsContentUtils.cpp
++++ b/content/base/src/nsContentUtils.cpp
+@@ -40,16 +40,17 @@
+ #include "nsPIDOMWindow.h"
+ #include "nsIJSContextStack.h"
+ #include "nsIDocShell.h"
+ #include "nsIDocShellTreeItem.h"
+ #include "nsParserCIID.h"
+ #include "nsIParser.h"
+ #include "nsIFragmentContentSink.h"
+ #include "nsIContentSink.h"
++#include "nsIXMLContentSink.h"
+ #include "nsContentList.h"
+ #include "nsIHTMLDocument.h"
+ #include "nsIDOMHTMLFormElement.h"
+ #include "nsIDOMHTMLElement.h"
+ #include "nsIForm.h"
+ #include "nsIFormControl.h"
+ #include "nsGkAtoms.h"
+ #include "imgINotificationObserver.h"
+@@ -235,16 +236,17 @@ bool nsContentUtils::sIsFullScreenApiEna
+ bool nsContentUtils::sTrustedFullScreenOnly = true;
+ bool nsContentUtils::sIsIdleObserverAPIEnabled = false;
+ 
+ uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
+ 
+ nsHtml5StringParser* nsContentUtils::sHTMLFragmentParser = nullptr;
+ nsIParser* nsContentUtils::sXMLFragmentParser = nullptr;
+ nsIFragmentContentSink* nsContentUtils::sXMLFragmentSink = nullptr;
++nsIXMLContentSink* nsContentUtils::sXMLContentSink = nullptr;
+ bool nsContentUtils::sFragmentParsingActive = false;
+ 
+ namespace {
+ 
+ /**
+  * Default values for the ViewportInfo structure.
+  */
+ static const double   kViewportMinScale = 0.0;
+@@ -4149,16 +4151,17 @@ nsContentUtils::CreateContextualFragment
+ 
+ /* static */
+ void
+ nsContentUtils::DropFragmentParsers()
+ {
+   NS_IF_RELEASE(sHTMLFragmentParser);
+   NS_IF_RELEASE(sXMLFragmentParser);
+   NS_IF_RELEASE(sXMLFragmentSink);
++  NS_IF_RELEASE(sXMLContentSink);
+ }
+ 
+ /* static */
+ void
+ nsContentUtils::XPCOMShutdown()
+ {
+   nsContentUtils::DropFragmentParsers();
+ }
+@@ -4259,16 +4262,75 @@ nsContentUtils::ParseFragmentXML(const n
+ 
+   sXMLFragmentParser->Reset();
+ 
+   return rv;
+ }
+ 
+ /* static */
+ nsresult
++nsContentUtils::ParseDocumentXML(const nsAString& aSourceBuffer,
++                                 nsIDocument** aDocument)
++{
++  if (nsContentUtils::sFragmentParsingActive) {
++    NS_NOTREACHED("Re-entrant fragment parsing attempted.");
++    return NS_ERROR_DOM_INVALID_STATE_ERR;
++  }
++  mozilla::AutoRestore<bool> guard(nsContentUtils::sFragmentParsingActive);
++  nsContentUtils::sFragmentParsingActive = true;
++  if (!sXMLFragmentParser) {
++    nsCOMPtr<nsIParser> parser = do_CreateInstance(kCParserCID);
++    parser.forget(&sXMLFragmentParser);
++    // sXMLFragmentParser now owns the parser
++  }
++
++  nsCOMPtr<nsIURI> uri;
++  NS_NewURI(getter_AddRefs(uri), "about:blank");
++
++  nsCOMPtr<nsIPrincipal> principal =
++    do_CreateInstance(NS_NULLPRINCIPAL_CONTRACTID);
++
++  nsCOMPtr<nsIDOMDocument> domDocument;
++  nsresult rv = NS_NewDOMDocument(getter_AddRefs(domDocument),
++                                  EmptyString(),
++                                  EmptyString(),
++                                  nullptr,
++                                  uri,
++                                  uri,
++                                  principal,
++                                  true,
++                                  nullptr,
++                                  DocumentFlavorLegacyGuess);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDocument);
++  if (!sXMLContentSink) {
++    NS_NewXMLContentSink(&sXMLContentSink, doc);
++    // sXMLContentSink now owns the sink
++  }
++  nsCOMPtr<nsIContentSink> contentsink = do_QueryInterface(sXMLContentSink);
++  NS_ABORT_IF_FALSE(contentsink, "Sink doesn't QI to nsIContentSink!");
++  sXMLFragmentParser->SetContentSink(contentsink);
++
++  rv = sXMLFragmentParser->Parse(aSourceBuffer, nullptr, true);
++
++  if (NS_FAILED(rv)) {
++    // Drop the fragment parser and sink that might be in an inconsistent state
++    NS_IF_RELEASE(sXMLFragmentParser);
++    NS_IF_RELEASE(sXMLContentSink);
++    return rv;
++  }
++
++  sXMLFragmentParser->Reset();
++
++  return CallQueryInterface(doc, aDocument);
++}
++
++/* static */
++nsresult
+ nsContentUtils::ConvertToPlainText(const nsAString& aSourceBuffer,
+                                    nsAString& aResultBuffer,
+                                    uint32_t aFlags,
+                                    uint32_t aWrapCol)
+ {
+   nsCOMPtr<nsIURI> uri;
+   NS_NewURI(getter_AddRefs(uri), "about:blank");
+   nsCOMPtr<nsIPrincipal> principal =
+diff --git a/content/xml/document/public/nsIXMLContentSink.h b/content/xml/document/public/nsIXMLContentSink.h
+--- a/content/xml/document/public/nsIXMLContentSink.h
++++ b/content/xml/document/public/nsIXMLContentSink.h
+@@ -9,18 +9,18 @@
+ #include "nsIParserNode.h"
+ #include "nsISupports.h"
+ 
+ class nsIDocument;
+ class nsIURI;
+ class nsIChannel;
+ 
+ #define NS_IXMLCONTENT_SINK_IID \
+- { 0x63fedea0, 0x9b0f, 0x4d64, \
+- { 0x9b, 0xa5, 0x37, 0xc6, 0x99, 0x73, 0x29, 0x35 } }
++ { 0x42196772, 0x2e68, 0x11e2, \
++ { 0x96, 0x96, 0x00, 0x90, 0xf5, 0x9a, 0xca, 0xdc } }
+ 
+ /**
+  * This interface represents a content sink for generic XML files.
+  * The goal of this sink is to deal with XML documents that do not
+  * have pre-built semantics, though it may also be implemented for
+  * cases in which semantics are hard-wired.
+  *
+  * The expectation is that the parser has already performed
+@@ -49,9 +49,13 @@ public:
+ 
+ NS_DEFINE_STATIC_IID_ACCESSOR(nsIXMLContentSink, NS_IXMLCONTENT_SINK_IID)
+ 
+ nsresult
+ NS_NewXMLContentSink(nsIXMLContentSink** aInstancePtrResult, nsIDocument* aDoc,
+                      nsIURI* aURL, nsISupports* aContainer,
+                      nsIChannel *aChannel);
+ 
++nsresult
++NS_NewXMLContentSink(nsIXMLContentSink** aInstancePtrResult,
++                     nsIDocument* aDoc);
++
+ #endif // nsIXMLContentSink_h___
+diff --git a/content/xml/document/src/nsXMLContentSink.cpp b/content/xml/document/src/nsXMLContentSink.cpp
+--- a/content/xml/document/src/nsXMLContentSink.cpp
++++ b/content/xml/document/src/nsXMLContentSink.cpp
+@@ -87,20 +87,59 @@ NS_NewXMLContentSink(nsIXMLContentSink**
+   
+   nsCOMPtr<nsIXMLContentSink> kungFuDeathGrip = it;
+   nsresult rv = it->Init(aDoc, aURI, aContainer, aChannel);
+   NS_ENSURE_SUCCESS(rv, rv);
+   
+   return CallQueryInterface(it, aResult);
+ }
+ 
+-nsXMLContentSink::nsXMLContentSink()
++nsresult
++NS_NewXMLContentSink(nsIXMLContentSink** aResult,
++                     nsIDocument* aDocument)
++{
++  NS_PRECONDITION(aResult != nullptr, "null ptr");
++  if (aResult == nullptr) {
++    return NS_ERROR_NULL_POINTER;
++  }
++
++  nsXMLContentSink* it = new nsXMLContentSink(true);
++  if (it == nullptr) {
++    return NS_ERROR_OUT_OF_MEMORY;
++  }
++
++  nsCOMPtr<nsIXMLContentSink> kungFuDeathGrip = it;
++
++  nsCOMPtr<nsIURI> uri;
++  NS_NewURI(getter_AddRefs(uri), "about:blank");
++
++  nsCOMPtr<nsIChannel> channel;
++  NS_NewInputStreamChannel(getter_AddRefs(channel), uri,
++                           nullptr,
++                           nsDependentCString("application/xml"), nullptr);
++  NS_ENSURE_STATE(channel);
++
++  nsresult rv = it->Init(aDocument, uri, nullptr, nullptr);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  nsCOMPtr<nsIStreamListener> docListener;
++  rv = aDocument->StartDocumentLoad(kLoadAsData, channel,
++                                    nullptr, nullptr,
++                              getter_AddRefs(docListener),
++                              false, it);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  return CallQueryInterface(it, aResult);
++}
++
++nsXMLContentSink::nsXMLContentSink(bool aRunsToCompletion)
+   : mConstrainSize(true),
+     mPrettyPrintXML(true)
+ {
++  mRunsToCompletion = aRunsToCompletion;
+ }
+ 
+ nsXMLContentSink::~nsXMLContentSink()
+ {
+   if (mText) {
+     PR_Free(mText);  //  Doesn't null out, unlike PR_FREEIF
+   }
+ }
+diff --git a/content/xml/document/src/nsXMLContentSink.h b/content/xml/document/src/nsXMLContentSink.h
+--- a/content/xml/document/src/nsXMLContentSink.h
++++ b/content/xml/document/src/nsXMLContentSink.h
+@@ -36,17 +36,17 @@ struct StackNode {
+ };
+ 
+ class nsXMLContentSink : public nsContentSink,
+                          public nsIXMLContentSink,
+                          public nsITransformObserver,
+                          public nsIExpatSink
+ {
+ public:
+-  nsXMLContentSink();
++  nsXMLContentSink(bool aRunsToCompletion = false);
+   virtual ~nsXMLContentSink();
+ 
+   NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
+ 
+   nsresult Init(nsIDocument* aDoc,
+                 nsIURI* aURL,
+                 nsISupports* aContainer,
+                 nsIChannel* aChannel);
+diff --git a/parser/html/nsHtml5Parser.cpp b/parser/html/nsHtml5Parser.cpp
+--- a/parser/html/nsHtml5Parser.cpp
++++ b/parser/html/nsHtml5Parser.cpp
+@@ -470,16 +470,25 @@ nsHtml5Parser::Parse(const nsAString& aS
+     mDocWriteSpeculativeTreeBuilder->DropHandles();
+     mExecutor->FlushSpeculativeLoads();
+   }
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
++nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
++                     void* aKey,
++                     bool aLastCall)
++{
++  NS_NOTREACHED("Don't call. For interface compat only.");
++  return NS_ERROR_NOT_IMPLEMENTED;
++}
++
++NS_IMETHODIMP
+ nsHtml5Parser::Terminate()
+ {
+   // We should only call DidBuildModel once, so don't do anything if this is
+   // the second time that Terminate has been called.
+   if (mExecutor->IsComplete()) {
+     return NS_OK;
+   }
+   // XXX - [ until we figure out a way to break parser-sink circularity ]
+diff --git a/parser/html/nsHtml5Parser.h b/parser/html/nsHtml5Parser.h
+--- a/parser/html/nsHtml5Parser.h
++++ b/parser/html/nsHtml5Parser.h
+@@ -153,16 +153,23 @@ class nsHtml5Parser : public nsIParser,
+      */
+     NS_IMETHOD Parse(const nsAString& aSourceBuffer,
+                      void* aKey,
+                      const nsACString& aContentType,
+                      bool aLastCall,
+                      nsDTDMode aMode = eDTDMode_autodetect);
+ 
+     /**
++     * Don't call. For interface compat only.
++     */
++    NS_IMETHOD Parse(const nsAString& aSourceBuffer,
++                     void* aKey,
++                     bool aLastCall);
++
++    /**
+      * Stops the parser prematurely
+      */
+     NS_IMETHOD Terminate();
+ 
+     /**
+      * Don't call. For interface backwards compat only.
+      */
+     NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
+diff --git a/parser/htmlparser/public/nsIParser.h b/parser/htmlparser/public/nsIParser.h
+--- a/parser/htmlparser/public/nsIParser.h
++++ b/parser/htmlparser/public/nsIParser.h
+@@ -22,18 +22,18 @@
+ #include "nsIStreamListener.h"
+ #include "nsIDTD.h"
+ #include "nsStringGlue.h"
+ #include "nsTArray.h"
+ #include "nsIAtom.h"
+ #include "nsParserBase.h"
+ 
+ #define NS_IPARSER_IID \
+-{ 0x2c4ad90a, 0x740e, 0x4212, \
+-  { 0xba, 0x3f, 0xfe, 0xac, 0xda, 0x4b, 0x92, 0x9e } }
++{ 0xc8fc9cdc, 0x2d73, 0x11e2, \
++  { 0x9b, 0xa3, 0x00, 0x90, 0xf5, 0x9a, 0xca, 0xdc} }
+ 
+ // {41421C60-310A-11d4-816F-000064657374}
+ #define NS_IDEBUG_DUMP_CONTENT_IID \
+ { 0x41421c60, 0x310a, 0x11d4, \
+ { 0x81, 0x6f, 0x0, 0x0, 0x64, 0x65, 0x73, 0x74 } }
+ 
+ class nsIContentSink;
+ class nsIRequestObserver;
+@@ -183,16 +183,20 @@ class nsIParser : public nsParserBase {
+     NS_IMETHOD_(bool) IsParserEnabled() = 0;
+     NS_IMETHOD_(bool) IsComplete() = 0;
+     
+     NS_IMETHOD Parse(nsIURI* aURL,
+                      nsIRequestObserver* aListener = nullptr,
+                      void* aKey = 0,
+                      nsDTDMode aMode = eDTDMode_autodetect) = 0;
+ 
++    NS_IMETHOD Parse(const nsAString& aSourceBuffer,
++                     void* aKey,
++                     bool aLastCall) = 0;
++
+     NS_IMETHOD Terminate(void) = 0;
+ 
+     /**
+      * This method gets called when you want to parse a fragment of HTML or XML
+      * surrounded by the context |aTagStack|. It requires that the parser have
+      * been given a fragment content sink.
+      *
+      * @param aSourceBuffer The XML or HTML that hasn't been parsed yet.
+diff --git a/parser/htmlparser/src/nsParser.cpp b/parser/htmlparser/src/nsParser.cpp
+--- a/parser/htmlparser/src/nsParser.cpp
++++ b/parser/htmlparser/src/nsParser.cpp
+@@ -1269,17 +1269,17 @@ nsParser::Parse(nsIURI* aURL,
+   return result;
+ }
+ 
+ /**
+  * Used by XML fragment parsing below.
+  *
+  * @param   aSourceBuffer contains a string-full of real content
+  */
+-nsresult
++NS_IMETHODIMP
+ nsParser::Parse(const nsAString& aSourceBuffer,
+                 void* aKey,
+                 bool aLastCall)
+ {
+   nsresult result = NS_OK;
+ 
+   // Don't bother if we're never going to parse this.
+   if (mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING) {
+diff --git a/parser/htmlparser/src/nsParser.h b/parser/htmlparser/src/nsParser.h
+--- a/parser/htmlparser/src/nsParser.h
++++ b/parser/htmlparser/src/nsParser.h
+@@ -148,16 +148,23 @@ class nsParser : public nsIParser,
+      * @return  TRUE if all went well -- FALSE otherwise
+      */
+     NS_IMETHOD Parse(nsIURI* aURL,
+                      nsIRequestObserver* aListener = nullptr,
+                      void* aKey = 0,
+                      nsDTDMode aMode = eDTDMode_autodetect);
+ 
+     /**
++     * Pushes XML fragment parsing data to expat without an input stream.
++     */
++    NS_IMETHOD Parse(const nsAString& aSourceBuffer,
++                     void* aKey = 0,
++                     bool aLastCall = true);
++
++    /**
+      * This method needs documentation
+      */
+     NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
+                              nsTArray<nsString>& aTagStack);
+                              
+     /**
+      * This method gets called when the tokens have been consumed, and it's time
+      * to build the model via the content sink.
+@@ -373,23 +380,16 @@ private:
+      *  has completed.
+      *  
+      *  @update  gess 3/25/98
+      *  @param   
+      *  @return  TRUE if all went well
+      */
+     bool DidTokenize(bool aIsFinalChunk = false);
+ 
+-    /**
+-     * Pushes XML fragment parsing data to expat without an input stream.
+-     */
+-    nsresult Parse(const nsAString& aSourceBuffer,
+-                   void* aKey,
+-                   bool aLastCall);
+-
+ protected:
+     //*********************************************
+     // And now, some data members...
+     //*********************************************
+     
+       
+     CParserContext*              mParserContext;
+     nsCOMPtr<nsIDTD>             mDTD;

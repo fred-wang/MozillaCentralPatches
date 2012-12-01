@@ -20,10 +20,10 @@ stable patches below and I'll try to update them as soon as possible.
 
   { semantics.diff
   { semantics-reftests.diff
-
-  => In testing and need review + discussions with Math WG
-
-  { mo-selection.diff
+  { negative-spacing.diff
+  { negative-spacing-reftest.diff
+  { bug687807.diff
+  { remove-test-pages.diff
 
 * Work in progress patches:
 
@@ -32,11 +32,16 @@ stable patches below and I'll try to update them as soon as possible.
   { mathml-clipboard-3.diff
   { mathml-clipboard-4.diff
   { mathml-clipboard-5.diff
+  { mathml-clipboard-6.diff
    => Add a copy MathML command?
       Register Mac flavors? Implement TeX paste in plain text editor?
+      Use XML serializer/parser?
 
   { nsMathMLChar.diff
    => Not tested much (may change the rendering of some operators).
+
+   { bug415413.diff
+   => Does not work.
 
 * Experimental and old patches:
 

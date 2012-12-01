@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 189fbd4f365e61c28fdbe0ae7f04a8dc832a2550
 # User Frédéric Wang <fred.wang@free.fr>
-Implement copy operation for MathML and TeX - part 3. b=539506, r=?
+Part 4: Implement copy operation for MathML and TeX. b=539506, r=?
 
 diff --git a/widget/windows/nsClipboard.cpp b/widget/windows/nsClipboard.cpp
 --- a/widget/windows/nsClipboard.cpp

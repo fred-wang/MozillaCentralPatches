@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 4ca83396a83811d0606793665b2396ded83b53c8
 # User Frédéric Wang <fred.wang@free.fr>
-Implement copy operation for MathML and TeX - part 2. b=539506, r=?
+Part 3: Implement copy operation for MathML and TeX. b=539506, r=?
 
 diff --git a/content/base/src/nsCopySupport.cpp b/content/base/src/nsCopySupport.cpp
 --- a/content/base/src/nsCopySupport.cpp

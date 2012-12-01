@@ -1,0 +1,88 @@
+# HG changeset patch
+# Parent 3a27b51c463234b1a597fd52ce1c1e0f1e7bd8e4
+# User Frédéric Wang <fred.wang@free.fr>
+Reftest for bug 717546. r=karlt.
+
+diff --git a/layout/reftests/mathml/negative-mspace-1-ref.html b/layout/reftests/mathml/negative-mspace-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/negative-mspace-1-ref.html
+@@ -0,0 +1,25 @@
++<!doctype>
++<html>
++  <head>
++    <title>negative mspace</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <p>
++      <math>
++	<mrow>
++	  <mspace width="1em" height="1em" mathbackground="red"></mspace>
++	  <mspace width="1em" height="1em" mathbackground="blue"></mspace>
++	</mrow>
++      </math>
++    </p>
++    <p>
++      <math>
++	<mrow>
++	  <mspace width="1em" height="1em" mathbackground="blue"></mspace>
++	  <mspace width="1em" height="1em" mathbackground="red"></mspace>
++	</mrow>
++      </math>
++    </p>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/negative-mspace-1.html b/layout/reftests/mathml/negative-mspace-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/negative-mspace-1.html
+@@ -0,0 +1,27 @@
++<!doctype>
++<html>
++  <head>
++    <title>negative mspace</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <p>
++      <math>
++	<mrow>
++	  <mspace width="2em" height="1em" mathbackground="red"></mspace>
++	  <mspace width="-1em"/>
++	  <mspace width="1em" height="1em" mathbackground="blue"></mspace>
++	</mrow>
++      </math>
++    </p>
++    <p>
++      <math dir="rtl">
++	<mrow>
++	  <mspace width="2em" height="1em" mathbackground="red"></mspace>
++	  <mspace width="-1em"/>
++	  <mspace width="1em" height="1em" mathbackground="blue"></mspace>
++	</mrow>
++      </math>
++    </p>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -90,16 +90,17 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == math-display.html math-display-ref.html
+ == scriptlevel-movablelimits-1.html scriptlevel-movablelimits-1-ref.html
+ == munderover-align-accent-false.html munderover-align-accent-false-ref.html
+ == munderover-align-accent-true.html munderover-align-accent-true-ref.html
+ == munder-mover-align-accent-true.html munder-mover-align-accent-true-ref.html
+ == munder-mover-align-accent-false.html munder-mover-align-accent-false-ref.html
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
++== negative-mspace-1.html negative-mspace-1-ref.html
+ != link-1.xhtml link-ref.xhtml
+ == munderover-empty-scripts.html munderover-empty-scripts-ref.html
+ == positive-namedspace.html positive-namedspace-ref.html
+ == mtable-align-whitespace.html mtable-align-whitespace-ref.html
+ == mtable-width.html mtable-width-ref.html
+ == maction-selection.html maction-selection-ref.html
+ == maction-dynamic-embellished-op.html maction-dynamic-embellished-op-ref.html
+ == maction-dynamic-1.html maction-dynamic-1-ref.html

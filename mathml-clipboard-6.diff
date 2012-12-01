@@ -1,0 +1,140 @@
+# HG changeset patch
+# Parent 8405a5c0aa609d05eb19c6ad30407fa5a33807ac
+# User Frédéric Wang <fred.wang@free.fr>
+Part 6: Implement MathML paste and drop operations for the HTML editor. b=539506, r=?
+
+diff --git a/editor/libeditor/html/nsHTMLDataTransfer.cpp b/editor/libeditor/html/nsHTMLDataTransfer.cpp
+--- a/editor/libeditor/html/nsHTMLDataTransfer.cpp
++++ b/editor/libeditor/html/nsHTMLDataTransfer.cpp
+@@ -85,16 +85,17 @@
+ #include "nsStringIterator.h"
+ #include "nsSubstringTuple.h"
+ #include "nsTextEditRules.h"
+ #include "nsTextEditUtils.h"
+ #include "nsTreeSanitizer.h"
+ #include "nsWSRunObject.h"
+ #include "nsXPCOM.h"
+ #include "nscore.h"
++#include "nsMimeTypes.h"
+ 
+ class nsIAtom;
+ class nsILoadContext;
+ class nsISupports;
+ 
+ using namespace mozilla;
+ 
+ const PRUnichar nbsp = 160;
+@@ -982,16 +983,19 @@ NS_IMETHODIMP nsHTMLEditor::PrepareHTMLT
+     nsILoadContext* loadContext = destdoc ? destdoc->GetLoadContext() : nullptr;
+     (*aTransferable)->Init(loadContext);
+ 
+     // Create the desired DataFlavor for the type of data
+     // we want to get out of the transferable
+     // This should only happen in html editors, not plaintext
+     if (!IsPlaintextEditor())
+     {
++      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_XML);
++      (*aTransferable)->AddDataFlavor(APPLICATION_MATHML_PRESENTATION_XML);
++
+       if (!aHavePrivFlavor) 
+       {
+         (*aTransferable)->AddDataFlavor(kNativeHTMLMime);
+       }
+       (*aTransferable)->AddDataFlavor(kHTMLMime);
+       (*aTransferable)->AddDataFlavor(kFileMime);
+ 
+       switch (Preferences::GetInt("clipboard.paste_image_type", 1))
+@@ -1309,16 +1313,18 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
+           // to be pasted as mere HTML to get the best chance of pasting it
+           // correctly.
+           bestFlavor.AssignLiteral(kHTMLMime);
+           // Fall through the next case
+         }
+       }
+     }
+     if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
++        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
++        0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_PRESENTATION_XML) ||
+         0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
+         0 == nsCRT::strcmp(bestFlavor, kMozTextInternal)) {
+       nsCOMPtr<nsISupportsString> textDataObj = do_QueryInterface(genericDataObj);
+       if (textDataObj && len > 0) {
+         nsAutoString text;
+         textDataObj->GetData(text);
+         NS_ASSERTION(text.Length() <= (len/2), "Invalid length!");
+         stuffToPaste.Assign(text.get(), len / 2);
+@@ -1329,17 +1335,20 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTr
+           textDataObj->GetData(text);
+           NS_ASSERTION(text.Length() <= len, "Invalid length!");
+           stuffToPaste.Assign(NS_ConvertUTF8toUTF16(Substring(text, 0, len)));
+         }
+       }
+ 
+       if (!stuffToPaste.IsEmpty()) {
+         nsAutoEditBatch beginBatching(this);
+-        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime)) {
++        if (0 == nsCRT::strcmp(bestFlavor, kHTMLMime) ||
++            0 == nsCRT::strcmp(bestFlavor, APPLICATION_MATHML_XML) ||
++            0 == nsCRT::strcmp(bestFlavor,
++                               APPLICATION_MATHML_PRESENTATION_XML)) {
+           rv = DoInsertHTMLWithContext(stuffToPaste,
+                                        aContextStr, aInfoStr, flavor,
+                                        aSourceDoc,
+                                        aDestinationNode, aDestOffset,
+                                        aDoDeleteSelection,
+                                        isSafe);
+         } else {
+           rv = InsertTextAt(stuffToPaste, aDestinationNode, aDestOffset, aDoDeleteSelection);
+@@ -1416,24 +1425,28 @@ nsresult nsHTMLEditor::InsertFromDataTra
+           return DoInsertHTMLWithContext(cffragment,
+                                          cfcontext, cfselection, type,
+                                          aSourceDoc,
+                                          aDestinationNode, aDestOffset,
+                                          aDoDeleteSelection,
+                                          isSafe);
+         }
+       }
+-      else if (type.EqualsLiteral(kHTMLMime)) {
++      else if (type.EqualsLiteral(kHTMLMime) ||
++               type.EqualsLiteral(APPLICATION_MATHML_XML) ||
++               type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
+         nsAutoString text, contextString, infoString;
+         GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
+         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLContext), aIndex, contextString);
+         GetStringFromDataTransfer(aDataTransfer, NS_LITERAL_STRING(kHTMLInfo), aIndex, infoString);
+ 
+         nsAutoEditBatch beginBatching(this);
+-        if (type.EqualsLiteral(kHTMLMime)) {
++        if (type.EqualsLiteral(kHTMLMime) ||
++            type.EqualsLiteral(APPLICATION_MATHML_XML) ||
++            type.EqualsLiteral(APPLICATION_MATHML_PRESENTATION_XML)) {
+           return DoInsertHTMLWithContext(text,
+                                          contextString, infoString, type,
+                                          aSourceDoc,
+                                          aDestinationNode, aDestOffset,
+                                          aDoDeleteSelection,
+                                          isSafe);
+         }
+       }
+@@ -2296,16 +2309,21 @@ nsresult nsHTMLEditor::ParseFragment(con
+                                                   true);
+   if (!aTrustedInput) {
+     nsTreeSanitizer sanitizer(aContextLocalName ?
+                               nsIParserUtils::SanitizerAllowStyle :
+                               nsIParserUtils::SanitizerAllowComments);
+     sanitizer.Sanitize(fragment);
+   }
+   *outNode = do_QueryInterface(frag);
++  // nsCOMPtr<nsIDocument> document;
++  // nsresult rv = nsContentUtils::ParseDocumentXML(aFragStr,
++  //                                                getter_AddRefs(document));
++  // NS_ENSURE_SUCCESS(rv, rv);
++  // *outNode = do_QueryInterface(document);
+   return rv;
+ }
+ 
+ nsresult nsHTMLEditor::CreateListOfNodesToPaste(nsIDOMNode  *aFragmentAsNode,
+                                                 nsCOMArray<nsIDOMNode>& outNodeList,
+                                                 nsIDOMNode *aStartNode,
+                                                 int32_t aStartOffset,
+                                                 nsIDOMNode *aEndNode,

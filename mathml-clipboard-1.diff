@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent f62d0f5c005e237d0ecb9be7a9626618d49dff81
 # User Frédéric Wang <fred.wang@free.fr>
-Avoid code duplication between nsCopySupport and nsDocumentEncoder. b=539506, r=ehsan.
+Part 1: Avoid code duplication between nsCopySupport and nsDocumentEncoder. b=539506, r=ehsan.
 
 diff --git a/content/base/public/nsCopySupport.h b/content/base/public/nsCopySupport.h
 --- a/content/base/public/nsCopySupport.h

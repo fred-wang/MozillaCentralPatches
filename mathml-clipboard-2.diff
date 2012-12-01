@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 7f6bd17ec5e2b587e2c8d5310645187f19cd244d
 # User Frédéric Wang <fred.wang@free.fr>
-Implement copy operation for MathML and TeX - part 1. b=539506, r=?
+Part 2: Implement copy operation for MathML and TeX. b=539506, r=?
 
 diff --git a/content/base/public/nsIDocumentEncoder.idl b/content/base/public/nsIDocumentEncoder.idl
 --- a/content/base/public/nsIDocumentEncoder.idl
