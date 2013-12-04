@@ -1,0 +1,29 @@
+# HG changeset patch
+# Parent 02c421ce0ac5746aab05549d36823019d07cf4d1
+# User Frédéric Wang <fred.wang@free.fr>
+html5lib mochitest: remove the workaround for private MathML attributes. b=527201, r=hsivonen
+
+diff --git a/parser/htmlparser/tests/mochitest/parser_datreader.js b/parser/htmlparser/tests/mochitest/parser_datreader.js
+--- a/parser/htmlparser/tests/mochitest/parser_datreader.js
++++ b/parser/htmlparser/tests/mochitest/parser_datreader.js
+@@ -143,20 +143,16 @@ function addLevels(walker, buf, indent) 
+             buf += "otherns ";
+           }
+           buf += walker.currentNode.localName + ">";
+           if (walker.currentNode.hasAttributes()) {
+             var valuesByName = {};
+             var attrs = walker.currentNode.attributes;
+             for (var i = 0; i < attrs.length; ++i) {
+               var localName = attrs[i].localName;
+-              if (localName.indexOf("_moz-") == 0) {
+-                // Skip bogus attributes added by the MathML implementation
+-                continue;
+-              }
+               var name;
+               var attrNs = attrs[i].namespaceURI;
+               if (null == attrNs) {
+                 name = localName;
+               } else if ("http://www.w3.org/XML/1998/namespace" == attrNs) {
+                 name = "xml " + localName;
+               } else if ("http://www.w3.org/1999/xlink" == attrNs) {
+                 name = "xlink " + localName;

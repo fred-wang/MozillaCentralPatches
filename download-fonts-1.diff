@@ -1,18 +1,18 @@
 # HG changeset patch
-# Parent 7be8d1cc52ac3652d88f966477d88ce7e4173a2d
+# Parent ae6237161b6c49c91cb0e439cdffeeb7f8c87123
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 295193 - Allow downloading math fonts in Firefox - part 1.
 
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -2403,16 +2403,22 @@ nsPresContext::IsRootContentDocument()
-   if (!view) {
+@@ -2545,16 +2545,22 @@ nsPresContext::IsCrossProcessRootContent
+   if (XRE_GetProcessType() == GeckoProcessType_Default) {
      return true;
    }
  
-   nsIFrame* f = view->GetFrame();
-   return (f && f->PresContext()->IsChrome());
+   TabChild* tabChild = GetTabChildFrom(mShell);
+   return (tabChild && tabChild->IsRootContentDocument());
  }
  
 +bool
@@ -24,15 +24,15 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
  nsRootPresContext::nsRootPresContext(nsIDocument* aDocument,
                                       nsPresContextType aType)
    : nsPresContext(aDocument, aType),
-     mUpdatePluginGeometryForFrame(nsnull),
-     mDOMGeneration(0),
-     mNeedsToUpdatePluginGeometry(false)
+     mDOMGeneration(0)
  {
    mRegisteredPlugins.Init();
+ }
+ 
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -960,16 +960,18 @@ public:
+@@ -957,16 +957,17 @@ public:
  
    virtual size_t SizeOfExcludingThis(nsMallocSizeOfFun aMallocSizeOf) const;
    virtual size_t SizeOfIncludingThis(nsMallocSizeOfFun aMallocSizeOf) const {
@@ -40,44 +40,46 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    }
  
    bool IsRootContentDocument();
- 
+   bool IsCrossProcessRootContentDocument();
 +  bool IsLoadingFonts();
-+
- protected:
-   friend class nsRunnableMethod<nsPresContext>;
-   NS_HIDDEN_(void) ThemeChangedInternal();
-   NS_HIDDEN_(void) SysColorChangedInternal();
  
-   NS_HIDDEN_(void) SetImgAnimations(nsIContent *aParent, PRUint16 aMode);
-   NS_HIDDEN_(void) SetSMILAnimations(nsIDocument *aDoc, PRUint16 aNewMode,
-                                      PRUint16 aOldMode);
+   bool IsGlyph() const {
+     return mIsGlyph;
+   }
+ 
+   void SetIsGlyph(bool aValue) {
+     mIsGlyph = aValue;
+   }
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -26,27 +26,70 @@
- #include "nsCSSRendering.h"
- #include "prprf.h"         // For PR_snprintf()
+@@ -28,26 +28,150 @@
  
  #include "nsDisplayList.h"
  
  #include "nsMathMLOperators.h"
  #include "nsMathMLChar.h"
+ #include <cstdlib> // for std::abs(int/long)
+ #include <cmath> // for std::abs(float/double)
  
 +#include "nsThreadUtils.h"
 +#include "nsEventDispatcher.h"
 +
  using namespace mozilla;
  
- //#define SHOW_BORDERS 1
  //#define NOISY_SEARCH 1
  
- // -----------------------------------------------------------------------------------
++#define PK_DBUS_SERVICE    "org.freedesktop.PackageKit"
++#define PK_DBUS_PATH       "/org/freedesktop/PackageKit"
++#define PK_DBUS_INTERFACE  "org.freedesktop.PackageKit"
++#define PKT_DBUS_INTERFACE "org.freedesktop.PackageKit.Transaction"
++
+ // -----------------------------------------------------------------------------
  static const PRUnichar   kSpaceCh   = PRUnichar(' ');
  static const nsGlyphCode kNullGlyph = {{0, 0}, 0};
  typedef enum {eExtension_base, eExtension_variants, eExtension_parts}
    nsMathfontPrefExtension;
  
-+// -----------------------------------------------------------------------------
 +static bool gMathFontWarning = false;
 +
 +static int
@@ -99,17 +101,94 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +
 +  NS_IMETHOD Run()
 +  {
-+    nsCOMPtr<nsIDOMEvent> event;
-+    if (NS_SUCCEEDED(nsEventDispatcher::CreateEvent(mPresContext, nsnull,
-+                                                    NS_LITERAL_STRING("Events"),
-+                                                    getter_AddRefs(event)))) {
-+      event->InitEvent(NS_LITERAL_STRING("DOMMissingMathMLFonts"), true, true);
-+      event->SetTrusted(true);
++    // nsCOMPtr<nsIDOMEvent> event;
++    // if (NS_SUCCEEDED(nsEventDispatcher::CreateEvent(mPresContext, nullptr,
++    //                                                 NS_LITERAL_STRING("Events"),
++    //                                                 getter_AddRefs(event)))) {
++    //   event->InitEvent(NS_LITERAL_STRING("DOMMissingMathMLFonts"), true, true);
++    //   event->SetTrusted(true);
 +
-+      nsEventDispatcher::DispatchDOMEvent(mPresContext->Document(),
-+                                          nsnull, event,
-+                                          mPresContext, nsnull);
-+    }
++    //   nsEventDispatcher::DispatchDOMEvent(mPresContext->Document(),
++    //                                       nullptr, event,
++    //                                       mPresContext, nullptr);
++    // }
++
++    // DBusError err;
++    // dbus_error_init(&err);
++  
++    // DBusConnection *connection;
++    // connection = dbus_bus_get(DBUS_BUS_SESSION, &err);
++    // if (dbus_error_is_set(&err)) { 
++    //   dbus_error_free(&err); 
++    //   return NS_ERROR_FAILURE;
++    // }
++    // if (!connection) { 
++    //   return NS_ERROR_FAILURE; 
++    // }
++
++    // DBusMessage* message;
++    // message = dbus_message_new_method_call(PK_DBUS_SERVICE,
++    //                                        PK_DBUS_PATH,
++    //                                        PK_DBUS_INTERFACE,
++    //                                        "CreateTransaction");
++    // if (!message) {
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++
++    // DBusPendingCall* pending;
++    // if (!dbus_connection_send_with_reply (connection, message, &pending, -1) ||
++    //     !pending) {
++    //   dbus_message_unref(message);
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++    // dbus_connection_flush(connection);
++    // dbus_message_unref(message);
++
++    // dbus_pending_call_block(pending);
++    // message = dbus_pending_call_steal_reply(pending);
++    // if (!message) {
++    //   dbus_pending_call_unref(pending);
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++    // dbus_pending_call_unref(pending);
++
++    // DBusMessageIter args;
++    // if (!dbus_message_iter_init(message, &args) ||
++    //     !dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_OBJECT_PATH) {
++    //   dbus_message_unref(message);
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++
++    // char *objectPath;
++    // dbus_message_iter_get_basic(&args, &objectPath);
++    // dbus_message_unref(message);
++
++    // printf("%s\n", objectPath);
++
++    // message = dbus_message_new_method_call(PK_DBUS_SERVICE,
++    //                                        objectPath,
++    //                                        PKT_DBUS_INTERFACE,
++    //                                        "InstallPackages");
++    // free(objectPath);
++    // if (!message) {
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++
++    // char *package[] = { "otf-stix", "ttf-oflb-asana-math" };
++    // dbus_message_iter_init_append(msg, &args);
++    // if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRV, &package)) { 
++    //   dbus_message_unref(message);
++    //   dbus_connection_unref(connection);
++    //   return NS_ERROR_FAILURE;
++    // }
++
++    // dbus_message_unref(message);
++    // dbus_connection_unref(connection);
 +    return NS_OK;
 +  }
 +  
@@ -117,7 +196,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  nsPresContext* mPresContext;
 +};
 +
- // -----------------------------------------------------------------------------------
+ // -----------------------------------------------------------------------------
  // nsGlyphTable is a class that provides an interface for accessing glyphs
  // of stretchy chars. It acts like a table that stores the variants of bigger
  // sizes (if any) and the partial glyphs needed to build extensible symbols.
@@ -125,7 +204,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // can be taken in other additional fonts when stretching certain characters.
  // These supplementary fonts are referred to as "external" fonts to the table.
  //
-@@ -457,16 +500,20 @@ public:
+@@ -373,16 +497,20 @@ public:
    nsGlyphTable*
    GetGlyphTableFor(nsPresContext* aPresContext,
                     nsMathMLChar*  aChar);
@@ -139,14 +218,14 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +                   nsMathMLChar*  aChar);
 +
  private:
-   nsGlyphTable* TableAt(PRInt32 aIndex) {
+   nsGlyphTable* TableAt(int32_t aIndex) {
      return &mTableList.ElementAt(aIndex);
    }
-   PRInt32 Count() {
+   int32_t Count() {
      return mTableList.Length();
    }
  
-@@ -563,16 +610,32 @@ nsGlyphTableList::GetGlyphTableFor(const
+@@ -479,16 +607,32 @@ nsGlyphTableList::GetGlyphTableFor(const
      if (fontName.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
        return glyphTable;
      }
@@ -171,7 +250,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  }
 +  return false;
 +}
- // -----------------------------------------------------------------------------------
+ // -----------------------------------------------------------------------------
  
  // Lookup the preferences:
  // "font.mathfont-family.\uNNNN.base"     -- fonts for the base size
@@ -179,7 +258,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
  // Given the char code and mode of stretch, retrieve the preferred extension
  // font families.
-@@ -641,16 +704,20 @@ MathFontEnumCallback(const nsString& aFa
+@@ -558,16 +702,20 @@ MathFontEnumCallback(const nsString& aFa
  }
  
  static nsresult
@@ -190,7 +269,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
 +  // Set up a listener for mathfont-warning and check the initial value
 +  Preferences::RegisterCallback(PrefsChanged, "font.mathfont-warning");
-+  PrefsChanged(nsnull, nsnull);
++  PrefsChanged(nullptr, nullptr);
 +
    // Allocate the placeholders for the preferred parts and variants
    nsresult rv = NS_ERROR_OUT_OF_MEMORY;
@@ -200,7 +279,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
    if (NS_FAILED(rv)) {
      delete gGlyphTableList;
-@@ -681,18 +748,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -598,18 +746,16 @@ InitGlobals(nsPresContext* aPresContext)
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
    nsFont font("", 0, 0, 0, 0, 0, 0);
@@ -211,15 +290,15 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // Parse the font list and append an entry for each family to gGlyphTableList
 -  nsAutoString missingFamilyList;
 -
-   font.EnumerateFamilies(MathFontEnumCallback, nsnull);
+   font.EnumerateFamilies(MathFontEnumCallback, nullptr);
    return rv;
  }
  
- // -----------------------------------------------------------------------------------
+ // -----------------------------------------------------------------------------
  // And now the implementation of nsMathMLChar
  
  nsStyleContext*
-@@ -1651,16 +1716,33 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1529,16 +1675,33 @@ nsMathMLChar::StretchInternal(nsPresCont
        if (!maxWidth) {
          mScaleY *= scale;
        }
@@ -256,11 +335,11 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/layout/style/nsFontFaceLoader.h b/layout/style/nsFontFaceLoader.h
 --- a/layout/style/nsFontFaceLoader.h
 +++ b/layout/style/nsFontFaceLoader.h
-@@ -50,16 +50,18 @@ public:
- 
+@@ -52,16 +52,18 @@ public:
    nsPresContext *GetPresContext() { return mPresContext; }
  
-   virtual void ReplaceFontEntry(gfxProxyFontEntry *aProxy,
+   virtual void ReplaceFontEntry(gfxMixedFontFamily *aFamily,
+                                 gfxProxyFontEntry *aProxy,
                                  gfxFontEntry *aFontEntry);
  
    nsCSSFontFaceRule *FindRuleForEntry(gfxFontEntry *aFontEntry);
@@ -278,7 +357,7 @@ diff --git a/layout/style/nsFontFaceLoader.h b/layout/style/nsFontFaceLoader.h
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -3584,12 +3584,15 @@ pref("memory.low_commit_space_threshold_
+@@ -3854,16 +3854,19 @@ pref("memory.low_commit_space_threshold_
  pref("memory.low_physical_memory_threshold_mb", 0);
  
  // On Windows 32- or 64-bit, don't fire a low-memory notification because of
@@ -294,3 +373,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // likely leak)?  This should be longer than it usually takes for an eligible
  // window to be collected via the GC/CC.
  pref("memory.ghost_window_timeout_seconds", 60);
+ 
+ // Disable freeing dirty pages when minimizing memory.
+ pref("memory.free_dirty_pages", false);
+ 

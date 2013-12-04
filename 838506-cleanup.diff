@@ -1,0 +1,316 @@
+# HG changeset patch
+# Parent 6f2758e87c5071b0d0667fd051b07296c9d05f41
+# User Frédéric Wang <fred.wang@free.fr>
+Refactor implementation of displaystyle - part 4: cleanup legacy code. b=838506, r=karlt
+
+diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
+--- a/layout/mathml/nsIMathMLFrame.h
++++ b/layout/mathml/nsIMathMLFrame.h
+@@ -137,28 +137,23 @@ public:
+    */
+ 
+   NS_IMETHOD
+   InheritAutomaticData(nsIFrame* aParent) = 0;
+ 
+   NS_IMETHOD
+   TransmitAutomaticData() = 0;
+ 
+- /* UpdatePresentationData :
+-  * Updates the frame's displaystyle and compression flags. The displaystyle
+-  * flag of an environment gets updated according to the MathML specification.
++ /* UpdatePresentationData:
++  * Updates the frame's compression flag.
+   * A frame becomes "compressed" (or "cramped") according to TeX rendering
+   * rules (TeXBook, Ch.17, p.140-141).
+   *
+-  * Note that <mstyle> is the only tag which allows to set
+-  * <mstyle displaystyle="true|false">
+-  * Therefore <mstyle> has its own peculiar version of this method.
+-  *
+   * @param aFlagsValues [in]
+-  *        The new values (e.g., display, compress) that are going to be
++  *        The new values (e.g., compress) that are going to be
+   *        updated.
+   *
+   * @param aWhichFlags [in]
+   *        The flags that are relevant to this call. Since not all calls
+   *        are meant to update all flags at once, aWhichFlags is used
+   *        to distinguish flags that need to retain their existing values
+   *        from flags that need to be turned on (or turned off). If a bit
+   *        is set in aWhichFlags, then the corresponding value (which
+@@ -167,34 +162,30 @@ public:
+   *        setting their desired values in aFlagsValues, it is possible to
+   *        update some flags in the frame, leaving the other flags unchanged.
+   */
+   NS_IMETHOD
+   UpdatePresentationData(uint32_t        aFlagsValues,
+                          uint32_t        aWhichFlags) = 0;
+ 
+  /* UpdatePresentationDataFromChildAt :
+-  * Sets displaystyle and compression flags on the whole tree. For child frames
+-  * at aFirstIndex up to aLastIndex, this method sets their displaystyle and
++  * Sets compression flag on the whole tree. For child frames
++  * at aFirstIndex up to aLastIndex, this method sets their
+   * compression flags. The update is propagated down the subtrees of each of
+   * these child frames. 
+   *
+-  * Note that <mstyle> is the only tag which allows
+-  * <mstyle displaystyle="true|false">
+-  * Therefore <mstyle> has its own peculiar version of this method.
+-  *
+   * @param aFirstIndex [in]
+   *        Index of the first child from where the update is propagated.
+   *
+   * @param aLastIndex [in]
+   *        Index of the last child where to stop the update.
+   *        A value of -1 means up to last existing child.
+   *
+   * @param aFlagsValues [in]
+-  *        The new values (e.g., display, compress) that are going to be
++  *        The new values (e.g., compress) that are going to be
+   *        assigned in the whole sub-trees.
+   *
+   * @param aWhichFlags [in]
+   *        The flags that are relevant to this call. See UpdatePresentationData()
+   *        for more details about this parameter.
+   */
+   NS_IMETHOD
+   UpdatePresentationDataFromChildAt(int32_t         aFirstIndex,
+@@ -238,17 +229,17 @@ struct nsEmbellishData {
+ // By convention, the data that we keep in this struct can change depending
+ // on any of our ancestors and/or descendants. If a data can be resolved
+ // solely from the embellished hierarchy, and it remains immutable once
+ // resolved, we put it in |nsEmbellishData|. If it can be affected by other
+ // things, it comes here. This struct is updated as we receive information
+ // transmitted by our ancestors and is kept in sync with changes in our
+ // descendants that affects us.
+ struct nsPresentationData {
+-  // bits for: displaystyle, compressed, etc
++  // bits for: compressed, etc
+   uint32_t flags;
+ 
+   // handy pointer on our base child (the 'nucleus' in TeX), but it may be
+   // null here (e.g., tags like <mrow>, <mfrac>, <mtable>, etc, won't
+   // pick a particular child in their child list to be the base)
+   nsIFrame* baseFrame;
+ 
+   // up-pointer on the mstyle frame, if any, that defines the scope
+@@ -260,45 +251,32 @@ struct nsPresentationData {
+     mstyle = nullptr;
+   }
+ };
+ 
+ // ==========================================================================
+ // Bits used for the presentation flags -- these bits are set
+ // in their relevant situation as they become available
+ 
+-// This bit is set if the frame is in the *context* of displaystyle=true.
+-// Note: This doesn't mean that the frame has displaystyle=true as attribute,
+-// the displaystyle attribute is only allowed on <mstyle> and <mtable>.
+-// The bit merely tells the context of the frame. In the context of 
+-// displaystyle="false", it is intended to slightly alter how the
+-// rendering is done in inline mode.
+-#define NS_MATHML_DISPLAYSTYLE                        0x00000001U
+-
+ // This bit is used to emulate TeX rendering. 
+ // Internal use only, cannot be set by the user with an attribute.
+ #define NS_MATHML_COMPRESSED                          0x00000002U
+ 
+ // This bit is set if the frame will fire a vertical stretch
+ // command on all its (non-empty) children.
+ // Tags like <mrow> (or an inferred mrow), mpadded, etc, will fire a
+ // vertical stretch command on all their non-empty children
+ #define NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY     0x00000004U
+ 
+ // This bit is set if the frame will fire a horizontal stretch
+ // command on all its (non-empty) children.
+ // Tags like munder, mover, munderover, will fire a 
+ // horizontal stretch command on all their non-empty children
+ #define NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY   0x00000008U
+ 
+-// This bit is set if the frame has the explicit attribute
+-// displaystyle="true" or "false". It is only relevant to <mstyle> and <mtable>
+-// because they are the only tags where the attribute is allowed by the spec.
+-#define NS_MATHML_EXPLICIT_DISPLAYSTYLE               0x00000020U
+-
+ // This bit is set if the frame is "space-like", as defined by the spec.
+ #define NS_MATHML_SPACE_LIKE                          0x00000040U
+ 
+ // This bit is set when the frame cannot be formatted due to an
+ // error (e.g., invalid markup such as a <msup> without an overscript).
+ // When set, a visual feedback will be provided to the user.
+ #define NS_MATHML_ERROR                               0x80000000U
+ 
+@@ -308,31 +286,25 @@ struct nsPresentationData {
+ // This bit is used for visual debug. When set, the bounding box
+ // of your frame is painted. This visual debug enable to ensure that
+ // you have properly filled your mReference and mBoundingMetrics in
+ // Place().
+ #define NS_MATHML_SHOW_BOUNDING_METRICS               0x10000000U
+ 
+ // Macros that retrieve those bits
+ 
+-#define NS_MATHML_IS_DISPLAYSTYLE(_flags) \
+-  (NS_MATHML_DISPLAYSTYLE == ((_flags) & NS_MATHML_DISPLAYSTYLE))
+-
+ #define NS_MATHML_IS_COMPRESSED(_flags) \
+   (NS_MATHML_COMPRESSED == ((_flags) & NS_MATHML_COMPRESSED))
+ 
+ #define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(_flags) \
+   (NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY == ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY))
+ 
+ #define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(_flags) \
+   (NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY == ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY))
+ 
+-#define NS_MATHML_HAS_EXPLICIT_DISPLAYSTYLE(_flags) \
+-  (NS_MATHML_EXPLICIT_DISPLAYSTYLE == ((_flags) & NS_MATHML_EXPLICIT_DISPLAYSTYLE))
+-
+ #define NS_MATHML_IS_SPACE_LIKE(_flags) \
+   (NS_MATHML_SPACE_LIKE == ((_flags) & NS_MATHML_SPACE_LIKE))
+ 
+ #define NS_MATHML_HAS_ERROR(_flags) \
+   (NS_MATHML_ERROR == ((_flags) & NS_MATHML_ERROR))
+ 
+ #define NS_MATHML_STRETCH_WAS_DONE(_flags) \
+   (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))
+diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
+--- a/layout/mathml/nsMathMLFrame.cpp
++++ b/layout/mathml/nsMathMLFrame.cpp
+@@ -25,42 +25,16 @@ nsMathMLFrame::GetMathMLFrameType()
+   // if it has a prescribed base, fetch the type from there
+   if (mPresentationData.baseFrame)
+     return GetMathMLFrameTypeFor(mPresentationData.baseFrame);
+ 
+   // everything else is treated as ordinary (mapped to 'Ord' in TeX)
+   return eMathMLFrameType_Ordinary;  
+ }
+ 
+-// snippet of code used by <mstyle>, <mtable> and <math> which are the only
+-// three tags where the displaystyle attribute is allowed by the spec.
+-/* static */ void
+-nsMathMLFrame::FindAttrDisplaystyle(nsIContent*         aContent,
+-                                    nsPresentationData& aPresentationData)
+-{
+-  NS_ASSERTION(aContent->Tag() == nsGkAtoms::mstyle_ ||
+-               aContent->Tag() == nsGkAtoms::mtable_ ||
+-               aContent->Tag() == nsGkAtoms::math, "bad caller");
+-  static nsIContent::AttrValuesArray strings[] =
+-    {&nsGkAtoms::_false, &nsGkAtoms::_true, nullptr};
+-  // see if the explicit displaystyle attribute is there
+-  switch (aContent->FindAttrValueIn(kNameSpaceID_None,
+-    nsGkAtoms::displaystyle_, strings, eCaseMatters)) {
+-  case 0:
+-    aPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
+-    aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
+-    break;
+-  case 1:
+-    aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+-    aPresentationData.flags |= NS_MATHML_EXPLICIT_DISPLAYSTYLE;
+-    break;
+-  }
+-  // no reset if the attr isn't found. so be sure to call it on inherited flags
+-}
+-
+ NS_IMETHODIMP
+ nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent) 
+ {
+   mEmbellishData.flags = 0;
+   mEmbellishData.coreFrame = nullptr;
+   mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+   mEmbellishData.leadingSpace = 0;
+   mEmbellishData.trailingSpace = 0;
+@@ -68,45 +42,31 @@ nsMathMLFrame::InheritAutomaticData(nsIF
+   mPresentationData.flags = 0;
+   mPresentationData.baseFrame = nullptr;
+   mPresentationData.mstyle = nullptr;
+ 
+   // by default, just inherit the display of our parent
+   nsPresentationData parentData;
+   GetPresentationDataFrom(aParent, parentData);
+   mPresentationData.mstyle = parentData.mstyle;
+-  if (NS_MATHML_IS_DISPLAYSTYLE(parentData.flags)) {
+-    mPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+-  }
+ 
+ #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
+   mPresentationData.flags |= NS_MATHML_SHOW_BOUNDING_METRICS;
+ #endif
+ 
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLFrame::UpdatePresentationData(uint32_t        aFlagsValues,
+                                       uint32_t        aWhichFlags)
+ {
+-  NS_ASSERTION(NS_MATHML_IS_DISPLAYSTYLE(aWhichFlags) ||
+-               NS_MATHML_IS_COMPRESSED(aWhichFlags),
+-               "aWhichFlags should only be displaystyle or compression flag"); 
++  NS_ASSERTION(NS_MATHML_IS_COMPRESSED(aWhichFlags),
++               "aWhichFlags should only be compression flag"); 
+ 
+-  // update flags that are relevant to this call
+-  if (NS_MATHML_IS_DISPLAYSTYLE(aWhichFlags)) {
+-    // updating the displaystyle flag is allowed
+-    if (NS_MATHML_IS_DISPLAYSTYLE(aFlagsValues)) {
+-      mPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+-    }
+-    else {
+-      mPresentationData.flags &= ~NS_MATHML_DISPLAYSTYLE;
+-    }
+-  }
+   if (NS_MATHML_IS_COMPRESSED(aWhichFlags)) {
+     // updating the compression flag is allowed
+     if (NS_MATHML_IS_COMPRESSED(aFlagsValues)) {
+       // 'compressed' means 'prime' style in App. G, TeXbook
+       mPresentationData.flags |= NS_MATHML_COMPRESSED;
+     }
+     // no else. the flag is sticky. it retains its value once it is set
+   }
+@@ -182,21 +142,16 @@ nsMathMLFrame::GetPresentationDataFrom(n
+     // stop if we reach the root <math> tag
+     nsIContent* content = frame->GetContent();
+     NS_ASSERTION(content || !frame->GetParent(), // no assert for the root
+                  "dangling frame without a content node"); 
+     if (!content)
+       break;
+ 
+     if (content->Tag() == nsGkAtoms::math) {
+-      const nsStyleDisplay* display = frame->StyleDisplay();
+-      if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK) {
+-        aPresentationData.flags |= NS_MATHML_DISPLAYSTYLE;
+-      }
+-      FindAttrDisplaystyle(content, aPresentationData);
+       aPresentationData.mstyle = frame->FirstContinuation();
+       break;
+     }
+     frame = frame->GetParent();
+   }
+   NS_WARN_IF_FALSE(frame && frame->GetContent(),
+                    "bad MathML markup - could not find the top <math> element");
+ }
+diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
+--- a/layout/mathml/nsMathMLFrame.h
++++ b/layout/mathml/nsMathMLFrame.h
+@@ -123,21 +123,16 @@ public:
+   // set to true and the frame happens to be surrounded by non-MathML
+   // helper frames needed for its support, we walk up the frame hierarchy
+   // until we reach a MathML ancestor or the <root> math element.
+   static void
+   GetPresentationDataFrom(nsIFrame*           aFrame,
+                           nsPresentationData& aPresentationData,
+                           bool                aClimbTree = true);
+ 
+-  // helper used by <mstyle> and <mtable> to see if they have a displaystyle attribute 
+-  static void
+-  FindAttrDisplaystyle(nsIContent*         aContent,
+-                       nsPresentationData& aPresentationData);
+-
+   // helper to check if a content has an attribute. If content is nullptr or if
+   // the attribute is not there, check if the attribute is on the mstyle hierarchy
+   // @return true     --if attribute exists
+   //         false --if attribute doesn't exist
+   static bool
+   GetAttribute(nsIContent* aContent,
+                nsIFrame*   aMathMLmstyleFrame,          
+                nsIAtom*    aAttributeAtom,

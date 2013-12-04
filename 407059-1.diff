@@ -1,0 +1,271 @@
+# HG changeset patch
+# Parent 9e7dec4f08596658e5792228ed12bbefc13e5263
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 407059 - read OpenType MATH table for variants and parts of stretchy characters
+
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -33,16 +33,17 @@
+ #include "nsStyleConsts.h"
+ #include "mozilla/FloatingPoint.h"
+ #include "mozilla/Likely.h"
+ #include "mozilla/MemoryReporting.h"
+ #include "mozilla/Preferences.h"
+ #include "mozilla/Services.h"
+ #include "mozilla/Telemetry.h"
+ #include "gfxSVGGlyphs.h"
++#include "gfxMathTable.h"
+ #include "gfx2DGlue.h"
+ 
+ #include "cairo.h"
+ #include "gfxFontTest.h"
+ 
+ #include "harfbuzz/hb.h"
+ #include "harfbuzz/hb-ot.h"
+ #include "graphite2/Font.h"
+@@ -95,16 +96,17 @@ gfxFontEntry::gfxFontEntry() :
+     mIsBadUnderlineFont(false),
+     mIsUserFont(false),
+     mIsLocalUserFont(false),
+     mStandardFace(false),
+     mSymbolFont(false),
+     mIgnoreGDEF(false),
+     mIgnoreGSUB(false),
+     mSVGInitialized(false),
++    mMathInitialized(false),
+     mHasSpaceFeaturesInitialized(false),
+     mHasSpaceFeatures(false),
+     mHasSpaceFeaturesKerning(false),
+     mHasSpaceFeaturesNonKerning(false),
+     mHasSpaceFeaturesSubDefault(false),
+     mCheckedForGraphiteTables(false),
+     mHasCmapTable(false),
+     mGrFaceInitialized(false),
+@@ -122,16 +124,17 @@ gfxFontEntry::gfxFontEntry(const nsAStri
+     mName(aName), mItalic(false), mFixedPitch(false),
+     mIsProxy(false), mIsValid(true),
+     mIsBadUnderlineFont(false), mIsUserFont(false),
+     mIsLocalUserFont(false), mStandardFace(aIsStandardFace),
+     mSymbolFont(false),
+     mIgnoreGDEF(false),
+     mIgnoreGSUB(false),
+     mSVGInitialized(false),
++    mMathInitialized(false),
+     mHasSpaceFeaturesInitialized(false),
+     mHasSpaceFeatures(false),
+     mHasSpaceFeaturesKerning(false),
+     mHasSpaceFeaturesNonKerning(false),
+     mHasSpaceFeaturesSubDefault(false),
+     mCheckedForGraphiteTables(false),
+     mHasCmapTable(false),
+     mGrFaceInitialized(false),
+@@ -354,20 +357,46 @@ gfxFontEntry::TryGetSVGData(gfxFont* aFo
+ 
+     if (!mFontsUsingSVGGlyphs.Contains(aFont)) {
+         mFontsUsingSVGGlyphs.AppendElement(aFont);
+     }
+ 
+     return !!mSVGGlyphs;
+ }
+ 
++const gfxMathTable*
++gfxFontEntry::TryGetMathTable(gfxFont* aFont)
++{
++    if (!mMathInitialized) {
++        mMathInitialized = true;
++
++        // We don't use AutoTable here because we'll pass ownership of this
++        // blob to the gfxMathTable, once we've confirmed the table exists
++        hb_blob_t *mathTable = GetFontTable(TRUETYPE_TAG('M','A','T','H'));
++        if (!mathTable) {
++            return nullptr;
++        }
++
++        // gfxMathTable will hb_blob_destroy() the table when it is finished
++        // with it.
++        mMathTable = new gfxMathTable(mathTable, this);
++    }
++
++    if (!mFontsUsingMathTable.Contains(aFont)) {
++        mFontsUsingMathTable.AppendElement(aFont);
++    }
++
++    return mMathTable;
++}
++
+ void
+ gfxFontEntry::NotifyFontDestroyed(gfxFont* aFont)
+ {
+     mFontsUsingSVGGlyphs.RemoveElement(aFont);
++    mFontsUsingMathTable.RemoveElement(aFont);
+ }
+ 
+ void
+ gfxFontEntry::NotifyGlyphsChanged()
+ {
+     for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
+         gfxFont* font = mFontsUsingSVGGlyphs[i];
+         font->NotifyGlyphsChanged();
+@@ -693,16 +722,25 @@ gfxFontEntry::DisconnectSVG()
+ {
+     if (mSVGInitialized && mSVGGlyphs) {
+         mSVGGlyphs = nullptr;
+         mSVGInitialized = false;
+     }
+ }
+ 
+ void
++gfxFontEntry::DisconnectMath()
++{
++    if (mMathInitialized && mMathTable) {
++        mMathTable = nullptr;
++        mMathInitialized = false;
++    }
++}
++
++void
+ gfxFontEntry::CheckForGraphiteTables()
+ {
+     AutoTable silfTable(this, TRUETYPE_TAG('S','i','l','f'));
+     mHasGraphiteTables = silfTable && hb_blob_get_length(silfTable) > 0;
+ }
+ 
+ /* static */ size_t
+ gfxFontEntry::FontTableHashEntry::SizeOfEntryExcludingThis
+diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
+--- a/gfx/thebes/gfxFont.h
++++ b/gfx/thebes/gfxFont.h
+@@ -42,16 +42,17 @@ class gfxTextRun;
+ class gfxFont;
+ class gfxFontFamily;
+ class gfxFontGroup;
+ class gfxUserFontSet;
+ class gfxUserFontData;
+ class gfxShapedText;
+ class gfxShapedWord;
+ class gfxSVGGlyphs;
++class gfxMathTable;
+ class gfxTextContextPaint;
+ 
+ class nsILanguageAtomService;
+ 
+ #define FONT_MAX_SIZE                  2000.0
+ 
+ #define NO_FONT_LANGUAGE_OVERRIDE      0
+ 
+@@ -305,16 +306,18 @@ public:
+     bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
+                             gfxRect *aResult);
+     bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
+                         gfxTextContextPaint *aContextPaint);
+     // Call this when glyph geometry or rendering has changed
+     // (e.g. animated SVG glyphs)
+     void NotifyGlyphsChanged();
+ 
++    const gfxMathTable* TryGetMathTable(gfxFont* aFont);
++
+     virtual bool MatchesGenericFamily(const nsACString& aGeneric) const {
+         return true;
+     }
+     virtual bool SupportsLangGroup(nsIAtom *aLangGroup) const {
+         return true;
+     }
+ 
+     // Access to raw font table data (needed for Harfbuzz):
+@@ -402,16 +405,19 @@ public:
+     // Get Graphite face corresponding to this font file.
+     // Caller must call gfxFontEntry::ReleaseGrFace when finished with it.
+     gr_face* GetGrFace();
+     virtual void ReleaseGrFace(gr_face* aFace);
+ 
+     // Release any SVG-glyphs document this font may have loaded.
+     void DisconnectSVG();
+ 
++    // Release any Math table this font may have loaded.
++    void DisconnectMath();
++
+     // Called to notify that aFont is being destroyed. Needed when we're tracking
+     // the fonts belonging to this font entry.
+     void NotifyFontDestroyed(gfxFont* aFont);
+ 
+     // For memory reporting
+     virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                         FontListSizes* aSizes) const;
+     virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+@@ -427,16 +433,17 @@ public:
+     bool             mIsBadUnderlineFont : 1;
+     bool             mIsUserFont  : 1;
+     bool             mIsLocalUserFont  : 1;
+     bool             mStandardFace : 1;
+     bool             mSymbolFont  : 1;
+     bool             mIgnoreGDEF  : 1;
+     bool             mIgnoreGSUB  : 1;
+     bool             mSVGInitialized : 1;
++    bool             mMathInitialized : 1;
+     bool             mHasSpaceFeaturesInitialized : 1;
+     bool             mHasSpaceFeatures : 1;
+     bool             mHasSpaceFeaturesKerning : 1;
+     bool             mHasSpaceFeaturesNonKerning : 1;
+     bool             mHasSpaceFeaturesSubDefault : 1;
+     bool             mHasGraphiteTables : 1;
+     bool             mCheckedForGraphiteTables : 1;
+     bool             mHasCmapTable : 1;
+@@ -450,16 +457,18 @@ public:
+ 
+     nsRefPtr<gfxCharacterMap> mCharacterMap;
+     uint32_t         mUVSOffset;
+     nsAutoArrayPtr<uint8_t> mUVSData;
+     nsAutoPtr<gfxUserFontData> mUserFontData;
+     nsAutoPtr<gfxSVGGlyphs> mSVGGlyphs;
+     // list of gfxFonts that are using SVG glyphs
+     nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
++    nsAutoPtr<gfxMathTable> mMathTable;
++    nsTArray<gfxFont*> mFontsUsingMathTable;
+     nsTArray<gfxFontFeature> mFeatureSettings;
+     uint32_t         mLanguageOverride;
+ 
+ protected:
+     friend class gfxPlatformFontList;
+     friend class gfxMacPlatformFontList;
+     friend class gfxUserFcFontEntry;
+     friend class gfxFontFamily;
+diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
+--- a/gfx/thebes/moz.build
++++ b/gfx/thebes/moz.build
+@@ -20,16 +20,17 @@ EXPORTS += [
+     'gfxFont.h',
+     'gfxFontConstants.h',
+     'gfxFontFeatures.h',
+     'gfxFontTest.h',
+     'gfxFontUtils.h',
+     'gfxGradientCache.h',
+     'gfxImageSurface.h',
+     'gfxLineSegment.h',
++    'gfxMathTable.h',
+     'gfxMatrix.h',
+     'gfxPath.h',
+     'gfxPattern.h',
+     'gfxPlatform.h',
+     'gfxPoint.h',
+     'gfxPoint3D.h',
+     'gfxPointH3D.h',
+     'gfxQuad.h',
+@@ -261,16 +262,17 @@ UNIFIED_SOURCES += [
+     'gfxContext.cpp',
+     'gfxFontFeatures.cpp',
+     'gfxFontMissingGlyphs.cpp',
+     'gfxFontTest.cpp',
+     'gfxGradientCache.cpp',
+     'gfxGraphiteShaper.cpp',
+     'gfxHarfBuzzShaper.cpp',
+     'gfxImageSurface.cpp',
++    'gfxMathTable.cpp',
+     'gfxMatrix.cpp',
+     'gfxPath.cpp',
+     'gfxPattern.cpp',
+     'gfxRect.cpp',
+     'gfxReusableImageSurfaceWrapper.cpp',
+     'gfxReusableSharedImageSurfaceWrapper.cpp',
+     'gfxScriptItemizer.cpp',
+     'gfxSkipChars.cpp',

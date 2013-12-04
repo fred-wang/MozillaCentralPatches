@@ -1,0 +1,3408 @@
+# User Quentin Headen <qheaden@phaseshiftsoftware.com>
+Bug 731667 - Rewrite mtable implementation to avoid use of _moz-* attributes - tests. r=fredw
+
+diff --git a/layout/reftests/mathml/mtable-columnalign-multi-mtable-dynamic.html b/layout/reftests/mathml/mtable-columnalign-multi-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-multi-mtable-dynamic.html
+@@ -0,0 +1,146 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++
++        // Table 1 setup
++        table1.setAttribute("columnalign", "left center right");
++        // Table 2 setup
++        table2.setAttribute("columnalign", "right left center");
++        // Table 3 setup
++        table3.setAttribute("columnalign", "center right left");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>columnalign="left center right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right left center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center right left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-multi-mtable.html b/layout/reftests/mathml/mtable-columnalign-multi-mtable.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-multi-mtable.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left center right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="left center right">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right left center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="right left center">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center right left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="center right left">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-multi-mtr-dynamic.html b/layout/reftests/mathml/mtable-columnalign-multi-mtr-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-multi-mtr-dynamic.html
+@@ -0,0 +1,155 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++        var rows = undefined;
++
++        // Table 1 setup
++        rows = table1.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "left center right");
++
++        // Table 2 setup
++        rows = table2.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "right left center");
++
++        // Table 3 setup
++        rows = table3.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "center right left");
++
++        document.documentElement.removeAttribute("class");
++      }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>columnalign="left center right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right left center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center right left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-multi-mtr.html b/layout/reftests/mathml/mtable-columnalign-multi-mtr.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-multi-mtr.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left center right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="left center right">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="left center right">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="left center right">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right left center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="right left center">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="right left center">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="right left center">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center right left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="center right left">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="center right left">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="center right left">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-multi-ref.html b/layout/reftests/mathml/mtable-columnalign-multi-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-multi-ref.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left center right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="right">
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right left center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="center">
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center right left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="left">
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-single-mtable-dynamic.html b/layout/reftests/mathml/mtable-columnalign-single-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-single-mtable-dynamic.html
+@@ -0,0 +1,146 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++
++        // Table 1 setup
++        table1.setAttribute("columnalign", "left");
++        // Table 2 setup
++        table2.setAttribute("columnalign", "center");
++        // Table 3 setup
++        table3.setAttribute("columnalign", "right");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>columnalign="left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-single-mtable.html b/layout/reftests/mathml/mtable-columnalign-single-mtable.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-single-mtable.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="left">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="center">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable columnalign="right">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-single-mtr-dynamic.html b/layout/reftests/mathml/mtable-columnalign-single-mtr-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-single-mtr-dynamic.html
+@@ -0,0 +1,155 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++        var rows = undefined;
++
++        // Table 1 setup
++        rows = table1.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "left");
++
++        // Table 2 setup
++        rows = table2.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "center");
++
++        // Table 3 setup
++        rows = table3.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("columnalign", "right");
++
++        document.documentElement.removeAttribute("class");
++      }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>columnalign="left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-single-mtr.html b/layout/reftests/mathml/mtable-columnalign-single-mtr.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-single-mtr.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="left">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="left">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="left">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="center">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="center">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="center">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr columnalign="right">
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++            <mtd>
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="right">
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd>
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr columnalign="right">
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnalign-single-ref.html b/layout/reftests/mathml/mtable-columnalign-single-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnalign-single-ref.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnalign</title>
++  </head>
++  <body>
++    <b>columnalign="left"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="left">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="left">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="left">
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="center">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="center">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>columnalign="right"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>123</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>12345</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd columnalign="right">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd columnalign="right">
++              <mtext>1234567</mtext>
++            </mtd>
++            <mtd>
++            <mtext>1234567</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnlines-multi-mtable-dynamic.html b/layout/reftests/mathml/mtable-columnlines-multi-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnlines-multi-mtable-dynamic.html
+@@ -0,0 +1,105 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnlines</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++
++        // Table 1 setup
++        table1.setAttribute("columnlines", "solid dashed");
++        // Table 2 setup
++        table2.setAttribute("columnlines", "dashed solid");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++  <b>columnlines="solid dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table1">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>columnlines="dashed solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table2">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnlines-multi-ref.html b/layout/reftests/mathml/mtable-columnlines-multi-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnlines-multi-ref.html
+@@ -0,0 +1,90 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnlines</title>
++  </head>
++  <body>
++  <b>columnlines="solid dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable columnlines="solid dashed">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>columnlines="dashed solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable columnlines="dashed solid">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnlines-single-mtable-dynamic.html b/layout/reftests/mathml/mtable-columnlines-single-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnlines-single-mtable-dynamic.html
+@@ -0,0 +1,105 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML columnlines</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++
++        // Table 1 setup
++        table1.setAttribute("columnlines", "solid");
++        // Table 2 setup
++        table2.setAttribute("columnlines", "dashed");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++  <b>columnlines="solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table1">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>columnlines="dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table2">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-columnlines-single-ref.html b/layout/reftests/mathml/mtable-columnlines-single-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-columnlines-single-ref.html
+@@ -0,0 +1,90 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML columnlines</title>
++  </head>
++  <body>
++  <b>columnlines="solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable columnlines="solid">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>columnlines="dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable columnlines="dashed">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-multi-mtable-dynamic.html b/layout/reftests/mathml/mtable-rowalign-multi-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-multi-mtable-dynamic.html
+@@ -0,0 +1,146 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML rowalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++
++        // Table 1 setup
++        table1.setAttribute("rowalign", "top center bottom");
++        // Table 2 setup
++        table2.setAttribute("rowalign", "bottom top center");
++        // Table 3 setup
++        table3.setAttribute("rowalign", "center bottom top");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>rowalign="top center bottom"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom top center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center bottom top"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-multi-mtable.html b/layout/reftests/mathml/mtable-rowalign-multi-mtable.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-multi-mtable.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowalign</title>
++  </head>
++  <body>
++    <b>rowalign="top center bottom"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable rowalign="top center bottom">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom top center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable rowalign="bottom top center">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center bottom top"</b> <br />
++    <math>
++      <mstyle>
++        <mtable rowalign="center bottom top">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-multi-ref.html b/layout/reftests/mathml/mtable-rowalign-multi-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-multi-ref.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowalign</title>
++  </head>
++  <body>
++    <b>rowalign="top center bottom"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom top center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center bottom top"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-single-mtable-dynamic.html b/layout/reftests/mathml/mtable-rowalign-single-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-single-mtable-dynamic.html
+@@ -0,0 +1,146 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML rowalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++
++        // Table 1 setup
++        table1.setAttribute("rowalign", "top");
++        // Table 2 setup
++        table2.setAttribute("rowalign", "center");
++        // Table 3 setup
++        table3.setAttribute("rowalign", "bottom");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>rowalign="top"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-single-mtable.html b/layout/reftests/mathml/mtable-rowalign-single-mtable.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-single-mtable.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowalign</title>
++  </head>
++  <body>
++    <b>rowalign="top"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable rowalign="top">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable rowalign="center">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom"</b> <br />
++    <math>
++      <mstyle>
++        <mtable rowalign="bottom">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-single-mtr-dynamic.html b/layout/reftests/mathml/mtable-rowalign-single-mtr-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-single-mtr-dynamic.html
+@@ -0,0 +1,155 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML rowalign</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++        var table3 = document.getElementById("table3");
++        var rows = undefined;
++
++        // Table 1 setup
++        rows = table1.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("rowalign", "top");
++
++        // Table 2 setup
++        rows = table2.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("rowalign", "center");
++
++        // Table 3 setup
++        rows = table3.getElementsByTagName("mtr");
++        for(var i = 0; i < rows.length; i++)
++          rows[i].setAttribute("rowalign", "bottom");
++
++        document.documentElement.removeAttribute("class");
++      }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++    <b>rowalign="top"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable id="table1">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table2">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom"</b> <br />
++    <math>
++      <mstyle>
++        <mtable id="table3">
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-single-mtr.html b/layout/reftests/mathml/mtable-rowalign-single-mtr.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-single-mtr.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowalign</title>
++  </head>
++  <body>
++    <b>rowalign="top"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr rowalign="top">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="top">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="top">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr rowalign="center">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="center">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="center">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr rowalign="bottom">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="bottom">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr rowalign="bottom">
++            <mtd>
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd>
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowalign-single-ref.html b/layout/reftests/mathml/mtable-rowalign-single-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowalign-single-ref.html
+@@ -0,0 +1,128 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowalign</title>
++  </head>
++  <body>
++    <b>rowalign="top"</b> <br/>
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="top">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="center"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="center">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math> <br />
++    <b>rowalign="bottom"</b> <br />
++    <math>
++      <mstyle>
++        <mtable>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="5px" height="5px" mathbackground="red"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="10px" height="10px" mathbackground="green"></mspace>
++            </mtd>
++            <mtd rowalign="bottom">
++              <mspace width="10px" depth="15px" height="15px" mathbackground="blue"></mspace>
++            </mtd>
++          </mtr>
++        </mtable>
++      </mstyle>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowlines-multi-mtable-dynamic.html b/layout/reftests/mathml/mtable-rowlines-multi-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowlines-multi-mtable-dynamic.html
+@@ -0,0 +1,105 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML rowlines</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++
++        // Table 1 setup
++        table1.setAttribute("rowlines", "solid dashed");
++        // Table 2 setup
++        table2.setAttribute("rowlines", "dashed solid");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++  <b>rowlines="solid dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table1">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>rowlines="dashed solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table2">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowlines-multi-ref.html b/layout/reftests/mathml/mtable-rowlines-multi-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowlines-multi-ref.html
+@@ -0,0 +1,90 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowlines</title>
++  </head>
++  <body>
++  <b>rowlines="solid dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable rowlines="solid dashed">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>rowlines="dashed solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable rowlines="dashed solid">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowlines-single-mtable-dynamic.html b/layout/reftests/mathml/mtable-rowlines-single-mtable-dynamic.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowlines-single-mtable-dynamic.html
+@@ -0,0 +1,105 @@
++<!DOCTYPE>
++<html class="reftest-wait">
++  <head>
++    <title>Test MathML rowlines</title>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var table1 = document.getElementById("table1");
++        var table2 = document.getElementById("table2");
++
++        // Table 1 setup
++        table1.setAttribute("rowlines", "solid");
++        // Table 2 setup
++        table2.setAttribute("rowlines", "dashed");
++
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body>
++  <b>rowlines="solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table1">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>rowlines="dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable id="table2">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mtable-rowlines-single-ref.html b/layout/reftests/mathml/mtable-rowlines-single-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mtable-rowlines-single-ref.html
+@@ -0,0 +1,90 @@
++<!DOCTYPE>
++<html>
++  <head>
++    <title>Test MathML rowlines</title>
++  </head>
++  <body>
++  <b>rowlines="solid"</b> <br />
++  <math>
++    <mstyle>
++      <mtable rowlines="solid">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  <b>rowlines="dashed"</b> <br />
++  <math>
++    <mstyle>
++      <mtable rowlines="dashed">
++        <mtr>
++          <mtd>
++            <mtext>a</mtext>
++          </mtd>
++          <mtd>
++            <mtext>b</mtext>
++          </mtd>
++          <mtd>
++            <mtext>c</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>d</mtext>
++          </mtd>
++
++          <mtd>
++            <mtext>e</mtext>
++          </mtd>
++          <mtd>
++            <mtext>f</mtext>
++          </mtd>
++        </mtr>
++        <mtr>
++          <mtd>
++            <mtext>g</mtext>
++          </mtd>
++          <mtd>
++            <mtext>h</mtext>
++          </mtd>
++          <mtd>
++            <mtext>i</mtext>
++          </mtd>
++        </mtr>
++      </mtable>
++    </mstyle>
++  </math> <br />
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -107,16 +107,34 @@ fails == mstyle-5.xhtml mstyle-5-ref.xht
+ == mfrac-linethickness-3.xhtml mfrac-linethickness-3-ref.xhtml
+ == mathml-negativespace.html mathml-negativespace-ref.html
+ == negative-mspace-1.html negative-mspace-1-ref.html
+ != link-1.xhtml link-ref.xhtml
+ == munderover-empty-scripts.html munderover-empty-scripts-ref.html
+ == positive-namedspace.html positive-namedspace-ref.html
+ == mtable-align-whitespace.html mtable-align-whitespace-ref.html
+ == mtable-width.html mtable-width-ref.html
++== mtable-rowlines-single-mtable-dynamic.html mtable-rowlines-single-ref.html
++== mtable-rowlines-multi-mtable-dynamic.html mtable-rowlines-multi-ref.html
++== mtable-rowalign-single-mtr.html mtable-rowalign-single-ref.html
++== mtable-rowalign-single-mtr-dynamic.html mtable-rowalign-single-ref.html
++== mtable-rowalign-single-mtable.html mtable-rowalign-single-ref.html
++== mtable-rowalign-single-mtable-dynamic.html mtable-rowalign-single-ref.html
++== mtable-rowalign-multi-mtable.html mtable-rowalign-multi-ref.html
++== mtable-rowalign-multi-mtable-dynamic.html mtable-rowalign-multi-ref.html
++== mtable-columnlines-single-mtable-dynamic.html mtable-columnlines-single-ref.html
++== mtable-columnlines-multi-mtable-dynamic.html mtable-columnlines-multi-ref.html
++== mtable-columnalign-single-mtr.html mtable-columnalign-single-ref.html
++== mtable-columnalign-single-mtr-dynamic.html mtable-columnalign-single-ref.html
++== mtable-columnalign-single-mtable.html mtable-columnalign-single-ref.html
++== mtable-columnalign-single-mtable-dynamic.html mtable-columnalign-single-ref.html
++== mtable-columnalign-multi-mtr.html mtable-columnalign-multi-ref.html
++== mtable-columnalign-multi-mtr-dynamic.html mtable-columnalign-multi-ref.html
++== mtable-columnalign-multi-mtable.html mtable-columnalign-multi-ref.html
++== mtable-columnalign-multi-mtable-dynamic.html mtable-columnalign-multi-ref.html
+ == maction-selection.html maction-selection-ref.html
+ == maction-dynamic-embellished-op.html maction-dynamic-embellished-op-ref.html
+ skip-if(B2G) == maction-dynamic-1.html maction-dynamic-1-ref.html # bug 773482
+ == maction-dynamic-2.html maction-dynamic-2-ref.html
+ == mo-lspace-rspace.html mo-lspace-rspace-ref.html
+ skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
+ == whitespace-trim-1.html whitespace-trim-1-ref.html
+ == whitespace-trim-2.html whitespace-trim-2-ref.html

@@ -1,0 +1,169 @@
+# HG changeset patch
+# Parent 33ae87487a2373554283007c7611e61157151519
+# User Frédéric Wang <fred.wang@free.fr>
+Refactor implementation of displaystyle - part 2: map displaystyle to style. b=838506, r=karlt
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -19,23 +19,32 @@ math {
+   direction: ltr;
+   unicode-bidi: embed;
+   display: inline;
+   font-size: inherit;
+   font-style: normal;
+   font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+   text-rendering: optimizeLegibility;
+   -moz-float-edge: margin-box;
++  -moz-display-style: none;
+ }
+ math[mode="display"], math[display="block"] {
+   display: block;
+   text-align: -moz-center;
++  -moz-display-style: true;
+ }
+ math[display="inline"] {
+   display: inline;
++  -moz-display-style: none;
++}
++math[displaystyle="false"] {
++  -moz-display-style: none;
++}
++math[displaystyle="true"] {
++  -moz-display-style: true;
+ }
+ 
+ /**************************************************************************/
+ /* Token elements                                                         */
+ /**************************************************************************/
+ 
+ ms {
+   display: inline;
+@@ -231,25 +240,116 @@ mtable[frame="dashed"] > mtr > mtd:last-
+ /**********************************************************************/
+ /* This is used when wrapping non-MathML inline elements inside math. */
+ *|*::-moz-mathml-anonymous-block {
+   display: inline-block !important;
+   position: static !important;
+   text-indent: 0;
+ }
+ 
+-/*****************************************/
+-/* Controlling scriptlevel               */
+-/*****************************************/
++/**************************************************************************/
++/* Controlling Displaystyle and Scriptlevel                               */
++/**************************************************************************/
+ 
+-/* mfrac, munder, mover and munderover change the scriptlevels of their children using
+-   -moz-math-increment-script-level because regular CSS rules are insufficient to
+-   control when the scriptlevel should be incremented */
+-:-moz-math-increment-script-level { -moz-script-level:+1; }
++/*
++  http://www.w3.org/Math/draft-spec/chapter3.html#presm.scriptlevel
+ 
+-/* all other cases can be described using regular CSS, so we do it this way because it's
+-   more efficient and less code */
+-mroot > :not(:first-child) { -moz-script-level:+2; }
++  The determination of -moz-display-style for <math> involves the displaystyle
++  and display attributes. See the <math> section above.
++*/
+ 
++/*
++  Map mstyle@displaystyle to -moz-display-style.
++*/
++mstyle[displaystyle="false"] {
++  -moz-display-style: none;
++}
++mstyle[displaystyle="true"] {
++  -moz-display-style: true;
++}
++
++/*  munder, mover and munderover change the scriptlevels of their children
++   using -moz-math-increment-script-level because regular CSS rules are
++   insufficient to control when the scriptlevel should be incremented. All other
++   cases can be described using regular CSS, so we do it this way because it's
++   more efficient and less code. */
++:-moz-math-increment-script-level { -moz-script-level: +1; }
++
++/*
++   The mfrac element sets displaystyle to "false", or if it was already false
++   increments scriptlevel by 1, within numerator and denominator.
++*/   
++mfrac > * {
++    -moz-script-level: auto;
++    -moz-display-style: none;
++}
++
++/*
++   The mroot element increments scriptlevel by 2, and sets displaystyle to
++   "false", within index, but leaves both attributes unchanged within base.
++   The msqrt element leaves both attributes unchanged within its argument.
++*/
++mroot > :not(:first-child) {
++    -moz-script-level: +2;
++    -moz-display-style: none;
++}
++
++/*
++   The msub element [...] increments scriptlevel by 1, and sets displaystyle to
++   "false", within subscript, but leaves both attributes unchanged within base.
++
++   The msup element [...] increments scriptlevel by 1, and sets displaystyle to
++   "false", within superscript, but leaves both attributes unchanged within
++   base.
++
++   The msubsup element [...] increments scriptlevel by 1, and sets displaystyle
++   to "false", within subscript and superscript, but leaves both attributes
++   unchanged within base.
++
++   The mmultiscripts element increments scriptlevel by 1, and sets displaystyle
++   to "false", within each of its arguments except base, but leaves both
++   attributes unchanged within base.
++ */
+ msub > :not(:first-child),
+ msup > :not(:first-child),
+ msubsup > :not(:first-child),
+-mmultiscripts > :not(:first-child) { -moz-script-level:+1; }
++mmultiscripts > :not(:first-child) {
++    -moz-script-level: +1;
++    -moz-display-style: none;
++}
++
++/*
++   The munder element [...] always sets displaystyle to "false" within the
++   underscript, but increments scriptlevel by 1 only when accentunder is
++   "false". Within base, it always leaves both attributes unchanged.
++
++   The mover element [...] always sets displaystyle to "false" within
++   overscript, but increments scriptlevel by 1 only when accent is "false".
++   Within base, it always leaves both attributes unchanged.
++
++   The munderover [..] always sets displaystyle to "false" within underscript
++   and overscript, but increments scriptlevel by 1 only when accentunder or
++   accent, respectively, are "false". Within base, it always leaves both
++   attributes unchanged.
++*/
++munder > :not(:first-child),
++mover > :not(:first-child),
++munderover > :not(:first-child) {
++    -moz-display-style: none;
++}
++
++/*
++   The displaystyle attribute is allowed on the mtable element to set the
++   inherited value of the attribute. If the attribute is not present, the
++   mtable element sets displaystyle to "false" within the table elements.
++*/
++mtable { -moz-display-style: none; }
++mtable[displaystyle="true"] { -moz-display-style: true; }
++
++/*
++   The mscarries element sets displaystyle to "false", and increments
++   scriptlevel by 1, so the children are typically displayed in a smaller font.
++   XXXfredw: This element is not implemented yet. See bug 534967.
++mscarries {
++  -moz-script-level: +1;
++  -moz-display-style: none;
++}
++*/
