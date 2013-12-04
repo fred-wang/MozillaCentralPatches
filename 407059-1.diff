@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 9e7dec4f08596658e5792228ed12bbefc13e5263
+# Parent 9e16d5789ab6aa77d31dfe683716dc9c0e344615
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 407059 - read OpenType MATH table for variants and parts of stretchy characters
 
@@ -230,6 +230,113 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      friend class gfxMacPlatformFontList;
      friend class gfxUserFcFontEntry;
      friend class gfxFontFamily;
+diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
+new file mode 100644
+--- /dev/null
++++ b/gfx/thebes/gfxMathTable.cpp
+@@ -0,0 +1,24 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "gfxMathTable.h"
++
++#include "gfxFont.h"
++#include "harfbuzz/hb.h"
++
++using namespace mozilla;
++
++gfxMathTable::gfxMathTable(hb_blob_t* aMathTable, gfxFontEntry* aFontEntry)
++    : mMathTable(aMathTable)
++    , mFontEntry(aFontEntry)
++{
++    unsigned int length;
++    const char* mathData = hb_blob_get_data(mMathTable, &length);
++    mHeader = reinterpret_cast<const Header*>(mathData);
++}
++
++gfxMathTable::~gfxMathTable()
++{
++    hb_blob_destroy(mMathTable);
++}
+diff --git a/gfx/thebes/gfxMathTable.h b/gfx/thebes/gfxMathTable.h
+new file mode 100644
+--- /dev/null
++++ b/gfx/thebes/gfxMathTable.h
+@@ -0,0 +1,73 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef GFX_MATH_TABLE_WRAPPER_H
++#define GFX_MATH_TABLE_WRAPPER_H
++
++#include "gfxFontUtils.h"
++
++/**
++ * Used by |gfxFontEntry| to represent the MATH table of an OpenType font.
++ * Each |gfxFontEntry| owns at most one |gfxMathTable| instance.
++ */
++class gfxMathTable
++{
++public:
++    /**
++     * @param aMathTable The MATH table from the OpenType font
++     *
++     * The gfxMathTable object takes over ownership of the blob references
++     * that are passed in, and will hb_blob_destroy() them when finished;
++     * the caller should -not- destroy these references.
++     */
++    gfxMathTable(hb_blob_t* aMathTable, gfxFontEntry* aFontEntry);
++
++    /**
++     * Releases our references to the Math table and cleans up everything else.
++     */
++    ~gfxMathTable();
++
++    const gfxFontEntry* GetFontEntry() const { return mFontEntry; }
++
++private:
++    hb_blob_t* mMathTable;
++    gfxFontEntry* mFontEntry;
++
++    typedef mozilla::AutoSwap_PRUint32 Offset;
++    typedef mozilla::AutoSwap_PRUint16 GlyphID;
++
++    struct MathValueRecord {
++        mozilla::AutoSwap_PRUint16 mValue;
++        Offset                     mDeviceTable;
++    };
++
++    const struct Header {
++        mozilla::AutoSwap_PRUint32 mVersion;
++        Offset                     mMathConstants;
++        Offset                     mMathGlyphInfo;
++        Offset                     mMathVariants;
++    } *mHeader;
++
++    struct MathVariants {
++        mozilla::AutoSwap_PRUint16 mMinConnectorOverlap;
++        Offset                     mVertGlyphCoverage;
++        Offset                     mHorizGlyphCoverage;
++        mozilla::AutoSwap_PRUint16 mVertGlyphCount;
++        mozilla::AutoSwap_PRUint16 mHorizGlyphCount;
++    };
++
++    struct MathGlyphVariantRecord {
++      GlyphID                    mVariantGlyph;
++      mozilla::AutoSwap_PRUint16 mAdvanceMeasurement;
++    };
++
++    struct MathGlyphConstruction {
++        Offset                     mGlyphAssembly;
++        mozilla::AutoSwap_PRUint16 mVariantCount;
++        MathGlyphVariantRecord     mMathGlyphVariant;
++    };
++
++};
++
++#endif
 diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
 --- a/gfx/thebes/moz.build
 +++ b/gfx/thebes/moz.build
