@@ -1,5 +1,7 @@
 663740.diff
 407059-1.diff
+disable-scale.diff
+prime.diff
 try.diff
 bug731667_css_atoms.patch
 bug731667_tests.patch

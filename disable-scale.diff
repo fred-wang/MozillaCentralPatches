@@ -1,0 +1,60 @@
+# HG changeset patch
+# Parent 365c57af00f8d7f50929f48e8b70589351a3ecc9
+# User Frédéric Wang <fred.wang@free.fr>
+Disable scale.
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1848,46 +1848,46 @@ nsMathMLChar::StretchInternal(nsPresCont
+     // variables accordingly.
+     if (!glyphFound) mDraw = DRAW_NORMAL;
+     mUnscaledAscent = aDesiredStretchSize.ascent;
+   }
+     
+   // stretchy character
+   if (stretchy) {
+     if (isVertical) {
+-      float scale =
++      float scale = 1.0;/*
+         float(aContainerSize.ascent + aContainerSize.descent) /
+-        (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);
++        (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);*/
+       if (!largeop || scale > 1.0) {
+         // make the character match the desired height.
+         if (!maxWidth) {
+           mScaleY *= scale;
+         }
+         aDesiredStretchSize.ascent *= scale;
+         aDesiredStretchSize.descent *= scale;
+       }
+     } else {
+-      float scale =
++      float scale = 1.0; /*
+         float(aContainerSize.rightBearing - aContainerSize.leftBearing) /
+-        (aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing);
++        (aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing);*/
+       if (!largeop || scale > 1.0) {
+         // make the character match the desired width.
+         if (!maxWidth) {
+           mScaleX *= scale;
+         }
+         aDesiredStretchSize.leftBearing *= scale;
+         aDesiredStretchSize.rightBearing *= scale;
+         aDesiredStretchSize.width *= scale;
+       }
+     }
+   }
+ 
+   // We do not have a char variant for this largeop in display mode, so we
+   // apply a scale transform to the base char.
+-  if (!glyphFound && largeop) {
++  if (!glyphFound && largeop && false) {
+     float scale;
+     float largeopFactor = float(M_SQRT2);
+ 
+     // increase the width if it is not largeopFactor times larger
+     // than the initial one.
+     if ((aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing) <
+         largeopFactor * (initialSize.rightBearing - initialSize.leftBearing)) {
+       scale = (largeopFactor *
