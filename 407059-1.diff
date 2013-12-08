@@ -201,7 +201,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -358,27 +361,106 @@ gfxFontEntry::TryGetSVGData(gfxFont* aFo
+@@ -358,27 +361,111 @@ gfxFontEntry::TryGetSVGData(gfxFont* aFo
  
      return !!mSVGGlyphs;
  }
@@ -228,6 +228,11 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +    if (!mMathInitialized) {
 +        mMathInitialized = true;
 +
++        // If UnitsPerEm is not known/valid, we can't use MATH table
++        if (UnitsPerEm() == kInvalidUPEM) {
++            return false;
++        }
++
 +        // We don't use AutoTable here because we'll pass ownership of this
 +        // blob to the gfxMathTable, once we've confirmed the table exists
 +        hb_blob_t *mathTable = GetFontTable(TRUETYPE_TAG('M','A','T','H'));
@@ -251,11 +256,11 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +    return !!mMathTable;
 +}
 +
-+uint16_t
++gfxFloat
 +gfxFontEntry::GetDisplayOperatorMinHeight()
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
-+    return mMathTable->GetDisplayOperatorMinHeight();
++    return 1.0f * mMathTable->GetDisplayOperatorMinHeight() / mUnitsPerEm;
 +}
 +
 +void
@@ -308,7 +313,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
  
  class gfxFontEntry::FontTableBlobData {
  public:
-@@ -693,16 +775,25 @@ gfxFontEntry::DisconnectSVG()
+@@ -693,16 +780,25 @@ gfxFontEntry::DisconnectSVG()
  {
      if (mSVGInitialized && mSVGGlyphs) {
          mSVGGlyphs = nullptr;
@@ -365,7 +370,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      void NotifyGlyphsChanged();
  
 +    bool TryGetMathTable(gfxFont* aFont);
-+    uint16_t GetDisplayOperatorMinHeight();
++    gfxFloat GetDisplayOperatorMinHeight();
 +    void SelectGlyphConstruction(uint32_t aGlyphID, bool aVertical);
 +    bool HasMathVariants();
 +    uint16_t MathVariantsSizesCount();
@@ -1029,10 +1034,10 @@ diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properti
  
  %ifdef XP_WIN
 -font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L, Symbol
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Standard Symbols L, Symbol
++font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L, Symbol
  %else
 -font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Standard Symbols L
++font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L
  %endif
  
  # The ordered list of fonts with which to attempt to stretch MathML
@@ -1233,7 +1238,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  static void
  Clean(nsString& aValue)
  {
-@@ -99,93 +98,121 @@ LoadProperties(const nsString& aName,
+@@ -99,93 +98,122 @@ LoadProperties(const nsString& aName,
    return NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(aProperties), 
                                                  NS_ConvertUTF16toUTF8(uriStr));
  }
@@ -1288,7 +1293,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +                          nsMathMLChar* aChar) = 0;
 +
 +  //
-+  virtual int32_t GetDisplayOperatorMinHeight(int32_t aAppUnitsPerGfxUnit) = 0;
++  virtual int32_t GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics) = 0;
 +
 +  // Getter for size variants
 +  virtual nsGlyphCode BigOf(gfxContext* aThebesContext,
@@ -1363,7 +1368,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  virtual bool HasPartsOf(gfxContext* aThebesContext,
 +                          nsMathMLChar* aChar) MOZ_OVERRIDE;
 +
-+  virtual int32_t GetDisplayOperatorMinHeight(int32_t aAppUnitsPerGfxUnit) MOZ_OVERRIDE
++  virtual int32_t GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics)
++    MOZ_OVERRIDE
 +  {
 +    return 0;
 +  }
@@ -1402,7 +1408,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // mGlyphCache will retain the 'value', which is a consecutive list of
    // nsGlyphCodes, i.e., the pairs of 'code@font' needed by the char -- in
    // which 'code@0' can be specified
-@@ -195,22 +222,73 @@ private:
+@@ -195,22 +223,73 @@ private:
    // k-th glyph is characterized by :
    // 1) mGlyphCache[3*k],mGlyphCache[3*k+1] : its Unicode point
    // 2) mGlyphCache[3*k+2] : the numeric identifier of the font where it comes
@@ -1479,7 +1485,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  #ifdef DEBUG
      nsAutoCString uriStr;
      uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
-@@ -305,52 +383,198 @@ nsGlyphTable::ElementAt(nsPresContext* a
+@@ -305,52 +384,198 @@ nsGlyphTable::ElementAt(nsPresContext* a
    if (index+2 >= mGlyphCache.Length()) return kNullGlyph;
    nsGlyphCode ch;
    ch.code[0] = mGlyphCache.CharAt(index);
@@ -1507,10 +1513,10 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  virtual bool HasPartsOf(gfxContext* aThebesContext,
 +                          nsMathMLChar* aChar) MOZ_OVERRIDE;
 +
-+  virtual int32_t GetDisplayOperatorMinHeight(int32_t aAppUnitsPerGfxUnit)
++  virtual int32_t GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics)
 +    MOZ_OVERRIDE
 +  {
-+    return  mFontEntry->GetDisplayOperatorMinHeight() * aAppUnitsPerGfxUnit;
++    return mFontEntry->GetDisplayOperatorMinHeight() * aFontMetrics->EmHeight();
 +  }
 +
 +  virtual nsGlyphCode BigOf(gfxContext* aThebesContext,
@@ -1689,7 +1695,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
  
    virtual ~nsGlyphTableList()
-@@ -362,33 +586,43 @@ public:
+@@ -362,33 +587,43 @@ public:
    nsresult Finalize();
  
    // Add a glyph table in the list, return the new table that was added
@@ -1740,7 +1746,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // Here is the global list of applicable glyph tables that we will be using
  static nsGlyphTableList* gGlyphTableList = nullptr;
  
-@@ -439,52 +673,72 @@ nsGlyphTable*
+@@ -439,52 +674,72 @@ nsGlyphTable*
  nsGlyphTableList::AddGlyphTable(const nsString& aPrimaryFontName)
  {
    // See if there is already a special table for this family.
@@ -1822,7 +1828,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
  // Given the char code and mode of stretch, retrieve the preferred extension
  // font families.
-@@ -648,17 +902,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -648,17 +903,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
    mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
    mBoundingMetrics = nsBoundingMetrics();
    mGlyphTable = nullptr;
@@ -1841,7 +1847,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
   The Stretch:
   @param aContainerSize - suggested size for the stretched char
   @param aDesiredStretchSize - OUT parameter. The desired size
-@@ -963,20 +1217,39 @@ public:
+@@ -963,20 +1218,39 @@ public:
          NS_ERROR("This shouldn't be called because we never enable spacing");
      }
  };
@@ -1885,7 +1891,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  {
    nsAutoPtr<gfxTextRun> textRun;
    textRun = MakeTextRun(aThebesContext, aGlyph);
-@@ -988,28 +1261,29 @@ nsMathMLChar::MeasureGlyph(gfxContext*  
+@@ -988,28 +1262,29 @@ nsMathMLChar::MeasureGlyph(gfxContext*  
                           aThebesContext, &provider);
  
    nsBoundingMetrics bm;
@@ -1917,7 +1923,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    textRun->Draw(aThebesContext, pt, DrawMode::GLYPH_FILL, 0, aGlyph.Length(),
                  &provider, nullptr, nullptr);
  }
-@@ -1092,17 +1366,17 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1092,17 +1367,17 @@ nsMathMLChar::StretchEnumContext::TryVar
    // start at size = 1 (size = 0 is the char at its normal size)
    int32_t size = 1;
  #ifdef NOISY_SEARCH
@@ -1936,7 +1942,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        continue;
      }
  
-@@ -1123,18 +1397,17 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1123,18 +1398,17 @@ nsMathMLChar::StretchEnumContext::TryVar
          // IsSizeBetter() checked that charSize < maxsize;
          // Leave ascent, descent, and bestsize as these contain maxsize.
          if (mBoundingMetrics.width < bm.width)
@@ -1956,7 +1962,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          mChar->mGlyphTable = aGlyphTable;
          mChar->mFamily = font.name;
          mChar->mGlyphs[0] = ch;
-@@ -1148,34 +1421,38 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1148,34 +1422,37 @@ nsMathMLChar::StretchEnumContext::TryVar
      else {
  #ifdef NOISY_SEARCH
        printf("    size:%d Rejected!\n", size);
@@ -1969,8 +1975,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -    if (largeopOnly) break;
 +    if (largeopOnly &&
 +        bm.ascent + bm.descent >=
-+        aGlyphTable->GetDisplayOperatorMinHeight(mChar->mFontMetrics->
-+                                                 AppUnitsPerDevPixel())) {
++        aGlyphTable->GetDisplayOperatorMinHeight(mChar->mFontMetrics)) {
 +      break;
 +    }
      ++size;
@@ -2175,7 +2180,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Standard Symbols L, DejaVu Sans");
++pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -2194,7 +2199,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Symbol, DejaVu Sans");
++pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans");
  
  // cleartype settings - false implies default system settings 
  
@@ -2213,7 +2218,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Symbol, DejaVu Sans");
++pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans");
  
  // individual font faces to be treated as independent families
  // names are Postscript names of each face
@@ -2232,7 +2237,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
  
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
-+pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, DejaVu Sans");
++pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, DejaVu Sans");
  
  // Languages only need lists if we have a default that might not be available.
  // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
