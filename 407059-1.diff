@@ -1,13 +1,13 @@
 # HG changeset patch
-# Parent 7ebb35289779557869d462eb13305dff09f8dd3d
+# Parent fbdb14e21214b5761f617d352fb8b64647c211ce
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 407059 - read OpenType MATH table for variants and parts of stretchy characters
+Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
 diff --git a/gfx/thebes/MathTableStructures.h b/gfx/thebes/MathTableStructures.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/MathTableStructures.h
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,100 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -19,129 +19,81 @@ new file mode 100644
 +// will read the header of the structure first, verify that there is enough
 +// space for the specified arrays and then use a pointer to browse these arrays.
 +
-+typedef AutoSwap_PRUint16 Offset;
-+typedef AutoSwap_PRUint16 GlyphID;
++typedef mozilla::AutoSwap_PRUint16 Count16;
++typedef mozilla::AutoSwap_PRUint16 GlyphID;
++typedef mozilla::AutoSwap_PRUint16 Offset;
 +
 +struct MathValueRecord {
-+  AutoSwap_PRUint16 mValue;
-+  Offset            mDeviceTable;
++  mozilla::AutoSwap_PRUint16 mValue;
++  Offset                     mDeviceTable;
 +};
 +
 +struct RangeRecord {
-+  GlyphID           mStart;
-+  GlyphID           mEnd;
-+  AutoSwap_PRUint16 mStartCoverageIndex;
++  GlyphID                    mStart;
++  GlyphID                    mEnd;
++  mozilla::AutoSwap_PRUint16 mStartCoverageIndex;
 +};
 +
 +struct Coverage {
-+  AutoSwap_PRUint16 mFormat;
++  mozilla::AutoSwap_PRUint16 mFormat;
 +};
 +
 +struct CoverageFormat1 {
-+  AutoSwap_PRUint16 mFormat;
-+  AutoSwap_PRUint16 mGlyphCount;
-+  // GlyphID        mGlyphArray[mGlyphCount]
++  mozilla::AutoSwap_PRUint16 mFormat;
++  Count16                    mGlyphCount;
++  // GlyphID                 mGlyphArray[mGlyphCount]
 +};
 +
 +struct CoverageFormat2 {
-+  AutoSwap_PRUint16 mFormat;
-+  AutoSwap_PRUint16 mRangeCount;
-+  // RangeRecord    mRangeArray[mRangeCount];
++  mozilla::AutoSwap_PRUint16 mFormat;
++  Count16                    mRangeCount;
++  // RangeRecord             mRangeArray[mRangeCount];
 +};
 +
-+struct Header {
-+  AutoSwap_PRUint32 mVersion;
-+  Offset            mMathConstants;
-+  Offset            mMathGlyphInfo;
-+  Offset            mMathVariants;
++struct MATHTableHeader {
++  mozilla::AutoSwap_PRUint32 mVersion;
++  Offset                     mMathConstants;
++  Offset                     mMathGlyphInfo;
++  Offset                     mMathVariants;
 +};
 +
 +struct MathConstants {
-+  AutoSwap_PRUint16 mScriptPercentScaleDown;
-+  AutoSwap_PRUint16 mScriptScriptPercentScaleDown;
-+  AutoSwap_PRUint16 mDelimitedSubFormulaMinHeight;
-+  AutoSwap_PRUint16 mDisplayOperatorMinHeight;
-+  MathValueRecord   mMathLeading;
-+  MathValueRecord   mAxisHeight;
-+  MathValueRecord   mAccentBaseHeight;
-+  MathValueRecord   mFlattenedAccentBaseHeight;
-+  MathValueRecord   mSubscriptShiftDown;
-+  MathValueRecord   mSubscriptTopMax;
-+  MathValueRecord   mSubscriptBaselineDropMin;
-+  MathValueRecord   mSuperscriptShiftUp;
-+  MathValueRecord   mSuperscriptShiftUpCramped;
-+  MathValueRecord   mSuperscriptBottomMin;
-+  MathValueRecord   mSuperscriptBaselineDropMax;
-+  MathValueRecord   mSubSuperscriptGapMin;
-+  MathValueRecord   mSuperscriptBottomMaxWithSubscript;
-+  MathValueRecord   mSpaceAfterScript;
-+  MathValueRecord   mUpperLimitGapMin;
-+  MathValueRecord   mUpperLimitBaselineRiseMin;
-+  MathValueRecord   mLowerLimitGapMin;
-+  MathValueRecord   mLowerLimitBaselineDropMin;
-+  MathValueRecord   mStackTopShiftUp;
-+  MathValueRecord   mStackTopDisplayStyleShiftUp;
-+  MathValueRecord   mStackBottomShiftDown;
-+  MathValueRecord   mStackBottomDisplayStyleShiftDown;
-+  MathValueRecord   mStackGapMin;
-+  MathValueRecord   mStackDisplayStyleGapMin;
-+  MathValueRecord   mStretchStackTopShiftUp;
-+  MathValueRecord   mStretchStackBottomShiftDown;
-+  MathValueRecord   mStretchStackGapAboveMin;
-+  MathValueRecord   mStretchStackGapBelowMin;
-+  MathValueRecord   mFractionNumeratorShiftUp;
-+  MathValueRecord   mFractionNumeratorDisplayStyleShiftUp;
-+  MathValueRecord   mFractionDenominatorShiftDown;
-+  MathValueRecord   mFractionDenominatorDisplayStyleShiftDown;
-+  MathValueRecord   mFractionNumeratorGapMin;
-+  MathValueRecord   mFractionNumDiisplayStyleGapMin;
-+  MathValueRecord   mFractionRuleThickness;
-+  MathValueRecord   mFractionDenominatorGapMin;
-+  MathValueRecord   mFractionDenomDisplayStyleGapMin;
-+  MathValueRecord   mSkewedFractionHorizontalGap;
-+  MathValueRecord   mSkewedFractionVerticalGap;
-+  MathValueRecord   mOverbarVerticalGap;
-+  MathValueRecord   mOverbarRuleThickness;
-+  MathValueRecord   mOverbarExtraAscender;
-+  MathValueRecord   mUnderbarVerticalGap;
-+  MathValueRecord   mUnderbarRuleThickness;
-+  MathValueRecord   mUnderbarExtraDescender;
-+  MathValueRecord   mRadicalVerticalGap;
-+  MathValueRecord   mRadicalDisplayStyleVerticalGap;
-+  MathValueRecord   mRadicalRuleThickness;
-+  MathValueRecord   mRadicalExtraAscender;
-+  MathValueRecord   mRadicalKernBeforeDegree;
-+  MathValueRecord   mRadicalKernAfterDegree;
-+  AutoSwap_PRUint16 mRadicalDegreeBottomRaisePercent;
++  mozilla::AutoSwap_PRUint16 mSingleValues[gfxFontEntry::
++                                           DisplayOperatorMinHeight -
++                                           gfxFontEntry::
++                                           ScriptPercentScaleDown + 1];
++  MathValueRecord            mMathValues[gfxFontEntry::RadicalKernAfterDegree -
++                                         gfxFontEntry::MathLeading + 1];
++  mozilla::AutoSwap_PRUint16 mRadicalDegreeBottomRaisePercent;
 +};
 +
 +struct MathVariants {
-+  AutoSwap_PRUint16 mMinConnectorOverlap;
-+  Offset            mVertGlyphCoverage;
-+  Offset            mHorizGlyphCoverage;
-+  AutoSwap_PRUint16 mVertGlyphCount;
-+  AutoSwap_PRUint16 mHorizGlyphCount;
-+  // Offset         mVertGlyphConstruction[mVertGlyphCount];
-+  // Offset         mHorizGlyphConstruction[mHorizGlyphCount];
++  mozilla::AutoSwap_PRUint16 mMinConnectorOverlap;
++  Offset                     mVertGlyphCoverage;
++  Offset                     mHorizGlyphCoverage;
++  Count16                    mVertGlyphCount;
++  Count16                    mHorizGlyphCount;
++  // Offset                  mVertGlyphConstruction[mVertGlyphCount];
++  // Offset                  mHorizGlyphConstruction[mHorizGlyphCount];
 +};
 +
 +struct MathGlyphVariantRecord {
-+  GlyphID           mVariantGlyph;
-+  AutoSwap_PRUint16 mAdvanceMeasurement;
++  GlyphID                    mVariantGlyph;
++  mozilla::AutoSwap_PRUint16 mAdvanceMeasurement;
 +};
 +
 +struct MathGlyphConstruction {
-+  Offset                     mGlyphAssembly;
-+  AutoSwap_PRUint16          mVariantCount;
-+  // MathGlyphVariantRecord  mMathGlyphVariantRecord[mVariantCount]
++  Offset                    mGlyphAssembly;
++  Count16                   mVariantCount;
++  // MathGlyphVariantRecord mMathGlyphVariantRecord[mVariantCount]
 +};
 +
 +struct GlyphPartRecord {
-+  GlyphID	    mGlyph;
-+  AutoSwap_PRUint16 mStartConnectorLength;
-+  AutoSwap_PRUint16 mEndConnectorLength;
-+  AutoSwap_PRUint16 mFullAdvance;
-+  AutoSwap_PRUint16 mPartFlags;
++  GlyphID	              mGlyph;
++  mozilla::AutoSwap_PRUint16 mStartConnectorLength;
++  mozilla::AutoSwap_PRUint16 mEndConnectorLength;
++  mozilla::AutoSwap_PRUint16 mFullAdvance;
++  mozilla::AutoSwap_PRUint16 mPartFlags;
 +};
 +
 +// PartFlags enumeration currently uses only one bit:
@@ -153,7 +105,7 @@ new file mode 100644
 +
 +struct GlyphAssembly {
 +  MathValueRecord    mItalicsCorrection;
-+  AutoSwap_PRUint16  mPartCount;
++  Count16            mPartCount;
 +  // GlyphPartRecord mPartRecords[mPartCount]
 +};
 diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
@@ -213,19 +165,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -358,27 +361,85 @@ gfxFontEntry::TryGetSVGData(gfxFont* aFo
- 
-     return !!mSVGGlyphs;
- }
- 
- void
- gfxFontEntry::NotifyFontDestroyed(gfxFont* aFont)
- {
-     mFontsUsingSVGGlyphs.RemoveElement(aFont);
-+    mFontsUsingMathTable.RemoveElement(aFont);
- }
- 
- void
+@@ -369,16 +372,69 @@ void
  gfxFontEntry::NotifyGlyphsChanged()
  {
      for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
@@ -261,18 +201,14 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +        }
 +    }
 +
-+    if (!mFontsUsingMathTable.Contains(aFont)) {
-+        mFontsUsingMathTable.AppendElement(aFont);
-+    }
-+
 +    return !!mMathTable;
 +}
 +
 +gfxFloat
-+gfxFontEntry::GetDisplayOperatorMinHeight()
++gfxFontEntry::GetMathConstant(gfxFontEntry::MathConstant aConstant)
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
-+    return 1.0f * mMathTable->GetDisplayOperatorMinHeight() / mUnitsPerEm;
++    return gfxFloat(mMathTable->GetMathConstant(aConstant)) / mUnitsPerEm;
 +}
 +
 +uint32_t
@@ -299,36 +235,10 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
  
  class gfxFontEntry::FontTableBlobData {
  public:
-@@ -693,16 +754,25 @@ gfxFontEntry::DisconnectSVG()
- {
-     if (mSVGInitialized && mSVGGlyphs) {
-         mSVGGlyphs = nullptr;
-         mSVGInitialized = false;
-     }
- }
- 
- void
-+gfxFontEntry::DisconnectMath()
-+{
-+    if (mMathInitialized && mMathTable) {
-+        mMathTable = nullptr;
-+        mMathInitialized = false;
-+    }
-+}
-+
-+void
- gfxFontEntry::CheckForGraphiteTables()
- {
-     AutoTable silfTable(this, TRUETYPE_TAG('S','i','l','f'));
-     mHasGraphiteTables = silfTable && hb_blob_get_length(silfTable) > 0;
- }
- 
- /* static */ size_t
- gfxFontEntry::FontTableHashEntry::SizeOfEntryExcludingThis
 diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 --- a/gfx/thebes/gfxFont.h
 +++ b/gfx/thebes/gfxFont.h
-@@ -42,16 +42,17 @@ class gfxTextRun;
+@@ -43,16 +43,17 @@ class gfxTextRun;
  class gfxFont;
  class gfxFontFamily;
  class gfxFontGroup;
@@ -346,7 +256,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
  
-@@ -305,16 +306,25 @@ public:
+@@ -306,16 +307,83 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -358,7 +268,65 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 +    // Call TryGetMathTable to try to load the Open Type MATH table. The other
 +    // functions forward the call to the gfxMathTable class.
 +    bool     TryGetMathTable(gfxFont* aFont);
-+    gfxFloat GetDisplayOperatorMinHeight();
++    enum MathConstant {
++      ScriptPercentScaleDown,
++      ScriptScriptPercentScaleDown,
++      DelimitedSubFormulaMinHeight,
++      DisplayOperatorMinHeight,
++      MathLeading,
++      AxisHeight,
++      AccentBaseHeight,
++      FlattenedAccentBaseHeight,
++      SubscriptShiftDown,
++      SubscriptTopMax,
++      SubscriptBaselineDropMin,
++      SuperscriptShiftUp,
++      SuperscriptShiftUpCramped,
++      SuperscriptBottomMin,
++      SuperscriptBaselineDropMax,
++      SubSuperscriptGapMin,
++      SuperscriptBottomMaxWithSubscript,
++      SpaceAfterScript,
++      UpperLimitGapMin,
++      UpperLimitBaselineRiseMin,
++      LowerLimitGapMin,
++      LowerLimitBaselineDropMin,
++      StackTopShiftUp,
++      StackTopDisplayStyleShiftUp,
++      StackBottomShiftDown,
++      StackBottomDisplayStyleShiftDown,
++      StackGapMin,
++      StackDisplayStyleGapMin,
++      StretchStackTopShiftUp,
++      StretchStackBottomShiftDown,
++      StretchStackGapAboveMin,
++      StretchStackGapBelowMin,
++      FractionNumeratorShiftUp,
++      FractionNumeratorDisplayStyleShiftUp,
++      FractionDenominatorShiftDown,
++      FractionDenominatorDisplayStyleShiftDown,
++      FractionNumeratorGapMin,
++      FractionNumDisplayStyleGapMin,
++      FractionRuleThickness,
++      FractionDenominatorGapMin,
++      FractionDenomDisplayStyleGapMin,
++      SkewedFractionHorizontalGap,
++      SkewedFractionVerticalGap,
++      OverbarVerticalGap,
++      OverbarRuleThickness,
++      OverbarExtraAscender,
++      UnderbarVerticalGap,
++      UnderbarRuleThickness,
++      UnderbarExtraDescender,
++      RadicalVerticalGap,
++      RadicalDisplayStyleVerticalGap,
++      RadicalRuleThickness,
++      RadicalExtraAscender,
++      RadicalKernBeforeDegree,
++      RadicalKernAfterDegree,
++      RadicalDegreeBottomRaisePercent
++    };
++    gfxFloat GetMathConstant(MathConstant aConstant);
 +    uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                 uint16_t aSize);
 +    bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
@@ -372,27 +340,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -402,16 +412,19 @@ public:
-     // Get Graphite face corresponding to this font file.
-     // Caller must call gfxFontEntry::ReleaseGrFace when finished with it.
-     gr_face* GetGrFace();
-     virtual void ReleaseGrFace(gr_face* aFace);
- 
-     // Release any SVG-glyphs document this font may have loaded.
-     void DisconnectSVG();
- 
-+    // Release any MATH table this font may have loaded.
-+    void DisconnectMath();
-+
-     // Called to notify that aFont is being destroyed. Needed when we're tracking
-     // the fonts belonging to this font entry.
-     void NotifyFontDestroyed(gfxFont* aFont);
- 
-     // For memory reporting
-     virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                         FontListSizes* aSizes) const;
-     virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-@@ -427,16 +440,17 @@ public:
+@@ -428,16 +496,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -410,7 +358,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -450,16 +464,18 @@ public:
+@@ -451,16 +520,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -420,7 +368,6 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      // list of gfxFonts that are using SVG glyphs
      nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
 +    nsAutoPtr<gfxMathTable> mMathTable;
-+    nsTArray<gfxFont*> mFontsUsingMathTable;
      nsTArray<gfxFontFeature> mFeatureSettings;
      uint32_t         mLanguageOverride;
  
@@ -433,49 +380,46 @@ diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.cpp
-@@ -0,0 +1,363 @@
+@@ -0,0 +1,382 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 +
 +#include "gfxMathTable.h"
 +
++#include "MathTableStructures.h"
 +#include "gfxFont.h"
 +#include "harfbuzz/hb.h"
 +
 +using namespace mozilla;
 +
-+#include "MathTableStructures.h"
-+
 +gfxMathTable::gfxMathTable(hb_blob_t* aMathTable, gfxFontEntry* aFontEntry)
 +  : mMathTable(aMathTable)
-+  , mFontEntry(aFontEntry)
-+  , mMathData(nullptr)
-+  , mMathDataLength(0)
 +  , mGlyphConstruction(nullptr)
 +  , mGlyphID(0)
 +  , mVertical(false)
 +{
-+  mMathData = hb_blob_get_data(mMathTable, &mMathDataLength);
 +}
 +
 +gfxMathTable::~gfxMathTable()
 +{
-+    hb_blob_destroy(mMathTable);
++  hb_blob_destroy(mMathTable);
 +}
 +
 +bool
 +gfxMathTable::HasValidHeaders()
 +{
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
 +  // Verify the MATH table header.
-+  if (!ValidStructure(mMathData, sizeof(Header))) {
++  if (!ValidStructure(mathData, sizeof(MATHTableHeader))) {
 +    return false;
 +  }
-+  const Header* header = GetHeader();
++  const MATHTableHeader* header = GetMATHTableHeader();
 +  if (uint32_t(header->mVersion) != 0x00010000 ||
-+      !ValidOffset(mMathData, uint16_t(header->mMathConstants)) ||
-+      !ValidOffset(mMathData, uint16_t(header->mMathGlyphInfo)) ||
-+      !ValidOffset(mMathData, uint16_t(header->mMathVariants))) {
++      !ValidOffset(mathData, uint16_t(header->mMathConstants)) ||
++      !ValidOffset(mathData, uint16_t(header->mMathGlyphInfo)) ||
++      !ValidOffset(mathData, uint16_t(header->mMathVariants))) {
 +    return false;
 +  }
 +
@@ -503,23 +447,34 @@ new file mode 100644
 +}
 +
 +uint16_t
-+gfxMathTable::GetDisplayOperatorMinHeight()
++gfxMathTable::GetMathConstant(gfxFontEntry::MathConstant aConstant)
 +{
-+  return uint16_t(GetMathConstants()->mDisplayOperatorMinHeight);
++  const MathConstants* mathconstants = GetMathConstants();
++
++  if (aConstant <= gfxFontEntry::DisplayOperatorMinHeight) {
++    return uint16_t(mathconstants->mSingleValues[aConstant]);
++  }
++
++  if (aConstant <= gfxFontEntry::RadicalKernAfterDegree) {
++    return uint16_t(mathconstants->
++                    mMathValues[aConstant - gfxFontEntry::MathLeading].mValue);
++  }
++
++  return uint16_t(mathconstants->mRadicalDegreeBottomRaisePercent);
 +}
 +
 +uint32_t
 +gfxMathTable::GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                  uint16_t aSize)
 +{
-+  // Update our cached values.
++  // Select the glyph construction.
 +  SelectGlyphConstruction(aGlyphID, aVertical);
-+
-+  // Verify the validity of the array of the MathGlyphVariantRecord's and
-+  // whether there is a variant of the requested size.
 +  if (!mGlyphConstruction) {
 +    return 0;
 +  }
++
++  // Verify the validity of the array of the MathGlyphVariantRecord's and
++  // whether there is a variant of the requested size.
 +  uint16_t count = mGlyphConstruction->mVariantCount;
 +  const char *start = reinterpret_cast<const char*>(mGlyphConstruction + 1);
 +  if (aSize >= count ||
@@ -559,9 +514,9 @@ new file mode 100644
 +  //
 +  // The nsMathMLChar code can use at most 3 non extender pieces (aGlyphs[0],
 +  // aGlyphs[1] and aGlyphs[2]) and the extenders between these pieces should
-+  // all be same (aGlyphs[4]). Also, the parts of vertical assembly are stored
-+  // from bottom to top in the Open Type MATH table while they are stored from
-+  // top to bottom in nsMathMLChar.
++  // all be the same (aGlyphs[4]). Also, the parts of vertical assembly are
++  // stored from bottom to top in the Open Type MATH table while they are
++  // stored from top to bottom in nsMathMLChar.
 +  //
 +
 +  // Count the number of non extender pieces
@@ -653,37 +608,48 @@ new file mode 100644
 +bool
 +gfxMathTable::ValidStructure(const char* aStart, uint16_t aSize)
 +{
-+  return (mMathData <= aStart &&
-+          aStart + aSize <= mMathData + mMathDataLength);
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  return (mathData <= aStart &&
++          aStart + aSize <= mathData + mathDataLength);
 +}
 +
 +bool
 +gfxMathTable::ValidOffset(const char* aStart, uint16_t aOffset)
 +{
-+  return (mMathData <= aStart + aOffset &&
-+          aStart + aOffset < mMathData + mMathDataLength);
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  return (mathData <= aStart + aOffset &&
++          aStart + aOffset < mathData + mathDataLength);
 +}
 +
-+const Header*
-+gfxMathTable::GetHeader()
++const MATHTableHeader*
++gfxMathTable::GetMATHTableHeader()
 +{
-+  return reinterpret_cast<const Header*>(mMathData);
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  return reinterpret_cast<const MATHTableHeader*>(mathData);
 +};
 +
 +const MathConstants*
 +gfxMathTable::GetMathConstants()
 +{
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
 +  return
-+    reinterpret_cast<const MathConstants*>(mMathData +
-+                                           uint16_t(GetHeader()->
++    reinterpret_cast<const MathConstants*>(mathData +
++                                           uint16_t(GetMATHTableHeader()->
 +                                                    mMathConstants));
 +}
 +const MathVariants*
 +gfxMathTable::GetMathVariants()
 +{
++  unsigned int mathDataLength;
++  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
 +  return
-+    reinterpret_cast<const MathVariants*>(mMathData +
-+                                          uint16_t(GetHeader()->mMathVariants));
++    reinterpret_cast<const MathVariants*>(mathData +
++                                          uint16_t(GetMATHTableHeader()->
++                                                   mMathVariants));
 +}
 +
 +const GlyphAssembly*
@@ -801,7 +767,7 @@ diff --git a/gfx/thebes/gfxMathTable.h b/gfx/thebes/gfxMathTable.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.h
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,106 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -810,10 +776,11 @@ new file mode 100644
 +#define GFX_MATH_TABLE_WRAPPER_H
 +
 +#include "gfxFontUtils.h"
++#include "gfxFont.h"
 +
 +struct Coverage;
 +struct GlyphAssembly;
-+struct Header;
++struct MATHTableHeader;
 +struct MathConstants;
 +struct MathGlyphConstruction;
 +struct MathVariants;
@@ -840,10 +807,9 @@ new file mode 100644
 +    ~gfxMathTable();
 +
 +    /**
-+     * Returns the minimum height of n-ary operators (such as integral and
-+     * summation) for formulas in display mode.
++     * Returns the value of the specified constant from the MATH table.
 +     */
-+    uint16_t GetDisplayOperatorMinHeight();
++    uint16_t GetMathConstant(gfxFontEntry::MathConstant aConstant);
 +
 +    /**
 +     * @param aGlyphID  glyph index of the character we want to stretch
@@ -883,14 +849,7 @@ new file mode 100644
 +    // HarfBuzz blob where the MATH table is stored.
 +    hb_blob_t*    mMathTable;
 +
-+    // gfxFontEntry that holds this MATH table.
-+    gfxFontEntry* mFontEntry;
-+
-+    // Pointer to the raw data and its size.
-+    const char*  mMathData;
-+    unsigned int mMathDataLength;
-+
-+    // Cached values for the latest (mGlyphID, mVertical) pair that has been 
++    // Cached values for the latest (mGlyphID, mVertical) pair that has been
 +    // accessed and the corresponding glyph construction. These are verified
 +    // by SelectGlyphConstruction and updated if necessary.
 +    const MathGlyphConstruction* mGlyphConstruction;
@@ -899,10 +858,10 @@ new file mode 100644
 +    void     SelectGlyphConstruction(uint32_t aGlyphID, bool aVertical);
 +
 +    // Access to some structures of the MATH table.
-+    const Header*        GetHeader();
-+    const MathConstants* GetMathConstants();
-+    const MathVariants*  GetMathVariants();
-+    const GlyphAssembly* GetGlyphAssembly(uint32_t aGlyphID, bool aVertical);
++    const MATHTableHeader* GetMATHTableHeader();
++    const MathConstants*   GetMathConstants();
++    const MathVariants*    GetMathVariants();
++    const GlyphAssembly*   GetGlyphAssembly(uint32_t aGlyphID, bool aVertical);
 +
 +    // Verify whether a structure or an offset belongs to the math data and can
 +    // be read safely.
@@ -915,71 +874,6 @@ new file mode 100644
 +};
 +
 +#endif
-diff --git a/gfx/thebes/gfxUserFontSet.cpp b/gfx/thebes/gfxUserFontSet.cpp
---- a/gfx/thebes/gfxUserFontSet.cpp
-+++ b/gfx/thebes/gfxUserFontSet.cpp
-@@ -821,31 +821,40 @@ gfxUserFontSet::UserFontCache::Entry::Re
- PLDHashOperator
- gfxUserFontSet::UserFontCache::Entry::DisconnectSVG(Entry* aEntry,
-                                                     void* aUserData)
- {
-     aEntry->GetFontEntry()->DisconnectSVG();
-     return PL_DHASH_NEXT;
- }
- 
-+PLDHashOperator
-+gfxUserFontSet::UserFontCache::Entry::DisconnectMath(Entry* aEntry,
-+                                                     void* aUserData)
-+{
-+    aEntry->GetFontEntry()->DisconnectMath();
-+    return PL_DHASH_NEXT;
-+}
-+
- NS_IMETHODIMP
- gfxUserFontSet::UserFontCache::Flusher::Observe(nsISupports* aSubject,
-                                                 const char* aTopic,
-                                                 const PRUnichar* aData)
- {
-     if (!sUserFonts) {
-         return NS_OK;
-     }
- 
-     if (!strcmp(aTopic, NS_CACHESERVICE_EMPTYCACHE_TOPIC_ID)) {
-         sUserFonts->Clear();
-     } else if (!strcmp(aTopic, "last-pb-context-exited")) {
-         sUserFonts->EnumerateEntries(Entry::RemoveIfPrivate, nullptr);
-     } else if (!strcmp(aTopic, "xpcom-shutdown")) {
-         sUserFonts->EnumerateEntries(Entry::DisconnectSVG, nullptr);
-+        sUserFonts->EnumerateEntries(Entry::DisconnectMath, nullptr);
-     } else {
-         NS_NOTREACHED("unexpected topic");
-     }
- 
-     return NS_OK;
- }
- 
- bool
-diff --git a/gfx/thebes/gfxUserFontSet.h b/gfx/thebes/gfxUserFontSet.h
---- a/gfx/thebes/gfxUserFontSet.h
-+++ b/gfx/thebes/gfxUserFontSet.h
-@@ -345,16 +345,17 @@ public:
- 
-             enum { ALLOW_MEMMOVE = false };
- 
-             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
- 
-             static PLDHashOperator RemoveIfPrivate(Entry* aEntry, void* aUserData);
-             static PLDHashOperator RemoveIfMatches(Entry* aEntry, void* aUserData);
-             static PLDHashOperator DisconnectSVG(Entry* aEntry, void* aUserData);
-+            static PLDHashOperator DisconnectMath(Entry* aEntry, void* aUserData);
- 
- #ifdef DEBUG_USERFONT_CACHE
-             static PLDHashOperator DumpEntry(Entry* aEntry, void* aUserData);
- #endif
- 
-         private:
-             static uint32_t
-             HashFeatures(const nsTArray<gfxFontFeature>& aFeatures) {
 diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
 --- a/gfx/thebes/moz.build
 +++ b/gfx/thebes/moz.build
@@ -1019,1316 +913,3 @@ diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
      'gfxReusableSharedImageSurfaceWrapper.cpp',
      'gfxScriptItemizer.cpp',
      'gfxSkipChars.cpp',
-diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
---- a/layout/mathml/Makefile.in
-+++ b/layout/mathml/Makefile.in
-@@ -5,19 +5,17 @@
- # file, You can obtain one at http://mozilla.org/MPL/2.0/.
- 
- include $(topsrcdir)/config/rules.mk
- 
- font_properties = \
- 	mathfontMathJax_Main.properties \
- 	mathfontUnicode.properties \
- 	mathfontSTIXNonUnicode.properties \
--	mathfontSTIXSize1.properties \
- 	mathfontSTIXSizeOneSym.properties \
--	mathfontAsanaMath.properties \
- 	mathfontStandardSymbolsL.properties \
- 	$(NULL)
- 
- ifeq ($(TARGET_MD_ARCH),win32)
- font_properties += \
- 	mathfontSymbol.properties
- endif
- 
-diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
---- a/layout/mathml/mathfont.properties
-+++ b/layout/mathml/mathfont.properties
-@@ -6,19 +6,19 @@
- #  Do not translate anything in this file
- 
- # List of fonts that have corresponding properties files containing special
- # glyph tables for stretching MathML characters.  See the documentation at the
- # end of this file for details on the setup of the property file associated to
- # each font.  Do not include the Unicode table in this list.
- 
- %ifdef XP_WIN
--font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L, Symbol
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L, Symbol
- %else
--font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, Asana Math, Standard Symbols L
-+font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L
- %endif
- 
- # The ordered list of fonts with which to attempt to stretch MathML
- # characters is controlled by setting pref("font.mathfont-family",
- # "CMSY10, CMEX10, ...") for example, or by setting the font-family list in
- # :-moz-math-stretchy in mathml.css.
- #
- # Preferred fonts for particular stretchy characters may be specified in
-diff --git a/layout/mathml/mathfontAsanaMath.properties b/layout/mathml/mathfontAsanaMath.properties
-deleted file mode 100644
---- a/layout/mathml/mathfontAsanaMath.properties
-+++ /dev/null
-@@ -1,145 +0,0 @@
--# This Source Code Form is subject to the terms of the Mozilla Public
--# License, v. 2.0. If a copy of the MPL was not distributed with this
--# file, You can obtain one at http://mozilla.org/MPL/2.0/.
--
--#  LOCALIZATION NOTE: FILE
--#  Do not translate anything in this file
--
--# This file contains the list of some stretchy MathML chars that
--# can be rendered with Asana Math font.
--
--#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
--#        (*) not in the MathML operator dictionary
--
--\u0028 = \u239B\uFFFD\u239D\u239C\u0028\uDBFF\uDFF4\uDBFF\uDFF5\uDBFF\uDFF6 # (
--\u0029 = \u239E\uFFFD\u23A0\u239F\u0029\uDBFF\uDFF7\uDBFF\uDFF8\uDBFF\uDFF9 # )
--\u005B = \u23A1\uFFFD\u23A3\u23A2\u005B\uDBFF\uDFEE\uDBFF\uDFEF\uDBFF\uDFF0 # [
--\u005D = \u23A4\uFFFD\u23A6\u23A5\u005D\uDBFF\uDFF1\uDBFF\uDFF2\uDBFF\uDFF3 # ]
--\u007B = \u23A7\u23A8\u23A9\u23AA\u007B\uDBFF\uDFFA\uDBFF\uDFFB\uDBFF\uDFFC # {
--\u007C = \uFFFD\uFFFD\uFFFD\u007C\u007C\uDBFF\uDFD6\uDBFF\uDFD7\uDBFF\uDFD8\uDBFF\uDFD9 # |
--\u007D = \u23AB\u23AC\u23AD\u23AA\u007D\uDBFF\uDFFD\uDBFF\uDFFE\uDBFF\uDFFF # }
--\u2016 = \uFFFD\uFFFD\uFFFD\uDBFF\uDFD1\u2016\uDBFF\uDFCE\uDBFF\uDFCF\uDBFF\uDFD0\uDBFF\uDFD1 # DOUBLE VERTICAL LINE
--
--\u2044 = \uFFFD\uFFFD\uFFFD\uFFFD\u2044\uDBFF\uDFD2\uDBFF\uDFD3\uDBFF\uDFD4\uDBFF\uDFD5 # FRACTION SLASH
--# \u2045 = \uDBFF\uDFB6\uDBFF\uDF53\uDBFF\uDFB7\uDBFF\uDFBA\u2045\uDBFF\uDFBB\uDBFF\uDFBC\uDBFF\uDFBD # LEFT SQUARE BRACKET WITH QUILL (*)
--# \u2046 = \uDBFF\uDFB8\uDBFF\uDF54\uDBFF\uDFB9\uDBFF\uDF52\u2046\uDBFF\uDFBE\uDBFF\uDFBF\uDBFF\uDFC0 # RIGHT SQUARE BRACKET WITH QUILL (*)
--
--\u2191 = \u2191\uFFFD\uFFFD\uDBFF\uDEC6\u2191 # UPWARDS ARROW
--\u2193 = \uFFFD\uFFFD\u2193\uDBFF\uDEC6\u2193 # DOWNWARDS ARROW
--\u21D1 = \u21D1\uFFFD\uFFFD\uDBFF\uDEC7\u21D1 # UPWARDS DOUBLE ARROW
--\u21D3 = \uFFFD\uFFFD\u21D3\uDBFF\uDEC7\u21D3 # DOWNWARDS DOUBLE ARROW
--
--\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\u220F\uDBFF\uDF9F\uDBFF\uDFA0\uDBFF\uDFA1 # N-ARY PRODUCT
--\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\u2210\uDBFF\uDFA2\uDBFF\uDFA3\uDBFF\uDFA4 # N-ARY COPRODUCT
--\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\u2211\uDBFF\uDF9C\uDBFF\uDF9D\uDBFF\uDF9E # summation N-ARY SUMMATION
--\u221A = \uDBFF\uDF6D\uFFFD\u23B7\u20D3\u221A\uDBFF\uDF6E\uDBFF\uDF6F\uDBFF\uDF70\uDBFF\uDF71 # SQUARE ROOT
--\u2223 = \uFFFD\uFFFD\uFFFD\u2223\u2223 # DIVIDES
--\u2225 = \uFFFD\uFFFD\uFFFD\u2225\u2225 # PARALLEL TO
--\u222B = \u2320\uFFFD\u2321\u23AE\u222B\uDBFF\uDF99\uDBFF\uDF9A\uDBFF\uDF9B # INTEGRAL
--\u222C = \uFFFD\uFFFD\uFFFD\uFFFD\u222C\uDBFF\uDF6A\uDBFF\uDF6B\uDBFF\uDF6C # DOUBLE INTEGRAL
--\u222D = \uFFFD\uFFFD\uFFFD\uFFFD\u222D\uDBFF\uDF67\uDBFF\uDF68\uDBFF\uDF69 # TRIPLE INTEGRAL
--\u222E = \uFFFD\uFFFD\uFFFD\uFFFD\u222E\uDBFF\uDF64\uDBFF\uDF65\uDBFF\uDF66 # CONTOUR INTEGRAL
--\u222F = \uFFFD\uFFFD\uFFFD\uFFFD\u222F\uDBFF\uDF61\uDBFF\uDF62\uDBFF\uDF63 # SURFACE INTEGRAL
--\u2230 = \uFFFD\uFFFD\uFFFD\uFFFD\u2230\uDBFF\uDF5E\uDBFF\uDF5F\uDBFF\uDF60 # VOLUME INTEGRAL
--\u2231 = \uFFFD\uFFFD\uFFFD\uFFFD\u2231\uDBFF\uDF5B\uDBFF\uDF5C\uDBFF\uDF5D # CLOCKWISE INTEGRAL
--\u2232 = \uFFFD\uFFFD\uFFFD\uFFFD\u2232\uDBFF\uDF58\uDBFF\uDF59\uDBFF\uDF5A # CLOCKWISE CONTOUR INTEGRAL
--\u2233 = \uFFFD\uFFFD\uFFFD\uFFFD\u2233\uDBFF\uDF55\uDBFF\uDF56\uDBFF\uDF57 # ANTICLOCKWISE CONTOUR INTEGRAL
--
--\u22C0 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C0\uDBFF\uDF92\uDBFF\uDF93 # N-ARY LOGICAL AND
--\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C1\uDBFF\uDF94\uDBFF\uDF95 # N-ARY LOGICAL OR
--\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C2\uDBFF\uDF8E\uDBFF\uDF8F # N-ARY INTERSECTION
--\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\u22C3\uDBFF\uDF8C\uDBFF\uDF8D # N-ARY UNION
--\u2308 = \u23A1\uFFFD\uFFFD\u23A2\u2308\uDBFF\uDFE2\uDBFF\uDFE3\uDBFF\uDFE4 # LEFT CEILING
--\u2309 = \u23A4\uFFFD\uFFFD\u23A5\u2309\uDBFF\uDFE5\uDBF\uDFE6\uDBFF\uDFE7 # RIGHT CEILING
--\u230A = \uFFFD\uFFFD\u23A3\u23A2\u230A\uDBFF\uDFE8\uDBFF\uDFE9\uDBFF\uDFEA # LEFT FLOOR
--\u230B = \uFFFD\uFFFD\u23A6\u23A5\u230B\u230B\uDBFF\uDFEB\uDBFF\uDFEC\uDBFF\uDFED # RIGHT FLOOR
--
--# \u27C5 = \uFFFD\uFFFD\uFFFD\uFFFD\u27C5\uDBFF\uDDF3\uDBFF\uDDF5\uDBFF\uDDF7\uDBFF\uDDF9\uDBFF\uDDFB # LEFT S-SHAPED BAG DELIMITER (*)
--# \u27C6 = \uFFFD\uFFFD\uFFFD\uFFFD\uDBFF\uDDF4\uDBFF\uDDF6\uDBFF\uDDF8\uDBFF\uDDFA\uDBFF\uDDFC # RIGHT S-SHAPED BAG DELIMITER (*)
--\u27E6 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E6\uDBFF\uDFDA\uDBFF\uDFDB\uDBFF\uDFDC\uDBFF\uDFDD # MATHEMATICAL LEFT WHITE SQUARE BRACKET
--\u27E7 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E7\uDBFF\uDFDE\uDBFF\uDFDF\uDBFF\uDFE0\uDBFF\uDFE1 # MATHEMATICAL RIGHT WHITE SQUARE BRACKET
--\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E8\uDBFF\uDF89\uDBFF\uDF8A\uDBFF\uD8B # MATHEMATICAL LEFT ANGLE BRACKET
--\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\u27E9\uDBFF\uDF7C\uDBFF\uDF7D\uDBFF\uDF7E # MATHEMATICAL RIGHT ANGLE BRACKET
--\u27EA = \uFFFD\uFFFD\uFFFD\uFFFD\u27EA\uDBFF\uDF76\uDBFF\uDF77\uDBFF\uDF78 # MATHEMATICAL LEFT DOUBLE ANGLE BRACKET
--\u27EB = \uFFFD\uFFFD\uFFFD\uFFFD\u27EB\uDBFF\uDF79\uDBFF\uDF7A\uDBFF\uDF7B # MATHEMATICAL RIGHT DOUBLE ANGLE BRACKET
--
--\u29FC = \uFFFD\uFFFD\uFFFD\uFFFD\u29FC\uDBFF\uDEC8\uDBFF\uDEC9\uDBFF\uDECA # LEFT-POINTING CURVED ANGLE BRACKET
--\u29FD = \uFFFD\uFFFD\uFFFD\uFFFD\u29FD\uDBFF\uDECB\uDBFF\uDECC\uDBFF\uDECD # RIGHT-POINTING CURVED ANGLE BRACKET
--
--\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A00\uDBFF\uDF96\uDBFF\uDF97 # N-ARY CIRCLED DOT OPERATOR
--\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A01\uDBFF\uDF98\uDBFF\uDFA5 # N-ARY CIRCLED PLUS OPERATOR
--\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A02\uDBFF\uDF7F\uDBFF\uDF80 # N-ARY CIRCLED TIMES OPERATOR
--\u2A03 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A03\uDBFF\uDF81\uDBFF\uDF82 # N-ARY UNION OPERATOR WITH DOT
--\u2A04 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A04\uDBFF\uDF90\uDBFF\uDF91 # N-ARY UNION OPERATOR WITH PLUS
--\u2A05 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A05\uDBFF\uDF83\uDBFF\uDF84 # N-ARY SQUARE INTERSECTION OPERATOR
--\u2A06 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A06\uDBFF\uDF85\uDBFF\uDF86 # N-ARY SQUARE UNION OPERATOR
--\u2A07 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A07\uDBFF\uDF72\uDBFF\uDF73 # TWO LOGICAL AND OPERATOR
--\u2A08 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A08\uDBFF\uDF74\uDBFF\uDF75 # TWO LOGICAL OR OPERATOR
--\u2A09 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A09\uDBFF\uDF87\uDBFF\uDF88 # N-ARY TIMES OPERATOR
--\u2A0C = \uFFFD\uFFFD\uFFFD\uFFFD\u2A0C\uDBFF\uDF1F\uDBFF\uDF20\uDBFF\uDF21 # QUADRUPLE INTEGRAL OPERATOR
--\u2A0D = \uFFFD\uFFFD\uFFFD\uFFFD\u2A0D\uDBFF\uDF22\uDBFF\uDF23\uDBFF\uDF24 # FINITE PART INTEGRAL
--\u2A0E = \uFFFD\uFFFD\uFFFD\uFFFD\u2A0E\uDBFF\uDF25\uDBFF\uDF26\uDBFF\uDF27 # INTEGRAL WITH DOUBLE STROKE
--\u2A0F = \uFFFD\uFFFD\uFFFD\uFFFD\u2A0F\uDBFF\uDF28\uDBFF\uDF29\uDBFF\uDF2A # INTEGRAL AVERAGE WITH SLASH
--\u2A10 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A10\uDBFF\uDF2B\uDBFF\uDF2C\uDBFF\uDF2D # CIRCULATION FUNCTION
--\u2A11 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A11\uDBFF\uDF2E\uDBFF\uDF2F\uDBFF\uDF30 # ANTICLOCKWISE INTEGRATION
--\u2A12 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A12\uDBFF\uDF31\uDBFF\uDF32\uDBFF\uDF33 # LINE INTEGRATION WITH RECTANGULAR PATH AROUND POLE
--\u2A13 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A13\uDBFF\uDF34\uDBFF\uDF35\uDBFF\uDF36 # LINE INTEGRATION WITH SEMICIRCULAR PATH AROUND POLE
--\u2A14 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A14\uDBFF\uDF37\uDBFF\uDF38\uDBFF\uDF39 # LINE INTEGRATION NOT INCLUDING THE POLE
--\u2A15 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A15\uDBFF\uDF3A\uDBFF\uDF3B\uDBFF\uDF3C # INTEGRAL AROUND A POINT OPERATOR
--\u2A16 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A16\uDBFF\uDF3D\uDBFF\uDF3E\uDBFF\uDF3F # QUATERNION INTEGRAL OPERATOR
--\u2A17 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A17\uDBFF\uDF40\uDBFF\uDF41\uDBFF\uDF42 # INTEGRAL WITH LEFTWARDS ARROW WITH HOOK
--\u2A18 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A18\uDBFF\uDF43\uDBFF\uDF44\uDBFF\uDF45 # INTEGRAL WITH TIMES SIGN
--\u2A19 = \uFFFD\uFFFD\uFFFD\uFFFD\u2A19\uDBFF\uDF46\uDBFF\uDF47\uDBFF\uDF48 # INTEGRAL WITH INTERSECTION
--\u2A1A = \uFFFD\uFFFD\uFFFD\uFFFD\u2A1A\uDBFF\uDF49\uDBFF\uDF4A\uDBFF\uDF4B # INTEGRAL WITH UNION
--\u2A1B = \uFFFD\uFFFD\uFFFD\uFFFD\u2A1B\uDBFF\uDF4C\uDBFF\uDF4D\uDBFF\uDF4E # INTEGRAL WITH OVERBAR
--\u2A1C = \uFFFD\uFFFD\uFFFD\uFFFD\u2A1C\uDBFF\uDF4F\uDBFF\uDF50\uDBFF\uDF51 # INTEGRAL WITH UNDERBAR
--
--\u005E = \uFFFD\uFFFD\uFFFD\uFFFD\u005E\uDBFF\uDFA6\uDBFF\uDFA7\uDBFF\uDFA8 # CIRCUMFLEX ACCENT
--\u0302 = \uFFFD\uFFFD\uFFFD\uFFFD\u005E\uDBFF\uDFA6\uDBFF\uDFA7\uDBFF\uDFA8 # COMBINING CIRCUMFLEX ACCENT
--\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\u007E\uDBFF\uDFAA\uDBFF\uDFAB\uDBFF\uDFAC\uDBFF\uDFAD # TILDE
--\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\u007E\uDBFF\uDFAA\uDBFF\uDFAB\uDBFF\uDFAC\uDBFF\uDFAD # SMALL TILDE
--# \u0303 = \uFFFD\uFFFD\uFFFD\uFFFD\u007E\uDBFF\uDFAA\uDBFF\uDFAB\uDBFF\uDFAC\uDBFF\uDFAD # COMBINING TILDE (*)
--# \u0305 = \uFFFD\uFFFD\uFFFD\uDBFF\uDF1E\u0305 COMBINING OVERLINE (*)
--# \u0306 = \uFFFD\uFFFD\uFFFD\uFFFD\u02D8\uDBFF\uDFB2\uDBFF\uDFB3\uDBFF\uDFB4\uDBFF\uDFB5 # COMBINING BREVE (*)
--# \u02D8 = \uFFFD\uFFFD\uFFFD\uFFFD\u02D8\uDBFF\uDFB2\uDBFF\uDFB3\uDBFF\uDFB4\uDBFF\uDFB5 # BREVE (not stretchy)
--\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\u02C7\uDBFF\uDFAE\uDBFF\uDFAF\uDBFF\uDFB0\uDBFF\uDFB1 # CARON
--# \u030C = \uFFFD\uFFFD\uFFFD\uFFFD\u02C7\uDBFF\uDFAE\uDBFF\uDFAF\uDBFF\uDFB0\uDBFF\uDFB1 # COMBINING CARON (*)
--# \u0332 = \uFFFD\uFFFD\uFFFD\uDBFF\uDF1D\u0332\uDBFF\uDF1D\uDBFF\uDF18\uDBFF\uDF14 # COMBINING LOW LINE (*)
--# \u0333 = \uFFFD\uFFFD\uFFFD\uDBFF\uDF1C\u0333\uDBFF\uDF1C\uDBFF\uDF17\uDBFF\uDF13 # COMBINING DOUBLE LOW LINE (*)
--# \u033F = \uFFFD\uFFFD\uFFFD\uDBFF\uDF1B\u033F\uDBFF\uDF1B\uDBFF\uDF16\uDBFF\uDF12 # COMBINING DOUBLE OVERLINE (*)
--# \u20D0 = \u20D0\uFFFD\uFFFD\uDBFF\uDF1A\u20D0 # COMBINING LEFT HARPOON ABOVE (*)
--# \u20D1 = \uFFFD\uFFFD\u20D1\uDBFF\uDF1A\u20D1 # COMBINING RIGHT HARPOON ABOVE (*)
--# \u20D6 = \u20D6\uFFFD\uFFFD\uDBFF\uDF1A\u20D6\uDBFF\uDE4A\uDBFF\uDE4B\uDBFF\uDE4C\uDBFF\uDE4D # COMBINING LEFT ARROW ABOVE (*)
--# \u20D7 = \uFFFD\uFFFD\u20D7\uDBFF\uDF1A\u20D7\uDBFF\uDE4E\uDBFF\uDE4F\uDBFF\uDE50\uDBFF\uDE51 # COMBINING RIGHT ARROW ABOVE (*)
--# \u20E1 = \u20D6\uFFFD\u20D7\uDBFF\uDF1A\u20E1 # COMBINING LEFT RIGHT ARROW ABOVE (*)
--# \u20E9 = \uDBFF\uDEEC\uFFFD\uDBFF\uDEED\uDBFF\uDEEB\u20E9 # COMBINING WIDE BRIDGE ABOVE (*)
--
--\u2190 = \uDBFF\uDF11\uFFFD\uDBFF\uDF10\u23AF\u2190 # LEFTWARDS ARROW 
--\u2192 = \uDBFF\uDF0E\uFFFD\uDBFF\uDF0F\u23AF\u2192 # RIGHTWARDS ARROW
--\u2194 = \uDBFF\uDF11\uFFFD\uDBFF\uDF0F\u23AF\u2194 # LEFT RIGHT ARROW
--\u21A4 = \uDBFF\uDF11\uFFFD\uDBFF\uDF08\u23AF\u21A4 # LEFTWARDS ARROW FROM BAR
--\u21A6 = \uDBFF\uDF07\uFFFD\uDBFF\uDF0F\u23AF\u21A6 # RIGHTWARDS ARROW FROM BAR
--\u21A9 = \uDBFF\uDF11\uFFFD\uDBFF\uDF06\u23AF\u21A9 # LEFTWARDS ARROW WITH HOOK
--\u21AA = \uDBFF\uDF05\uFFFD\uDBFF\uDF0F\u23AF\u21AA # RIGHTWARDS ARROW WITH HOOK
--
--\u21D0 = \uDBFF\uDF0D\uFFFD\uDBFF\uDF0C\uDBFF\uDF09\u21D0 # LEFTWARDS DOUBLE ARROW
--\u21D2 = \uDBFF\uDF0A\uFFFD\uDBFF\uDF0B\uDBFF\uDF09\u21D2 # RIGHTWARDS DOUBLE ARROW
--\u21D4 = \uDBFF\uDF0D\uFFFD\uDBFF\uDF0B\uDBFF\uDF09\u21D4 # LEFT RIGHT DOUBLE ARROW
--
--\u23B4 = \uDBFF\uDEEC\uFFFD\uDBFF\uDEED\uDBFF\uDEEB\u23B4\uDBFF\uDEFD\uDBFF\uDEFE\uDBFF\uDEFF # TOP SQUARE BRACKET
--\u23B5 = \uDBFF\uDEEE\uFFFD\uDBFF\uDEEF\uDBFF\uDEEA\u23B5\uDBFF\uDF00\uDBFF\uDF01\uDBFF\uDF02 # BOTTOM SQUARE BRACKET
--
--\u23DC = \uDBFF\uDFC7\uFFFD\uDBFF\uDFC9\uDBFF\uDFCA\u23DC\uDBFF\uDEF7\uDBFF\uDEF8\uDBFF\uDEF9 # TOP PARENTHESIS
--\uFE35 = \uDBFF\uDFC7\uFFFD\uDBFF\uDFC9\uDBFF\uDFCA\u23DC\uDBFF\uDEF7\uDBFF\uDEF8\uDBFF\uDEF9 # &OverParenthesis; (MathML 2.0)
--\u23DD = \uDBFF\uDFCB\uFFFD\uDBFF\uDFCD\uDBFF\uDEF0\u23DD\uDBFF\uDEFA\uDBFF\uDEFB\uDBFF\uDEFC # BOTTOM PARENTHESIS
--\uFE36 = \uDBFF\uDFCB\uFFFD\uDBFF\uDFCD\uDBFF\uDEF0\u23DD\uDBFF\uDEFA\uDBFF\uDEFB\uDBFF\uDEFC # &UnderParenthesis; (MathML 2.0)
--
--\u23DE = \uDBFF\uDFC7\uDBFF\uDFC8\uDBFF\uDFC9\uDBFF\uDFCA\u23DE\uDBFF\uDFC1\uDBFF\uDFC2\uDBFF\uDFC3 # TOP CURLY BRACKET
--\uFE37 = \uDBFF\uDFC7\uDBFF\uDFC8\uDBFF\uDFC9\uDBFF\uDFCA\u23DE\uDBFF\uDFC1\uDBFF\uDFC2\uDBFF\uDFC3 # &OverBrace; (MathML 2.0)
--\u23DF = \uDBFF\uDFCB\uDBFF\uDFCC\uDBFF\uDFCD\uDBFF\uDEF0\u23DF\uDBFF\uDFC4\uDBFF\uDFC5\uDBFF\uDFC6 # BOTTOM CURLY BRACKET
--\uFE38 = \uDBFF\uDFCB\uDBFF\uDFCC\uDBFF\uDFCD\uDBFF\uDEF0\u23DF\uDBFF\uDFC4\uDBFF\uDFC5\uDBFF\uDFC6 # &UnderBrace; (MathML 2.0)
--\u23E0 = \uFFFD\uFFFD\uFFFD\uFFFD\u23E0\uDBFF\uDEF1\uDBFF\uDEF2\uDBFF\uDEF3 # TOP TORTOISE SHELL BRACKET
--\u23E1 = \uFFFD\uFFFD\uFFFD\uFFFD\u23E1\uDBFF\uDEF4\uDBFF\uDEF5\uDBFF\uDEF6 # BOTTOM TORTOISE SHELL BRACKET
--
--\u2906 = \uDBFF\uDF0D\uFFFD\uDBFF\uDF04\uDBFF\uDF09\u2906 # LEFTWARDS DOUBLE ARROW FROM BAR
--\u2907 = \uDBFF\uDF03\uFFFD\uDBFF\uDF0B\uDBFF\uDF09\u2907 # RIGHTWARDS DOUBLE ARROW FROM BAR
-diff --git a/layout/mathml/mathfontSTIXSize1.properties b/layout/mathml/mathfontSTIXSize1.properties
-deleted file mode 100644
---- a/layout/mathml/mathfontSTIXSize1.properties
-+++ /dev/null
-@@ -1,70 +0,0 @@
--# This Source Code Form is subject to the terms of the Mozilla Public
--# License, v. 2.0. If a copy of the MPL was not distributed with this
--# file, You can obtain one at http://mozilla.org/MPL/2.0/.
--
--#  LOCALIZATION NOTE: FILE
--#  Do not translate anything in this file
--
--# This file contains the list of some stretchy MathML chars that
--# can be rendered with STIXSize* set of fonts,
--# with some help from STIXNonUnicode and STIXGeneral.
--
--external.1 = STIXNonUnicode
--external.2 = STIXSize2
--external.3 = STIXSize3
--external.4 = STIXSize4
--external.5 = STIXSize5
--external.6 = STIXGeneral
--
--#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
--\u0028 = \u239B\uFFFD\u239D\u239C\uFFFD((@2(@3(@4 # (
--\u0029 = \u239E\uFFFD\u23A0\u239F\uFFFD))@2)@3)@4 # )
--\u005B = \u23A1\uFFFD\u23A3\u23A2\u005B[[@2[@3[@4 # [
--\u005D = \u23A4\uFFFD\u23A6\u23A5\u005D]]@2]@3]@4 # ]
--\u007B = \u23A7\u23A8\u23A9\u23AA\u007B{{@2{@3{@4 # {
--\u007D = \u23AB\u23AC\u23AD\u23AA\u007D}}@2}@3}@4 # }
--
--# N-ARY operators
--\u2140 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2140 # DOUBLE-STRUCK N-ARY SUMMATION
--\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u220F # N-ARY PRODUCT
--\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2210 # N-ARY COPRODUCT
--\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2211 # N-ARY SUMMATION
--\u22C0 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C0 # N-ARY LOGICAL AND
--\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C1 # N-ARY LOGICAL OR
--\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C2 # N-ARY INTERSECTION
--\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C3 # N-ARY UNION
--\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A00 # N-ARY CIRCLED DOT OPERATOR
--\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A01 # N-ARY CIRCLED PLUS OPERATOR
--\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A02 # N-ARY CIRCLED TIMES OPERATOR
--\u2A03 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A03 # N-ARY UNION OPERATOR WITH DOT
--\u2A04 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A04 # N-ARY UNION OPERATOR WITH PLUS
--\u2A05 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A05 # N-ARY SQUARE INTERSECTION OPERATOR
--\u2A06 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A06 # N-ARY SQUARE UNION OPERATOR
--\u2A09 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A09 # N-ARY TIMES OPERATOR
--\u2AFF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2AFF # N-ARY WHITE VERTICAL BAR
--
--# E000 stix-radical symbol vertical extender
--# E001 stix-radical symbol top corner
--\u221A = \uE001@1\uFFFD\u221A@4\uE000@1\uFFFD\u221A\u221A@2\u221A@3 # Sqrt, radic
--
--\u222B = \u2320\uFFFD\u2321\u23AE\uFFFD\u222B@6 # Integral, int
--
--\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E8\u27E8@2\u27E8@3\u27E8@4 # LeftAngleBracket
--\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E9\u27E9@2\u27E9@3\u27E9@4 # RightAngleBracket
--
--\u23DE = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (Unicode)
--\uFE37 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (MathML 2.0)
--\u23B4 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B4\u23B4@2\u23B4@3\u23B4@4\u23B4@5 # &OverBracket;
--\u23DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (Unicode)
--\uFE35 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (MathML 2.0)
--\u23DF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (Unicode)
--\uFE38 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (MathML 2.0)
--\u23B5 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B5\u23B5@2\u23B5@3\u23B5@4\u23B5@5 # &UnderBracket;
--\u23DD = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (Unicode)
--\uFE36 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (MathML 2.0)
--
--\u005E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # circumflex accent, COMBINING CIRCUMFLEX ACCENT
--\u02C6 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # modifier letter circumflex accent, COMBINING CIRCUMFLEX ACCENT
--\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # ~ tilde, COMBINING TILDE
--\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # small tilde, COMBINING TILDE
--\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u030C\u030C@2\u030C@3\u030C@4\u030C@5 # caron, COMBINING CARON
-diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
---- a/layout/mathml/nsMathMLChar.cpp
-+++ b/layout/mathml/nsMathMLChar.cpp
-@@ -23,60 +23,145 @@
- #include "nsCSSRendering.h"
- #include "prprf.h"         // For PR_snprintf()
- 
- #include "nsDisplayList.h"
- 
- #include "nsMathMLOperators.h"
- #include <algorithm>
- 
-+#include "gfxMathTable.h"
-+
- using namespace mozilla;
- 
- //#define NOISY_SEARCH 1
- 
- // -----------------------------------------------------------------------------
- static const nsGlyphCode kNullGlyph = {{0, 0}, 0};
- typedef enum {eExtension_base, eExtension_variants, eExtension_parts}
-   nsMathfontPrefExtension;
- 
- // -----------------------------------------------------------------------------
- // nsGlyphTable is a class that provides an interface for accessing glyphs
- // of stretchy chars. It acts like a table that stores the variants of bigger
- // sizes (if any) and the partial glyphs needed to build extensible symbols.
--// An instance of nsGlyphTable is associated to one primary font. Extra glyphs
--// can be taken in other additional fonts when stretching certain characters.
--// These supplementary fonts are referred to as "external" fonts to the table.
- //
- // A char for which nsGlyphTable::Has(aChar) is true means that the table
- // contains some glyphs (bigger and/or partial) that can be used to render
- // the char. Bigger sizes (if any) of the char can then be retrieved with
- // BigOf(aSize). Partial glyphs can be retrieved with TopOf(), GlueOf(), etc.
- //
- // A table consists of "nsGlyphCode"s which are viewed either as Unicode
--// points or as direct glyph indices, depending on the type of the table.
--// XXX The latter is not yet supported.
-+// points (for nsPropertiesTable) or as direct glyph indices (for
-+// nsOpenTypeTable)
-+// -----------------------------------------------------------------------------
-+
-+class nsGlyphTable {
-+public:
-+  explicit nsGlyphTable()
-+    : mCharCache(0) {
-+    MOZ_COUNT_CTOR(nsGlyphTable);
-+  }
-+  virtual ~nsGlyphTable() {
-+    MOZ_COUNT_DTOR(nsGlyphTable);
-+  }
-+
-+  virtual const nsAString&
-+  FontNameFor(const nsGlyphCode& aGlyphCode) const = 0;
-+
-+  // True if this table contains some glyphs (variants and/or parts)
-+  // or contains child chars that can be used to render this char
-+  bool Has(gfxContext* aThebesContext, nsMathMLChar* aChar);
-+
-+  // True if this table contains variants of larger sizes to render this char
-+  bool HasVariantsOf(gfxContext* aThebesContext, nsMathMLChar* aChar);
-+
-+  // True if this table contains parts to render this char
-+  bool HasPartsOf(gfxContext* aThebesContext, nsMathMLChar* aChar);
-+
-+  // Getter for the DisplayOperatorMinHeight parameter.
-+  virtual int32_t GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics) = 0;
-+
-+  // Getters for the parts
-+  nsGlyphCode TopOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 0);
-+  }
-+  nsGlyphCode MiddleOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 1);
-+  }
-+  nsGlyphCode BottomOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 2);
-+  }
-+  nsGlyphCode GlueOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 3);
-+  }
-+  virtual nsGlyphCode BigOf(gfxContext* aThebesContext,
-+                            nsMathMLChar* aChar,
-+                            uint32_t aSize) = 0;
-+  nsGlyphCode LeftOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 0);
-+  }
-+  nsGlyphCode RightOf(gfxContext* aThebesContext, nsMathMLChar* aChar) {
-+    return ElementAt(aThebesContext, aChar, 2);
-+  }
-+
-+protected:
-+  // For speedy re-use, we always cache the last data used in the table.
-+  // mCharCache is the Unicode point of the last char that was queried in this
-+  // table. 
-+  PRUnichar mCharCache;
-+
-+  virtual nsGlyphCode ElementAt(gfxContext* aThebesContext,
-+                                nsMathMLChar* aChar,
-+                                uint32_t aPosition) = 0;
-+};
-+
-+bool
-+nsGlyphTable::Has(gfxContext* aThebesContext, nsMathMLChar* aChar)
-+{
-+  return (HasVariantsOf(aThebesContext, aChar) ||
-+          HasPartsOf(aThebesContext, aChar));
-+}
-+
-+bool
-+nsGlyphTable::HasVariantsOf(gfxContext* aThebesContext, nsMathMLChar* aChar)
-+{
-+  //XXXkt all variants must be in the same file as size 1
-+  return BigOf(aThebesContext, aChar, 1).Exists();
-+}
-+
-+bool
-+nsGlyphTable::HasPartsOf(gfxContext* aThebesContext, nsMathMLChar* aChar)
-+{
-+  return GlueOf(aThebesContext, aChar).Exists() ||
-+    TopOf(aThebesContext, aChar).Exists() ||
-+    BottomOf(aThebesContext, aChar).Exists() ||
-+    MiddleOf(aThebesContext, aChar).Exists();
-+}
-+
-+// An instance of nsPropertiesTable is associated to one primary font. Extra
-+// glyphs can be taken in other additional fonts when stretching certain
-+// characters.
-+// These supplementary fonts are referred to as "external" fonts to the table.
- 
- // General format of MathFont Property Files from which glyph data are
- // retrieved:
- // -----------------------------------------------------------------------------
- // Each font should have its set of glyph data. For example, the glyph data for
- // the "Symbol" font and the "MT Extra" font are in "mathfontSymbol.properties"
- // and "mathfontMTExtra.properties", respectively. The mathfont property file
- // is a set of all the stretchy MathML characters that can be rendered with that
- // font using larger and/or partial glyphs. The entry of each stretchy character
- // in the mathfont property file gives, in that order, the 4 partial glyphs:
- // Top (or Left), Middle, Bottom (or Right), Glue; and the variants of bigger
- // sizes (if any).
- // A position that is not relevant to a particular character is indicated there
- // with the UNICODE REPLACEMENT CHARACTER 0xFFFD.
- // -----------------------------------------------------------------------------
- 
--#define NS_TABLE_TYPE_UNICODE       0
--#define NS_TABLE_TYPE_GLYPH_INDEX   1
--
- #define NS_TABLE_STATE_ERROR       -1
- #define NS_TABLE_STATE_EMPTY        0
- #define NS_TABLE_STATE_READY        1
- 
- // helper to trim off comments from data in a MathFont Property File
- static void
- Clean(nsString& aValue)
- {
-@@ -95,122 +180,102 @@ LoadProperties(const nsString& aName,
-   uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
-   uriStr.Append(aName);
-   uriStr.StripWhitespace(); // that may come from aName
-   uriStr.AppendLiteral(".properties");
-   return NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(aProperties), 
-                                                 NS_ConvertUTF16toUTF8(uriStr));
- }
- 
--// -----------------------------------------------------------------------------
--
--class nsGlyphTable {
-+class nsPropertiesTable MOZ_FINAL : public nsGlyphTable {
- public:
--  explicit nsGlyphTable(const nsString& aPrimaryFontName)
--    : mFontName(1), // ensure space for primary font name.
--      mState(NS_TABLE_STATE_EMPTY),
--      mCharCache(0)
--  {
--    MOZ_COUNT_CTOR(nsGlyphTable);
-+  explicit nsPropertiesTable(const nsString& aPrimaryFontName)
-+    : nsGlyphTable()
-+    , mFontName(1) // ensure space for primary font name.
-+    , mState(NS_TABLE_STATE_EMPTY) {
-+    MOZ_COUNT_CTOR(nsPropertiesTable);
-     mFontName.AppendElement(aPrimaryFontName);
-   }
- 
--  // not a virtual destructor: this class is not intended to be subclassed
--  ~nsGlyphTable()
--  {
--    MOZ_COUNT_DTOR(nsGlyphTable);
-+  ~nsPropertiesTable() {
-+    MOZ_COUNT_DTOR(nsPropertiesTable);
-   }
- 
--  const nsAString& PrimaryFontName() const
--  {
-+  const nsAString& PrimaryFontName() const {
-     return mFontName[0];
-   }
- 
--  const nsAString& FontNameFor(const nsGlyphCode& aGlyphCode) const
-+  const nsAString&
-+  FontNameFor(const nsGlyphCode& aGlyphCode) const MOZ_OVERRIDE;
-+
-+  virtual int32_t
-+  GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics) MOZ_OVERRIDE
-   {
--    NS_ASSERTION(!aGlyphCode.IsGlyphID(),
--                 "nsGlyphTable can only access glyphs by Unicode code point");
--    return mFontName[aGlyphCode.font];
--  }
--
--  // True if this table contains some glyphs (variants and/or parts)
--  // or contains child chars that can be used to render this char
--  bool Has(nsPresContext* aPresContext, nsMathMLChar* aChar);
--
--  // True if this table contains variants of larger sizes to render this char
--  bool HasVariantsOf(nsPresContext* aPresContext, nsMathMLChar* aChar);
--
--  // True if this table contains parts to render this char
--  bool HasPartsOf(nsPresContext* aPresContext, nsMathMLChar* aChar);
--
--  // Getters for the parts
--  nsGlyphCode TopOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 0);
--  }
--  nsGlyphCode MiddleOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 1);
--  }
--  nsGlyphCode BottomOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 2);
--  }
--  nsGlyphCode GlueOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 3);
--  }
--  nsGlyphCode BigOf(nsPresContext* aPresContext, nsMathMLChar* aChar,
--                    int32_t aSize) {
--    return ElementAt(aPresContext, aChar, 4 + aSize);
--  }
--  nsGlyphCode LeftOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 0);
--  }
--  nsGlyphCode RightOf(nsPresContext* aPresContext, nsMathMLChar* aChar) {
--    return ElementAt(aPresContext, aChar, 2);
-+    // No minimal height for display operators. The first size variant is used.
-+    return 0;
-   }
- 
- private:
--  nsGlyphCode ElementAt(nsPresContext* aPresContext, nsMathMLChar* aChar,
--                        uint32_t aPosition);
--
-+  virtual nsGlyphCode ElementAt(gfxContext* aThebesContext,
-+                                nsMathMLChar* aChar,
-+                                uint32_t aPosition) MOZ_OVERRIDE;
-+  virtual nsGlyphCode BigOf(gfxContext* aThebesContext, nsMathMLChar* aChar,
-+                            uint32_t aSize) MOZ_OVERRIDE;
-   // mFontName[0] is the primary font associated to this table. The others 
-   // are possible "external" fonts for glyphs not in the primary font
-   // but which are needed to stretch certain characters in the table
-   nsTArray<nsString> mFontName;
- 
-   // Tri-state variable for error/empty/ready
-   int32_t mState;
- 
-   // The set of glyph data in this table, as provided by the MathFont Property
-   // File
-   nsCOMPtr<nsIPersistentProperties> mGlyphProperties;
- 
--  // For speedy re-use, we always cache the last data used in the table.
--  // mCharCache is the Unicode point of the last char that was queried in this
--  // table. mGlyphCache is a buffer containing the glyph data associated to
--  // that char. For a property line 'key = value' in the MathFont Property File,
-+  // mGlyphCache is a buffer containing the glyph data associated to mCharCache.
-+  // For a property line 'key = value' in the MathFont Property File,
-   // mCharCache will retain the 'key' -- which is a Unicode point, while
-   // mGlyphCache will retain the 'value', which is a consecutive list of
-   // nsGlyphCodes, i.e., the pairs of 'code@font' needed by the char -- in
-   // which 'code@0' can be specified
-   // without the optional '@0'. However, to ease subsequent processing,
-   // mGlyphCache excludes the '@' symbol and explicitly inserts all optional '0'
-   // that indicates the primary font identifier. Specifically therefore, the
-   // k-th glyph is characterized by :
-   // 1) mGlyphCache[3*k],mGlyphCache[3*k+1] : its Unicode point
-   // 2) mGlyphCache[3*k+2] : the numeric identifier of the font where it comes
-   // from.
-   // A font identifier of '0' means the default primary font associated to this
-   // table. Other digits map to the "external" fonts that may have been
-   // specified in the MathFont Property File.
-   nsString  mGlyphCache;
--  PRUnichar mCharCache;
- };
- 
-+/* virtual */
- nsGlyphCode
--nsGlyphTable::ElementAt(nsPresContext* aPresContext, nsMathMLChar* aChar,
--                        uint32_t aPosition)
-+nsPropertiesTable::BigOf(gfxContext* aThebesContext, nsMathMLChar* aChar,
-+                         uint32_t aSize)
-+{
-+  return ElementAt(aThebesContext, aChar, 4 + aSize);
-+}
-+
-+/* virtual */
-+const nsAString&
-+nsPropertiesTable::FontNameFor(const nsGlyphCode& aGlyphCode) const
-+{
-+    NS_ASSERTION(!aGlyphCode.IsGlyphID(),
-+                 "nsPropertiesTable can only access glyphs by code point");
-+    return mFontName[aGlyphCode.font];
-+}
-+
-+/* virtual */
-+nsGlyphCode
-+nsPropertiesTable::ElementAt(gfxContext* aThebesContext, nsMathMLChar* aChar,
-+                             uint32_t aPosition)
- {
-   if (mState == NS_TABLE_STATE_ERROR) return kNullGlyph;
-   // Load glyph properties if this is the first time we have been here
-   if (mState == NS_TABLE_STATE_EMPTY) {
-     nsresult rv = LoadProperties(mFontName[0], mGlyphProperties);
- #ifdef DEBUG
-     nsAutoCString uriStr;
-     uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
-@@ -305,52 +370,148 @@ nsGlyphTable::ElementAt(nsPresContext* a
-   if (index+2 >= mGlyphCache.Length()) return kNullGlyph;
-   nsGlyphCode ch;
-   ch.code[0] = mGlyphCache.CharAt(index);
-   ch.code[1] = mGlyphCache.CharAt(index + 1);
-   ch.font = mGlyphCache.CharAt(index + 2);
-   return ch.code[0] == PRUnichar(0xFFFD) ? kNullGlyph : ch;
- }
- 
--bool
--nsGlyphTable::Has(nsPresContext* aPresContext, nsMathMLChar* aChar)
-+// An instance of nsOpenTypeTable is associated to one gfxFontEntry that
-+// corresponds to an Open Type font with a MATH table. All the glyphs come from
-+// the same font and the calls to access size variants and parts are directly
-+// forwarded to the gfx code.
-+class nsOpenTypeTable MOZ_FINAL : public nsGlyphTable {
-+public:
-+  explicit nsOpenTypeTable(gfxFontEntry* aFontEntry)
-+    : nsGlyphTable(),
-+      mFontEntry(aFontEntry) {
-+    MOZ_COUNT_CTOR(nsOpenTypeTable);
-+  }
-+
-+  ~nsOpenTypeTable() {
-+    MOZ_COUNT_DTOR(nsOpenTypeTable);
-+  }
-+
-+  virtual int32_t
-+  GetDisplayOperatorMinHeight(nsFontMetrics* aFontMetrics) MOZ_OVERRIDE
-+  {
-+    return mFontEntry->GetDisplayOperatorMinHeight() * aFontMetrics->EmHeight();
-+  }
-+
-+  virtual nsGlyphCode BigOf(gfxContext* aThebesContext,
-+                            nsMathMLChar* aChar,
-+                            uint32_t aSize) MOZ_OVERRIDE;
-+
-+  const nsAString&
-+  FontNameFor(const nsGlyphCode& aGlyphCode) const MOZ_OVERRIDE;
-+
-+  const gfxFontEntry* GetFontEntry() const {
-+    return mFontEntry;
-+  }
-+
-+private:
-+  nsRefPtr<gfxFontEntry> mFontEntry;
-+  uint32_t mGlyphID;
-+
-+  void UpdateCache(gfxContext* aThebesContext, nsMathMLChar* aChar);
-+  virtual nsGlyphCode ElementAt(gfxContext* aThebesContext,
-+                                nsMathMLChar* aChar,
-+                                uint32_t aPosition) MOZ_OVERRIDE;
-+};
-+
-+void
-+nsOpenTypeTable::UpdateCache(gfxContext* aThebesContext, nsMathMLChar* aChar)
- {
--  return HasVariantsOf(aPresContext, aChar) || HasPartsOf(aPresContext, aChar);
-+  PRUnichar uchar = aChar->mData[0];
-+  if (mCharCache != uchar) {
-+    // XXXfred: use gfxFont::GetGlyph() to get rid of aThebesContext?
-+    nsGlyphCode glyph =  { {uchar, 0}, 0};
-+    nsAutoPtr<gfxTextRun> textRun;
-+    textRun = aChar->MakeTextRun(aThebesContext, glyph);
-+    const gfxTextRun::CompressedGlyph data = textRun->GetCharacterGlyphs()[0];
-+    if (data.IsSimpleGlyph()) {
-+      mGlyphID = data.GetSimpleGlyph();
-+    } else if (data.GetGlyphCount() == 1) {
-+      mGlyphID = textRun->GetDetailedGlyphs(0)->mGlyphID;
-+    } else {
-+      mGlyphID = 0;
-+    }
-+    mCharCache = uchar;
-+  }
- }
- 
--bool
--nsGlyphTable::HasVariantsOf(nsPresContext* aPresContext, nsMathMLChar* aChar)
-+/* virtual */
-+const nsAString&
-+nsOpenTypeTable::FontNameFor(const nsGlyphCode& aGlyphCode) const
- {
--  //XXXkt all variants must be in the same file as size 1
--  return BigOf(aPresContext, aChar, 1).Exists();
-+    NS_ASSERTION(aGlyphCode.IsGlyphID(),
-+                 "nsPropertiesTable can only access glyphs by id");
-+    return mFontEntry->FamilyName();
- }
- 
--bool
--nsGlyphTable::HasPartsOf(nsPresContext* aPresContext, nsMathMLChar* aChar)
-+/* virtual */
-+nsGlyphCode
-+nsOpenTypeTable::BigOf(gfxContext* aThebesContext, nsMathMLChar* aChar,
-+                       uint32_t aSize)
- {
--  return GlueOf(aPresContext, aChar).Exists() ||
--    TopOf(aPresContext, aChar).Exists() ||
--    BottomOf(aPresContext, aChar).Exists() ||
--    MiddleOf(aPresContext, aChar).Exists();
-+  UpdateCache(aThebesContext, aChar);
-+
-+  bool isVertical = aChar->mDirection == NS_STRETCH_DIRECTION_VERTICAL;
-+  uint32_t glyphID =
-+    (aSize == 0 ? mGlyphID :
-+     mFontEntry->GetMathVariantsSize(mGlyphID, isVertical, aSize - 1));
-+  if (!glyphID) {
-+    return kNullGlyph;
-+  }
-+
-+  nsGlyphCode glyph;
-+  glyph.glyphID = glyphID;
-+  glyph.font = -1;
-+  return glyph;
-+}
-+
-+/* virtual */
-+nsGlyphCode
-+nsOpenTypeTable::ElementAt(gfxContext* aThebesContext,
-+                           nsMathMLChar* aChar,
-+                           uint32_t aPosition)
-+{
-+  UpdateCache(aThebesContext, aChar);
-+
-+  uint32_t parts[4];
-+  bool isVertical = aChar->mDirection == NS_STRETCH_DIRECTION_VERTICAL;
-+  if (!mFontEntry->GetMathVariantsParts(mGlyphID, isVertical, parts)) {
-+    return kNullGlyph;
-+  }
-+
-+  uint32_t glyphID = parts[aPosition];
-+  if (!glyphID) {
-+    return kNullGlyph;
-+  }
-+  nsGlyphCode glyph;
-+  glyph.glyphID = glyphID;
-+  glyph.font = -1;
-+  return glyph;
- }
- 
- // -----------------------------------------------------------------------------
- // This is the list of all the applicable glyph tables.
- // We will maintain a single global instance that will only reveal those
- // glyph tables that are associated to fonts currently installed on the
- // user' system. The class is an XPCOM shutdown observer to allow us to
- // free its allocated data at shutdown
- 
- class nsGlyphTableList : public nsIObserver
- {
- public:
-   NS_DECL_ISUPPORTS
-   NS_DECL_NSIOBSERVER
- 
--  nsGlyphTable mUnicodeTable;
-+  nsPropertiesTable mUnicodeTable;
- 
-   nsGlyphTableList()
-     : mUnicodeTable(NS_LITERAL_STRING("Unicode"))
-   {
-     MOZ_COUNT_CTOR(nsGlyphTableList);
-   }
- 
-   virtual ~nsGlyphTableList()
-@@ -362,33 +523,43 @@ public:
-   nsresult Finalize();
- 
-   // Add a glyph table in the list, return the new table that was added
-   nsGlyphTable*
-   AddGlyphTable(const nsString& aPrimaryFontName);
- 
-   // Find a glyph table in the list that has a glyph for the given char
-   nsGlyphTable*
--  GetGlyphTableFor(nsPresContext* aPresContext,
--                   nsMathMLChar*  aChar);
-+  GetGlyphTableFor(nsMathMLChar*  aChar);
- 
-   // Find the glyph table in the list corresponding to the given font family.
-   nsGlyphTable*
-   GetGlyphTableFor(const nsAString& aFamily);
- 
-+  // Find the glyph table in the list corresponding to the given gfxFont.
-+  nsGlyphTable*
-+  GetGlyphTableFor(gfxFont* aFont);
-+
- private:
--  nsGlyphTable* TableAt(int32_t aIndex) {
--    return &mTableList.ElementAt(aIndex);
-+  nsPropertiesTable* PropertiesTableAt(int32_t aIndex) {
-+    return &mPropertiesTableList.ElementAt(aIndex);
-   }
--  int32_t Count() {
--    return mTableList.Length();
-+  int32_t PropertiesTableCount() {
-+    return mPropertiesTableList.Length();
-+  }
-+  nsOpenTypeTable* OpenTypeTableAt(int32_t aIndex) {
-+    return &mOpenTypeTableList.ElementAt(aIndex);
-+  }
-+  int32_t OpenTypeTableCount() {
-+    return mOpenTypeTableList.Length();
-   }
- 
-   // List of glyph tables;
--  nsTArray<nsGlyphTable> mTableList;
-+  nsTArray<nsPropertiesTable> mPropertiesTableList;
-+  nsTArray<nsOpenTypeTable> mOpenTypeTableList;
- };
- 
- NS_IMPL_ISUPPORTS1(nsGlyphTableList, nsIObserver)
- 
- // -----------------------------------------------------------------------------
- // Here is the global list of applicable glyph tables that we will be using
- static nsGlyphTableList* gGlyphTableList = nullptr;
- 
-@@ -439,52 +610,72 @@ nsGlyphTable*
- nsGlyphTableList::AddGlyphTable(const nsString& aPrimaryFontName)
- {
-   // See if there is already a special table for this family.
-   nsGlyphTable* glyphTable = GetGlyphTableFor(aPrimaryFontName);
-   if (glyphTable != &mUnicodeTable)
-     return glyphTable;
- 
-   // allocate a table
--  glyphTable = mTableList.AppendElement(aPrimaryFontName);
-+  glyphTable = mPropertiesTableList.AppendElement(aPrimaryFontName);
-   return glyphTable;
- }
- 
- nsGlyphTable*
--nsGlyphTableList::GetGlyphTableFor(nsPresContext* aPresContext, 
--                                   nsMathMLChar*   aChar)
-+nsGlyphTableList::GetGlyphTableFor(nsMathMLChar* aChar)
- {
--  if (mUnicodeTable.Has(aPresContext, aChar))
-+  if (mUnicodeTable.Has(nullptr, aChar))
-     return &mUnicodeTable;
- 
-   int32_t i;
--  for (i = 0; i < Count(); i++) {
--    nsGlyphTable* glyphTable = TableAt(i);
--    if (glyphTable->Has(aPresContext, aChar)) {
-+  for (i = 0; i < PropertiesTableCount(); i++) {
-+    nsPropertiesTable* glyphTable = PropertiesTableAt(i);
-+    if (glyphTable->Has(nullptr, aChar)) {
-       return glyphTable;
-     }
-   }
-   return nullptr;
- }
- 
- nsGlyphTable*
- nsGlyphTableList::GetGlyphTableFor(const nsAString& aFamily)
- {
--  for (int32_t i = 0; i < Count(); i++) {
--    nsGlyphTable* glyphTable = TableAt(i);
-+  for (int32_t i = 0; i < PropertiesTableCount(); i++) {
-+    nsPropertiesTable* glyphTable = PropertiesTableAt(i);
-     const nsAString& fontName = glyphTable->PrimaryFontName();
-     // TODO: would be nice to consider StripWhitespace and other aliasing
-     if (fontName.Equals(aFamily, nsCaseInsensitiveStringComparator())) {
-       return glyphTable;
-     }
-   }
-   // Fall back to default Unicode table
-   return &mUnicodeTable;
- }
- 
-+nsGlyphTable*
-+nsGlyphTableList::GetGlyphTableFor(gfxFont* aFont)
-+{
-+  if (!aFont->GetFontEntry()->TryGetMathTable(aFont)) {
-+    return nullptr;
-+  }
-+
-+  nsOpenTypeTable* glyphTable;
-+  for (int32_t i = 0; i < OpenTypeTableCount(); i++) {
-+    glyphTable = OpenTypeTableAt(i);
-+    if (aFont->GetFontEntry() == glyphTable->GetFontEntry()) {
-+      return glyphTable;
-+    }
-+  }
-+
-+  // allocate a table
-+  glyphTable = mOpenTypeTableList.AppendElement(aFont->GetFontEntry());
-+  return glyphTable;
-+}
-+
-+
- // -----------------------------------------------------------------------------
- 
- // Lookup the preferences:
- // "font.mathfont-family.\uNNNN.base"     -- fonts for the base size
- // "font.mathfont-family.\uNNNN.variants" -- fonts for larger glyphs
- // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
- // Given the char code and mode of stretch, retrieve the preferred extension
- // font families.
-@@ -648,17 +839,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
-   mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
-   mBoundingMetrics = nsBoundingMetrics();
-   mGlyphTable = nullptr;
-   // check if stretching is applicable ...
-   if (gGlyphTableList && (1 == mData.Length())) {
-     mDirection = nsMathMLOperators::GetStretchyDirection(mData);
-     // default tentative table (not the one that is necessarily going
-     // to be used)
--    mGlyphTable = gGlyphTableList->GetGlyphTableFor(aPresContext, this);
-+    mGlyphTable = gGlyphTableList->GetGlyphTableFor(this);
-   }
- }
- 
- // -----------------------------------------------------------------------------
- /*
-  The Stretch:
-  @param aContainerSize - suggested size for the stretched char
-  @param aDesiredStretchSize - OUT parameter. The desired size
-@@ -963,20 +1154,39 @@ public:
-         NS_ERROR("This shouldn't be called because we never enable spacing");
-     }
- };
- 
- gfxTextRun*
- nsMathMLChar::MakeTextRun(gfxContext*        aThebesContext,
-                           const nsGlyphCode& aGlyph)
- {
--  NS_ASSERTION(!aGlyph.IsGlyphID(), "not yet implemented");
--  return mFontMetrics->GetThebesFontGroup()->
--    MakeTextRun(aGlyph.code, aGlyph.Length(), aThebesContext,
--                mFontMetrics->AppUnitsPerDevPixel(), 0);
-+  if (!aGlyph.IsGlyphID()) {
-+    return mFontMetrics->GetThebesFontGroup()->
-+      MakeTextRun(aGlyph.code, aGlyph.Length(), aThebesContext,
-+                  mFontMetrics->AppUnitsPerDevPixel(), 0);
-+  }
-+
-+  gfxTextRunFactory::Parameters params = {
-+    aThebesContext, nullptr, nullptr, nullptr, 0,
-+    mFontMetrics->AppUnitsPerDevPixel()
-+  };
-+  gfxTextRun* textRun = gfxTextRun::Create(&params, 1, mFontMetrics->
-+                                           GetThebesFontGroup(), 0);
-+  textRun->AddGlyphRun(mFontMetrics->GetThebesFontGroup()->GetFontAt(0),
-+                       gfxTextRange::kFontGroup, 0, false);
-+  gfxTextRun::DetailedGlyph detailedGlyph;
-+  detailedGlyph.mGlyphID = aGlyph.glyphID;
-+  detailedGlyph.mAdvance = 0;
-+  detailedGlyph.mXOffset = detailedGlyph.mYOffset = 0;
-+  gfxShapedText::CompressedGlyph g;
-+  g.SetComplex(true, true, 1);
-+  textRun->SetGlyphs(0, g, &detailedGlyph);
-+
-+  return textRun;
- }
- 
- nsBoundingMetrics
- nsMathMLChar::MeasureGlyph(gfxContext*        aThebesContext,
-                            const nsGlyphCode& aGlyph)
- {
-   nsAutoPtr<gfxTextRun> textRun;
-   textRun = MakeTextRun(aThebesContext, aGlyph);
-@@ -988,28 +1198,29 @@ nsMathMLChar::MeasureGlyph(gfxContext*  
-                          aThebesContext, &provider);
- 
-   nsBoundingMetrics bm;
-   bm.leftBearing = NSToCoordFloor(metrics.mBoundingBox.X());
-   bm.rightBearing = NSToCoordCeil(metrics.mBoundingBox.XMost());
-   bm.ascent = NSToCoordCeil(-metrics.mBoundingBox.Y());
-   bm.descent = NSToCoordCeil(metrics.mBoundingBox.YMost());
-   bm.width = NSToCoordRound(metrics.mAdvanceWidth);
-+  if (aGlyph.IsGlyphID()) {
-+    bm.width = bm.rightBearing - std::max(0, bm.leftBearing);
-+  }
- 
-   return bm;
- }
- 
- void
- nsMathMLChar::DrawGlyph(gfxContext*         aThebesContext,
-                         const nsGlyphCode&  aGlyph,
-                         nscoord             dx,
-                         nscoord             dy)
- {
--  NS_ASSERTION(!aGlyph.IsGlyphID(), "not yet implemented");
--
-   nsAutoPtr<gfxTextRun> textRun;
-   textRun = MakeTextRun(aThebesContext, aGlyph);
- 
-   StubPropertyProvider provider;
-   gfxPoint pt(dx, dy);
-   textRun->Draw(aThebesContext, pt, DrawMode::GLYPH_FILL, 0, aGlyph.Length(),
-                 &provider, nullptr, nullptr);
- }
-@@ -1092,17 +1303,17 @@ nsMathMLChar::StretchEnumContext::TryVar
-   // start at size = 1 (size = 0 is the char at its normal size)
-   int32_t size = 1;
- #ifdef NOISY_SEARCH
-   printf("  searching in %s ...\n",
-            NS_LossyConvertUTF16toASCII(aFamily).get());
- #endif
- 
-   nsGlyphCode ch;
--  while ((ch = aGlyphTable->BigOf(mPresContext, mChar, size)).Exists()) {
-+  while ((ch = aGlyphTable->BigOf(mThebesContext, mChar, size)).Exists()) {
- 
-     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
-       // if largeopOnly is set, break now
-       if (largeopOnly) break;
-       ++size;
-       continue;
-     }
- 
-@@ -1123,18 +1334,16 @@ nsMathMLChar::StretchEnumContext::TryVar
-         // IsSizeBetter() checked that charSize < maxsize;
-         // Leave ascent, descent, and bestsize as these contain maxsize.
-         if (mBoundingMetrics.width < bm.width)
-           mBoundingMetrics.width = bm.width;
-         if (mBoundingMetrics.leftBearing > bm.leftBearing)
-           mBoundingMetrics.leftBearing = bm.leftBearing;
-         if (mBoundingMetrics.rightBearing < bm.rightBearing)
-           mBoundingMetrics.rightBearing = bm.rightBearing;
--        // Continue to check other sizes unless largeopOnly
--        haveBetter = largeopOnly;
-       }
-       else {
-         mBoundingMetrics = bm;
-         haveBetter = true;
-         bestSize = charSize;
-         mChar->mGlyphTable = aGlyphTable;
-         mChar->mFamily = font.name;
-         mChar->mGlyphs[0] = ch;
-@@ -1148,34 +1357,38 @@ nsMathMLChar::StretchEnumContext::TryVar
-     else {
- #ifdef NOISY_SEARCH
-       printf("    size:%d Rejected!\n", size);
- #endif
-       if (haveBetter)
-         break; // Not making an futher progress, stop searching
-     }
- 
--    // if largeopOnly is set, break now
--    if (largeopOnly) break;
-+    // If this a largeop only operator, we stop if the glyph is large enough.
-+    if (largeopOnly &&
-+        bm.ascent + bm.descent >=
-+        aGlyphTable->GetDisplayOperatorMinHeight(mChar->mFontMetrics)) {
-+      break;
-+    }
-     ++size;
-   }
- 
-   return haveBetter &&
-     (largeopOnly ||
-      IsSizeOK(mPresContext, bestSize, mTargetSize, mStretchHint));
- }
- 
- // 3. Build by parts.
- // Returns true if the size is OK, false to keep searching.
- // Always updates the char if a better match is found.
- bool
- nsMathMLChar::StretchEnumContext::TryParts(nsGlyphTable*    aGlyphTable,
-                                            const nsAString& aFamily)
- {
--  if (!aGlyphTable->HasPartsOf(mPresContext, mChar))
-+  if (!aGlyphTable->HasPartsOf(mThebesContext, mChar))
-     return false; // to next table
- 
-   // See if the parts of this table fit in the desired space //////////////////
- 
-   // Use our stretchy style context now that stretching is in progress
-   nsFont font = mChar->mStyleContext->StyleFont()->mFont;
-   // Ensure SetFontFamily will set the font
-   font.name.Truncate();
-@@ -1186,20 +1399,20 @@ nsMathMLChar::StretchEnumContext::TryPar
-   nscoord sizedata[4];
- 
-   bool isVertical = (mDirection == NS_STRETCH_DIRECTION_VERTICAL);
-   bool maxWidth = (NS_STRETCH_MAXWIDTH & mStretchHint) != 0;
- 
-   for (int32_t i = 0; i < 4; i++) {
-     nsGlyphCode ch;
-     switch (i) {
--    case 0: ch = aGlyphTable->TopOf(mPresContext, mChar);    break;
--    case 1: ch = aGlyphTable->MiddleOf(mPresContext, mChar); break;
--    case 2: ch = aGlyphTable->BottomOf(mPresContext, mChar); break;
--    case 3: ch = aGlyphTable->GlueOf(mPresContext, mChar);   break;
-+    case 0: ch = aGlyphTable->TopOf(mThebesContext, mChar);    break;
-+    case 1: ch = aGlyphTable->MiddleOf(mThebesContext, mChar); break;
-+    case 2: ch = aGlyphTable->BottomOf(mThebesContext, mChar); break;
-+    case 3: ch = aGlyphTable->GlueOf(mThebesContext, mChar);   break;
-     }
-     chdata[i] = ch;
-     if (ch.Exists()) {
-       if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font))
-         return false;
- 
-       nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, chdata[i]);
- 
-@@ -1317,34 +1530,45 @@ nsMathMLChar::StretchEnumContext::TryPar
- 
- // This is called for each family, whether it exists or not
- bool
- nsMathMLChar::StretchEnumContext::EnumCallback(const nsString& aFamily,
-                                                bool aGeneric, void *aData)
- {
-   StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
- 
--  // See if there is a special table for the family, but always use the
--  // Unicode table for generic fonts.
--  nsGlyphTable* glyphTable = aGeneric ?
--    &gGlyphTableList->mUnicodeTable :
--    gGlyphTableList->GetGlyphTableFor(aFamily);
--
--  if (context->mTablesTried.Contains(glyphTable))
--    return true; // already tried this one
--
-   // Check font family if it is not a generic one
-   // We test with the kNullGlyph
-   nsStyleContext *sc = context->mChar->mStyleContext;
-   nsFont font = sc->StyleFont()->mFont;
-   if (!aGeneric && !context->mChar->SetFontFamily(context->mPresContext,
-                                                   nullptr, kNullGlyph, aFamily,
-                                                   font))
-      return true; // Could not set the family
- 
-+  // Determine the glyph table to use for this font.
-+  nsGlyphTable* glyphTable;
-+  if (aGeneric) {
-+    // This is a generic font, use the Unicode table.
-+    glyphTable = &gGlyphTableList->mUnicodeTable;
-+  } else {
-+    // If the font contains an Open Type MATH table, use it.
-+    glyphTable = gGlyphTableList->
-+      GetGlyphTableFor(context->mChar->mFontMetrics->
-+                       GetThebesFontGroup()->GetFontAt(0));
-+    if (!glyphTable) {
-+      // Otherwise try to find a .properties file corresponding to that font
-+      // family or fallback to the Unicode table.
-+      glyphTable = gGlyphTableList->GetGlyphTableFor(aFamily);
-+    }
-+  }
-+
-+  if (context->mTablesTried.Contains(glyphTable))
-+    return true; // already tried this one
-+
-   context->mGlyphTable = glyphTable;
- 
-   // Now see if the table has a glyph that matches the container
- 
-   // Only try this table once.
-   context->mTablesTried.AppendElement(glyphTable);
- 
-   // If the unicode table is being used, then search all font families.  If a
-@@ -2090,27 +2314,27 @@ nsMathMLChar::PaintVertically(nsPresCont
-   // Get the device pixel size in the vertical direction.
-   // (This makes no effort to optimize for non-translation transformations.)
-   nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();
- 
-   // get metrics data to be re-used later
-   int32_t i = 0;
-   nsGlyphCode ch, chdata[4];
-   int32_t glue, bottom;
--  nsGlyphCode chGlue = aGlyphTable->GlueOf(aPresContext, this);
-+  nsGlyphCode chGlue = aGlyphTable->GlueOf(aThebesContext, this);
-   for (i = 0; i < 4; ++i) {
-     switch (i) {
-       case 0:
--        ch = aGlyphTable->TopOf(aPresContext, this);
-+        ch = aGlyphTable->TopOf(aThebesContext, this);
-         break;
-       case 1:
--        ch = aGlyphTable->MiddleOf(aPresContext, this);
-+        ch = aGlyphTable->MiddleOf(aThebesContext, this);
-         break;
-       case 2:
--        ch = aGlyphTable->BottomOf(aPresContext, this);
-+        ch = aGlyphTable->BottomOf(aThebesContext, this);
-         bottom = i;
-         break;
-       case 3:
-         ch = chGlue;
-         glue = i;
-         break;
-     }
-     // empty slots are filled with the glue if it is not null
-@@ -2284,27 +2508,27 @@ nsMathMLChar::PaintHorizontally(nsPresCo
-   // Get the device pixel size in the horizontal direction.
-   // (This makes no effort to optimize for non-translation transformations.)
-   nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();
- 
-   // get metrics data to be re-used later
-   int32_t i = 0;
-   nsGlyphCode ch, chdata[4];
-   int32_t glue, right;
--  nsGlyphCode chGlue = aGlyphTable->GlueOf(aPresContext, this);
-+  nsGlyphCode chGlue = aGlyphTable->GlueOf(aThebesContext, this);
-   for (int32_t i = 0; i < 4; ++i) {
-     switch (i) {
-       case 0:
--        ch = aGlyphTable->LeftOf(aPresContext, this);
-+        ch = aGlyphTable->LeftOf(aThebesContext, this);
-         break;
-       case 1:
--        ch = aGlyphTable->MiddleOf(aPresContext, this);
-+        ch = aGlyphTable->MiddleOf(aThebesContext, this);
-         break;
-       case 2:
--        ch = aGlyphTable->RightOf(aPresContext, this);
-+        ch = aGlyphTable->RightOf(aThebesContext, this);
-         right = i;
-         break;
-       case 3:
-         ch = chGlue;
-         glue = i;
-         break;
-     }
-     // empty slots are filled with the glue if it is not null
-diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
---- a/layout/mathml/nsMathMLChar.h
-+++ b/layout/mathml/nsMathMLChar.h
-@@ -193,17 +193,18 @@ public:
-   // They provide an interface to make them accessible to the Style System via
-   // the Get/Set AdditionalStyleContext() APIs. Owners of MathMLChars
-   // should honor these APIs.
-   nsStyleContext* GetStyleContext() const;
- 
-   void SetStyleContext(nsStyleContext* aStyleContext);
- 
- protected:
--  friend class nsGlyphTable;
-+  friend class nsPropertiesTable;
-+  friend class nsOpenTypeTable;
-   nsString           mData;
- 
- private:
-   nsRect             mRect;
-   nsStretchDirection mDirection;
-   nsBoundingMetrics  mBoundingMetrics;
-   nsStyleContext*    mStyleContext;
- 
-diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
---- a/modules/libpref/src/init/all.js
-+++ b/modules/libpref/src/init/all.js
-@@ -1623,17 +1623,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
- 
- // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
- // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
- pref("intl.hyphenation-alias.no", "nb");
- pref("intl.hyphenation-alias.no-*", "nb");
- pref("intl.hyphenation-alias.nb-*", "nb");
- pref("intl.hyphenation-alias.nn-*", "nn");
- 
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans");
- 
- // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
- // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
- pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
- 
- pref("images.dither", "auto");
- pref("security.directory",              "");
- 
-@@ -2613,17 +2613,17 @@ pref("font.default.zh-TW", "sans-serif")
- pref("font.size.variable.zh-TW", 16);
- pref("font.size.fixed.zh-TW", 16);
- 
- pref("font.default.zh-HK", "sans-serif");
- pref("font.size.variable.zh-HK", 16);
- pref("font.size.fixed.zh-HK", 16);
- 
- // We have special support for Monotype Symbol on Windows.
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans");
- 
- // cleartype settings - false implies default system settings 
- 
- // use cleartype rendering for downloadable fonts (win xp only)
- pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
- 
- // use cleartype rendering for all fonts always (win xp only)
- pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -3141,17 +3141,17 @@ pref("font.default.zh-TW", "sans-serif")
- pref("font.size.variable.zh-TW", 15);
- pref("font.size.fixed.zh-TW", 16);
- 
- pref("font.default.zh-HK", "sans-serif");
- pref("font.size.variable.zh-HK", 15);
- pref("font.size.fixed.zh-HK", 16);
- 
- // Apple's Symbol is Unicode so use it
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans");
- 
- // individual font faces to be treated as independent families
- // names are Postscript names of each face
- pref("font.single-face-list", "Osaka-Mono");
- 
- // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
- // names are canonical family names (typically English names)
- pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
-@@ -3190,17 +3190,17 @@ pref("mousewheel.enable_pixel_scrolling"
- #endif
- 
- #ifdef XP_OS2
- 
- pref("ui.key.menuAccessKeyFocuses", true);
- 
- pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
- 
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
-+pref("font.mathfont-family", "Latin Modern, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, DejaVu Sans");
- 
- // Languages only need lists if we have a default that might not be available.
- // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
- // maps them to Times New Roman and Helvetica, respectively. Those fonts and
- // Courier are available on OS/2 by default.
- 
- pref("font.name.serif.ar", "Tms Rmn");
- pref("font.name.sans-serif.ar", "Helv");

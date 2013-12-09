@@ -1,8 +1,10 @@
 663740.diff
 407059-1.diff
+407059-2.diff
+407059-3.diff
+try.diff
 disable-scale.diff
 prime.diff
-try.diff
 bug731667_css_atoms.patch
 bug731667_tests.patch
 bug731667_rendering.patch
