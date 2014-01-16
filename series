@@ -3,9 +3,9 @@ italic-correction.diff
 407059-1.diff
 ots-math.diff
 407059-2.diff
-disable-scale.diff
 407059-3.diff
 407059-tests.diff
+disable-scale.diff
 try.diff
 try-c.diff
 bug687807-reftest.diff
