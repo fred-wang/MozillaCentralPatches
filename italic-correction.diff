@@ -1,0 +1,145 @@
+# HG changeset patch
+# Parent 1f835fe670d7c83dd5235a67dcfcd77c1b58d24f
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 928675 - Don't apply italic correction before postscript subscripts. r=roc
+
+diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+--- a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
++++ b/layout/mathml/nsMathMLmmultiscriptsFrame.cpp
+@@ -591,16 +591,22 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+           width = std::max(subScriptSize.Width(), supScriptSize.Width());
+ 
+           if (subScriptFrame) {
+             nscoord x = dx;
+             // prescripts should be right aligned
+             // https://bugzilla.mozilla.org/show_bug.cgi?id=928675
+             if (isPreScript)
+               x += width - subScriptSize.Width();
++            else if (baseFrame &&
++                     baseFrame->GetNextSibling() == subScriptFrame) {
++              // a postscript subscript should be immediately after the base, so
++              // we subtract the italic correction that was added above
++              x -= italicCorrection;
++            }
+             dy = aDesiredSize.TopAscent() - subScriptSize.TopAscent() +
+               maxSubScriptShift;
+             FinishReflowChild (subScriptFrame, aPresContext, nullptr,
+                                subScriptSize,
+                                aFrame->MirrorIfRTL(aDesiredSize.Width(),
+                                                    subScriptSize.Width(),
+                                                    x),
+                                dy, 0);
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -150,16 +150,17 @@ fails == whitespace-trim-4.html whitespa
+ == operator-1.xhtml operator-1-ref.xhtml
+ == scriptshift-1.xhtml scriptshift-1-ref.xhtml
+ == number-size-1.xhtml number-size-1-ref.xhtml
+ == multiscripts-1.html multiscripts-1-ref.html
+ == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
+ == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
+ != menclose-1.html menclose-1-ref.html
+ == mmultiscript-align.html mmultiscript-align-ref.html
++== subscript-italic-correction.html subscript-italic-correction-ref.html
+ == mathvariant-1a.html mathvariant-1a-ref.html
+ == mathvariant-1b.html mathvariant-1b-ref.html
+ == mathvariant-1c.html mathvariant-1c-ref.html
+ == mathvariant-1d.html mathvariant-1d-ref.html
+ == mathvariant-2.html mathvariant-2-ref.html
+ == mathvariant-3.html mathvariant-3-ref.html
+ == mathvariant-4.html mathvariant-4-ref.html
+ == mathvariant-5.html mathvariant-5-ref.html
+diff --git a/layout/reftests/mathml/subscript-italic-correction-ref.html b/layout/reftests/mathml/subscript-italic-correction-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/subscript-italic-correction-ref.html
+@@ -0,0 +1,32 @@
++<!doctype html>
++<html>
++  <head>
++    <title>subscript</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body style="background: #5f5; font-size: 50px;">
++
++    <div>
++      <math>
++        <msubsup>
++          <mi>f</mi>
++          <mspace id="s1" width="50px" height="50px" mathbackground="blue"/>
++          <mspace id="s2" width="50px" height="50px" mathbackground="blue"/>
++        </msubsup>
++      </math>
++    </div>
++
++    <br/>
++
++    <div>
++      <math>
++        <mmultiscripts>
++          <mi>f</mi>
++          <mspace id="s3" width="50px" height="50px" mathbackground="blue"/>
++          <mspace id="s4" width="50px" height="50px" mathbackground="blue"/>
++        </mmultiscripts>
++      </math>
++    </div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/subscript-italic-correction.html b/layout/reftests/mathml/subscript-italic-correction.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/subscript-italic-correction.html
+@@ -0,0 +1,51 @@
++<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>subscript</title>
++    <meta charset="utf-8"/>
++    <script type="text/javascript">
++      function doTest()
++      {
++        var s1 = document.getElementById("s1");
++        var s2 = document.getElementById("s2");
++        var s3 = document.getElementById("s3");
++        var s4 = document.getElementById("s4");
++        var epsilon = 5;
++        var shift1 = (s1.getBoundingClientRect().left <
++                      s2.getBoundingClientRect().left - epsilon);
++        var shift2 = (s3.getBoundingClientRect().left <
++                      s4.getBoundingClientRect().left - epsilon);
++        if (shift1 && shift2) {
++          document.body.style.background = "#5f5";
++        }
++        document.documentElement.removeAttribute("class");
++      }
++      window.addEventListener("MozReftestInvalidate", doTest, false);
++    </script>
++  </head>
++  <body style="background: #f00; font-size: 50px;">
++
++    <div>
++      <math>
++        <msubsup>
++          <mi>f</mi>
++          <mspace id="s1" width="50px" height="50px" mathbackground="blue"/>
++          <mspace id="s2" width="50px" height="50px" mathbackground="blue"/>
++        </msubsup>
++      </math>
++    </div>
++
++    <br/>
++
++    <div>
++      <math>
++        <mmultiscripts>
++          <mi>f</mi>
++          <mspace id="s3" width="50px" height="50px" mathbackground="blue"/>
++          <mspace id="s4" width="50px" height="50px" mathbackground="blue"/>
++        </mmultiscripts>
++      </math>
++    </div>
++
++  </body>
++</html>

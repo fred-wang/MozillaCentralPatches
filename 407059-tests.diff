@@ -1,0 +1,377 @@
+# HG changeset patch
+# Parent 4d01f80c9ef7ae7f62e07bbdcddc24f26ac1b09d
+# User Frédéric Wang <fred.wang@free.fr>
+Part 4: add reftests. r=karl, b=407059
+
+diff --git a/layout/reftests/fonts/Math.otf b/layout/reftests/fonts/Math.otf
+new file mode 100644
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..01e9d1b044b36c37c50d0de22d46998d2f86014d
+GIT binary patch
+literal 2972
+zc%0o<UuauZ82`TH=FghDG@EUg$z8dHY-~!hB<<!_>TuMBA*+qElraX&ZId=>n<k`b
+z_Xoj^3Dadd-7;NWkx?e@L4267CkY}#_fQoFiXaRJK1_WvQkN`?jo&%<Buy=1VQ-$~
+z+~4>8&hI<tyZ4@R?&<C8>jfK}0wZ|40|E8dPtSf2AQb_OX9I!0o{^nReE`-|0HE~j
+z?c0Cfc4rIuGXREby)SR~4~(4q4gghZ4-Lk(WcU}!L$R+AcQ_i+!p$3Qo~E|XsP2ps
+z;W}#FNcI9%S2UhJezimv*t%GJTsxiwXOK*E(#1Tk#UoFq=VkI~e0-ElOr$Gkpq=vj
+zf!b9-CIuMHg=dd8cKr!9iFF2Fmv?=!gbUyVnYmUlfL<s@W+@zD!<4C=_f%hq3i2yR
+zxDOY=ME5&wm?!^&j`$n2;~HYYY^+5g&q|cw(7rHy4r<#CV@IU}j>vizOCzb`4(#wr
+zjokt-3L8O!SA|W3z(rvjDe6aIOO%~i*d}nGTi9me_mdJO$`B6lC}tx)gGpf<D4o}Y
+zZG`7wTG$e4%EC5*iZ)@J!HRpJ8xoL&6Oe)!3_}#sl+9Kcgl&X=@PZFI$m${0Nm7i_
+zPa~g2r6`VFHHwLmH4f07NS;W=hNEe9>)<xk@AY-4J&BXCu`x~UPNb5Fl$MSqNY}%I
+zqGV`kc7+IpsgFsBlM@NYCJ6()%QVLnr551{c_<|nI(bTZAG+s*9pI*`yOuNr665JW
+zA~hUQ{T{E{sj{&Md^_AeH%o0r8vQgz3MRzOsMHVZ$-|M23jLAP1m&-Ky*`iE>s43u
+zz~75r74hc!*wf~|1iJ_u_^dV1EShcmu<b^r!sboe4A~!5DwTV8hwg^&4lbX)G$U3_
+z=YN*}YX2V;u_`O4*nY9H(DIT15l#G6pn-_qVj~oNSo9l;?Z)B;sr8=WdPO$2zBF5r
+zrPc;mGu6L6lc^c9C8I2W;siwolY*U%3V=hw*g6F^DaMiYu+hL5TqCr=CUC*iG}m_1
+zLOVc9JO~HrRrkXoI6_k*0;4p8Qg8)k;M(MP%<tRXt;6#=?9(B@VXs#QpALQ<cIfbo
+zmP#d#O(w(R0~3*`cgh>}P5Gk!DgRhxD9zVeG#(2NB+}_bJe^2Rk+Zs0$R1O5)*_z8
+z*YOQJhZ#JNZ{k~c0pG@V@FHHqEMCTU@jbkP)A&AK#Tjt2$FP}piB7t8jdp?4a0#x%
+zE%*}dz|ZhIHlPzd*o6mim^!|SH}NZ_G@8j3gE`FQ3b%8{TuaeYyjAv?bLBJ5#bDuf
+zIcTvjZnG=JZ(RiqGkK#+$``cFW;=HaA@U2Mg7zq6wkr=m(8)PQ&Jj6hwrBEOm7%E6
+zW{X`ZNlfFCitd6|c2j#HBm~q==uwDCMuj9xk}Q+VRV8yInX}k+kGcqz-8C;uUX~@B
+zDP@g|S*es&tguM&4>DETVt=s6EX>e_X$aWA2wYY3EcQ}G7cz~^*#)7gdQ3x7MwGG{
+zohxNcJd%-%L^>F`NTlKzt+LDY)pqM>wQGysq;toR=!F_h)1Qqh)2R3BNJ@h@6+%sl
+z<#KaIZYXFC`TY63ESIvjeEyGzn!HwDid5#Go&AR4vTrwQX@H;5Lkp(My!2^ZU6~j7
+z)GD;ol*Z61bnUv9W7V$fV;SFGSL@=D_KCl4lifv|Lkppcu=>qMzGc*VE~+xDr?W`w
+zzh<Q?o3J0l^vyPr(gQnT4}A<@fWt5VBec03q8)LqgwSY3SSRZzC+0I`97D#l6+S~+
+zncD2cJA_siTD#CP{$nw|37Q%3^UXS8A#7llb2-;i(>-3?`kL>kX_{(rOWYHW9f$mh
+yT3`*$L>u=E^mHV49%9Eye&S>^hn)%A1y1Y8kDK#Lm1(VYRjxx><lqpM`F{gqujyL=
+
+diff --git a/layout/reftests/fonts/math-generate.py b/layout/reftests/fonts/math-generate.py
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/fonts/math-generate.py
+@@ -0,0 +1,188 @@
++#!/usr/bin/python
++# vim: set shiftwidth=4 tabstop=8 autoindent expandtab:
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++# For general fontforge documentation, see:
++#   http://fontforge.sourceforge.net/
++# For fontforge scripting documentation, see:
++#   http://fontforge.sourceforge.net/scripting-tutorial.html
++#   http://fontforge.sourceforge.net/scripting.html
++# and most importantly:
++#   http://fontforge.sourceforge.net/python.html
++
++# To install what you need, on Ubuntu,
++#   sudo apt-get install python-fontforge
++
++import fontforge
++
++em = 1024
++nvariants = 3
++
++f = fontforge.font()
++n = "Math"
++f.fontname = n
++f.familyname = n
++f.fullname = n
++f.copyright = "Copyright (c) 2014 Mozilla Corporation"
++f.encoding = "UnicodeFull"
++f.em = em
++
++# Set DisplayOperatorMinHeight
++f.math.DisplayOperatorMinHeight = 8 * em
++
++# Create a space character. Also force the creation of some MATH subtables.
++g = f.createChar(ord(" "), "space")
++g.width = em
++g.italicCorrection = 0
++g.topaccent = 0
++g.mathKern.bottomLeft = tuple([(0,0)])
++g.mathKern.bottomRight = tuple([(0,0)])
++g.mathKern.topLeft = tuple([(0,0)])
++g.mathKern.topRight = tuple([(0,0)])
++
++# Draw boxes for the size variants and glues
++for i in range(0, nvariants):
++    s = em * (i + 1)
++
++    g = f.createChar(-1, "h%d" % i)
++    p = g.glyphPen()
++    p.moveTo(0, -em)
++    p.lineTo(0, em)
++    p.lineTo(s, em)
++    p.lineTo(s, -em)
++    p.closePath()
++    g.width = s
++
++    g = f.createChar(-1, "v%d" % i)
++    p = g.glyphPen()
++    p.moveTo(0, 0)
++    p.lineTo(2 * em, 0)
++    p.lineTo(2 * em, s)
++    p.lineTo(0, s)
++    p.closePath();
++    g.width = 2 * em
++
++# Draw some pieces for stretchy operators
++s = em * nvariants
++
++g = f.createChar(-1, "left")
++p = g.glyphPen()
++p.moveTo(0, -2 * em)
++p.lineTo(0, 2 * em)
++p.lineTo(s, em)
++p.lineTo(s, -em)
++p.closePath();
++g.width = s
++
++g = f.createChar(-1, "right")
++p = g.glyphPen()
++p.moveTo(0, -em)
++p.lineTo(0, em)
++p.lineTo(s, 2 * em)
++p.lineTo(s, -2 * em)
++p.closePath();
++g.width = s
++
++g = f.createChar(-1, "hmid")
++p = g.glyphPen()
++p.moveTo(0, -em)
++p.lineTo(0, em)
++p.lineTo(s, 2 * em)
++p.lineTo(2 * s, em)
++p.lineTo(2 * s, -em)
++p.lineTo(s, -2 * em)
++p.closePath();
++g.width = 2 * s
++
++g = f.createChar(-1, "bottom")
++p = g.glyphPen()
++p.moveTo(0, 0)
++p.lineTo(4 * em, 0)
++p.lineTo(2 * em, s)
++p.lineTo(0, s)
++p.closePath();
++g.width = 4 * em
++
++g = f.createChar(-1, "top")
++p = g.glyphPen()
++p.moveTo(0, 0)
++p.lineTo(4 * em, 0)
++p.lineTo(2 * em, -s)
++p.lineTo(0, -s)
++p.closePath();
++g.width = 4 * em
++
++g = f.createChar(-1, "vmid")
++p = g.glyphPen()
++p.moveTo(0, s)
++p.lineTo(2 * em, s)
++p.lineTo(4 * em, 0)
++p.lineTo(2 * em, -s)
++p.lineTo(0, -s)
++p.closePath();
++g.width = 3 * em
++
++# Create small rectangle of various size for some exotic arrows that are
++# unlikely to be stretchable with standard fonts.
++hstretchy = [
++    0x219C, # leftwards wave arrow
++    0x219D, # rightwards wave arrow
++    0x219E, # leftwards two headed arrow
++    0x21A0, # rightwards two headed arrow
++    0x21A2  # leftwards arrow with tail
++]
++vstretchy = [
++    0x219F, # upwards two headed arrow
++    0x21A1, # downwards two headed arrow
++    0x21A5, # upwards arrow from bar
++    0x21A7, # downwards arrow from bar
++    0x21A8  # up down arrow with base
++]
++for i in range(0, 1 + nvariants + 1):
++    s = (i + 1) * em/10
++
++    g = f.createChar(hstretchy[i])
++    p = g.glyphPen()
++    p.moveTo(0, -em/10)
++    p.lineTo(0, em/10)
++    p.lineTo(s, em/10)
++    p.lineTo(s, -em/10)
++    p.closePath()
++    g.width = s
++
++    g = f.createChar(vstretchy[i])
++    p = g.glyphPen()
++    p.moveTo(0, 0)
++    p.lineTo(2 * em/10, 0)
++    p.lineTo(2 * em/10, s)
++    p.lineTo(0, s)
++    p.closePath();
++    g.width = 2 * em/10
++
++# hstretchy[0] and vstretchy[0] have all the variants and the components. The others only have one of them.
++s = em * nvariants
++
++f[hstretchy[0]].horizontalVariants = "h0 h1 h2"
++f[hstretchy[0]].horizontalComponents = (("left", False, 0, 0, s), \
++("h2", True, 0, 0, s), ("hmid", False, 0, 0, 2 * s), ("h2", True, 0, 0, s), \
++("right", False, 0, 0, s))
++
++f[hstretchy[1]].horizontalVariants = "h0"
++f[hstretchy[2]].horizontalVariants = "h1"
++f[hstretchy[3]].horizontalVariants = "h2"
++f[hstretchy[4]].horizontalComponents = f[hstretchy[0]].horizontalComponents
++
++
++f[vstretchy[0]].verticalVariants = "v0 v1 v2"
++f[vstretchy[0]].verticalComponents = (("bottom", False, 0, 0, s), \
++("v2", True, 0, 0, s), ("vmid", False, 0, 0, 2 * s), ("v2", True, 0, 0, s), \
++("top", False, 0, 0, s))
++
++f[vstretchy[1]].verticalVariants = "v0"
++f[vstretchy[2]].verticalVariants = "v1"
++f[vstretchy[3]].verticalVariants = "v2"
++f[vstretchy[4]].verticalComponents = f[vstretchy[0]].verticalComponents
++
++f.generate(n + ".otf")
+diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests/mathml/opentype-stretchy-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/opentype-stretchy-ref.html
+@@ -0,0 +1,57 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - stretchy operator</title>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      @font-face {
++        font-family: test;
++        src: url(../fonts/Math.otf);
++      }
++      body, math, mo, ::-moz-math-stretchy {
++        font-family: test;
++        font-size: 20px;
++      }
++    </style>
++  </head>
++  <body>
++
++<!--
++hstretchy = [
++    0x219C, # leftwards wave arrow
++    0x219D, # rightwards wave arrow
++    0x219E, # leftwards two headed arrow
++    0x21A0, # rightwards two headed arrow
++    0x21A2  # leftwards arrow with tail
++]
++vstretchy = [
++    0x219F, # upwards two headed arrow
++    0x21A1, # downwards two headed arrow
++    0x21A5, # upwards arrow from bar
++    0x21A7, # downwards arrow from bar
++    0x21A8  # up down arrow with base
++]
++
++hstretchy[0] and vstretchy[0] have all the variants and the components. The others only have one of them.
++-->
++
++    <p>
++      <math>
++        <mstyle scriptsizemultiplier="1">
++          <mover><mo stretchy="true">&#x219D;</mo><mspace width="1em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x219E;</mo><mspace width="2em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x21A0;</mo><mspace width="3em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x21A2;</mo><mspace width="15em" height="1px" mathbackground="red"/></mover>
++        </mstyle>
++      </math>
++    </p>
++
++    <p>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="1em">&#x21A1;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="2em">&#x21A5;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="3em">&#x21A7;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="15em">&#x21A8;</mo></mrow></math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/opentype-stretchy.html b/layout/reftests/mathml/opentype-stretchy.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/opentype-stretchy.html
+@@ -0,0 +1,57 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - stretchy operator</title>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      @font-face {
++        font-family: test;
++        src: url(../fonts/Math.otf);
++      }
++      body, math, mo, ::-moz-math-stretchy {
++        font-family: test;
++        font-size: 20px;
++      }
++    </style>
++  </head>
++  <body>
++
++<!--
++hstretchy = [
++    0x219C, # leftwards wave arrow
++    0x219D, # rightwards wave arrow
++    0x219E, # leftwards two headed arrow
++    0x21A0, # rightwards two headed arrow
++    0x21A2  # leftwards arrow with tail
++]
++vstretchy = [
++    0x219F, # upwards two headed arrow
++    0x21A1, # downwards two headed arrow
++    0x21A5, # upwards arrow from bar
++    0x21A7, # downwards arrow from bar
++    0x21A8  # up down arrow with base
++]
++
++hstretchy[0] and vstretchy[0] have all the variants and the components. The others only have one of them.
++-->
++
++    <p>
++      <math>
++        <mstyle scriptsizemultiplier="1">
++          <mover><mo stretchy="true">&#x219C;</mo><mspace width="1em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x219C;</mo><mspace width="2em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x219C;</mo><mspace width="3em" height="1px" mathbackground="red"/></mover>
++          <mover><mo stretchy="true">&#x219C;</mo><mspace width="15em" height="1px" mathbackground="red"/></mover>
++        </mstyle>
++      </math>
++    </p>
++
++    <p>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="1em">&#x219F;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="2em">&#x219F;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="3em">&#x219F;</mo></mrow></math>
++      <math><mrow><mo symmetric="false" stretchy="true" minsize="15em">&#x219F;</mo></mrow></math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -143,16 +143,17 @@ skip-if(B2G) == maction-dynamic-1.html m
+ == mo-lspace-rspace.html mo-lspace-rspace-ref.html
+ skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
+ == whitespace-trim-1.html whitespace-trim-1-ref.html
+ == whitespace-trim-2.html whitespace-trim-2-ref.html
+ == whitespace-trim-3.html whitespace-trim-3-ref.html
+ fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
+ == whitespace-trim-5.html whitespace-trim-5-ref.html
+ == operator-1.xhtml operator-1-ref.xhtml
++== opentype-stretchy.html opentype-stretchy-ref.html
+ == scriptshift-1.xhtml scriptshift-1-ref.xhtml
+ == number-size-1.xhtml number-size-1-ref.xhtml
+ == multiscripts-1.html multiscripts-1-ref.html
+ == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
+ == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
+ != menclose-1.html menclose-1-ref.html
+ == mmultiscript-align.html mmultiscript-align-ref.html
+ == subscript-italic-correction.html subscript-italic-correction-ref.html

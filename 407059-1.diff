@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent fbdb14e21214b5761f617d352fb8b64647c211ce
+# Parent 1a01899e7ce30ecb2e406967987cc4d8fba39740
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -7,7 +7,7 @@ diff --git a/gfx/thebes/MathTableStructures.h b/gfx/thebes/MathTableStructures.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/MathTableStructures.h
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,113 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -65,6 +65,19 @@ new file mode 100644
 +  MathValueRecord            mMathValues[gfxFontEntry::RadicalKernAfterDegree -
 +                                         gfxFontEntry::MathLeading + 1];
 +  mozilla::AutoSwap_PRUint16 mRadicalDegreeBottomRaisePercent;
++};
++
++struct MathGlyphInfo {
++  Offset mMathItalicsCorrectionInfo;
++  Offset mMathTopAccentAttachment;
++  Offset mExtendedShapeCoverage;
++  Offset mMathKernInfo;
++};
++
++struct MathItalicsCorrectionInfo {
++  Offset  mCoverage;
++  Count16 mItalicsCorrectionCount;
++  // MathValueRecord mItalicsCorrection[mItalicsCorrectionCount]
 +};
 +
 +struct MathVariants {
@@ -165,7 +178,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -369,16 +372,69 @@ void
+@@ -369,16 +372,81 @@ void
  gfxFontEntry::NotifyGlyphsChanged()
  {
      for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
@@ -189,15 +202,15 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +        // blob to the gfxMathTable, once we've confirmed the table exists
 +        hb_blob_t *mathTable = GetFontTable(TRUETYPE_TAG('M','A','T','H'));
 +        if (!mathTable) {
-+            return nullptr;
++            return false;
 +        }
 +
 +        // gfxMathTable will hb_blob_destroy() the table when it is finished
 +        // with it.
-+        mMathTable = new gfxMathTable(mathTable, this);
++        mMathTable = new gfxMathTable(mathTable);
 +        if (!mMathTable->HasValidHeaders()) {
 +            mMathTable = nullptr;
-+            return nullptr;
++            return false;
 +        }
 +    }
 +
@@ -209,6 +222,18 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
 +    return gfxFloat(mMathTable->GetMathConstant(aConstant)) / mUnitsPerEm;
++}
++
++bool gfxFontEntry::GetMathItalicCorrection(uint32_t aGlyphID,
++                                           gfxFloat* aItalicCorrection)
++{
++    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
++    uint16_t italicCorrection;
++    if (!mMathTable->GetMathItalicCorrection(aGlyphID, &italicCorrection)) {
++        return false;
++    }
++    *aItalicCorrection = gfxFloat(italicCorrection) / mUnitsPerEm;
++    return true;
 +}
 +
 +uint32_t
@@ -256,7 +281,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
  
-@@ -306,16 +307,83 @@ public:
+@@ -306,16 +307,88 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -266,67 +291,72 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      void NotifyGlyphsChanged();
  
 +    // Call TryGetMathTable to try to load the Open Type MATH table. The other
-+    // functions forward the call to the gfxMathTable class.
++    // functions forward the call to the gfxMathTable class. The GetMath...()
++    // functions MUST NOT be called unless TryGetMathTable() has returned true.
 +    bool     TryGetMathTable(gfxFont* aFont);
 +    enum MathConstant {
-+      ScriptPercentScaleDown,
-+      ScriptScriptPercentScaleDown,
-+      DelimitedSubFormulaMinHeight,
-+      DisplayOperatorMinHeight,
-+      MathLeading,
-+      AxisHeight,
-+      AccentBaseHeight,
-+      FlattenedAccentBaseHeight,
-+      SubscriptShiftDown,
-+      SubscriptTopMax,
-+      SubscriptBaselineDropMin,
-+      SuperscriptShiftUp,
-+      SuperscriptShiftUpCramped,
-+      SuperscriptBottomMin,
-+      SuperscriptBaselineDropMax,
-+      SubSuperscriptGapMin,
-+      SuperscriptBottomMaxWithSubscript,
-+      SpaceAfterScript,
-+      UpperLimitGapMin,
-+      UpperLimitBaselineRiseMin,
-+      LowerLimitGapMin,
-+      LowerLimitBaselineDropMin,
-+      StackTopShiftUp,
-+      StackTopDisplayStyleShiftUp,
-+      StackBottomShiftDown,
-+      StackBottomDisplayStyleShiftDown,
-+      StackGapMin,
-+      StackDisplayStyleGapMin,
-+      StretchStackTopShiftUp,
-+      StretchStackBottomShiftDown,
-+      StretchStackGapAboveMin,
-+      StretchStackGapBelowMin,
-+      FractionNumeratorShiftUp,
-+      FractionNumeratorDisplayStyleShiftUp,
-+      FractionDenominatorShiftDown,
-+      FractionDenominatorDisplayStyleShiftDown,
-+      FractionNumeratorGapMin,
-+      FractionNumDisplayStyleGapMin,
-+      FractionRuleThickness,
-+      FractionDenominatorGapMin,
-+      FractionDenomDisplayStyleGapMin,
-+      SkewedFractionHorizontalGap,
-+      SkewedFractionVerticalGap,
-+      OverbarVerticalGap,
-+      OverbarRuleThickness,
-+      OverbarExtraAscender,
-+      UnderbarVerticalGap,
-+      UnderbarRuleThickness,
-+      UnderbarExtraDescender,
-+      RadicalVerticalGap,
-+      RadicalDisplayStyleVerticalGap,
-+      RadicalRuleThickness,
-+      RadicalExtraAscender,
-+      RadicalKernBeforeDegree,
-+      RadicalKernAfterDegree,
-+      RadicalDegreeBottomRaisePercent
++        // The order of the constants must match the order of the fields
++        // defined in the MATH table.
++        ScriptPercentScaleDown,
++        ScriptScriptPercentScaleDown,
++        DelimitedSubFormulaMinHeight,
++        DisplayOperatorMinHeight,
++        MathLeading,
++        AxisHeight,
++        AccentBaseHeight,
++        FlattenedAccentBaseHeight,
++        SubscriptShiftDown,
++        SubscriptTopMax,
++        SubscriptBaselineDropMin,
++        SuperscriptShiftUp,
++        SuperscriptShiftUpCramped,
++        SuperscriptBottomMin,
++        SuperscriptBaselineDropMax,
++        SubSuperscriptGapMin,
++        SuperscriptBottomMaxWithSubscript,
++        SpaceAfterScript,
++        UpperLimitGapMin,
++        UpperLimitBaselineRiseMin,
++        LowerLimitGapMin,
++        LowerLimitBaselineDropMin,
++        StackTopShiftUp,
++        StackTopDisplayStyleShiftUp,
++        StackBottomShiftDown,
++        StackBottomDisplayStyleShiftDown,
++        StackGapMin,
++        StackDisplayStyleGapMin,
++        StretchStackTopShiftUp,
++        StretchStackBottomShiftDown,
++        StretchStackGapAboveMin,
++        StretchStackGapBelowMin,
++        FractionNumeratorShiftUp,
++        FractionNumeratorDisplayStyleShiftUp,
++        FractionDenominatorShiftDown,
++        FractionDenominatorDisplayStyleShiftDown,
++        FractionNumeratorGapMin,
++        FractionNumDisplayStyleGapMin,
++        FractionRuleThickness,
++        FractionDenominatorGapMin,
++        FractionDenomDisplayStyleGapMin,
++        SkewedFractionHorizontalGap,
++        SkewedFractionVerticalGap,
++        OverbarVerticalGap,
++        OverbarRuleThickness,
++        OverbarExtraAscender,
++        UnderbarVerticalGap,
++        UnderbarRuleThickness,
++        UnderbarExtraDescender,
++        RadicalVerticalGap,
++        RadicalDisplayStyleVerticalGap,
++        RadicalRuleThickness,
++        RadicalExtraAscender,
++        RadicalKernBeforeDegree,
++        RadicalKernAfterDegree,
++        RadicalDegreeBottomRaisePercent
 +    };
 +    gfxFloat GetMathConstant(MathConstant aConstant);
++    bool     GetMathItalicCorrection(uint32_t aGlyphID,
++                                     gfxFloat* aItalicCorrection);
 +    uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                 uint16_t aSize);
 +    bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
@@ -340,7 +370,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -428,16 +496,17 @@ public:
+@@ -428,16 +501,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -358,7 +388,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -451,16 +520,17 @@ public:
+@@ -451,16 +525,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -380,7 +410,7 @@ diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.cpp
-@@ -0,0 +1,382 @@
+@@ -0,0 +1,455 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -390,10 +420,11 @@ new file mode 100644
 +#include "MathTableStructures.h"
 +#include "gfxFont.h"
 +#include "harfbuzz/hb.h"
++#include <algorithm>
 +
 +using namespace mozilla;
 +
-+gfxMathTable::gfxMathTable(hb_blob_t* aMathTable, gfxFontEntry* aFontEntry)
++gfxMathTable::gfxMathTable(hb_blob_t* aMathTable)
 +  : mMathTable(aMathTable)
 +  , mGlyphConstruction(nullptr)
 +  , mGlyphID(0)
@@ -409,8 +440,7 @@ new file mode 100644
 +bool
 +gfxMathTable::HasValidHeaders()
 +{
-+  unsigned int mathDataLength;
-+  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  const char* mathData = hb_blob_get_data(mMathTable, nullptr);
 +  // Verify the MATH table header.
 +  if (!ValidStructure(mathData, sizeof(MATHTableHeader))) {
 +    return false;
@@ -425,8 +455,15 @@ new file mode 100644
 +
 +  // Verify the MathConstants header.
 +  const MathConstants* mathconstants = GetMathConstants();
-+  const char *start = reinterpret_cast<const char*>(mathconstants);
++  const char* start = reinterpret_cast<const char*>(mathconstants);
 +  if (!ValidStructure(start, sizeof(MathConstants))) {
++    return false;
++  }
++
++  // Verify the MathGlyphInfo header.
++  const MathGlyphInfo* mathglyphinfo = GetMathGlyphInfo();
++  start = reinterpret_cast<const char*>(mathglyphinfo);
++  if (!ValidStructure(start, sizeof(MathGlyphInfo))) {
 +    return false;
 +  }
 +
@@ -463,6 +500,49 @@ new file mode 100644
 +  return uint16_t(mathconstants->mRadicalDegreeBottomRaisePercent);
 +}
 +
++bool
++gfxMathTable::GetMathItalicCorrection(uint32_t aGlyphID,
++                                      uint16_t* aItalicCorrection)
++{
++  const MathGlyphInfo* mathglyphinfo = GetMathGlyphInfo();
++
++  // Get the offset of the italic correction and verify whether it is valid.
++  const char* start = reinterpret_cast<const char*>(mathglyphinfo);
++  uint16_t offset = mathglyphinfo->mMathItalicsCorrectionInfo;
++  if (offset == 0 || !ValidOffset(start, offset)) {
++    return false;
++  }
++  start += offset;
++
++  // Verify the validy of the MathItalicsCorrectionInfo and retrieve it.
++  if (!ValidStructure(start, sizeof(MathItalicsCorrectionInfo))) {
++    return false;
++  }
++  const MathItalicsCorrectionInfo* italicsCorrectionInfo =
++    reinterpret_cast<const MathItalicsCorrectionInfo*>(start);
++  
++  // Get the coverage index for the glyph.
++  offset = italicsCorrectionInfo->mCoverage;
++  const Coverage* coverage =
++    reinterpret_cast<const Coverage*>(start + offset);
++  int32_t i = GetCoverageIndex(coverage, aGlyphID);
++
++  // Get the ItalicsCorrection.
++  uint16_t count = italicsCorrectionInfo->mItalicsCorrectionCount;
++  if (i < 0 || i >= count) {
++    return false;
++  }
++  start = reinterpret_cast<const char*>(italicsCorrectionInfo + 1);
++  if (!ValidStructure(start, count * sizeof(MathValueRecord))) {
++    return false;
++  }
++  const MathValueRecord* mathValueRecordArray =
++    reinterpret_cast<const MathValueRecord*>(start);
++
++  *aItalicCorrection = uint16_t(mathValueRecordArray[i].mValue);
++  return true;
++}
++
 +uint32_t
 +gfxMathTable::GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                  uint16_t aSize)
@@ -476,7 +556,7 @@ new file mode 100644
 +  // Verify the validity of the array of the MathGlyphVariantRecord's and
 +  // whether there is a variant of the requested size.
 +  uint16_t count = mGlyphConstruction->mVariantCount;
-+  const char *start = reinterpret_cast<const char*>(mGlyphConstruction + 1);
++  const char* start = reinterpret_cast<const char*>(mGlyphConstruction + 1);
 +  if (aSize >= count ||
 +      !ValidStructure(start, count * sizeof(MathGlyphVariantRecord))) {
 +    return 0;
@@ -626,26 +706,34 @@ new file mode 100644
 +const MATHTableHeader*
 +gfxMathTable::GetMATHTableHeader()
 +{
-+  unsigned int mathDataLength;
-+  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  const char* mathData = hb_blob_get_data(mMathTable, nullptr);
 +  return reinterpret_cast<const MATHTableHeader*>(mathData);
-+};
++}
 +
 +const MathConstants*
 +gfxMathTable::GetMathConstants()
 +{
-+  unsigned int mathDataLength;
-+  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  const char* mathData = hb_blob_get_data(mMathTable, nullptr);
 +  return
 +    reinterpret_cast<const MathConstants*>(mathData +
 +                                           uint16_t(GetMATHTableHeader()->
 +                                                    mMathConstants));
 +}
++
++const MathGlyphInfo*
++gfxMathTable::GetMathGlyphInfo()
++{
++  const char* mathData = hb_blob_get_data(mMathTable, nullptr);
++  return
++    reinterpret_cast<const MathGlyphInfo*>(mathData +
++                                           uint16_t(GetMATHTableHeader()->
++                                                    mMathGlyphInfo));
++}
++
 +const MathVariants*
 +gfxMathTable::GetMathVariants()
 +{
-+  unsigned int mathDataLength;
-+  const char* mathData = hb_blob_get_data(mMathTable, &mathDataLength);
++  const char* mathData = hb_blob_get_data(mMathTable, nullptr);
 +  return
 +    reinterpret_cast<const MathVariants*>(mathData +
 +                                          uint16_t(GetMATHTableHeader()->
@@ -688,9 +776,17 @@ new file mode 100644
 +    if (ValidStructure(start, count * sizeof(GlyphID))) {
 +      const GlyphID* glyphArray =
 +        reinterpret_cast<const GlyphID*>(start);
-+      for (uint16_t i = 0; i < count; i++) {
-+        if (uint16_t(glyphArray[i]) == aGlyph) {
-+          return i;
++      uint32_t imin = 0, imax = count;
++      while (imin < imax) {
++        uint32_t imid = (imin + imax) >> 1;
++        uint16_t glyphMid = glyphArray[imid];
++        if (glyphMid == aGlyph) {
++          return imid;
++        }
++        if (glyphMid < aGlyph) {
++          imin = imid + 1;
++        } else {
++          imax = imid;
 +        }
 +      }
 +    }
@@ -703,11 +799,18 @@ new file mode 100644
 +    if (ValidStructure(start, count * sizeof(RangeRecord))) {
 +      const RangeRecord* rangeArray =
 +        reinterpret_cast<const RangeRecord*>(start);
-+      for (uint16_t i = 0; i < count; i++) {
-+        uint16_t rStart = rangeArray[i].mStart;
-+        uint16_t rEnd = rangeArray[i].mEnd;
-+        if (rStart <= aGlyph && aGlyph <= rEnd) {
-+          return uint16_t(rangeArray[i].mStartCoverageIndex) + aGlyph - rStart;
++      uint32_t imin = 0, imax = count;
++      while (imin < imax) {
++        uint32_t imid = (imin + imax) >> 1;
++        uint16_t rStart = rangeArray[imid].mStart;
++        uint16_t rEnd = rangeArray[imid].mEnd;
++        if (rEnd < aGlyph) {
++          imin = imid + 1;
++        } else if (aGlyph < rStart) {
++          imax = imid;
++        } else {
++          return (uint16_t(rangeArray[imid].mStartCoverageIndex) +
++                  aGlyph - rStart);
 +        }
 +      }
 +    }
@@ -730,7 +833,7 @@ new file mode 100644
 +
 +  // Get the coverage index for the new values.
 +  const MathVariants* mathvariants = GetMathVariants();
-+  const char *start = reinterpret_cast<const char*>(mathvariants);
++  const char* start = reinterpret_cast<const char*>(mathvariants);
 +  uint16_t offset = (aVertical ?
 +                     mathvariants->mVertGlyphCoverage :
 +                     mathvariants->mHorizGlyphCoverage);
@@ -767,7 +870,7 @@ diff --git a/gfx/thebes/gfxMathTable.h b/gfx/thebes/gfxMathTable.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.h
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,115 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -783,6 +886,7 @@ new file mode 100644
 +struct MATHTableHeader;
 +struct MathConstants;
 +struct MathGlyphConstruction;
++struct MathGlyphInfo;
 +struct MathVariants;
 +
 +/**
@@ -799,7 +903,7 @@ new file mode 100644
 +     * that are passed in, and will hb_blob_destroy() them when finished;
 +     * the caller should -not- destroy these references.
 +     */
-+    gfxMathTable(hb_blob_t* aMathTable, gfxFontEntry* aFontEntry);
++    gfxMathTable(hb_blob_t* aMathTable);
 +
 +    /**
 +     * Releases our references to the Math table and cleans up everything else.
@@ -810,6 +914,13 @@ new file mode 100644
 +     * Returns the value of the specified constant from the MATH table.
 +     */
 +    uint16_t GetMathConstant(gfxFontEntry::MathConstant aConstant);
++
++    /**
++     *  If the MATH table contains an italic correction for that glyph, this
++     *  function gets the value and returns true. Otherwise it returns false.
++     */
++    bool
++    GetMathItalicCorrection(uint32_t aGlyphID, uint16_t* aItalicCorrection);
 +
 +    /**
 +     * @param aGlyphID  glyph index of the character we want to stretch
@@ -860,6 +971,7 @@ new file mode 100644
 +    // Access to some structures of the MATH table.
 +    const MATHTableHeader* GetMATHTableHeader();
 +    const MathConstants*   GetMathConstants();
++    const MathGlyphInfo*   GetMathGlyphInfo();
 +    const MathVariants*    GetMathVariants();
 +    const GlyphAssembly*   GetGlyphAssembly(uint32_t aGlyphID, bool aVertical);
 +
@@ -895,7 +1007,7 @@ diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
      'gfxPoint3D.h',
      'gfxPointH3D.h',
      'gfxQuad.h',
-@@ -261,16 +262,17 @@ UNIFIED_SOURCES += [
+@@ -245,16 +246,17 @@ UNIFIED_SOURCES += [
      'gfxContext.cpp',
      'gfxFontFeatures.cpp',
      'gfxFontMissingGlyphs.cpp',

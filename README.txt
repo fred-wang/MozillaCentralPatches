@@ -18,12 +18,7 @@ stable patches below and I'll try to update them as soon as possible.
 
 * Stable patches
 
-  { semantics.diff
-  { semantics-reftests.diff
-  { negative-spacing.diff
-  { negative-spacing-reftest.diff
   { bug687807.diff
-  { remove-test-pages.diff
 
 * Work in progress patches:
 
@@ -37,12 +32,6 @@ stable patches below and I'll try to update them as soon as possible.
       Register Mac flavors? Implement TeX paste in plain text editor?
       Use XML serializer/parser?
 
-  { nsMathMLChar.diff
-   => Not tested much (may change the rendering of some operators).
-
-   { bug415413.diff
-   => Does not work.
-
 * Experimental and old patches:
 
   - try.diff (used to push to try server)
@@ -55,15 +44,6 @@ stable patches below and I'll try to update them as soon as possible.
   around each graphical components and nsMathMLchars. But that may not be
   the best approach (see comments on these bugs).
 
-  { mathml-token-1.diff
-  { mathml-token-2.diff
-  { mathml-token-3.diff
-  { mathml-token-4.diff
-  { mathml-token-5.diff
-
-  - remove-stix-beta.diff
-    => Pending
-
   - largeop-initial-stretch.diff
   - opdict-diagonal-arrows.diff
   - rotate_stretchy.diff
@@ -73,10 +53,6 @@ stable patches below and I'll try to update them as soon as possible.
   { mglyph-2.diff
   { mglyph-3.diff
     => May crash Mozilla.
-
-  { ms-quotes-1.diff
-  { ms-quotes-2.diff
-    => Need feedback for the style part, fail dir=rtl and setAttribute tests.
 
   { download-fonts-1.diff
   { download-fonts-2.diff

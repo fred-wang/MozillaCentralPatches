@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0204febd31467c1cd357728a45c0e3e508487fd8
+# Parent 12d3ba62a5995c5eaeb21cc673456a61c56e4307
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 663740 - migrate nsMathMLChar measuring and drawing from nsRenderingContext to gfx/thebes classes. r=karlt.
 
@@ -1305,15 +1305,15 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
 +// 2) a glyph index from the Open Type MATH table. In that case, all the glyphs
 +// come from the font containing that table and 'font' is just set to -1.
  struct nsGlyphCode {
--  PRUnichar code[2]; 
+-  char16_t code[2]; 
 -  int32_t   font;
 +  union {
-+    PRUnichar code[2];
++    char16_t code[2];
 +    uint32_t glyphID;
 +  };
 +  int8_t   font;
  
--  int32_t Length() { return (code[1] == PRUnichar('\0') ? 1 : 2); }
+-  int32_t Length() { return (code[1] == char16_t('\0') ? 1 : 2); }
 +  bool IsGlyphID() const { return font == -1; }
 +
 +  int32_t Length() const {

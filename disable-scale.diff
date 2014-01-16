@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 365c57af00f8d7f50929f48e8b70589351a3ecc9
+# Parent f7eda2fe7ee67c11c7adb8316916c49b8bdb4f84
 # User Frédéric Wang <fred.wang@free.fr>
 Disable scale.
 
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1848,46 +1848,46 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1817,46 +1817,46 @@ nsMathMLChar::StretchInternal(nsPresCont
      // variables accordingly.
      if (!glyphFound) mDraw = DRAW_NORMAL;
      mUnscaledAscent = aDesiredStretchSize.ascent;
@@ -49,9 +49,9 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // We do not have a char variant for this largeop in display mode, so we
    // apply a scale transform to the base char.
 -  if (!glyphFound && largeop) {
-+  if (!glyphFound && largeop && false) {
++  if (false && !glyphFound && largeop) {
      float scale;
-     float largeopFactor = float(M_SQRT2);
+     float largeopFactor = kLargeOpFactor;
  
      // increase the width if it is not largeopFactor times larger
      // than the initial one.
