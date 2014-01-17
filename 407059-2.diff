@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 3b8d57914cda0ee5147e22b8dea26c915e8862d9
+# Parent 681cdc8d1ddebd9b08186788a96f6533c36c2aec
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: make nsMathMLChar use the MATH table. r=karl, b=407059
 
@@ -646,7 +646,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
   The Stretch:
   @param aContainerSize - suggested size for the stretched char
   @param aDesiredStretchSize - OUT parameter. The desired size
-@@ -963,20 +1159,39 @@ public:
+@@ -963,53 +1159,103 @@ public:
          NS_ERROR("This shouldn't be called because we never enable spacing");
      }
  };
@@ -686,11 +686,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
  nsBoundingMetrics
  nsMathMLChar::MeasureGlyph(gfxContext*        aThebesContext,
-                            const nsGlyphCode& aGlyph)
+-                           const nsGlyphCode& aGlyph)
++                           const nsGlyphCode& aGlyph, bool aLargeOp)
  {
    nsAutoPtr<gfxTextRun> textRun;
    textRun = MakeTextRun(aThebesContext, aGlyph);
-@@ -988,28 +1203,41 @@ nsMathMLChar::MeasureGlyph(gfxContext*  
+ 
+   StubPropertyProvider provider;
+   gfxTextRun::Metrics metrics =
+     textRun->MeasureText(0, aGlyph.Length(),
+                          gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS,
                           aThebesContext, &provider);
  
    nsBoundingMetrics bm;
@@ -699,21 +704,38 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    bm.ascent = NSToCoordCeil(-metrics.mBoundingBox.Y());
    bm.descent = NSToCoordCeil(metrics.mBoundingBox.YMost());
    bm.width = NSToCoordRound(metrics.mAdvanceWidth);
--
 +  if (aGlyph.IsGlyphID()) {
-+    // This a glyph index so the advance width returned by MeasureText is just
-+    // the zero value we specified in MakeTextRun. To get a better value we use
-+    // the italic correction given in the MATH table.
-+    gfxFloat italicCorrection;
-+    if (mFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
-+        GetFontEntry()->GetMathItalicCorrection(aGlyph.glyphID,
-+                                                &italicCorrection)) {
-+      bm.width = bm.rightBearing - italicCorrection * mFontMetrics->EmHeight();
-+      if (bm.width < 0) {
-+        bm.width = 0;
-+      }
++    // This is a glyph index so the advance width returned by MeasureText is
++    // just the zero value we specified in nsMathMLChar::MakeTextRun. Try to use
++    // GetGlyphWidth if it is available or otherwise fallback to
++    // rightBearing - leftBearing.
++    // XXXfredw: Is it possible that an Open Type MATH font does not provide
++    // glyph widths? If not, then we could just set the advance width in
++    // nsMathMLChar::MakeTextRun.
++    gfxFont* mathFont = mFontMetrics->GetThebesFontGroup()->GetFontAt(0);
++    if (mathFont->ProvidesGlyphWidths()) {
++      bm.width = mathFont->GetGlyphWidth(aThebesContext, aGlyph.glyphID) *
++        mFontMetrics->AppUnitsPerDevPixel() / 65536.0;
 +    } else {
 +      bm.width = bm.rightBearing - bm.leftBearing;
++    }
+ 
++    if (aLargeOp) {
++      // For large operator, the application of italic correction is reversed
++      // in the Open Type MATH spec. Hence we modify the advance width here so
++      // that nsMathMLmmultiscripts will place the scripts correctly. Note that
++      // STIX-Word does not provide italic correction for large operators but
++      // also does not give the advance width expected by the Open Type MATH
++      // spec, so we actually don't need to correct the value computed above.
++      // See https://bugzilla.mozilla.org/show_bug.cgi?id=407059#c71
++      gfxFloat italicCorrection;
++      if (mathFont->GetFontEntry()->
++          GetMathItalicCorrection(aGlyph.glyphID, &italicCorrection)) {
++        bm.width -= italicCorrection * mFontMetrics->EmHeight();
++        if (bm.width < 0) {
++          bm.width = 0;
++        }
++      }
 +    }
 +  }
    return bm;
@@ -735,7 +757,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    textRun->Draw(aThebesContext, pt, DrawMode::GLYPH_FILL, 0, aGlyph.Length(),
                  &provider, nullptr, nullptr);
  }
-@@ -1086,23 +1314,43 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1086,36 +1332,56 @@ nsMathMLChar::StretchEnumContext::TryVar
  
    nscoord bestSize =
      isVertical ? mBoundingMetrics.ascent + mBoundingMetrics.descent
@@ -758,7 +780,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +    if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
 +      return true;
 +    }
-+    nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch);
++    nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch, largeop);
 +    nscoord minHeight = largeopFactor * (bm.ascent + bm.descent);
 +    if (displayOperatorMinHeight < minHeight) {
 +      displayOperatorMinHeight = minHeight;
@@ -781,7 +803,21 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        continue;
      }
  
-@@ -1123,18 +1371,16 @@ nsMathMLChar::StretchEnumContext::TryVar
+     NS_ASSERTION(maxWidth || ch != mChar->mGlyphs[0] ||
+                  !font.name.Equals(mChar->mFamily),
+                  "glyph table incorrectly set -- duplicate found");
+ 
+-    nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch);
++    nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch, largeop);
+ 
+     nscoord charSize =
+       isVertical ? bm.ascent + bm.descent
+       : bm.rightBearing - bm.leftBearing;
+ 
+     if (largeopOnly ||
+         IsSizeBetter(charSize, bestSize, mTargetSize, mStretchHint)) {
+       mGlyphFound = true;
+@@ -1123,18 +1389,16 @@ nsMathMLChar::StretchEnumContext::TryVar
          // IsSizeBetter() checked that charSize < maxsize;
          // Leave ascent, descent, and bestsize as these contain maxsize.
          if (mBoundingMetrics.width < bm.width)
@@ -800,7 +836,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          mChar->mGlyphTable = aGlyphTable;
          mChar->mFamily = font.name;
          mChar->mGlyphs[0] = ch;
-@@ -1148,34 +1394,36 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1148,34 +1412,36 @@ nsMathMLChar::StretchEnumContext::TryVar
      else {
  #ifdef NOISY_SEARCH
        printf("    size:%d Rejected!\n", size);
@@ -840,7 +876,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    nsFont font = mChar->mStyleContext->StyleFont()->mFont;
    // Ensure SetFontFamily will set the font
    font.name.Truncate();
-@@ -1186,20 +1434,20 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1186,27 +1452,28 @@ nsMathMLChar::StretchEnumContext::TryPar
    nscoord sizedata[4];
  
    bool isVertical = (mDirection == NS_STRETCH_DIRECTION_VERTICAL);
@@ -863,9 +899,18 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font))
          return false;
  
-       nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, chdata[i]);
+-      nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, chdata[i]);
++      nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, chdata[i],
++                                                 false);
  
-@@ -1317,34 +1565,45 @@ nsMathMLChar::StretchEnumContext::TryPar
+       // TODO: For the generic Unicode table, ideally we should check that the
+       // glyphs are actually found and that they each come from the same
+       // font.
+       bmdata[i] = bm;
+       sizedata[i] = isVertical ? bm.ascent + bm.descent
+                                : bm.rightBearing - bm.leftBearing;
+     }
+@@ -1317,34 +1584,45 @@ nsMathMLChar::StretchEnumContext::TryPar
  
  // This is called for each family, whether it exists or not
  bool
@@ -920,7 +965,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    context->mTablesTried.AppendElement(glyphTable);
  
    // If the unicode table is being used, then search all font families.  If a
-@@ -1492,19 +1751,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1492,19 +1770,19 @@ nsMathMLChar::StretchInternal(nsPresCont
      }
    }
  
@@ -942,7 +987,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        done = true;
    }
  
-@@ -1602,17 +1861,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1602,17 +1880,17 @@ nsMathMLChar::StretchInternal(nsPresCont
        }
      }
    }
@@ -961,7 +1006,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        scale = (largeopFactor *
                 (initialSize.rightBearing - initialSize.leftBearing)) /
          (aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing);
-@@ -1623,17 +1882,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1623,17 +1901,17 @@ nsMathMLChar::StretchInternal(nsPresCont
        aDesiredStretchSize.rightBearing *= scale;
        aDesiredStretchSize.width *= scale;
      }
@@ -980,7 +1025,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);
        if (!maxWidth) {
          mScaleY *= scale;
-@@ -2094,27 +2353,27 @@ nsMathMLChar::PaintVertically(nsPresCont
+@@ -2094,27 +2372,27 @@ nsMathMLChar::PaintVertically(nsPresCont
    // Get the device pixel size in the vertical direction.
    // (This makes no effort to optimize for non-translation transformations.)
    nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();
@@ -1012,7 +1057,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          break;
      }
      // empty slots are filled with the glue if it is not null
-@@ -2288,27 +2547,27 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+@@ -2288,27 +2566,27 @@ nsMathMLChar::PaintHorizontally(nsPresCo
    // Get the device pixel size in the horizontal direction.
    // (This makes no effort to optimize for non-translation transformations.)
    nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();
@@ -1067,3 +1112,22 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
    nsBoundingMetrics  mBoundingMetrics;
    nsStyleContext*    mStyleContext;
  
+@@ -246,17 +247,17 @@ private:
+                 const nsAString&    aDefaultFamily,
+                 nsFont&             aFont);
+ 
+   gfxTextRun*
+   MakeTextRun(gfxContext* aThebesContext, const nsGlyphCode& aGlyph);
+ 
+   nsBoundingMetrics
+   MeasureGlyph(gfxContext*        aThebesContext,
+-               const nsGlyphCode& aGlyphCode);
++               const nsGlyphCode& aGlyphCode, bool aLargeOp);
+ 
+   void
+   DrawGlyph(gfxContext*         aThebesContext,
+             const nsGlyphCode&  aGlyph,
+             nscoord             dx,
+             nscoord             dy);
+ 
+   nsresult
