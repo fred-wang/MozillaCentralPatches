@@ -7,8 +7,6 @@ ots-math.diff
 407059-tests.diff
 bug930504.diff
 MATH-mfrac-msqrt.diff
-disable-scale.diff
-mirror-.diff
 mirror.diff
 try.diff
 try-c.diff
