@@ -1,0 +1,392 @@
+# HG changeset patch
+# Parent 8c7ada1b76df3079bbe8138260b14f6799e582b1
+# User James Kitchener <jkitch.bug@gmail.com>
+Bug 930504 - Use character substitution for all mathvariants
+
+diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLTextRunFactory.cpp
+--- a/layout/generic/MathMLTextRunFactory.cpp
++++ b/layout/generic/MathMLTextRunFactory.cpp
+@@ -583,17 +583,16 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+         settingSSTY.mTag = TRUETYPE_TAG('s','s','t','y');
+         settingSSTY.mValue = sstyLevel;
+         fontStyle.featureSettings.AppendElement(settingSSTY);
+       }
+     }
+   }
+ 
+   uint8_t mathVar;
+-  bool doMathvariantStyling = true;
+ 
+   for (uint32_t i = 0; i < length; ++i) {
+     int extraChars = 0;
+     nsStyleContext* styleContext = styles[i];
+     mathVar = styleContext->StyleFont()->mMathVariant;
+ 
+     if (singleCharMI && mathVar == NS_MATHML_MATHVARIANT_NONE) {
+       mathVar = NS_MATHML_MATHVARIANT_ITALIC;
+@@ -601,29 +600,16 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+ 
+     uint32_t ch = str[i];
+     if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
+         NS_IS_LOW_SURROGATE(str[i + 1])) {
+       ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+     }
+     uint32_t ch2 = MathVariant(ch, mathVar);
+ 
+-    if (mathVar == NS_MATHML_MATHVARIANT_BOLD ||
+-        mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC ||
+-        mathVar == NS_MATHML_MATHVARIANT_ITALIC) {
+-      if (ch == ch2  && ch != 0x20 && ch != 0xA0) {
+-        // Don't perform the transformation if a character cannot be
+-        // transformed. There is an exception for whitespace as it is both
+-        // common and innocuous.
+-        doMathvariantStyling = false;
+-      }
+-      // Undo the change as it will be handled as a font styling.
+-      ch2 = ch;
+-    }
+-
+     deletedCharsArray.AppendElement(false);
+     charsToMergeArray.AppendElement(false);
+     styleArray.AppendElement(styleContext);
+     canBreakBeforeArray.AppendElement(aTextRun->CanBreakLineBefore(i));
+ 
+     if (IS_IN_BMP(ch2)) {
+       convertedString.Append(ch2);
+     } else {
+@@ -648,27 +634,17 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+   uint32_t flags;
+   gfxTextRunFactory::Parameters innerParams =
+       GetParametersForInner(aTextRun, &flags, aRefContext);
+ 
+   nsAutoPtr<nsTransformedTextRun> transformedChild;
+   nsAutoPtr<gfxTextRun> cachedChild;
+   gfxTextRun* child;
+ 
+-  if (mathVar == NS_MATHML_MATHVARIANT_BOLD && doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_NORMAL;
+-    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
+-  } else if (mathVar == NS_MATHML_MATHVARIANT_ITALIC && doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_ITALIC;
+-    fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
+-  } else if (mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC &&
+-             doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_ITALIC;
+-    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
+-  } else if (mathVar != NS_MATHML_MATHVARIANT_NONE) {
++  if (mathVar != NS_MATHML_MATHVARIANT_NONE) {
+     // Mathvariant overrides fontstyle and fontweight
+     // Need to check to see if mathvariant is actually applied as this function
+     // is used for other purposes.
+     fontStyle.style = NS_FONT_STYLE_NORMAL;
+     fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
+   }
+   nsRefPtr<gfxFontGroup> newFontGroup = fontGroup->Copy(&fontStyle);
+ 
+diff --git a/layout/reftests/mathml/mathvariant-1a-ref.html b/layout/reftests/mathml/mathvariant-1a-ref.html
+--- a/layout/reftests/mathml/mathvariant-1a-ref.html
++++ b/layout/reftests/mathml/mathvariant-1a-ref.html
+@@ -9,25 +9,62 @@
+       <mrow>
+         <mtext>ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+         <mtext>abcdefghijklmnopqrstuvwxyz</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext fontstyle="italic">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+-        <mtext fontstyle="italic">abcdefghijklmnopqrstuvwxyz</mtext>
++        <mtext>
++          &#x1d400;&#x1d401;&#x1d402;&#x1d403;&#x1d404;&#x1d405;
++          &#x1d406;&#x1d407;&#x1d408;&#x1d409;&#x1d40a;&#x1d40b;
++          &#x1d40c;&#x1d40d;&#x1d40e;&#x1d40f;&#x1d410;&#x1d411;
++          &#x1d412;&#x1d413;&#x1d414;&#x1d415;&#x1d416;&#x1d417;
++          &#x1d418;&#x1d419;
++          &#x1d41a;&#x1d41b;&#x1d41c;&#x1d41d;&#x1d41e;&#x1d41f;
++          &#x1d420;&#x1d421;&#x1d422;&#x1d423;&#x1d424;&#x1d425;
++          &#x1d426;&#x1d427;&#x1d428;&#x1d429;&#x1d42a;&#x1d42b;
++          &#x1d42c;&#x1d42d;&#x1d42e;&#x1d42f;&#x1d430;&#x1d431;
++          &#x1d432;&#x1d433;
++        </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext fontweight="bold" fontstyle="italic">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+-        <mtext fontweight="bold" fontstyle="italic">abcdefghijklmnopqrstuvwxyz</mtext>
++        <mtext>
++          &#x1d434;&#x1d435;&#x1d436;&#x1d437;&#x1d438;&#x1d439;
++          &#x1d43a;&#x1d43b;&#x1d43c;&#x1d43d;&#x1d43e;&#x1d43f;
++          &#x1d440;&#x1d441;&#x1d442;&#x1d443;&#x1d444;&#x1d445;
++          &#x1d446;&#x1d447;&#x1d448;&#x1d449;&#x1d44a;&#x1d44b;
++          &#x1d44c;&#x1d44d;
++          &#x1d44e;&#x1d44f;&#x1d450;&#x1d451;&#x1d452;&#x1d453;
++          &#x1d454;&#x210e;&#x1d456;&#x1d457;&#x1d458;&#x1d459;
++          &#x1d45a;&#x1d45b;&#x1d45c;&#x1d45d;&#x1d45e;&#x1d45f;
++          &#x1d460;&#x1d461;&#x1d462;&#x1d463;&#x1d464;&#x1d465;
++          &#x1d466;&#x1d467;
++        </mtext>
++      </mrow>
++    </math>
++    <br>
++    <math>
++      <mrow>
++        <mtext>
++          &#x1d468;&#x1d469;&#x1d46a;&#x1d46b;&#x1d46c;&#x1d46d;
++          &#x1d46e;&#x1d46f;&#x1d470;&#x1d471;&#x1d472;&#x1d473;
++          &#x1d474;&#x1d475;&#x1d476;&#x1d477;&#x1d478;&#x1d479;
++          &#x1d47a;&#x1d47b;&#x1d47c;&#x1d47d;&#x1d47e;&#x1d47f;
++          &#x1d480;&#x1d481;
++          &#x1d482;&#x1d483;&#x1d484;&#x1d485;&#x1d486;&#x1d487;
++          &#x1d488;&#x1d489;&#x1d48a;&#x1d48b;&#x1d48c;&#x1d48d;
++          &#x1d48e;&#x1d48f;&#x1d490;&#x1d491;&#x1d492;&#x1d493;
++          &#x1d494;&#x1d495;&#x1d496;&#x1d497;&#x1d498;&#x1d499;
++          &#x1d49a;&#x1d49b;
++        </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+         <mtext>
+           &#x1d49c;&#x212c;&#x1d49e;&#x1d49f;&#x2130;&#x2131;
+           &#x1d4a2;&#x210b;&#x2110;&#x1d4a5;&#x1d4a6;&#x2112;
+diff --git a/layout/reftests/mathml/mathvariant-1a.html b/layout/reftests/mathml/mathvariant-1a.html
+--- a/layout/reftests/mathml/mathvariant-1a.html
++++ b/layout/reftests/mathml/mathvariant-1a.html
+@@ -9,25 +9,59 @@
+       <mrow>
+         <mtext mathvariant="normal">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+         <mtext mathvariant="normal">abcdefghijklmnopqrstuvwxyz</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext mathvariant="italic">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+-        <mtext mathvariant="italic">abcdefghijklmnopqrstuvwxyz</mtext>
++        <mtext mathvariant="bold">
++          ABCDEF
++          GHIJKL
++          MNOPQR
++          STUVWX
++          YZ
++          abcdef
++          ghijkl
++          mnopqr
++          stuvwx
++          yz</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext mathvariant="bold-italic">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mtext>
+-        <mtext mathvariant="bold-italic">abcdefghijklmnopqrstuvwxyz</mtext>
++        <mtext mathvariant="italic">
++          ABCDEF
++          GHIJKL
++          MNOPQR
++          STUVWX
++          YZ
++          abcdef
++          ghijkl
++          mnopqr
++          stuvwx
++          yz</mtext>
++      </mrow>
++    </math>
++    <br>
++    <math>
++      <mrow>
++        <mtext mathvariant="bold-italic">
++          ABCDEF
++          GHIJKL
++          MNOPQR
++          STUVWX
++          YZ
++          abcdef
++          ghijkl
++          mnopqr
++          stuvwx
++          yz</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+         <mtext mathvariant="script">
+           ABCDEF
+           GHIJKL
+diff --git a/layout/reftests/mathml/mathvariant-1b-ref.html b/layout/reftests/mathml/mathvariant-1b-ref.html
+--- a/layout/reftests/mathml/mathvariant-1b-ref.html
++++ b/layout/reftests/mathml/mathvariant-1b-ref.html
+@@ -8,17 +8,20 @@
+     <math>
+       <mrow>
+         <mtext>0123456789</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext fontweight="bold">0123456789</mtext>
++        <mtext>
++          &#x1d7ce;&#x1d7cf;&#x1d7d0;&#x1d7d1;&#x1d7d2;&#x1d7d3;
++          &#x1d7d4;&#x1d7d5;&#x1d7d6;&#x1d7d7;
++        </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+         <mtext>0123456789</mtext>
+       </mrow>
+     </math>
+diff --git a/layout/reftests/mathml/mathvariant-1b.html b/layout/reftests/mathml/mathvariant-1b.html
+--- a/layout/reftests/mathml/mathvariant-1b.html
++++ b/layout/reftests/mathml/mathvariant-1b.html
+@@ -8,17 +8,20 @@
+     <math>
+       <mrow>
+         <mtext mathvariant="normal">0123456789</mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext mathvariant="bold">0123456789</mtext>
++        <mtext mathvariant="bold">
++          012345
++          6789
++        </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+         <mtext mathvariant="italic">0123456789</mtext>
+       </mrow>
+     </math>
+diff --git a/layout/reftests/mathml/mathvariant-1c-ref.html b/layout/reftests/mathml/mathvariant-1c-ref.html
+--- a/layout/reftests/mathml/mathvariant-1c-ref.html
++++ b/layout/reftests/mathml/mathvariant-1c-ref.html
+@@ -19,61 +19,61 @@
+           &#x03c7;&#x03c8;&#x03c9;&#x2202;&#x03f5;&#x03d1;
+           &#x03f0;&#x03d5;&#x03f1;&#x03d6;
+         </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext  fontweight="bold">
+-          &#x0391;&#x0392;&#x0393;&#x0394;&#x0395;&#x0396;
+-          &#x0397;&#x0398;&#x0399;&#x039a;&#x039b;&#x039c;
+-          &#x039d;&#x039e;&#x039f;&#x03a0;&#x03a1;&#x03f4;
+-          &#x03a3;&#x03a4;&#x03a5;&#x03a6;&#x03a7;&#x03a8;
+-          &#x03a9;&#x2207;&#x03b1;&#x03b2;&#x03b3;&#x03b4;
+-          &#x03b5;&#x03b6;&#x03b7;&#x03b8;&#x03b9;&#x03ba;
+-          &#x03bb;&#x03bc;&#x03bd;&#x03be;&#x03bf;&#x03c0;
+-          &#x03c1;&#x03c2;&#x03c3;&#x03c4;&#x03c5;&#x03c6;
+-          &#x03c7;&#x03c8;&#x03c9;&#x2202;&#x03f5;&#x03d1;
+-          &#x03f0;&#x03d5;&#x03f1;&#x03d6;
++        <mtext>
++          &#x1d6a8;&#x1d6a9;&#x1d6aa;&#x1d6ab;&#x1d6ac;&#x1d6ad;
++          &#x1d6ae;&#x1d6af;&#x1d6b0;&#x1d6b1;&#x1d6b2;&#x1d6b3;
++          &#x1d6b4;&#x1d6b5;&#x1d6b6;&#x1d6b7;&#x1d6b8;&#x1d6b9;
++          &#x1d6ba;&#x1d6bb;&#x1d6bc;&#x1d6bd;&#x1d6be;&#x1d6bf;
++          &#x1d6c0;&#x1d6c1;&#x1d6c2;&#x1d6c3;&#x1d6c4;&#x1d6c5;
++          &#x1d6c6;&#x1d6c7;&#x1d6c8;&#x1d6c9;&#x1d6ca;&#x1d6cb;
++          &#x1d6cc;&#x1d6cd;&#x1d6ce;&#x1d6cf;&#x1d6d0;&#x1d6d1;
++          &#x1d6d2;&#x1d6d3;&#x1d6d4;&#x1d6d5;&#x1d6d6;&#x1d6d7;
++          &#x1d6d8;&#x1d6d9;&#x1d6da;&#x1d6db;&#x1d6dc;&#x1d6dd;
++          &#x1d6de;&#x1d6df;&#x1d6e0;&#x1d6e1;
+         </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext  fontstyle="italic">
+-          &#x0391;&#x0392;&#x0393;&#x0394;&#x0395;&#x0396;
+-          &#x0397;&#x0398;&#x0399;&#x039a;&#x039b;&#x039c;
+-          &#x039d;&#x039e;&#x039f;&#x03a0;&#x03a1;&#x03f4;
+-          &#x03a3;&#x03a4;&#x03a5;&#x03a6;&#x03a7;&#x03a8;
+-          &#x03a9;&#x2207;&#x03b1;&#x03b2;&#x03b3;&#x03b4;
+-          &#x03b5;&#x03b6;&#x03b7;&#x03b8;&#x03b9;&#x03ba;
+-          &#x03bb;&#x03bc;&#x03bd;&#x03be;&#x03bf;&#x03c0;
+-          &#x03c1;&#x03c2;&#x03c3;&#x03c4;&#x03c5;&#x03c6;
+-          &#x03c7;&#x03c8;&#x03c9;&#x2202;&#x03f5;&#x03d1;
+-          &#x03f0;&#x03d5;&#x03f1;&#x03d6;
++        <mtext>
++          &#x1d6e2;&#x1d6e3;&#x1d6e4;&#x1d6e5;&#x1d6e6;&#x1d6e7;
++          &#x1d6e8;&#x1d6e9;&#x1d6ea;&#x1d6eb;&#x1d6ec;&#x1d6ed;
++          &#x1d6ee;&#x1d6ef;&#x1d6f0;&#x1d6f1;&#x1d6f2;&#x1d6f3;
++          &#x1d6f4;&#x1d6f5;&#x1d6f6;&#x1d6f7;&#x1d6f8;&#x1d6f9;
++          &#x1d6fa;&#x1d6fb;&#x1d6fc;&#x1d6fd;&#x1d6fe;&#x1d6ff;
++          &#x1d700;&#x1d701;&#x1d702;&#x1d703;&#x1d704;&#x1d705;
++          &#x1d706;&#x1d707;&#x1d708;&#x1d709;&#x1d70a;&#x1d70b;
++          &#x1d70c;&#x1d70d;&#x1d70e;&#x1d70f;&#x1d710;&#x1d711;
++          &#x1d712;&#x1d713;&#x1d714;&#x1d715;&#x1d716;&#x1d717;
++          &#x1d718;&#x1d719;&#x1d71a;&#x1d71b;
+         </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+-        <mtext fontweight="bold" fontstyle="italic">
+-          &#x0391;&#x0392;&#x0393;&#x0394;&#x0395;&#x0396;
+-          &#x0397;&#x0398;&#x0399;&#x039a;&#x039b;&#x039c;
+-          &#x039d;&#x039e;&#x039f;&#x03a0;&#x03a1;&#x03f4;
+-          &#x03a3;&#x03a4;&#x03a5;&#x03a6;&#x03a7;&#x03a8;
+-          &#x03a9;&#x2207;&#x03b1;&#x03b2;&#x03b3;&#x03b4;
+-          &#x03b5;&#x03b6;&#x03b7;&#x03b8;&#x03b9;&#x03ba;
+-          &#x03bb;&#x03bc;&#x03bd;&#x03be;&#x03bf;&#x03c0;
+-          &#x03c1;&#x03c2;&#x03c3;&#x03c4;&#x03c5;&#x03c6;
+-          &#x03c7;&#x03c8;&#x03c9;&#x2202;&#x03f5;&#x03d1;
+-          &#x03f0;&#x03d5;&#x03f1;&#x03d6;
++        <mtext>
++          &#x1d71c;&#x1d71d;&#x1d71e;&#x1d71f;&#x1d720;&#x1d721;
++          &#x1d722;&#x1d723;&#x1d724;&#x1d725;&#x1d726;&#x1d727;
++          &#x1d728;&#x1d729;&#x1d72a;&#x1d72b;&#x1d72c;&#x1d72d;
++          &#x1d72e;&#x1d72f;&#x1d730;&#x1d731;&#x1d732;&#x1d733;
++          &#x1d734;&#x1d735;&#x1d736;&#x1d737;&#x1d738;&#x1d739;
++          &#x1d73a;&#x1d73b;&#x1d73c;&#x1d73d;&#x1d73e;&#x1d73f;
++          &#x1d740;&#x1d741;&#x1d742;&#x1d743;&#x1d744;&#x1d745;
++          &#x1d746;&#x1d747;&#x1d748;&#x1d749;&#x1d74a;&#x1d74b;
++          &#x1d74c;&#x1d74d;&#x1d74e;&#x1d74f;&#x1d750;&#x1d751;
++          &#x1d752;&#x1d753;&#x1d754;&#x1d755;
+         </mtext>
+       </mrow>
+     </math>
+     <br>
+     <math>
+       <mrow>
+         <mtext>
+           &#x0391;&#x0392;&#x0393;&#x0394;&#x0395;&#x0396;
+diff --git a/layout/reftests/mathml/mathvariant-2-ref.html b/layout/reftests/mathml/mathvariant-2-ref.html
+--- a/layout/reftests/mathml/mathvariant-2-ref.html
++++ b/layout/reftests/mathml/mathvariant-2-ref.html
+@@ -1,16 +1,16 @@
+ <!doctype html>
+ <html>
+   <head>
+     <title>Test mathvariant exception mappings</title>
+   </head>
+   <body>
+     <math>
+       <mrow>
+-        <mtext fontstyle="italic">&#x0131;&#x0237;</mtext>
++        <mtext>&#x1d6a4;&#x1d6a5;</mtext>
+         <mtext>&#x0131;&#x0237;</mtext>
+-        <mtext fontweight="bold">&#x03DC;&#x03DD;</mtext>
++        <mtext>&#x1d7ca;&#x1d7cb;</mtext>
+         <mtext>&#x03DC;&#x03DD;</mtext>
+       </mrow>
+     </math>
+   </body>
+ </html>

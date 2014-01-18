@@ -1,0 +1,29 @@
+# HG changeset patch
+# Parent 72a4470a1fa40c2ad457738feecb477766561e8f
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 941611 - Incorrect preferred width of italic characters
+
+diff --git a/layout/generic/nsTextFrame.cpp b/layout/generic/nsTextFrame.cpp
+--- a/layout/generic/nsTextFrame.cpp
++++ b/layout/generic/nsTextFrame.cpp
+@@ -7380,18 +7380,18 @@ nsTextFrame::GetPrefWidthTightBounds(nsR
+                             nsTextFrame::eInflated);
+   provider.InitializeForMeasure();
+ 
+   gfxTextRun::Metrics metrics =
+         mTextRun->MeasureText(provider.GetStart().GetSkippedOffset(),
+                               ComputeTransformedLength(provider),
+                               gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS,
+                               aContext->ThebesContext(), &provider);
+-  *aX = metrics.mBoundingBox.x;
+-  *aXMost = metrics.mBoundingBox.XMost();
++  *aX = NSToCoordFloor(metrics.mBoundingBox.x);
++  *aXMost = NSToCoordCeil(metrics.mBoundingBox.XMost());
+ 
+   return NS_OK;
+ }
+ 
+ static bool
+ HasSoftHyphenBefore(const nsTextFragment* aFrag, gfxTextRun* aTextRun,
+                     int32_t aStartOffset, const gfxSkipCharsIterator& aIter)
+ {
