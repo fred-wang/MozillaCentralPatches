@@ -1,0 +1,27 @@
+# HG changeset patch
+# Parent 4406df272d5d22c6a170a2c76285f7c2c27911f2
+# User Frédéric Wang <fred.wang@free.fr>
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -16,17 +16,18 @@
+ /**************************************************************************/
+ 
+ math {
+   direction: ltr;
+   unicode-bidi: embed;
+   display: inline;
+   font-size: inherit;
+   font-style: normal;
+-  font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
++  /* FIXME: move this to a preference */
++  font-family: Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, Neo Euler, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+   text-rendering: optimizeLegibility;
+   -moz-float-edge: margin-box;
+   -moz-math-display: inline;
+ }
+ math[mode="display"], math[display="block"] {
+   display: block;
+   text-align: -moz-center;
+   -moz-math-display: block;

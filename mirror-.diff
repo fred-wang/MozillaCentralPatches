@@ -1,0 +1,213 @@
+# HG changeset patch
+# Parent 96cfd76ccf92c9b6bb020e991f3ccf4a24c11ef4
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 945183 - Mirroring large/stretchy operators
+
+diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
+--- a/gfx/thebes/gfxFont.h
++++ b/gfx/thebes/gfxFont.h
+@@ -1847,17 +1847,17 @@ public:
+     friend class GlyphChangeObserver;
+ 
+     bool GlyphsMayChange()
+     {
+         // Currently only fonts with SVG glyphs can have animated glyphs
+         return mFontEntry->TryGetSVGData(this);
+     }
+ 
+-protected:
++public:
+     void AddGlyphChangeObserver(GlyphChangeObserver *aObserver);
+     void RemoveGlyphChangeObserver(GlyphChangeObserver *aObserver);
+ 
+     bool HasSubstitutionRulesWithSpaceLookups(int32_t aRunScript) {
+         NS_ASSERTION(GetFontEntry()->mHasSpaceFeaturesInitialized,
+                      "need to initialize space lookup flags");
+         NS_ASSERTION(aRunScript < MOZ_NUM_SCRIPT_CODES, "weird script code");
+         if (aRunScript == MOZ_SCRIPT_INVALID ||
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -424,24 +424,29 @@ private:
+ };
+ 
+ void
+ nsOpenTypeTable::UpdateCache(gfxContext* aThebesContext, nsMathMLChar* aChar)
+ {
+   char16_t uchar = aChar->mData[0];
+   if (mCharCache != uchar) {
+     // XXXfred: use gfxFont::GetGlyph() to get rid of aThebesContext?
+-    nsGlyphCode glyph =  {{{uchar, 0}}, 0};
+-    nsAutoPtr<gfxTextRun> textRun;
+-    textRun = aChar->MakeTextRun(aThebesContext, glyph);
+-    const gfxTextRun::CompressedGlyph data = textRun->GetCharacterGlyphs()[0];
++    nsAutoPtr<gfxShapedWord> shapedWord;
++    shapedWord =
++      gfxShapedWord::Create(&uchar, 1, 0,
++                            aChar->mFontMetrics->AppUnitsPerDevPixel(),
++                            aChar->mRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
++    aChar->mFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
++      ShapeText(aThebesContext, &uchar, 0, 1, 0, shapedWord, false);
++    const gfxShapedText::CompressedGlyph data =
++      shapedWord->GetCharacterGlyphs()[0];
+     if (data.IsSimpleGlyph()) {
+       mGlyphID = data.GetSimpleGlyph();
+     } else if (data.GetGlyphCount() == 1) {
+-      mGlyphID = textRun->GetDetailedGlyphs(0)->mGlyphID;
++      mGlyphID = shapedWord->GetDetailedGlyphs(0)->mGlyphID;
+     } else {
+       mGlyphID = 0;
+     }
+     mCharCache = uchar;
+   }
+ }
+ 
+ /* virtual */
+@@ -1162,17 +1167,18 @@ public:
+ 
+ gfxTextRun*
+ nsMathMLChar::MakeTextRun(gfxContext*        aThebesContext,
+                           const nsGlyphCode& aGlyph)
+ {
+   if (!aGlyph.IsGlyphID()) {
+     return mFontMetrics->GetThebesFontGroup()->
+       MakeTextRun(aGlyph.code, aGlyph.Length(), aThebesContext,
+-                  mFontMetrics->AppUnitsPerDevPixel(), 0);
++                  mFontMetrics->AppUnitsPerDevPixel(),
++                  mRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
+   }
+ 
+   gfxTextRunFactory::Parameters params = {
+     aThebesContext, nullptr, nullptr, nullptr, 0,
+     mFontMetrics->AppUnitsPerDevPixel()
+   };
+   gfxTextRun* textRun = gfxTextRun::Create(&params, 1, mFontMetrics->
+                                            GetThebesFontGroup(), 0);
+@@ -1934,17 +1940,17 @@ nsMathMLChar::Stretch(nsPresContext*    
+                       bool                     aRTL)
+ {
+   NS_ASSERTION(!(aStretchHint &
+                  ~(NS_STRETCH_VARIABLE_MASK | NS_STRETCH_LARGEOP |
+                    NS_STRETCH_INTEGRAL)),
+                "Unexpected stretch flags");
+ 
+   mDraw = DRAW_NORMAL;
+-  mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
++  mRTL = aRTL;
+   mScaleY = mScaleX = 1.0;
+   mDirection = aStretchDirection;
+   nsresult rv =
+     StretchInternal(aPresContext, aRenderingContext.ThebesContext(), mDirection,
+                     aContainerSize, aDesiredStretchSize, aStretchHint);
+ 
+   aRenderingContext.SetFont(mFontMetrics);
+ 
+@@ -2206,34 +2212,29 @@ nsMathMLChar::Display(nsDisplayListBuild
+                                   !aSelectedRect->IsEmpty()));
+ }
+ 
+ void
+ nsMathMLChar::ApplyTransforms(gfxContext* aThebesContext,
+                               int32_t aAppUnitsPerGfxUnit,
+                               nsRect &r)
+ {
++  // TODO: make mScaleX negative if a mirrored glyph is not available and
++  // nsMathMLOperators::IsMirrorableOperator(mData);
++
+   // apply the transforms
+-  if (mMirrored) {
+-    nsPoint pt = r.TopRight();
+-    aThebesContext->
+-      Translate(gfxPoint(NSAppUnitsToFloatPixels(pt.x, aAppUnitsPerGfxUnit),
+-                         NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
+-    aThebesContext->Scale(-mScaleX, mScaleY);
+-  } else {
+-    nsPoint pt = r.TopLeft();
+-    aThebesContext->
+-      Translate(gfxPoint(NSAppUnitsToFloatPixels(pt.x, aAppUnitsPerGfxUnit),
+-                         NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
+-    aThebesContext->Scale(mScaleX, mScaleY);
+-  }
++  nsPoint pt = mScaleX < 0 ? r.TopRight() : r.TopLeft();
++  aThebesContext->
++    Translate(gfxPoint(NSAppUnitsToFloatPixels(pt.x, aAppUnitsPerGfxUnit),
++                       NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
++  aThebesContext->Scale(mScaleX, mScaleY);
+ 
+   // update the bounding rectangle.
+   r.x = r.y = 0;
+-  r.width /= mScaleX;
++  r.width /= std::abs(mScaleX);
+   r.height /= mScaleY;
+ }
+ 
+ void
+ nsMathMLChar::PaintForeground(nsPresContext* aPresContext,
+                               nsRenderingContext& aRenderingContext,
+                               nsPoint aPt,
+                               bool aIsSelected)
+@@ -2277,19 +2273,20 @@ nsMathMLChar::PaintForeground(nsPresCont
+   {
+     case DRAW_NORMAL:
+       {
+         // normal drawing if there is nothing special about this char...
+         uint32_t len = uint32_t(mData.Length());
+         nsAutoPtr<gfxTextRun> textRun;
+         textRun = mFontMetrics->GetThebesFontGroup()->
+           MakeTextRun(mData.get(), len, thebesContext,
+-                      mFontMetrics->AppUnitsPerDevPixel(), 0);
++                      mFontMetrics->AppUnitsPerDevPixel(),
++                      mRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
+         StubPropertyProvider provider;
+-        gfxPoint pt(0, mUnscaledAscent);
++        gfxPoint pt(mRTL ? mRect.width : 0, mUnscaledAscent);
+         textRun->Draw(thebesContext, pt, DrawMode::GLYPH_FILL, 0, len,
+                       &provider, nullptr, nullptr);
+       }
+       break;
+     case DRAW_VARIANT:
+       // if there is a glyph of appropriate size, paint that glyph
+       DrawGlyph(thebesContext, mGlyphs[0], r.x, r.y + mUnscaledAscent);
+       break;
+diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
+--- a/layout/mathml/nsMathMLChar.h
++++ b/layout/mathml/nsMathMLChar.h
+@@ -86,17 +86,17 @@ class nsMathMLChar
+ public:
+   // constructor and destructor
+   nsMathMLChar() {
+     MOZ_COUNT_CTOR(nsMathMLChar);
+     mStyleContext = nullptr;
+     mUnscaledAscent = 0;
+     mScaleX = mScaleY = 1.0;
+     mDraw = DRAW_NORMAL;
+-    mMirrored = false;
++    mRTL = false;
+   }
+ 
+   // not a virtual destructor: this class is not intended to be subclassed
+   ~nsMathMLChar();
+ 
+   void Display(nsDisplayListBuilder*   aBuilder,
+                nsIFrame*               aForFrame,
+                const nsDisplayListSet& aLists,
+@@ -228,18 +228,17 @@ private:
+   // - DRAW_VARIANT: we draw a larger size variant given by mGlyphs[0].
+   // - DRAW_PARTS: we assemble several parts given by mGlyphs[0], ... mGlyphs[4]
+   // XXXfredw: the MATH table can have any numbers of parts and extenders.
+   typedef enum {
+     DRAW_NORMAL, DRAW_VARIANT, DRAW_PARTS
+   } DrawingMethod;
+   DrawingMethod mDraw;
+ 
+-  // mMirrored indicates whether the character is mirrored. 
+-  bool               mMirrored;
++  bool mRTL;
+ 
+   class StretchEnumContext;
+   friend class StretchEnumContext;
+ 
+   // helper methods
+   bool
+   SetFontFamily(nsPresContext*      aPresContext,
+                 const nsGlyphTable* aGlyphTable,

@@ -1,0 +1,55 @@
+# HG changeset patch
+# Parent 1d863bc2d7557d56587ad106ca5184c7d6a1adb6
+# User Frédéric Wang <fred.wang@free.fr>
+xxx
+
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -376,17 +376,17 @@ gfxFontEntry::NotifyGlyphsChanged()
+         font->NotifyGlyphsChanged();
+     }
+ }
+ 
+ bool
+ gfxFontEntry::TryGetMathTable(gfxFont* aFont)
+ {
+     if (!mMathInitialized) {
+-        mMathInitialized = true;
++        //        mMathInitialized = true;
+ 
+         // If UnitsPerEm is not known/valid, we can't use MATH table
+         if (UnitsPerEm() == kInvalidUPEM) {
+             return false;
+         }
+ 
+         // We don't use AutoTable here because we'll pass ownership of this
+         // blob to the gfxMathTable, once we've confirmed the table exists
+diff --git a/layout/reftests/fonts/math-generate.py b/layout/reftests/fonts/math-generate.py
+--- a/layout/reftests/fonts/math-generate.py
++++ b/layout/reftests/fonts/math-generate.py
+@@ -130,20 +130,23 @@ vstretchy = [
+     0x219F, # upwards two headed arrow
+     0x21A1, # downwards two headed arrow
+     0x21A5, # upwards arrow from bar
+     0x21A7, # downwards arrow from bar
+     0x21A8  # up down arrow with base
+ ]
+ for i in range(0, 1 + nvariants + 1):
+     s = (i + 1) * em/10
++    t = -em/10
++    if i > 0:
++        t *= 2
+ 
+     g = f.createChar(hstretchy[i])
+     p = g.glyphPen()
+-    p.moveTo(0, -em/10)
++    p.moveTo(0, )
+     p.lineTo(0, em/10)
+     p.lineTo(s, em/10)
+     p.lineTo(s, -em/10)
+     p.closePath()
+     g.width = s
+ 
+     g = f.createChar(vstretchy[i])
+     p = g.glyphPen()

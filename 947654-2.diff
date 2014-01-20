@@ -1,0 +1,388 @@
+# HG changeset patch
+# Parent 03e1d7e50f798795faddf8971a581ab1f7ca6ae0
+# User Frédéric Wang <fred.wang@free.fr>
+Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -191,52 +191,18 @@ mtable[frame="dashed"] > mtr > mtd:first
+   padding-left: 0.4em; /* framespacing.left */
+ }
+ mtable[frame="solid"] > mtr > mtd:last-child,
+ mtable[frame="dashed"] > mtr > mtd:last-child {
+   padding-right: 0.4em; /* framespacing.right */
+ }
+ 
+ /**************************************************************************/
+-/* Style used for stretchy symbols *must* be normal to avoid misaligments */
+-/* By leaving the font-family empty, the MathML engine will use the value
+-   provided by the mathfont-family property in the mathfont.properties file
+-   or the value of the user's pref("font.mathfont-family", "...").
+-
+-   Authors can make elements on a document to be stretched with different
+-   fonts, e.g.,
+-
+-   To request the use of STIX fonts, you can add a <style>...</style> with:
+-   <mo myfonts="stix">...</mo> with the associated CSS declaration
+-   mo[myfonts="stix"]::-moz-math-stretchy {
+-     font-family: STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral;
+-   }
+-
+-   To request the use of Asana fonts, you can add a <style>...</style> with:
+-   <mo myfonts="asana">...</mo> with the associated CSS declaration
+-   mo[myfonts="asana"]::-moz-math-stretchy {
+-     font-family: Asana Math;
+-   }
+-
+-   Of course, if you just want all of the stretchy characters in your
+-   document to be stretched with your preferred list, you can just do:
+-   ::-moz-math-stretchy {
+-     font-family: [your-particular-list]
+-   }
+-
+-   Note that like other fonts in the document, users can override this by
+-   clicking the pref to override document fonts.
+-/**************************************************************************/
+-
+-::-moz-math-stretchy {
+-  font-style: normal;
+-  font-family: serif; /* an empty family is ignored as an error and behaves like inherit */
+-/*  background-color: #3C6; */
+-}
+-/* Don't actually style -moz-math-anonymous by default */
++/* This rule is used to give a style context suitable for nsMathMLChars.
++   We don't actually style -moz-math-anonymous by default. */
+ /*
+ ::-moz-math-anonymous {
+ }
+ */
+ 
+ /**********************************************************************/
+ /* This is used when wrapping non-MathML inline elements inside math. */
+ *|*::-moz-mathml-anonymous-block {
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1223,19 +1223,19 @@ nsMathMLChar::StretchEnumContext::TryVar
+ 
+     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
+       // if largeopOnly is set, break now
+       if (largeopOnly) break;
+       ++size;
+       continue;
+     }
+ 
+-    NS_ASSERTION(maxWidth || ch != mChar->mGlyphs[0] ||
++    /*    NS_ASSERTION(maxWidth || ch != mChar->mGlyphs[0] ||
+                  !font.name.Equals(mChar->mFamily),
+-                 "glyph table incorrectly set -- duplicate found");
++                 "glyph table incorrectly set -- duplicate found");*/
+ 
+     nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch, largeop);
+ 
+     nscoord charSize =
+       isVertical ? bm.ascent + bm.descent
+       : bm.rightBearing - bm.leftBearing;
+ 
+     if (largeopOnly ||
+diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
+--- a/layout/mathml/nsMathMLFrame.cpp
++++ b/layout/mathml/nsMathMLFrame.cpp
+@@ -74,21 +74,19 @@ nsMathMLFrame::UpdatePresentationData(ui
+ // Helper to give a style context suitable for doing the stretching of
+ // a MathMLChar. Frame classes that use this should ensure that the 
+ // extra leaf style contexts given to the MathMLChars are accessible to
+ // the Style System via the Get/Set AdditionalStyleContext() APIs.
+ /* static */ void
+ nsMathMLFrame::ResolveMathMLCharStyle(nsPresContext*  aPresContext,
+                                       nsIContent*      aContent,
+                                       nsStyleContext*  aParentStyleContext,
+-                                      nsMathMLChar*    aMathMLChar,
+-                                      bool             aIsMutableChar)
++                                      nsMathMLChar*    aMathMLChar)
+ {
+-  nsCSSPseudoElements::Type pseudoType = (aIsMutableChar) ?
+-    nsCSSPseudoElements::ePseudo_mozMathStretchy :
++  nsCSSPseudoElements::Type pseudoType =
+     nsCSSPseudoElements::ePseudo_mozMathAnonymous; // savings
+   nsRefPtr<nsStyleContext> newStyleContext;
+   newStyleContext = aPresContext->StyleSet()->
+     ResolvePseudoElementStyle(aContent->AsElement(), pseudoType,
+                               aParentStyleContext, nullptr);
+ 
+   aMathMLChar->SetStyleContext(newStyleContext);
+ }
+diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
+--- a/layout/mathml/nsMathMLFrame.h
++++ b/layout/mathml/nsMathMLFrame.h
+@@ -102,18 +102,17 @@ public:
+ 
+   // helper to give a style context suitable for doing the stretching to the
+   // MathMLChar. Frame classes that use this should make the extra style contexts
+   // accessible to the Style System via Get/Set AdditionalStyleContext.
+   static void
+   ResolveMathMLCharStyle(nsPresContext*  aPresContext,
+                          nsIContent*      aContent,
+                          nsStyleContext*  aParenStyleContext,
+-                         nsMathMLChar*    aMathMLChar,
+-                         bool             aIsMutableChar);
++                         nsMathMLChar*    aMathMLChar);
+ 
+   // helper to get the mEmbellishData of a frame
+   // The MathML REC precisely defines an "embellished operator" as:
+   // - an <mo> element;
+   // - or one of the elements <msub>, <msup>, <msubsup>, <munder>, <mover>,
+   //   <munderover>, <mmultiscripts>, <mfrac>, or <semantics>, whose first 
+   //   argument exists and is an embellished operator;
+   //- or one of the elements <mstyle>, <mphantom>, or <mpadded>, such that
+diff --git a/layout/mathml/nsMathMLOperators.cpp b/layout/mathml/nsMathMLOperators.cpp
+--- a/layout/mathml/nsMathMLOperators.cpp
++++ b/layout/mathml/nsMathMLOperators.cpp
+@@ -422,35 +422,16 @@ nsMathMLOperators::LookupOperators(const
+     if (found) {
+       aFlags[NS_MATHML_OPERATOR_FORM_PREFIX] = found->mFlags;
+       aLeadingSpace[NS_MATHML_OPERATOR_FORM_PREFIX] = found->mLeadingSpace;
+       aTrailingSpace[NS_MATHML_OPERATOR_FORM_PREFIX] = found->mTrailingSpace;
+     }
+   }
+ }
+ 
+-bool
+-nsMathMLOperators::IsMutableOperator(const nsString& aOperator)
+-{
+-  if (!gGlobalsInitialized) {
+-    InitGlobals();
+-  }
+-  // lookup all the variants of the operator and return true if there
+-  // is a variant that is stretchy or largeop
+-  nsOperatorFlags flags[4];
+-  float lspace[4], rspace[4];
+-  nsMathMLOperators::LookupOperators(aOperator, flags, lspace, rspace);
+-  nsOperatorFlags allFlags =
+-    flags[NS_MATHML_OPERATOR_FORM_INFIX] |
+-    flags[NS_MATHML_OPERATOR_FORM_POSTFIX] |
+-    flags[NS_MATHML_OPERATOR_FORM_PREFIX];
+-  return NS_MATHML_OPERATOR_IS_STRETCHY(allFlags) ||
+-         NS_MATHML_OPERATOR_IS_LARGEOP(allFlags);
+-}
+-
+ /* static */ bool
+ nsMathMLOperators::IsMirrorableOperator(const nsString& aOperator)
+ {
+   // LookupOperator will search infix, postfix and prefix forms of aOperator and
+   // return the first form found. It is assumed that all these forms have same
+   // mirrorability.
+   nsOperatorFlags flags = 0;
+   float dummy;
+diff --git a/layout/mathml/nsMathMLOperators.h b/layout/mathml/nsMathMLOperators.h
+--- a/layout/mathml/nsMathMLOperators.h
++++ b/layout/mathml/nsMathMLOperators.h
+@@ -87,21 +87,16 @@ public:
+    // particular form. If the operator wasn't found under a form, its entry
+    // aFlags[form] is set to zero.
+    static void
+    LookupOperators(const nsString&       aOperator,
+                    nsOperatorFlags*      aFlags,
+                    float*                aLeadingSpace,
+                    float*                aTrailingSpace);
+ 
+-  // IsMutableOperator:
+-  // Return true if the operator exists and is stretchy or largeop
+-  static bool
+-  IsMutableOperator(const nsString& aOperator);
+-
+   // Helper functions used by the nsMathMLChar class.
+   static bool
+   IsMirrorableOperator(const nsString& aOperator);
+ 
+   // Helper function used by the nsMathMLChar class.
+   static nsStretchDirection GetStretchyDirection(const nsString& aOperator);
+ };
+ 
+diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
+--- a/layout/mathml/nsMathMLmencloseFrame.cpp
++++ b/layout/mathml/nsMathMLmencloseFrame.cpp
+@@ -67,19 +67,17 @@ nsresult nsMathMLmencloseFrame::Allocate
+     mLongDivCharIndex = i;
+   } else if (mask == NOTATION_RADICAL) {
+     Char.Assign(kRadicalChar);
+     mRadicalCharIndex = i;
+   }
+ 
+   nsPresContext *presContext = PresContext();
+   mMathMLChar[i].SetData(presContext, Char);
+-  ResolveMathMLCharStyle(presContext, mContent, mStyleContext,
+-                         &mMathMLChar[i],
+-                         true);
++  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar[i]);
+ 
+   return NS_OK;
+ }
+ 
+ /*
+  * Add a notation to draw, if the argument is the name of a known notation.
+  * @param aNotation string name of a notation
+  */
+diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfencedFrame.cpp
+--- a/layout/mathml/nsMathMLmfencedFrame.cpp
++++ b/layout/mathml/nsMathMLmfencedFrame.cpp
+@@ -92,46 +92,43 @@ nsMathMLmfencedFrame::RemoveFencesAndSep
+   mSeparatorsChar = nullptr;
+   mSeparatorsCount = 0;
+ }
+ 
+ void
+ nsMathMLmfencedFrame::CreateFencesAndSeparators(nsPresContext* aPresContext)
+ {
+   nsAutoString value;
+-  bool isMutable = false;
+ 
+   //////////////  
+   // see if the opening fence is there ...
+   if (!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::open, value)) {
+     value = char16_t('('); // default as per the MathML REC
+   } else {
+     value.CompressWhitespace();
+   }
+ 
+   if (!value.IsEmpty()) {
+     mOpenChar = new nsMathMLChar;
+     mOpenChar->SetData(aPresContext, value);
+-    isMutable = nsMathMLOperators::IsMutableOperator(value);
+-    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mOpenChar, isMutable);
++    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mOpenChar);
+   }
+ 
+   //////////////
+   // see if the closing fence is there ...
+   if(!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::close, value)) {
+     value = char16_t(')'); // default as per the MathML REC
+   } else {
+     value.CompressWhitespace();
+   }
+ 
+   if (!value.IsEmpty()) {
+     mCloseChar = new nsMathMLChar;
+     mCloseChar->SetData(aPresContext, value);
+-    isMutable = nsMathMLOperators::IsMutableOperator(value);
+-    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mCloseChar, isMutable);
++    ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, mCloseChar);
+   }
+ 
+   //////////////
+   // see if separators are there ...
+   if (!mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::separators_, value)) {
+     value = char16_t(','); // default as per the MathML REC
+   } else {
+     value.StripWhitespace();
+@@ -141,24 +138,22 @@ nsMathMLmfencedFrame::CreateFencesAndSep
+   if (0 < mSeparatorsCount) {
+     int32_t sepCount = mFrames.GetLength() - 1;
+     if (0 < sepCount) {
+       mSeparatorsChar = new nsMathMLChar[sepCount];
+       nsAutoString sepChar;
+       for (int32_t i = 0; i < sepCount; i++) {
+         if (i < mSeparatorsCount) {
+           sepChar = value[i];
+-          isMutable = nsMathMLOperators::IsMutableOperator(sepChar);
+         }
+         else {
+           sepChar = value[mSeparatorsCount-1];
+-          // keep the value of isMutable that was set earlier
+         }
+         mSeparatorsChar[i].SetData(aPresContext, sepChar);
+-        ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, &mSeparatorsChar[i], isMutable);
++        ResolveMathMLCharStyle(aPresContext, mContent, mStyleContext, &mSeparatorsChar[i]);
+       }
+       mSeparatorsCount = sepCount;
+     } else {
+       // No separators.  Note that sepCount can be -1 here, so don't
+       // set mSeparatorsCount to it.
+       mSeparatorsCount = 0;
+     }
+   }
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -128,17 +128,17 @@ nsMathMLmoFrame::ProcessTextData()
+   }
+ 
+   // don't bother doing anything special if we don't have a
+   // single child with a visible text content
+   nsPresContext* presContext = PresContext();
+   if (NS_MATHML_OPERATOR_IS_INVISIBLE(mFlags) || mFrames.GetLength() != 1) {
+     data.Truncate(); // empty data to reset the char
+     mMathMLChar.SetData(presContext, data);
+-    ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar, false);
++    ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar);
+     return;
+   }
+ 
+   // special... in math mode, the usual minus sign '-' looks too short, so
+   // what we do here is to remap <mo>-</mo> to the official Unicode minus
+   // sign (U+2212) which looks much better. For background on this, see
+   // http://groups.google.com/groups?hl=en&th=66488daf1ade7635&rnum=1
+   if (1 == length && ch == '-') {
+@@ -184,17 +184,17 @@ nsMathMLmoFrame::ProcessTextData()
+   mEmbellishData.direction = mMathMLChar.GetStretchDirection();
+ 
+   bool isMutable =
+     NS_MATHML_OPERATOR_IS_LARGEOP(allFlags) ||
+     (mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED);
+   if (isMutable)
+     mFlags |= NS_MATHML_OPERATOR_MUTABLE;
+ 
+-  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar, isMutable);
++  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar);
+ }
+ 
+ // get our 'form' and lookup in the Operator Dictionary to fetch 
+ // our default data that may come from there. Then complete our setup
+ // using attributes that we may have. To stay in sync, this function is
+ // called very often. We depend on many things that may change around us.
+ // However, we re-use unchanged values.
+ void
+diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
+--- a/layout/mathml/nsMathMLmrootFrame.cpp
++++ b/layout/mathml/nsMathMLmrootFrame.cpp
+@@ -54,17 +54,17 @@ nsMathMLmrootFrame::Init(nsIContent*    
+   
+   nsPresContext *presContext = PresContext();
+ 
+   // No need to track the style context given to our MathML char. 
+   // The Style System will use Get/SetAdditionalStyleContext() to keep it
+   // up-to-date if dynamic changes arise.
+   nsAutoString sqrChar; sqrChar.Assign(kSqrChar);
+   mSqrChar.SetData(presContext, sqrChar);
+-  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mSqrChar, true);
++  ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mSqrChar);
+ }
+ 
+ NS_IMETHODIMP
+ nsMathMLmrootFrame::TransmitAutomaticData()
+ {
+   // 1. The REC says:
+   //    The <mroot> element increments scriptlevel by 2, and sets displaystyle to
+   //    "false", within index, but leaves both attributes unchanged within base.
+diff --git a/layout/style/nsCSSPseudoElementList.h b/layout/style/nsCSSPseudoElementList.h
+--- a/layout/style/nsCSSPseudoElementList.h
++++ b/layout/style/nsCSSPseudoElementList.h
+@@ -43,17 +43,16 @@ CSS_PSEUDO_ELEMENT(mozSelection, ":-moz-
+ CSS_PSEUDO_ELEMENT(mozFocusInner, ":-moz-focus-inner", 0)
+ CSS_PSEUDO_ELEMENT(mozFocusOuter, ":-moz-focus-outer", 0)
+ 
+ // XXXbz should we really allow random content to style these?  Maybe
+ // use our flags to prevent that?
+ CSS_PSEUDO_ELEMENT(mozListBullet, ":-moz-list-bullet", 0)
+ CSS_PSEUDO_ELEMENT(mozListNumber, ":-moz-list-number", 0)
+ 
+-CSS_PSEUDO_ELEMENT(mozMathStretchy, ":-moz-math-stretchy", 0)
+ CSS_PSEUDO_ELEMENT(mozMathAnonymous, ":-moz-math-anonymous", 0)
+ 
+ // HTML5 Forms pseudo elements
+ CSS_PSEUDO_ELEMENT(mozNumberWrapper, ":-moz-number-wrapper",
+                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE |
+                    CSS_PSEUDO_ELEMENT_IS_CHROME_ONLY)
+ CSS_PSEUDO_ELEMENT(mozNumberText, ":-moz-number-text",
+                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE |

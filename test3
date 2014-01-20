@@ -1,0 +1,28 @@
+# HG changeset patch
+# Parent 1d863bc2d7557d56587ad106ca5184c7d6a1adb6
+# User Frédéric Wang <fred.wang@free.fr>
+xxxxxxxxxxxxxxxxxx
+
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -375,16 +375,19 @@ gfxFontEntry::NotifyGlyphsChanged()
+         gfxFont* font = mFontsUsingSVGGlyphs[i];
+         font->NotifyGlyphsChanged();
+     }
+ }
+ 
+ bool
+ gfxFontEntry::TryGetMathTable(gfxFont* aFont)
+ {
++    if (mIsProxy)
++        return false;
++
+     if (!mMathInitialized) {
+         mMathInitialized = true;
+ 
+         // If UnitsPerEm is not known/valid, we can't use MATH table
+         if (UnitsPerEm() == kInvalidUPEM) {
+             return false;
+         }
+ 

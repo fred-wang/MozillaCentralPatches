@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 9e00a1acd5e0622aa1441698719d7320c11ff602
 # User Frédéric Wang <fred.wang@free.fr>
-Make OTS parse the MATH table. b=407059
+Part 0: Make OTS parse the MATH table. r=jfkthame, b=407059
 
 diff --git a/gfx/ots/src/layout.cc b/gfx/ots/src/layout.cc
 --- a/gfx/ots/src/layout.cc

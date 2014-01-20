@@ -1,0 +1,445 @@
+# HG changeset patch
+# Parent 459ce28e36c96d8a3a6335b70cdd95a7c0f7d075
+# User Frédéric Wang <fred.wang@free.fr>
+Remove the font.mathfont-family* preferences. b=947654, r=karlt
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -8,17 +8,16 @@
+ 
+ #include "nsCOMPtr.h"
+ #include "nsIFrame.h"
+ #include "nsPresContext.h"
+ #include "nsStyleContext.h"
+ #include "nsUnicharUtils.h"
+ #include "nsRenderingContext.h"
+ 
+-#include "mozilla/Preferences.h"
+ #include "nsIPersistentProperties2.h"
+ #include "nsIObserverService.h"
+ #include "nsIObserver.h"
+ #include "nsNetUtil.h"
+ 
+ #include "mozilla/LookAndFeel.h"
+ #include "nsCSSRendering.h"
+ #include "prprf.h"         // For PR_snprintf()
+@@ -34,18 +33,16 @@ using namespace mozilla;
+ 
+ //#define NOISY_SEARCH 1
+ 
+ static const float kLargeOpFactor = float(M_SQRT2);
+ static const float kIntegralFactor = 2.0;
+ 
+ // -----------------------------------------------------------------------------
+ static const nsGlyphCode kNullGlyph = {{{0, 0}}, 0};
+-typedef enum {eExtension_base, eExtension_variants, eExtension_parts}
+-  nsMathfontPrefExtension;
+ 
+ // -----------------------------------------------------------------------------
+ // nsGlyphTable is a class that provides an interface for accessing glyphs
+ // of stretchy chars. It acts like a table that stores the variants of bigger
+ // sizes (if any) and the partial glyphs needed to build extensible symbols.
+ //
+ // A char for which nsGlyphTable::Has(aChar) is true means that the table
+ // contains some glyphs (bigger and/or partial) that can be used to render
+@@ -673,79 +670,16 @@ nsGlyphTableList::GetGlyphTableFor(gfxFo
+   // allocate a table
+   glyphTable = mOpenTypeTableList.AppendElement(aFont->GetFontEntry());
+   return glyphTable;
+ }
+ 
+ 
+ // -----------------------------------------------------------------------------
+ 
+-// Lookup the preferences:
+-// "font.mathfont-family.\uNNNN.base"     -- fonts for the base size
+-// "font.mathfont-family.\uNNNN.variants" -- fonts for larger glyphs
+-// "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
+-// Given the char code and mode of stretch, retrieve the preferred extension
+-// font families.
+-static bool
+-GetFontExtensionPref(char16_t aChar,
+-                     nsMathfontPrefExtension aExtension, nsString& aValue)
+-{
+-  // initialize OUT param
+-  aValue.Truncate();
+-
+-  // We are going to try two keys because some users specify their pref as 
+-  // user_pref("font.mathfont-family.\uNNNN.base", "...") rather than
+-  // user_pref("font.mathfont-family.\\uNNNN.base", "...").
+-  // The \uNNNN in the former is interpreted as an UTF16 escape sequence by
+-  // JavaScript and is converted to the internal UTF8 string that JavaScript
+-  // uses. 
+-  // But clueless users who are not savvy of JavaScript have no idea as to what 
+-  // is going on and are baffled as to why their pref setting is not working.
+-  // So to save countless explanations, we are going to support both keys.
+-
+-  static const char* kMathFontPrefix = "font.mathfont-family.";
+-
+-  nsAutoCString extension;
+-  switch (aExtension)
+-  {
+-    case eExtension_base:
+-      extension.AssignLiteral(".base");
+-      break;
+-    case eExtension_variants:
+-      extension.AssignLiteral(".variants");
+-      break;
+-    case eExtension_parts:
+-      extension.AssignLiteral(".parts");
+-      break;
+-    default:
+-      return false;
+-  }
+-
+-  // .\\uNNNN key
+-  nsAutoCString key;
+-  key.AssignASCII(kMathFontPrefix);
+-  char ustr[10];
+-  PR_snprintf(ustr, sizeof(ustr), "\\u%04X", aChar);
+-  key.Append(ustr);
+-  key.Append(extension);
+-  // .\uNNNN key
+-  nsAutoCString alternateKey;
+-  alternateKey.AssignASCII(kMathFontPrefix);
+-  NS_ConvertUTF16toUTF8 tmp(&aChar, 1);
+-  alternateKey.Append(tmp);
+-  alternateKey.Append(extension);
+-
+-  aValue = Preferences::GetString(key.get());
+-  if (aValue.IsEmpty()) {
+-    aValue = Preferences::GetString(alternateKey.get());
+-  }
+-  return !aValue.IsEmpty();
+-}
+-
+-
+ static bool
+ MathFontEnumCallback(const nsString& aFamily, bool aGeneric, void *aData)
+ {
+   if (!gGlyphTableList->AddGlyphTable(aFamily))
+     return false; // stop in low-memory situations
+   return true; // don't stop
+ }
+ 
+@@ -789,19 +723,16 @@ InitGlobals(nsPresContext* aPresContext)
+   // stretchy characters.
+   // We just want to iterate over the font-family list using the
+   // callback mechanism that nsFont has...
+   nsFont font("", 0, 0, 0, 0, 0, 0);
+   NS_NAMED_LITERAL_CSTRING(defaultKey, "font.mathfont-glyph-tables");
+   rv = mathfontProp->GetStringProperty(defaultKey, font.name);
+   if (NS_FAILED(rv)) return rv;
+ 
+-  // Parse the font list and append an entry for each family to gGlyphTableList
+-  nsAutoString missingFamilyList;
+-
+   font.EnumerateFamilies(MathFontEnumCallback, nullptr);
+   return rv;
+ }
+ 
+ // -----------------------------------------------------------------------------
+ // And now the implementation of nsMathMLChar
+ 
+ nsMathMLChar::~nsMathMLChar()
+@@ -891,18 +822,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+        the next stage in the pipeline is given a chance to find
+        a largeop variant. If the next stage fails, we fallback
+        to the base size.
+ 
+  2) We search for the first larger variant of the char that fits the
+     container' size.  We first search for larger variants using the glyph
+     table corresponding to the first existing font specified in the list of
+     stretchy fonts held by the leaf style context (from -moz-math-stretchy in
+-    mathml.css).  Generic fonts are resolved by the preference
+-    "font.mathfont-family".
++    mathml.css).
+     Issues :
+     a) the largeop and display settings determine the starting
+        size when we do the above search, regardless of whether
+        smaller variants already fit the container' size.
+     b) if it is a largeopOnly request (i.e., a displaystyle operator
+        with largeop=true and stretchy=false), we break after finding
+        the first starting variant, regardless of whether that
+        variant fits the container's size.
+@@ -1025,90 +955,16 @@ ComputeSizeFromParts(nsPresContext* aPre
+ 
+   if (minSize > aTargetSize)
+     return minSize; // settle with the minimum size
+ 
+   // Fill-up the target area
+   return aTargetSize;
+ }
+ 
+-// Insert aFallbackFamilies before the first generic family in or at the end
+-// of a CSS aFontName.
+-static void
+-AddFallbackFonts(nsAString& aFontName, const nsAString& aFallbackFamilies)
+-{
+-  if (aFallbackFamilies.IsEmpty())
+-    return;
+-
+-  if (aFontName.IsEmpty()) {
+-    return;
+-  }
+-
+-  static const char16_t kSingleQuote  = char16_t('\'');
+-  static const char16_t kDoubleQuote  = char16_t('\"');
+-  static const char16_t kComma        = char16_t(',');
+-
+-  const char16_t *p_begin, *p_end;
+-  aFontName.BeginReading(p_begin);
+-  aFontName.EndReading(p_end);
+-
+-  const char16_t *p = p_begin;
+-  const char16_t *p_name = nullptr;
+-  while (p < p_end) {
+-    while (nsCRT::IsAsciiSpace(*p))
+-      if (++p == p_end)
+-        goto insert;
+-
+-    p_name = p;
+-    if (*p == kSingleQuote || *p == kDoubleQuote) {
+-      // quoted font family
+-      char16_t quoteMark = *p;
+-      if (++p == p_end)
+-        goto insert;
+-
+-      // XXX What about CSS character escapes?
+-      while (*p != quoteMark)
+-        if (++p == p_end)
+-          goto insert;
+-
+-      while (++p != p_end && *p != kComma)
+-        /* nothing */ ;
+-
+-    } else {
+-      // unquoted font family
+-      const char16_t *nameStart = p;
+-      while (++p != p_end && *p != kComma)
+-        /* nothing */ ;
+-
+-      nsAutoString family;
+-      family = Substring(nameStart, p);
+-      family.CompressWhitespace(false, true);
+-
+-      uint8_t generic;
+-      nsFont::GetGenericID(family, &generic);
+-      if (generic != kGenericFont_NONE)
+-        goto insert;
+-    }
+-
+-    ++p; // may advance past p_end
+-  }
+-
+-  aFontName.Append(NS_LITERAL_STRING(",") + aFallbackFamilies);
+-  return;
+-
+-insert:
+-  if (p_name) {
+-    aFontName.Insert(aFallbackFamilies + NS_LITERAL_STRING(","),
+-                     p_name - p_begin);
+-  }
+-  else { // whitespace or empty
+-    aFontName = aFallbackFamilies;
+-  }
+-}
+-
+ // Update the font and rendering context if there is a family change
+ bool
+ nsMathMLChar::SetFontFamily(nsPresContext*      aPresContext,
+                             const nsGlyphTable* aGlyphTable,
+                             const nsGlyphCode&  aGlyphCode,
+                             const nsAString&    aDefaultFamily,
+                             nsFont&             aFont)
+ {
+@@ -1655,30 +1511,16 @@ nsMathMLChar::StretchInternal(nsPresCont
+   // So first set our direction back to its instrinsic value
+   nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
+ 
+   // Set default font and get the default bounding metrics
+   // mStyleContext is a leaf context used only when stretching happens.
+   // For the base size, the default font should come from the parent context
+   nsFont font = mStyleContext->GetParent()->StyleFont()->mFont;
+ 
+-  // Override with specific fonts if applicable for this character
+-  nsAutoString families;
+-  if (GetFontExtensionPref(mData[0], eExtension_base, families)) {
+-    font.name = families;
+-  }
+-
+-  // Don't modify this nsMathMLChar when doing GetMaxWidth()
+-  bool maxWidth = (NS_STRETCH_MAXWIDTH & aStretchHint) != 0;
+-  if (!maxWidth) {
+-    // Record the families in case there is no stretch.  But don't bother
+-    // storing families when they are just those from the StyleContext.
+-    mFamily = families;
+-  }
+-
+   aPresContext->DeviceContext()->GetMetricsFor(font,
+                                                mStyleContext->StyleFont()->
+                                                mLanguage,
+                                                mStyleContext->PresContext()->
+                                                GetUserFontSet(),
+                                                mStyleContext->PresContext()->
+                                                GetTextPerfMetrics(),
+                                                *getter_AddRefs(mFontMetrics));
+@@ -1694,17 +1536,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+                          aThebesContext, &provider);
+   aDesiredStretchSize.leftBearing = NSToCoordFloor(metrics.mBoundingBox.X());
+   aDesiredStretchSize.rightBearing = NSToCoordCeil(metrics.
+                                                    mBoundingBox.XMost());
+   aDesiredStretchSize.ascent = NSToCoordCeil(-metrics.mBoundingBox.Y());
+   aDesiredStretchSize.descent = NSToCoordCeil(metrics.mBoundingBox.YMost());
+   aDesiredStretchSize.width = NSToCoordRound(metrics.mAdvanceWidth);
+ 
+-
++  bool maxWidth = (NS_STRETCH_MAXWIDTH & aStretchHint) != 0;
+   if (!maxWidth) {
+     mUnscaledAscent = aDesiredStretchSize.ascent;
+   }
+ 
+   //////////////////////////////////////////////////////////////////////////////
+   // 1. Check the common situations where stretching is not actually needed
+   //////////////////////////////////////////////////////////////////////////////
+ 
+@@ -1786,57 +1628,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+       done = true;
+   }
+ 
+   //////////////////////////////////////////////////////////////////////////////
+   // 2/3. Search for a glyph or set of part glyphs of appropriate size
+   //////////////////////////////////////////////////////////////////////////////
+ 
+   bool glyphFound = false;
+-  nsAutoString cssFamilies;
+ 
+   if (!done) {
+     font = mStyleContext->StyleFont()->mFont;
+-    cssFamilies = font.name;
+-  }
+-
+-  // See if there are preferred fonts for the variants of this char
+-  if (!done && GetFontExtensionPref(mData[0], eExtension_variants, families)) {
+-    font.name = families;
+-
+-    StretchEnumContext enumData(this, aPresContext, aThebesContext,
+-                                aStretchDirection, targetSize, aStretchHint,
+-                                aDesiredStretchSize, font.name, glyphFound);
+-    enumData.mTryParts = false;
+-
+-    done = !font.EnumerateFamilies(StretchEnumContext::EnumCallback, &enumData);
+-  }
+-
+-  // See if there are preferred fonts for the parts of this char
+-  if (!done && !largeopOnly
+-      && GetFontExtensionPref(mData[0], eExtension_parts, families)) {
+-    font.name = families;
+-
+-    StretchEnumContext enumData(this, aPresContext, aThebesContext,
+-                                aStretchDirection, targetSize, aStretchHint,
+-                                aDesiredStretchSize, font.name, glyphFound);
+-    enumData.mTryVariants = false;
+-
+-    done = !font.EnumerateFamilies(StretchEnumContext::EnumCallback, &enumData);
+-  }
+-
+-  if (!done) { // normal case
+-    // Use the css font-family but add preferred fallback fonts.
+-    font.name = cssFamilies;
+-    NS_NAMED_LITERAL_CSTRING(defaultKey, "font.mathfont-family");
+-    nsAdoptingString fallbackFonts = Preferences::GetString(defaultKey.get());
+-    if (!fallbackFonts.IsEmpty()) {
+-      AddFallbackFonts(font.name, fallbackFonts);
+-    }
+-
+ #ifdef NOISY_SEARCH
+     printf("Searching in "%s" for a glyph of appropriate size for: 0x%04X:%c\n",
+            font.name, mData[0], mData[0]&0x00FF);
+ #endif
+     StretchEnumContext enumData(this, aPresContext, aThebesContext,
+                                 aStretchDirection, targetSize, aStretchHint,
+                                 aDesiredStretchSize, font.name, glyphFound);
+     enumData.mTryParts = !largeopOnly;
+diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
+--- a/modules/libpref/src/init/all.js
++++ b/modules/libpref/src/init/all.js
+@@ -1463,18 +1463,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+ 
+ // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
+ // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
+ pref("intl.hyphenation-alias.no", "nb");
+ pref("intl.hyphenation-alias.no-*", "nb");
+ pref("intl.hyphenation-alias.nb-*", "nb");
+ pref("intl.hyphenation-alias.nn-*", "nn");
+ 
+-pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
+-
+ // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
+ // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
+ pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
+ 
+ pref("images.dither", "auto");
+ pref("security.directory",              "");
+ 
+ pref("signed.applets.codebase_principal_support", false);
+@@ -2458,19 +2456,16 @@ pref("font.size.fixed.zh-CN", 16);
+ pref("font.default.zh-TW", "sans-serif");
+ pref("font.size.variable.zh-TW", 16);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 16);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+-// We have special support for Monotype Symbol on Windows.
+-pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+-
+ // cleartype settings - false implies default system settings 
+ 
+ // use cleartype rendering for downloadable fonts (win xp only)
+ pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
+ 
+ // use cleartype rendering for all fonts always (win xp only)
+ pref("gfx.font_rendering.cleartype.always_use_for_content", false);
+ 
+@@ -2989,19 +2984,16 @@ pref("font.size.fixed.zh-CN", 16);
+ pref("font.default.zh-TW", "sans-serif");
+ pref("font.size.variable.zh-TW", 15);
+ pref("font.size.fixed.zh-TW", 16);
+ 
+ pref("font.default.zh-HK", "sans-serif");
+ pref("font.size.variable.zh-HK", 15);
+ pref("font.size.fixed.zh-HK", 16);
+ 
+-// Apple's Symbol is Unicode so use it
+-pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+-
+ // individual font faces to be treated as independent families
+ // names are Postscript names of each face
+ pref("font.single-face-list", "Osaka-Mono");
+ 
+ // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
+ // names are canonical family names (typically English names)
+ pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
+ 
+@@ -3042,18 +3034,16 @@ pref("mousewheel.enable_pixel_scrolling"
+ #endif
+ 
+ #ifdef XP_OS2
+ 
+ pref("ui.key.menuAccessKeyFocuses", true);
+ 
+ pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
+ 
+-pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, DejaVu Sans");
+-
+ // Languages only need lists if we have a default that might not be available.
+ // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
+ // maps them to Times New Roman and Helvetica, respectively. Those fonts and
+ // Courier are available on OS/2 by default.
+ 
+ pref("font.name.serif.ar", "Tms Rmn");
+ pref("font.name.sans-serif.ar", "Helv");
+ pref("font.name.monospace.ar", "Courier");

@@ -1,0 +1,5 @@
+# HG changeset patch
+# Parent d0128cfa66fcab2ec45aa9132bad45efa0f6e028
+# User Frédéric Wang <fred.wang@free.fr>
+try: -b o -p linux,linux64,macosx64,win32,android,android-x86 -u none -t none
+

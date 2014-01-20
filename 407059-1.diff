@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 1a01899e7ce30ecb2e406967987cc4d8fba39740
+# Parent c4d4e8990fa071300cdfb2945329b1e3b8d7cd44
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -7,7 +7,7 @@ diff --git a/gfx/thebes/MathTableStructures.h b/gfx/thebes/MathTableStructures.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/MathTableStructures.h
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,114 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -24,7 +24,7 @@ new file mode 100644
 +typedef mozilla::AutoSwap_PRUint16 Offset;
 +
 +struct MathValueRecord {
-+  mozilla::AutoSwap_PRUint16 mValue;
++  mozilla::AutoSwap_PRInt16  mValue;
 +  Offset                     mDeviceTable;
 +};
 +
@@ -58,10 +58,11 @@ new file mode 100644
 +};
 +
 +struct MathConstants {
-+  mozilla::AutoSwap_PRUint16 mSingleValues[gfxFontEntry::
-+                                           DisplayOperatorMinHeight -
-+                                           gfxFontEntry::
-+                                           ScriptPercentScaleDown + 1];
++  mozilla::AutoSwap_PRInt16  mInt16[gfxFontEntry::ScriptScriptPercentScaleDown -
++                                    gfxFontEntry::ScriptPercentScaleDown + 1];
++  mozilla::AutoSwap_PRUint16 mUint16[gfxFontEntry::DisplayOperatorMinHeight -
++                                     gfxFontEntry::
++                                     DelimitedSubFormulaMinHeight + 1];
 +  MathValueRecord            mMathValues[gfxFontEntry::RadicalKernAfterDegree -
 +                                         gfxFontEntry::MathLeading + 1];
 +  mozilla::AutoSwap_PRUint16 mRadicalDegreeBottomRaisePercent;
@@ -178,7 +179,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -369,16 +372,81 @@ void
+@@ -369,16 +372,88 @@ void
  gfxFontEntry::NotifyGlyphsChanged()
  {
      for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
@@ -221,14 +222,21 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +gfxFontEntry::GetMathConstant(gfxFontEntry::MathConstant aConstant)
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
-+    return gfxFloat(mMathTable->GetMathConstant(aConstant)) / mUnitsPerEm;
++    gfxFloat value = mMathTable->GetMathConstant(aConstant);
++    if (aConstant == gfxFontEntry::ScriptPercentScaleDown ||
++        aConstant == gfxFontEntry::ScriptScriptPercentScaleDown ||
++        aConstant == gfxFontEntry::RadicalDegreeBottomRaisePercent) {
++        return value / 100.0;
++    }
++    return value / mUnitsPerEm;
 +}
 +
-+bool gfxFontEntry::GetMathItalicCorrection(uint32_t aGlyphID,
-+                                           gfxFloat* aItalicCorrection)
++bool
++gfxFontEntry::GetMathItalicCorrection(uint32_t aGlyphID,
++                                      gfxFloat* aItalicCorrection)
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
-+    uint16_t italicCorrection;
++    int16_t italicCorrection;
 +    if (!mMathTable->GetMathItalicCorrection(aGlyphID, &italicCorrection)) {
 +        return false;
 +    }
@@ -410,7 +418,7 @@ diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.cpp
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,459 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -483,18 +491,22 @@ new file mode 100644
 +  return true;
 +}
 +
-+uint16_t
++int32_t
 +gfxMathTable::GetMathConstant(gfxFontEntry::MathConstant aConstant)
 +{
 +  const MathConstants* mathconstants = GetMathConstants();
 +
++  if (aConstant <= gfxFontEntry::ScriptScriptPercentScaleDown) {
++    return int16_t(mathconstants->mInt16[aConstant]);
++  }
++
 +  if (aConstant <= gfxFontEntry::DisplayOperatorMinHeight) {
-+    return uint16_t(mathconstants->mSingleValues[aConstant]);
++    return uint16_t(mathconstants->mUint16[aConstant]);
 +  }
 +
 +  if (aConstant <= gfxFontEntry::RadicalKernAfterDegree) {
-+    return uint16_t(mathconstants->
-+                    mMathValues[aConstant - gfxFontEntry::MathLeading].mValue);
++    return int16_t(mathconstants->
++                   mMathValues[aConstant - gfxFontEntry::MathLeading].mValue);
 +  }
 +
 +  return uint16_t(mathconstants->mRadicalDegreeBottomRaisePercent);
@@ -502,7 +514,7 @@ new file mode 100644
 +
 +bool
 +gfxMathTable::GetMathItalicCorrection(uint32_t aGlyphID,
-+                                      uint16_t* aItalicCorrection)
++                                      int16_t* aItalicCorrection)
 +{
 +  const MathGlyphInfo* mathglyphinfo = GetMathGlyphInfo();
 +
@@ -539,7 +551,7 @@ new file mode 100644
 +  const MathValueRecord* mathValueRecordArray =
 +    reinterpret_cast<const MathValueRecord*>(start);
 +
-+  *aItalicCorrection = uint16_t(mathValueRecordArray[i].mValue);
++  *aItalicCorrection = int16_t(mathValueRecordArray[i].mValue);
 +  return true;
 +}
 +
@@ -913,14 +925,14 @@ new file mode 100644
 +    /**
 +     * Returns the value of the specified constant from the MATH table.
 +     */
-+    uint16_t GetMathConstant(gfxFontEntry::MathConstant aConstant);
++    int32_t GetMathConstant(gfxFontEntry::MathConstant aConstant);
 +
 +    /**
 +     *  If the MATH table contains an italic correction for that glyph, this
 +     *  function gets the value and returns true. Otherwise it returns false.
 +     */
 +    bool
-+    GetMathItalicCorrection(uint32_t aGlyphID, uint16_t* aItalicCorrection);
++    GetMathItalicCorrection(uint32_t aGlyphID, int16_t* aItalicCorrection);
 +
 +    /**
 +     * @param aGlyphID  glyph index of the character we want to stretch
