@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 379439a345c2e4ee6963fab92b71fcfadce27bc0
+# Parent 0ea6b028ce53fa19e375f565e160346fdaca3704
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: make nsMathMLChar use the MATH table. r=karl, b=407059
 
@@ -321,7 +321,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  #ifdef DEBUG
      nsAutoCString uriStr;
      uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
-@@ -305,52 +363,142 @@ nsGlyphTable::ElementAt(nsPresContext* a
+@@ -305,52 +363,141 @@ nsGlyphTable::ElementAt(nsPresContext* a
    if (index+2 >= mGlyphCache.Length()) return kNullGlyph;
    nsGlyphCode ch;
    ch.code[0] = mGlyphCache.CharAt(index);
@@ -375,7 +375,6 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -  return HasVariantsOf(aPresContext, aChar) || HasPartsOf(aPresContext, aChar);
 +  char16_t uchar = aChar->mData[0];
 +  if (mCharCache != uchar) {
-+    // XXXfred: use gfxFont::GetGlyph() to get rid of aThebesContext?
 +    nsGlyphCode glyph =  {{{uchar, 0}}, 0};
 +    nsAutoPtr<gfxTextRun> textRun;
 +    textRun = aChar->MakeTextRun(aThebesContext, glyph);
@@ -478,7 +477,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
  
    virtual ~nsGlyphTableList()
-@@ -362,33 +510,43 @@ public:
+@@ -362,33 +509,43 @@ public:
    nsresult Finalize();
  
    // Add a glyph table in the list, return the new table that was added
@@ -529,7 +528,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // Here is the global list of applicable glyph tables that we will be using
  static nsGlyphTableList* gGlyphTableList = nullptr;
  
-@@ -439,52 +597,72 @@ nsGlyphTable*
+@@ -439,52 +596,72 @@ nsGlyphTable*
  nsGlyphTableList::AddGlyphTable(const nsString& aPrimaryFontName)
  {
    // See if there is already a special table for this family.
@@ -611,7 +610,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // "font.mathfont-family.\uNNNN.parts"    -- fonts for partial glyphs
  // Given the char code and mode of stretch, retrieve the preferred extension
  // font families.
-@@ -648,17 +826,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -648,17 +825,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
    mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
    mBoundingMetrics = nsBoundingMetrics();
    mGlyphTable = nullptr;
@@ -630,7 +629,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
   The Stretch:
   @param aContainerSize - suggested size for the stretched char
   @param aDesiredStretchSize - OUT parameter. The desired size
-@@ -963,53 +1141,109 @@ public:
+@@ -963,53 +1140,109 @@ public:
          NS_ERROR("This shouldn't be called because we never enable spacing");
      }
  };
@@ -747,7 +746,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    textRun->Draw(aThebesContext, pt, DrawMode::GLYPH_FILL, 0, aGlyph.Length(),
                  &provider, nullptr, nullptr);
  }
-@@ -1086,36 +1320,62 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1086,36 +1319,62 @@ nsMathMLChar::StretchEnumContext::TryVar
  
    nscoord bestSize =
      isVertical ? mBoundingMetrics.ascent + mBoundingMetrics.descent
@@ -813,7 +812,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      if (largeopOnly ||
          IsSizeBetter(charSize, bestSize, mTargetSize, mStretchHint)) {
        mGlyphFound = true;
-@@ -1123,18 +1383,16 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1123,18 +1382,16 @@ nsMathMLChar::StretchEnumContext::TryVar
          // IsSizeBetter() checked that charSize < maxsize;
          // Leave ascent, descent, and bestsize as these contain maxsize.
          if (mBoundingMetrics.width < bm.width)
@@ -832,7 +831,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          mChar->mGlyphTable = aGlyphTable;
          mChar->mFamily = font.name;
          mChar->mGlyphs[0] = ch;
-@@ -1148,34 +1406,36 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1148,34 +1405,36 @@ nsMathMLChar::StretchEnumContext::TryVar
      else {
  #ifdef NOISY_SEARCH
        printf("    size:%d Rejected!\n", size);
@@ -872,7 +871,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    nsFont font = mChar->mStyleContext->StyleFont()->mFont;
    // Ensure SetFontFamily will set the font
    font.name.Truncate();
-@@ -1186,27 +1446,28 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1186,27 +1445,28 @@ nsMathMLChar::StretchEnumContext::TryPar
    nscoord sizedata[4];
  
    bool isVertical = (mDirection == NS_STRETCH_DIRECTION_VERTICAL);
@@ -906,7 +905,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        sizedata[i] = isVertical ? bm.ascent + bm.descent
                                 : bm.rightBearing - bm.leftBearing;
      }
-@@ -1317,34 +1578,45 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1317,34 +1577,45 @@ nsMathMLChar::StretchEnumContext::TryPar
  
  // This is called for each family, whether it exists or not
  bool
@@ -961,7 +960,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    context->mTablesTried.AppendElement(glyphTable);
  
    // If the unicode table is being used, then search all font families.  If a
-@@ -1492,19 +1764,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1492,19 +1763,19 @@ nsMathMLChar::StretchInternal(nsPresCont
      }
    }
  
@@ -983,7 +982,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        done = true;
    }
  
-@@ -1567,17 +1839,21 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1567,17 +1838,21 @@ nsMathMLChar::StretchInternal(nsPresCont
    }
  
    if (!maxWidth) {
@@ -1006,7 +1005,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);
        if (!largeop || scale > 1.0) {
          // make the character match the desired height.
-@@ -1600,19 +1876,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1600,19 +1875,19 @@ nsMathMLChar::StretchInternal(nsPresCont
          aDesiredStretchSize.rightBearing *= scale;
          aDesiredStretchSize.width *= scale;
        }
@@ -1028,7 +1027,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        scale = (largeopFactor *
                 (initialSize.rightBearing - initialSize.leftBearing)) /
          (aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing);
-@@ -1623,17 +1899,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1623,17 +1898,17 @@ nsMathMLChar::StretchInternal(nsPresCont
        aDesiredStretchSize.rightBearing *= scale;
        aDesiredStretchSize.width *= scale;
      }
@@ -1047,7 +1046,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);
        if (!maxWidth) {
          mScaleY *= scale;
-@@ -2094,27 +2370,27 @@ nsMathMLChar::PaintVertically(nsPresCont
+@@ -2094,27 +2369,27 @@ nsMathMLChar::PaintVertically(nsPresCont
    // Get the device pixel size in the vertical direction.
    // (This makes no effort to optimize for non-translation transformations.)
    nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();
@@ -1079,7 +1078,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
          break;
      }
      // empty slots are filled with the glue if it is not null
-@@ -2288,27 +2564,27 @@ nsMathMLChar::PaintHorizontally(nsPresCo
+@@ -2288,27 +2563,27 @@ nsMathMLChar::PaintHorizontally(nsPresCo
    // Get the device pixel size in the horizontal direction.
    // (This makes no effort to optimize for non-translation transformations.)
    nscoord oneDevPixel = aPresContext->AppUnitsPerDevPixel();

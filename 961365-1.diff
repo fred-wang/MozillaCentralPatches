@@ -1,0 +1,102 @@
+# HG changeset patch
+# Parent e8554deb3c1caa1addc93d604d6dab6dea16613d
+# User Frédéric Wang <fred.wang@free.fr>
+Part 1 - Add helper functions to access MATH constants. r=karl, b=961365
+
+diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
+--- a/layout/mathml/nsMathMLFrame.h
++++ b/layout/mathml/nsMathMLFrame.h
+@@ -9,16 +9,18 @@
+ #include "mozilla/Attributes.h"
+ #include "nsFontMetrics.h"
+ #include "nsMathMLOperators.h"
+ #include "nsIMathMLFrame.h"
+ #include "nsLayoutUtils.h"
+ #include "nsBoundingMetrics.h"
+ #include "nsIFrame.h"
+ 
++#include "gfxMathTable.h"
++
+ class nsMathMLChar;
+ class nsCSSValue;
+ class nsDisplayListSet;
+ 
+ // Concrete base class with default methods that derived MathML frames can override
+ class nsMathMLFrame : public nsIMathMLFrame {
+ public:
+ 
+@@ -155,16 +157,48 @@ public:
+     if (aFrame->IsFrameOfType(nsIFrame::eMathML)) {
+       nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
+       if (mathMLFrame)
+         return mathMLFrame->GetMathMLFrameType();
+     }
+     return eMathMLFrameType_UNKNOWN;
+   }
+ 
++  static bool
++  TryGetMathTable(nsFontMetrics* aFontMetrics)
++  {
++    gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
++    return mathFont->GetFontEntry()->TryGetMathTable(mathFont);
++  }
++
++  static void
++  GetMathConstant(nsFontMetrics*             aFontMetrics,
++                 gfxFontEntry::MathConstant aConstant,
++                  float&                     aValue)
++  {
++    if (TryGetMathTable(aFontMetrics)) {
++      aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
++        GetFontEntry()->GetMathConstant(aConstant);
++    }
++  }
++
++  static void
++  GetMathConstantEm(nsFontMetrics*             aFontMetrics,
++                    gfxFontEntry::MathConstant aConstant,
++                    nscoord&                   aValue)
++  {
++    if (TryGetMathTable(aFontMetrics)) {
++      gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
++      aValue = NSToCoordRound(mathFont->GetFontEntry()->
++                              GetMathConstant(aConstant) *
++                              mathFont->GetMetrics().emHeight * 
++                              aFontMetrics->AppUnitsPerDevPixel());
++    }
++  }
++
+   // estimate of the italic correction
+   static void
+   GetItalicCorrection(nsBoundingMetrics& aBoundingMetrics,
+                       nscoord&           aItalicCorrection)
+   {
+     aItalicCorrection = aBoundingMetrics.rightBearing - aBoundingMetrics.width;
+     if (0 > aItalicCorrection) {
+       aItalicCorrection = 0;
+@@ -286,20 +320,21 @@ public:
+     // should switch to this API in order to scale with changes of TextZoom
+     emHeight = fm->EmHeight();
+ #else
+     emHeight = NSToCoordRound(float(fm->Font().size));
+ #endif
+   }
+ 
+   static void
+-  GetAxisHeight (nsFontMetrics* fm,
+-                 nscoord&        axisHeight)
+-  {
+-    axisHeight = NSToCoordRound(250.000f/430.556f * fm->XHeight());
++  GetAxisHeight (nsFontMetrics* aFontMetrics,
++                 nscoord&       aAxisHeight)
++   {
++    aAxisHeight = NSToCoordRound(250.000f/430.556f * aFontMetrics->XHeight());
++    GetMathConstantEm(aFontMetrics, gfxFontEntry::AxisHeight, aAxisHeight);
+   }
+ 
+   static void
+   GetBigOpSpacings(nsFontMetrics* fm, 
+                    nscoord&        bigOpSpacing1,
+                    nscoord&        bigOpSpacing2,
+                    nscoord&        bigOpSpacing3,
+                    nscoord&        bigOpSpacing4,

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent dcccf6c78eb27b7ee5307660ca76d77718ad5183
+# Parent b1a5c59fca32b537af763206976c5e512b857da8
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 945183 - Mirroring large/stretchy operators
 
@@ -26,7 +26,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
  
    virtual nsGlyphCode BigOf(gfxContext* aThebesContext,
-@@ -393,41 +394,58 @@ public:
+@@ -393,40 +394,41 @@ public:
  
    const gfxFontEntry* GetFontEntry() const {
      return mFontEntry;
@@ -48,29 +48,11 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  {
    char16_t uchar = aChar->mData[0];
 -  if (mCharCache != uchar) {
--    // XXXfred: use gfxFont::GetGlyph() to get rid of aThebesContext?
 -    nsGlyphCode glyph =  {{{uchar, 0}}, 0};
-+  bool rtl = aChar->mRTL;
-+  if (mCharCache != uchar || mRTLCache != rtl) {
++  if (mCharCache != uchar || mRTLCache != aChar->mRTL) {
      nsAutoPtr<gfxTextRun> textRun;
 -    textRun = aChar->MakeTextRun(aThebesContext, glyph);
-+    nsRefPtr<gfxFontGroup> newFontGroup;
-+    if (rtl) {
-+      gfxFontGroup* fontGroup = aChar->mFontMetrics->GetThebesFontGroup();
-+      gfxFontStyle fontStyle = *fontGroup->GetStyle();
-+      gfxFontFeature settingRTLM;
-+      settingRTLM.mTag = TRUETYPE_TAG('r','t','l','m');
-+      settingRTLM.mValue = 1;
-+      fontStyle.featureSettings.AppendElement(settingRTLM);
-+      newFontGroup = fontGroup->Copy(&fontStyle);
-+    }
-+    if (!newFontGroup) {
-+      newFontGroup = aChar->mFontMetrics->GetThebesFontGroup();
-+    }
-+    textRun = newFontGroup->
-+      MakeTextRun(&uchar, 1, aThebesContext,
-+                  aChar->mFontMetrics->AppUnitsPerDevPixel(),
-+                  rtl ? gfxTextRunFactory::TEXT_IS_RTL : 0);
++    textRun = aChar->MakeTextRunWithDirection(aThebesContext);
      const gfxTextRun::CompressedGlyph data = textRun->GetCharacterGlyphs()[0];
      if (data.IsSimpleGlyph()) {
        mGlyphID = data.GetSimpleGlyph();
@@ -80,7 +62,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        mGlyphID = 0;
      }
      mCharCache = uchar;
-+    mRTLCache = rtl;
++    mRTLCache = aChar->mRTL;
    }
  }
  
@@ -89,11 +71,37 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  nsOpenTypeTable::FontNameFor(const nsGlyphCode& aGlyphCode) const
  {
      NS_ASSERTION(aGlyphCode.IsGlyphID(),
-@@ -1142,19 +1160,19 @@ public:
+@@ -1137,23 +1139,45 @@ public:
+     }
+     virtual void GetSpacing(PRUint32 aStart, PRUint32 aLength,
+                             Spacing* aSpacing) {
+         NS_ERROR("This shouldn't be called because we never enable spacing");
      }
  };
  
  gfxTextRun*
++nsMathMLChar::MakeTextRunWithDirection(gfxContext* aThebesContext)
++{
++  nsRefPtr<gfxFontGroup> newFontGroup;
++  if (mRTL) {
++    gfxFontGroup* fontGroup = mFontMetrics->GetThebesFontGroup();
++    gfxFontStyle fontStyle = *fontGroup->GetStyle();
++    gfxFontFeature settingRTLM;
++    settingRTLM.mTag = TRUETYPE_TAG('r','t','l','m');
++    settingRTLM.mValue = 1;
++    fontStyle.featureSettings.AppendElement(settingRTLM);
++    newFontGroup = fontGroup->Copy(&fontStyle);
++  }
++  if (!newFontGroup) {
++    newFontGroup = mFontMetrics->GetThebesFontGroup();
++  }
++  return newFontGroup->
++    MakeTextRun(mData.get(), mData.Length(), aThebesContext,
++                mFontMetrics->AppUnitsPerDevPixel(),
++                mRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
++}
++
++gfxTextRun*
  nsMathMLChar::MakeTextRun(gfxContext*        aThebesContext,
                            const nsGlyphCode& aGlyph)
  {
@@ -112,7 +120,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    };
    gfxTextRun* textRun = gfxTextRun::Create(&params, 1, mFontMetrics->
                                             GetThebesFontGroup(), 0);
-@@ -1933,17 +1951,17 @@ nsMathMLChar::Stretch(nsPresContext*    
+@@ -1931,17 +1955,17 @@ nsMathMLChar::Stretch(nsPresContext*    
                        bool                     aRTL)
  {
    NS_ASSERTION(!(aStretchHint &
@@ -131,8 +139,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    aRenderingContext.SetFont(mFontMetrics);
  
-@@ -2205,34 +2223,29 @@ nsMathMLChar::Display(nsDisplayListBuild
-                                   !aSelectedRect->IsEmpty()));
+@@ -2204,29 +2228,21 @@ nsMathMLChar::Display(nsDisplayListBuild
  }
  
  void
@@ -140,9 +147,6 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                int32_t aAppUnitsPerGfxUnit,
                                nsRect &r)
  {
-+  // TODO: make mScaleX negative if a mirrored glyph is not available and
-+  // nsMathMLOperators::IsMirrorableOperator(mData);
-+
    // apply the transforms
 -  if (mMirrored) {
 -    nsPoint pt = r.TopRight();
@@ -157,7 +161,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -                         NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
 -    aThebesContext->Scale(mScaleX, mScaleY);
 -  }
-+  nsPoint pt = mScaleX < 0 ? r.TopRight() : r.TopLeft();
++  nsPoint pt = r.TopLeft();
 +  aThebesContext->
 +    Translate(gfxPoint(NSAppUnitsToFloatPixels(pt.x, aAppUnitsPerGfxUnit),
 +                       NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
@@ -165,55 +169,41 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // update the bounding rectangle.
    r.x = r.y = 0;
--  r.width /= mScaleX;
-+  r.width /= std::abs(mScaleX);
+   r.width /= mScaleX;
    r.height /= mScaleY;
  }
  
  void
- nsMathMLChar::PaintForeground(nsPresContext* aPresContext,
-                               nsRenderingContext& aRenderingContext,
-                               nsPoint aPt,
-                               bool aIsSelected)
-@@ -2274,21 +2287,35 @@ nsMathMLChar::PaintForeground(nsPresCont
+@@ -2270,25 +2286,22 @@ nsMathMLChar::PaintForeground(nsPresCont
+   nsRect r = mRect + aPt;
+   ApplyTransforms(thebesContext, aPresContext->AppUnitsPerDevPixel(), r);
  
    switch(mDraw)
    {
      case DRAW_NORMAL:
        {
          // normal drawing if there is nothing special about this char...
-         uint32_t len = uint32_t(mData.Length());
+-        uint32_t len = uint32_t(mData.Length());
          nsAutoPtr<gfxTextRun> textRun;
 -        textRun = mFontMetrics->GetThebesFontGroup()->
-+        nsRefPtr<gfxFontGroup> newFontGroup;
-+        if (mRTL) {
-+          gfxFontGroup* fontGroup = mFontMetrics->GetThebesFontGroup();
-+          gfxFontStyle fontStyle = *fontGroup->GetStyle();
-+          gfxFontFeature settingRTLM;
-+          settingRTLM.mTag = TRUETYPE_TAG('r','t','l','m');
-+          settingRTLM.mValue = 1;
-+          fontStyle.featureSettings.AppendElement(settingRTLM);
-+          newFontGroup = fontGroup->Copy(&fontStyle);
-+        }
-+        if (!newFontGroup) {
-+          newFontGroup = mFontMetrics->GetThebesFontGroup();
-+        }
-+        textRun = newFontGroup->
-           MakeTextRun(mData.get(), len, thebesContext,
+-          MakeTextRun(mData.get(), len, thebesContext,
 -                      mFontMetrics->AppUnitsPerDevPixel(), 0);
-+                      mFontMetrics->AppUnitsPerDevPixel(),
-+                      mRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
++        textRun = MakeTextRunWithDirection(thebesContext);
          StubPropertyProvider provider;
 -        gfxPoint pt(0, mUnscaledAscent);
+-        textRun->Draw(thebesContext, pt, DrawMode::GLYPH_FILL, 0, len,
+-                      &provider, nullptr, nullptr);
 +        gfxPoint pt(mRTL ? mRect.width : 0, mUnscaledAscent);
-         textRun->Draw(thebesContext, pt, DrawMode::GLYPH_FILL, 0, len,
-                       &provider, nullptr, nullptr);
++        textRun->Draw(thebesContext, pt, DrawMode::GLYPH_FILL, 0,
++                      mData.Length(), &provider, nullptr, nullptr);
        }
        break;
      case DRAW_VARIANT:
        // if there is a glyph of appropriate size, paint that glyph
        DrawGlyph(thebesContext, mGlyphs[0], r.x, r.y + mUnscaledAscent);
        break;
+     case DRAW_PARTS:
+       // paint by parts
 diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
 --- a/layout/mathml/nsMathMLChar.h
 +++ b/layout/mathml/nsMathMLChar.h
@@ -236,7 +226,7 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
    void Display(nsDisplayListBuilder*   aBuilder,
                 nsIFrame*               aForFrame,
                 const nsDisplayListSet& aLists,
-@@ -228,18 +228,17 @@ private:
+@@ -228,31 +228,33 @@ private:
    // - DRAW_VARIANT: we draw a larger size variant given by mGlyphs[0].
    // - DRAW_PARTS: we assemble several parts given by mGlyphs[0], ... mGlyphs[4]
    // XXXfredw: the MATH table can have any numbers of parts and extenders.
@@ -256,3 +246,19 @@ diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
    bool
    SetFontFamily(nsPresContext*      aPresContext,
                  const nsGlyphTable* aGlyphTable,
+                 const nsGlyphCode&  aGlyphCode,
+                 const nsAString&    aDefaultFamily,
+                 nsFont&             aFont);
+ 
+   gfxTextRun*
++  MakeTextRunWithDirection(gfxContext* aThebesContext);
++
++  gfxTextRun*
+   MakeTextRun(gfxContext* aThebesContext, const nsGlyphCode& aGlyph);
+ 
+   nsBoundingMetrics
+   MeasureGlyph(gfxContext*        aThebesContext,
+                const nsGlyphCode& aGlyphCode, bool aLargeOp);
+ 
+   void
+   DrawGlyph(gfxContext*         aThebesContext,

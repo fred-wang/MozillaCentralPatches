@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 0a74c538609bbaebd1626f8beb652af800781328
+# Parent aea16baf89d38290a1e02ae7ba379bfaf2114d50
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 961365 - Use Open Type MATH constants for mfrac and msqrt/mroot. r=karl
+Part 2 - Use MATH constants for radicals. r=karl, b=961365
 
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
@@ -48,136 +48,30 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -9,16 +9,18 @@
- #include "mozilla/Attributes.h"
- #include "nsFontMetrics.h"
- #include "nsMathMLOperators.h"
- #include "nsIMathMLFrame.h"
- #include "nsLayoutUtils.h"
- #include "nsBoundingMetrics.h"
- #include "nsIFrame.h"
- 
-+#include "gfxMathTable.h"
-+
- class nsMathMLChar;
- class nsCSSValue;
- class nsDisplayListSet;
- 
- // Concrete base class with default methods that derived MathML frames can override
- class nsMathMLFrame : public nsIMathMLFrame {
- public:
- 
-@@ -155,16 +157,55 @@ public:
-     if (aFrame->IsFrameOfType(nsIFrame::eMathML)) {
-       nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
-       if (mathMLFrame)
-         return mathMLFrame->GetMathMLFrameType();
+@@ -176,16 +176,23 @@ public:
+   {
+     if (TryGetMathTable(aFontMetrics)) {
+       aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
+         GetFontEntry()->GetMathConstant(aConstant);
      }
-     return eMathMLFrameType_UNKNOWN;
    }
  
-+  static bool
-+  TryGetMathTable(nsFontMetrics* aFontMetrics)
-+  {
-+    gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
-+    return mathFont->GetFontEntry()->TryGetMathTable(mathFont);
-+  }
-+
-+  static void
-+  GetMathConstant(nsFontMetrics*             aFontMetrics,
-+                 gfxFontEntry::MathConstant aConstant,
-+                  float&                     aValue)
-+  {
-+    if (TryGetMathTable(aFontMetrics)) {
-+      aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
-+        GetFontEntry()->GetMathConstant(aConstant);
-+    }
-+  }
-+
-+  static void
-+  GetMathConstantEm(nsFontMetrics*             aFontMetrics,
-+                    gfxFontEntry::MathConstant aConstant,
-+                    nscoord&                   aValue)
-+  {
-+    if (TryGetMathTable(aFontMetrics)) {
-+      gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
-+      aValue = NSToCoordRound(mathFont->GetFontEntry()->
-+                              GetMathConstant(aConstant) *
-+                              mathFont->GetMetrics().emHeight * 
-+                              aFontMetrics->AppUnitsPerDevPixel());
-+    }
-+  }
-+
-+  static void
+   static void
 +  GetRadicalParameters(nsFontMetrics* aFontMetrics,
 +                       bool aDisplayStyle,
 +                       nscoord& aRadicalRuleThickness,
 +                       nscoord& aRadicalExtraAscender,
 +                       nscoord& aRadicalVerticalGap);
 +
-   // estimate of the italic correction
-   static void
-   GetItalicCorrection(nsBoundingMetrics& aBoundingMetrics,
-                       nscoord&           aItalicCorrection)
++  static void
+   GetMathConstantEm(nsFontMetrics*             aFontMetrics,
+                     gfxFontEntry::MathConstant aConstant,
+                     nscoord&                   aValue)
    {
-     aItalicCorrection = aBoundingMetrics.rightBearing - aBoundingMetrics.width;
-     if (0 > aItalicCorrection) {
-       aItalicCorrection = 0;
-@@ -252,53 +293,32 @@ public:
-   GetSupDrop(nsFontMetrics* fm,
-              nscoord&        aSupDrop)
-   {
-     nscoord xHeight = fm->XHeight();
-     aSupDrop = NSToCoordRound(386.108f/430.556f * xHeight);
-   }
- 
-   static void
--  GetNumeratorShifts(nsFontMetrics* fm, 
--                     nscoord&        numShift1, 
--                     nscoord&        numShift2, 
--                     nscoord&        numShift3)
--  {
--    nscoord xHeight = fm->XHeight();
--    numShift1 = NSToCoordRound(676.508f/430.556f * xHeight);
--    numShift2 = NSToCoordRound(393.732f/430.556f * xHeight);
--    numShift3 = NSToCoordRound(443.731f/430.556f * xHeight);
--  }
--
--  static void
--  GetDenominatorShifts(nsFontMetrics* fm, 
--                       nscoord&        denShift1, 
--                       nscoord&        denShift2)
--  {
--    nscoord xHeight = fm->XHeight();
--    denShift1 = NSToCoordRound(685.951f/430.556f * xHeight);
--    denShift2 = NSToCoordRound(344.841f/430.556f * xHeight);
--  }
--
--  static void
-   GetEmHeight(nsFontMetrics* fm,
-               nscoord&        emHeight)
-   {
- #if 0
-     // should switch to this API in order to scale with changes of TextZoom
-     emHeight = fm->EmHeight();
- #else
-     emHeight = NSToCoordRound(float(fm->Font().size));
- #endif
-   }
- 
-   static void
-   GetAxisHeight (nsFontMetrics* fm,
-                  nscoord&        axisHeight)
-   {
-+    
-     axisHeight = NSToCoordRound(250.000f/430.556f * fm->XHeight());
-   }
- 
-   static void
-   GetBigOpSpacings(nsFontMetrics* fm, 
-                    nscoord&        bigOpSpacing1,
-                    nscoord&        bigOpSpacing2,
-                    nscoord&        bigOpSpacing3,
+     if (TryGetMathTable(aFontMetrics)) {
+       gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
+       aValue = NSToCoordRound(mathFont->GetFontEntry()->
+                               GetMathConstant(aConstant) *
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
@@ -334,178 +228,6 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.h b/layout/mathml/nsMathMLmencl
    // Display a frame of the specified type.
    // @param aType Type of frame to display
    void DisplayNotation(nsDisplayListBuilder* aBuilder,
-diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
---- a/layout/mathml/nsMathMLmfracFrame.cpp
-+++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -215,113 +215,137 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
-   nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
- 
-   nsRefPtr<nsFontMetrics> fm;
-   nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm));
-   aRenderingContext.SetFont(fm);
- 
-   nscoord defaultRuleThickness, axisHeight;
-   GetRuleThickness(aRenderingContext, fm, defaultRuleThickness);
-+  GetMathConstantEm(fm, gfxFontEntry::FractionRuleThickness,
-+                    defaultRuleThickness);
-   GetAxisHeight(aRenderingContext, fm, axisHeight);
- 
-   nsEmbellishData coreData;
-   GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
- 
-   // see if the linethickness attribute is there 
-   nsAutoString value;
-   mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_, value);
-   mLineThickness = CalcLineThickness(presContext, mStyleContext, value,
-                                      onePixel, defaultRuleThickness);
- 
-   // bevelled attribute
-   mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::bevelled_, value);
-   mIsBevelled = value.EqualsLiteral("true");
- 
-+  bool displayStyle = StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK;
-+
-   if (!mIsBevelled) {
-     mLineRect.height = mLineThickness;
-     
-     // by default, leave at least one-pixel padding at either end, or use
-     // lspace & rspace that may come from <mo> if we are an embellished
-     // container (we fetch values from the core since they may use units that
-     // depend on style data, and style changes could have occurred in the
-     // core since our last visit there)
-     nscoord leftSpace = std::max(onePixel, StyleVisibility()->mDirection ?
-                                coreData.trailingSpace : coreData.leadingSpace);
-     nscoord rightSpace = std::max(onePixel, StyleVisibility()->mDirection ?
-                                 coreData.leadingSpace : coreData.trailingSpace);
- 
-+    nscoord actualRuleThickness =  mLineThickness;
-+
-     //////////////////
-     // Get shifts
-     nscoord numShift = 0;
-     nscoord denShift = 0;
- 
-     // Rule 15b, App. G, TeXbook
--    nscoord numShift1, numShift2, numShift3;
--    nscoord denShift1, denShift2;
-+    nscoord xHeight = fm->XHeight();
-+    nscoord numShift1 = NSToCoordRound(676.508f/430.556f * xHeight);
-+    nscoord numShift2 = NSToCoordRound(393.732f/430.556f * xHeight);
-+    nscoord numShift3 = NSToCoordRound(443.731f/430.556f * xHeight);
-+    nscoord denShift1 = NSToCoordRound(685.951f/430.556f * xHeight);
-+    nscoord denShift2 = NSToCoordRound(344.841f/430.556f * xHeight);
- 
--    GetNumeratorShifts(fm, numShift1, numShift2, numShift3);
--    GetDenominatorShifts(fm, denShift1, denShift2);
--    if (StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK) {
--      // C > T
--      numShift = numShift1;
--      denShift = denShift1;
-+    if (0 == actualRuleThickness) {
-+      numShift = displayStyle ? numShift1 : numShift3;
-+      denShift = displayStyle ? numShift1 : numShift2;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackTopDisplayStyleShiftUp :
-+                        gfxFontEntry::StackTopShiftUp, numShift);
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackBottomDisplayStyleShiftDown :
-+                        gfxFontEntry::StackBottomShiftDown, denShift);
-+    } else {
-+      numShift = displayStyle ? denShift1 : denShift2;
-+      denShift = displayStyle ? denShift1 : denShift2;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionNumeratorDisplayStyleShiftUp :
-+                        gfxFontEntry::FractionNumeratorShiftUp, numShift);
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionDenominatorDisplayStyleShiftDown :
-+                        gfxFontEntry::FractionDenominatorShiftDown, denShift);
-     }
--    else {
--      numShift = (0 < mLineRect.height) ? numShift2 : numShift3;
--      denShift = denShift2;
--    }
--
--    nscoord minClearance = 0;
--    nscoord actualClearance = 0;
--
--    nscoord actualRuleThickness =  mLineThickness;
- 
-     if (0 == actualRuleThickness) {
-       // Rule 15c, App. G, TeXbook
- 
-       // min clearance between numerator and denominator
--      minClearance = StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK ?
-+      nscoord minClearance = displayStyle ?
-         7 * defaultRuleThickness : 3 * defaultRuleThickness;
--      actualClearance =
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackDisplayStyleGapMin :
-+                        gfxFontEntry::StackGapMin, minClearance);
-+      nscoord actualClearance =
-         (numShift - bmNum.descent) - (bmDen.ascent - denShift);
-       // actualClearance should be >= minClearance
-       if (actualClearance < minClearance) {
-         nscoord halfGap = (minClearance - actualClearance)/2;
-         numShift += halfGap;
-         denShift += halfGap;
-       }
-     }
-     else {
-     // Rule 15d, App. G, TeXbook
- 
-     // min clearance between numerator or denominator and middle of bar
- 
-     // TeX has a different interpretation of the thickness.
-     // Try $a \above10pt b$ to see. Here is what TeX does:
--    // minClearance = StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK
--    // ? 3 * actualRuleThickness : actualRuleThickness;
-+    // minClearance = displayStyle ?
-+    //   3 * actualRuleThickness : actualRuleThickness;
-  
-     // we slightly depart from TeX here. We use the defaultRuleThickness instead
-     // of the value coming from the linethickness attribute, i.e., we recover what
-     // TeX does if the user hasn't set linethickness. But when the linethickness
-     // is set, we avoid the wide gap problem.
--     minClearance = StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK ?
--      3 * defaultRuleThickness : defaultRuleThickness + onePixel;
-+      nscoord minClearanceNum = displayStyle ?
-+        3 * defaultRuleThickness : defaultRuleThickness + onePixel;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionNumDisplayStyleGapMin :
-+                        gfxFontEntry::FractionNumeratorGapMin, minClearanceNum);
-+      nscoord minClearanceDen = minClearanceNum;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionDenomDisplayStyleGapMin :
-+                        gfxFontEntry::FractionDenominatorGapMin,
-+                        minClearanceDen);
- 
--      // adjust numShift to maintain minClearance if needed
--      actualClearance =
-+      // adjust numShift to maintain minClearanceNum if needed
-+      nscoord actualClearanceNum =
-         (numShift - bmNum.descent) - (axisHeight + actualRuleThickness/2);
--      if (actualClearance < minClearance) {
--        numShift += (minClearance - actualClearance);
-+      if (actualClearanceNum < minClearanceNum) {
-+        numShift += (minClearanceNum - actualClearanceNum);
-       }
--      // adjust denShift to maintain minClearance if needed
--      actualClearance =
-+      // adjust denShift to maintain minClearanceDen if needed
-+      nscoord actualClearanceDen =
-         (axisHeight - actualRuleThickness/2) - (bmDen.ascent - denShift);
--      if (actualClearance < minClearance) {
--        denShift += (minClearance - actualClearance);
-+      if (actualClearanceDen < minClearanceDen) {
-+        denShift += (minClearanceDen - actualClearanceDen);
-       }
-     }
- 
-     //////////////////
-     // Place Children
- 
-     // XXX Need revisiting the width. TeX uses the exact width
-     // e.g. in $$\huge\frac{\displaystyle\int}{i}$$
 diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
 --- a/layout/mathml/nsMathMLmrootFrame.cpp
 +++ b/layout/mathml/nsMathMLmrootFrame.cpp
