@@ -3,52 +3,10 @@
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3 - Use MATH constants for fractions and stacks. r=karl, b=961365
 
-diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
---- a/layout/mathml/nsMathMLFrame.h
-+++ b/layout/mathml/nsMathMLFrame.h
-@@ -293,38 +293,16 @@ public:
-   GetSupDrop(nsFontMetrics* fm,
-              nscoord&        aSupDrop)
-   {
-     nscoord xHeight = fm->XHeight();
-     aSupDrop = NSToCoordRound(386.108f/430.556f * xHeight);
-   }
- 
-   static void
--  GetNumeratorShifts(nsFontMetrics* fm, 
--                     nscoord&        numShift1, 
--                     nscoord&        numShift2, 
--                     nscoord&        numShift3)
--  {
--    nscoord xHeight = fm->XHeight();
--    numShift1 = NSToCoordRound(676.508f/430.556f * xHeight);
--    numShift2 = NSToCoordRound(393.732f/430.556f * xHeight);
--    numShift3 = NSToCoordRound(443.731f/430.556f * xHeight);
--  }
--
--  static void
--  GetDenominatorShifts(nsFontMetrics* fm, 
--                       nscoord&        denShift1, 
--                       nscoord&        denShift2)
--  {
--    nscoord xHeight = fm->XHeight();
--    denShift1 = NSToCoordRound(685.951f/430.556f * xHeight);
--    denShift2 = NSToCoordRound(344.841f/430.556f * xHeight);
--  }
--
--  static void
-   GetEmHeight(nsFontMetrics* fm,
-               nscoord&        emHeight)
-   {
- #if 0
-     // should switch to this API in order to scale with changes of TextZoom
-     emHeight = fm->EmHeight();
- #else
-     emHeight = NSToCoordRound(float(fm->Font().size));
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -215,113 +215,137 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -215,113 +215,135 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
    nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
  
    nsRefPtr<nsFontMetrics> fm;
@@ -97,21 +55,16 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      nscoord denShift = 0;
  
      // Rule 15b, App. G, TeXbook
--    nscoord numShift1, numShift2, numShift3;
--    nscoord denShift1, denShift2;
-+    nscoord xHeight = fm->XHeight();
-+    nscoord numShift1 = NSToCoordRound(676.508f/430.556f * xHeight);
-+    nscoord numShift2 = NSToCoordRound(393.732f/430.556f * xHeight);
-+    nscoord numShift3 = NSToCoordRound(443.731f/430.556f * xHeight);
-+    nscoord denShift1 = NSToCoordRound(685.951f/430.556f * xHeight);
-+    nscoord denShift2 = NSToCoordRound(344.841f/430.556f * xHeight);
- 
--    GetNumeratorShifts(fm, numShift1, numShift2, numShift3);
--    GetDenominatorShifts(fm, denShift1, denShift2);
+     nscoord numShift1, numShift2, numShift3;
+     nscoord denShift1, denShift2;
+-
+     GetNumeratorShifts(fm, numShift1, numShift2, numShift3);
+     GetDenominatorShifts(fm, denShift1, denShift2);
 -    if (StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK) {
 -      // C > T
 -      numShift = numShift1;
 -      denShift = denShift1;
++
 +    if (0 == actualRuleThickness) {
 +      numShift = displayStyle ? numShift1 : numShift3;
 +      denShift = displayStyle ? numShift1 : numShift2;

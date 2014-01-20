@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent e8554deb3c1caa1addc93d604d6dab6dea16613d
 # User Frédéric Wang <fred.wang@free.fr>
-Part 1 - Add helper functions to access MATH constants. r=karl, b=961365
+Part 1 - Add helper functions to access MATH constants and use them to get the AxisHeight. r=karl, b=961365
 
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
