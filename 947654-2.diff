@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 03e1d7e50f798795faddf8971a581ab1f7ca6ae0
 # User Frédéric Wang <fred.wang@free.fr>
-Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
+Part 2: Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css

@@ -1,27 +1,499 @@
 # HG changeset patch
-# Parent 4406df272d5d22c6a170a2c76285f7c2c27911f2
+# Parent e476a2b9c5e29ef68f52718ce3a493f47852ee58
 # User Frédéric Wang <fred.wang@free.fr>
+Part 3: Remove old glyph tables and merge the legacy tables for the STIXGeneral set. r=karlt
 
-diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
---- a/layout/mathml/mathml.css
-+++ b/layout/mathml/mathml.css
-@@ -16,17 +16,18 @@
- /**************************************************************************/
+diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
+--- a/layout/mathml/Makefile.in
++++ b/layout/mathml/Makefile.in
+@@ -3,27 +3,20 @@
+ # This Source Code Form is subject to the terms of the Mozilla Public
+ # License, v. 2.0. If a copy of the MPL was not distributed with this
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
  
- math {
-   direction: ltr;
-   unicode-bidi: embed;
-   display: inline;
-   font-size: inherit;
-   font-style: normal;
--  font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
-+  /* FIXME: move this to a preference */
-+  font-family: Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, Neo Euler, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
-   text-rendering: optimizeLegibility;
-   -moz-float-edge: margin-box;
-   -moz-math-display: inline;
- }
- math[mode="display"], math[display="block"] {
-   display: block;
-   text-align: -moz-center;
-   -moz-math-display: block;
+ include $(topsrcdir)/config/rules.mk
+ 
+ font_properties = \
+ 	mathfontMathJax_Main.properties \
++	mathfontSTIXGeneral.properties \
+ 	mathfontUnicode.properties \
+-	mathfontSTIXNonUnicode.properties \
+-	mathfontSTIXSizeOneSym.properties \
+-	mathfontStandardSymbolsL.properties \
+ 	$(NULL)
+ 
+-ifeq ($(TARGET_MD_ARCH),win32)
+-font_properties += \
+-	mathfontSymbol.properties
+-endif
+-
+ libs:: $(font_properties)
+ 	$(INSTALL) $^ $(DIST)/bin/res/fonts
+ 
+ math_properties = mathfont.properties
+ 
+ $(DIST)/bin/res/fonts/$(math_properties) $(DESTDIR)$(mozappdir)/res/fonts/$(math_properties): $(math_properties) Makefile
+ 	test -d $(@D) || $(NSINSTALL) -D $(@D)
+ 	rm -f $@
+diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
+--- a/layout/mathml/mathfont.properties
++++ b/layout/mathml/mathfont.properties
+@@ -5,43 +5,17 @@
+ #  LOCALIZATION NOTE: FILE
+ #  Do not translate anything in this file
+ 
+ # List of fonts that have corresponding properties files containing special
+ # glyph tables for stretching MathML characters.  See the documentation at the
+ # end of this file for details on the setup of the property file associated to
+ # each font.  Do not include the Unicode table in this list.
+ 
+-%ifdef XP_WIN
+-font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L, Symbol
+-%else
+-font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L
+-%endif
+-
+-# The ordered list of fonts with which to attempt to stretch MathML
+-# characters is controlled by setting pref("font.mathfont-family",
+-# "CMSY10, CMEX10, ...") for example, or by setting the font-family list in
+-# :-moz-math-stretchy in mathml.css.
+-#
+-# Preferred fonts for particular stretchy characters may be specified in
+-# preferences.  Each entry is specified using the Unicode format of the
+-# character, and the comma-separated list of fonts like in the font-family
+-# property of CSS.  A character can request different fonts for its variants
+-# and for its parts.
+-# e.g. pref("font.mathfont-family.\\u2264.base", "CMSY10, etc")
+-# - A ".base" extension indicates the ordered list fonts to look for the glyph
+-#   at its base size.
+-# - The ".variants" extension indicates the ordered list of fonts where to
+-#   look for glyphs of larger sizes.
+-# - The ".parts" extension indicates the ordered list of fonts that should be
+-#   used to look for the partial glyphs to be used to build up the character.
+-#
+-# Note: setting base fonts for non-stretchy characters only works
+-# for operators that are ultimately handled by nsMathMLChar.
+-# @see how |useMathMLChar| is set in nsMathMLmoFrame::Stretch() & Paint().
++font.mathfont-glyph-tables = MathJax_Main, STIXGeneral
+ 
+ # Operator Dictionary indexed on the "form" (i.e., infix, prefix, or suffix).
+ # Each entry lists the attributes of the operator, using its Unicode format.
+ 
+ operator.\u0021.postfix = lspace:1 rspace:0 # !
+ operator.\u0021\u0021.postfix = lspace:1 rspace:0 # !!
+ operator.\u0021\u003D.infix = lspace:4 rspace:4 # !=
+ operator.\u0025.infix = lspace:3 rspace:3 # percent sign
+diff --git a/layout/mathml/mathfontSTIXGeneral.properties b/layout/mathml/mathfontSTIXGeneral.properties
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/mathfontSTIXGeneral.properties
+@@ -0,0 +1,128 @@
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++#  LOCALIZATION NOTE: FILE
++#  Do not translate anything in this file
++
++# This file contains the list of some stretchy MathML chars that can be
++# rendered with the STIXGeneral set.
++
++external.1 = STIXSizeOneSym
++external.2 = STIXSizeTwoSym
++external.3 = STIXSizeThreeSym
++external.4 = STIXSizeFourSym
++external.5 = STIXSizeFiveSym
++external.6 = STIXIntegralsD
++external.7 = STIXNonUnicode
++
++############
++# 1) Constructions from mathfontSTIXSizeOneSym.properties (bug 947654) #
++
++#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
++\u0028 = \u239B@1\uFFFD\u239D@1\u239C@1\uFFFD(@1(@2(@3(@4 # (
++\u0029 = \u239E@1\uFFFD\u23A0@1\u239F@1\uFFFD)@1)@2)@3)@4 # )
++\u005B = \u23A1@1\uFFFD\u23A3@1\u23A2@1\u005B@1[@1[@2[@3[@4 # [
++\u005D = \u23A4@1\uFFFD\u23A6@1\u23A5@1\u005D@1]@1]@2]@3]@4 # ]
++\u007B = \u23A7@1\u23A8@1\u23A9@1\u23AA@1\u007B@1{@1{@2{@3{@4 # {
++\u007D = \u23AB@1\u23AC@1\u23AD@1\u23AA@1\u007D@1}@1}@2}@3}@4 # }
++
++# N-ARY operators
++\u2140 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2140@1 # DOUBLE-STRUCK N-ARY SUMMATION
++\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u220F@1 # N-ARY PRODUCT
++\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2210@1 # N-ARY COPRODUCT
++\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2211@1 # N-ARY SUMMATION
++\u22C0 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C0@1 # N-ARY LOGICAL AND
++\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C1@1 # N-ARY LOGICAL OR
++\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C2@1 # N-ARY INTERSECTION
++\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C3@1 # N-ARY UNION
++\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A00@1 # N-ARY CIRCLED DOT OPERATOR
++\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A01@1 # N-ARY CIRCLED PLUS OPERATOR
++\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A02@1 # N-ARY CIRCLED TIMES OPERATOR
++\u2A03 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A03@1 # N-ARY UNION OPERATOR WITH DOT
++\u2A04 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A04@1 # N-ARY UNION OPERATOR WITH PLUS
++\u2A05 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A05@1 # N-ARY SQUARE INTERSECTION OPERATOR
++\u2A06 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A06@1 # N-ARY SQUARE UNION OPERATOR
++\u2A09 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A09@1 # N-ARY TIMES OPERATOR
++\u2AFF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2AFF@1 # N-ARY WHITE VERTICAL BAR
++
++# E000 stix-radical symbol vertical extender
++# E001 stix-radical symbol top corner
++\u221A = \uE001@7\uFFFD\u221A@4\uE000@7\uFFFD\u221A@1\u221A@2\u221A@3 # Sqrt, radic
++
++# Integrals
++\u222B = \u2320@1\uFFFD\u2321@1\u23AE@1\uFFFD@1\u222B@6
++\u222C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222C@6
++\u222D = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222D@6
++\u222E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222E@6
++\u222F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222F@6
++\u2230 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2230@6
++\u2231 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2231@6
++\u2232 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2232@6
++\u2233 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2233@6
++\u2A0B = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0B@6
++\u2A0C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0C@6
++\u2A0D = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0D@6
++\u2A0E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0E@6
++\u2A0F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0F@6
++\u2A10 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A10@6
++\u2A11 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A11@6
++\u2A12 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A12@6
++\u2A13 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A13@6
++\u2A14 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A14@6
++\u2A15 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A15@6
++\u2A16 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A16@6
++\u2A17 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A17@6
++\u2A18 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A18@6
++\u2A19 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A19@6
++\u2A1A = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1A@6
++\u2A1B = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1B@6
++\u2A1C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1C@6
++
++\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E8@1\u27E8@2\u27E8@3\u27E8@4 # LeftAngleBracket
++\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E9@1\u27E9@2\u27E9@3\u27E9@4 # RightAngleBracket
++
++\u23DE = \uE13B@7\uE140@7\uE13C@7\uE14A@7\uFFFD\u23DE@1\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (Unicode)
++\uFE37 = \uE13B@7\uE140@7\uE13C@7\uE14A@7\uFFFD\u23DE@1\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (MathML 2.0)
++\u23B4 = \uE146@7\uFFFD\uE147@7\uE14A@7\uFFFD\u23B4@1\u23B4@2\u23B4@3\u23B4@4\u23B4@5 # &OverBracket;
++\u23DC = \uE142@7\uFFFD\uE143@7\uE14A@7\uFFFD\u23DC@1\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (Unicode)
++\uFE35 = \uE142@7\uFFFD\uE143@7\uE14A@7\uFFFD\u23DC@1\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (MathML 2.0)
++\u23DF = \uE13D@7\uE141@7\uE13E@7\uE13F@7\uFFFD\u23DF@1\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (Unicode)
++\uFE38 = \uE13D@7\uE141@7\uE13E@7\uE13F@7\uFFFD\u23DF@1\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (MathML 2.0)
++\u23B5 = \uE148@7\uFFFD\uE149@7\uE14B@7\uFFFD\u23B5@1\u23B5@2\u23B5@3\u23B5@4\u23B5@5 # &UnderBracket;
++\u23DD = \uE144@7\uFFFD\uE145@7\uE14B@7\uFFFD\u23DD@1\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (Unicode)
++\uFE36 = \uE144@7\uFFFD\uE145@7\uE14B@7\uFFFD\u23DD@1\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (MathML 2.0)
++
++\u005E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302@1\u0302@2\u0302@3\u0302@4\u0302@5 # circumflex accent, COMBINING CIRCUMFLEX ACCENT
++\u02C6 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302@1\u0302@2\u0302@3\u0302@4\u0302@5 # modifier letter circumflex accent, COMBINING CIRCUMFLEX ACCENT
++\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303@1\u0303@2\u0303@3\u0303@4\u0303@5 # ~ tilde, COMBINING TILDE
++\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303@1\u0303@2\u0303@3\u0303@4\u0303@5 # small tilde, COMBINING TILDE
++\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u030C@1\u030C@2\u030C@3\u030C@4\u030C@5 # caron, COMBINING CARON
++
++############
++# 2) Constructions from mathfontSTIXNonUnicode.properties (bug 947654) #
++
++#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
++# E0B4 stix-arrow hookleft
++# E0B5 stix-arrow hookright
++\u21A9 = \u2190\uFFFD\uE0B5@7\u23AF # hookleftarrow, larrhk
++\u21AA = \uE0B4@7\uFFFD\u2192\u23AF # hookrightarrow, rarrhk
++
++# 0E10E stix-stix-extender for vertical double arrow
++# 0E10F stix-extender for horizontal double arrow
++\u21D0 = \u21D0\uFFFD\uFFFD\uE10F@7\uFFFD\u27F8 # DoubleLeftArrow, Leftarrow, lArr
++\u21D1 = \u21D1\uFFFD\uFFFD\uE10E@7 # DoubleUpArrow, Uparrow, uArr
++\u21D2 = \uFFFD\uFFFD\u21D2\uE10F@7\uFFFD\u27F9 # DoubleRightArrow, Implies, Rightarrow, rArr
++\u21D3 = \uFFFD\uFFFD\u21D3\uE10E@7 # DoubleDownArrow, Downarrow, dArr
++\u21D4 = \u21D0\uFFFD\u21D2\uE10F@7\uFFFD\u27FA # DoubleLeftRightArrow, Leftrightarrow, hArr, iff
++\u21D5 = \u21D1\uFFFD\u21D3\uE10E@7 # DoubleUpDownArrow, Updownarrow, vArr
++
++# STIXGeneral U+22A2/U+22A3 RIGHT/LEFT TACK are different heights to U+23AF.
++# Could use LONG RIGHT/LEFT TACK instead, but STIXNonUnicode provides
++# E0B6 stix-maps-to-relation tail
++\u21A4 = \u2190\uFFFD\uE0B6@7\u23AF\uFFFD\u27FB # LeftTeeArrow, mapstoleft
++\u21A6 = \uE0B6@7\uFFFD\u2192\u23AF\uFFFD\u27FC # RightTeeArrow, map, mapsto
++\u295A = \u21BC\uFFFD\uE0B6@7\u23AF # LeftTeeVector
++\u295B = \uE0B6@7\uFFFD\u21C0\u23AF # RIGHTWARDS HARPOON WITH BARB UP FROM BAR, RightTeeVector
++\u295E = \u21BD\uFFFD\uE0B6@7\u23AF # DownLeftTeeVector
++\u295F = \uE0B6@7\uFFFD\u21C1\u23AF # RIGHTWARDS HARPOON WITH BARB DOWN FROM BAR, DownRightTeeVector
+diff --git a/layout/mathml/mathfontSTIXNonUnicode.properties b/layout/mathml/mathfontSTIXNonUnicode.properties
+deleted file mode 100644
+--- a/layout/mathml/mathfontSTIXNonUnicode.properties
++++ /dev/null
+@@ -1,75 +0,0 @@
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+-# This file contains the list of some stretchy MathML chars that
+-# can be rendered with STIXNonUnicode.
+-
+-external.1 = STIXGeneral
+-
+-#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+-# E0B4 stix-arrow hookleft
+-# E0B5 stix-arrow hookright
+-\u21A9 = \u2190@1\uFFFD\uE0B5\u23AF@1 # hookleftarrow, larrhk
+-\u21AA = \uE0B4\uFFFD\u2192@1\u23AF@1 # hookrightarrow, rarrhk
+-
+-# 0E10E stix-stix-extender for vertical double arrow
+-# 0E10F stix-extender for horizontal double arrow
+-\u21D0 = \u21D0@1\uFFFD\uFFFD\uE10F\uFFFD\u27F8@1 # DoubleLeftArrow, Leftarrow, lArr
+-\u21D1 = \u21D1@1\uFFFD\uFFFD\uE10E # DoubleUpArrow, Uparrow, uArr
+-\u21D2 = \uFFFD\uFFFD\u21D2@1\uE10F\uFFFD\u27F9@1 # DoubleRightArrow, Implies, Rightarrow, rArr
+-\u21D3 = \uFFFD\uFFFD\u21D3@1\uE10E # DoubleDownArrow, Downarrow, dArr
+-\u21D4 = \u21D0@1\uFFFD\u21D2@1\uE10F\uFFFD\u27FA@1 # DoubleLeftRightArrow, Leftrightarrow, hArr, iff
+-\u21D5 = \u21D1@1\uFFFD\u21D3@1\uE10E # DoubleUpDownArrow, Updownarrow, vArr
+-
+-# STIXGeneral U+22A2/U+22A3 RIGHT/LEFT TACK are different heights to U+23AF.
+-# Could use LONG RIGHT/LEFT TACK instead, but STIXNonUnicode provides
+-# E0B6 stix-maps-to-relation tail
+-\u21A4 = \u2190@1\uFFFD\uE0B6\u23AF@1\uFFFD\u27FB@1 # LeftTeeArrow, mapstoleft
+-\u21A6 = \uE0B6\uFFFD\u2192@1\u23AF@1\uFFFD\u27FC@1 # RightTeeArrow, map, mapsto
+-\u295A = \u21BC@1\uFFFD\uE0B6\u23AF@1 # LeftTeeVector
+-\u295B = \uE0B6\uFFFD\u21C0@1\u23AF@1 # RIGHTWARDS HARPOON WITH BARB UP FROM BAR, RightTeeVector
+-\u295E = \u21BD@1\uFFFD\uE0B6\u23AF@1 # DownLeftTeeVector
+-\u295F = \uE0B6\uFFFD\u21C1@1\u23AF@1 # RIGHTWARDS HARPOON WITH BARB DOWN FROM BAR, DownRightTeeVector
+-
+-# E13B stix-left end of extensible overbrace
+-# E13C stix-right end of extensible overbrace
+-# E13D stix-left end of extensible underbrace
+-# E13E stix-right end of extensible underbrace
+-# E13F stix-extensible horizontal for curly over and under braces
+-# E140 stix-center of extensible overbrace
+-# E141 stix-center of extensible underbrace
+-# E13F is the wrong height for overbrace:
+-# use E14A stix-extensible horizontal for over paren or square bracket
+-# U+FE37 and U+FE38 are from the MathML 2.0 spec.
+-\uFE37 = \uE13B\uE140\uE13C\uE14A # OverBrace
+-\uFE38 = \uE13D\uE141\uE13E\uE13F # UnderBrace
+-# Unicode added U+23DE and U+23DF:
+-# http://www.unicode.org/reports/tr25/#_TocDelimiters
+-\u23DE = \uE13B\uE140\uE13C\uE14A # OverBrace
+-\u23DF = \uE13D\uE141\uE13E\uE13F # UnderBrace
+-
+-# E146 stix-left end of extensible over square bracket (CMEX10 x34 rotated 90deg)
+-# E147 stix-right end of extensible over square bracket (CMEX10 x32 rotated 90deg)
+-# E148 stix-left end of extensible under square bracket (CMEX10 x35 rotated 90deg)
+-# E149 stix-right end of extensible under square bracket (CMEX10 x33 rotated 90deg)
+-# E14A stix-extensible horizontal for over paren or square bracket (CMEX10 x42 rotated 90deg)
+-# E14B stix-extensible horizontal for under paren or square bracket
+-\u23B4 = \uE146\uFFFD\uE147\uE14A # &OverBracket;
+-\u23B5 = \uE148\uFFFD\uE149\uE14B # &UnderBracket;
+-
+-# E142 stix-left end of extensible overparen (CMEX10 x40 rotated 90deg)
+-# E143 stix-right end of extensible overparen (CMEX10 x30 rotated 90deg)
+-# E144 stix-left end of extensible underparen (CMEX10 x41 rotated 90deg)
+-# E145 stix-right end of extensible underparen (CMEX10 x31 rotated 90deg)
+-# E14A stix-extensible horizontal for over paren or square bracket (CMEX10 x42 rotated 90deg)
+-# E14B stix-extensible horizontal for under paren or square bracket
+-# U+FE35 and U+FE36 are from the MathML 2.0 spec.
+-\uFE35 = \uE142\uFFFD\uE143\uE14A # OverParenthesis
+-\uFE36 = \uE144\uFFFD\uE145\uE14B # UnderParenthesis
+-# Unicode added U+23DC and U+23DD:
+-\u23DC = \uE142\uFFFD\uE143\uE14A # OverParenthesis
+-\u23DD = \uE144\uFFFD\uE145\uE14B # UnderParenthesis
+diff --git a/layout/mathml/mathfontSTIXSizeOneSym.properties b/layout/mathml/mathfontSTIXSizeOneSym.properties
+deleted file mode 100644
+--- a/layout/mathml/mathfontSTIXSizeOneSym.properties
++++ /dev/null
+@@ -1,97 +0,0 @@
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+-# This file contains the list of some stretchy MathML chars that
+-# can be rendered with STIXSize* set of fonts,
+-# with some help from STIXNonUnicode, STIXGeneral and STIXIntegralsD.
+-
+-external.1 = STIXNonUnicode
+-external.2 = STIXSizeTwoSym
+-external.3 = STIXSizeThreeSym
+-external.4 = STIXSizeFourSym
+-external.5 = STIXSizeFiveSym
+-external.6 = STIXIntegralsD
+-
+-#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+-\u0028 = \u239B\uFFFD\u239D\u239C\uFFFD((@2(@3(@4 # (
+-\u0029 = \u239E\uFFFD\u23A0\u239F\uFFFD))@2)@3)@4 # )
+-\u005B = \u23A1\uFFFD\u23A3\u23A2\u005B[[@2[@3[@4 # [
+-\u005D = \u23A4\uFFFD\u23A6\u23A5\u005D]]@2]@3]@4 # ]
+-\u007B = \u23A7\u23A8\u23A9\u23AA\u007B{{@2{@3{@4 # {
+-\u007D = \u23AB\u23AC\u23AD\u23AA\u007D}}@2}@3}@4 # }
+-
+-# N-ARY operators
+-\u2140 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2140 # DOUBLE-STRUCK N-ARY SUMMATION
+-\u220F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u220F # N-ARY PRODUCT
+-\u2210 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2210 # N-ARY COPRODUCT
+-\u2211 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2211 # N-ARY SUMMATION
+-\u22C0 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C0 # N-ARY LOGICAL AND
+-\u22C1 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C1 # N-ARY LOGICAL OR
+-\u22C2 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C2 # N-ARY INTERSECTION
+-\u22C3 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u22C3 # N-ARY UNION
+-\u2A00 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A00 # N-ARY CIRCLED DOT OPERATOR
+-\u2A01 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A01 # N-ARY CIRCLED PLUS OPERATOR
+-\u2A02 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A02 # N-ARY CIRCLED TIMES OPERATOR
+-\u2A03 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A03 # N-ARY UNION OPERATOR WITH DOT
+-\u2A04 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A04 # N-ARY UNION OPERATOR WITH PLUS
+-\u2A05 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A05 # N-ARY SQUARE INTERSECTION OPERATOR
+-\u2A06 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A06 # N-ARY SQUARE UNION OPERATOR
+-\u2A09 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A09 # N-ARY TIMES OPERATOR
+-\u2AFF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2AFF # N-ARY WHITE VERTICAL BAR
+-
+-# E000 stix-radical symbol vertical extender
+-# E001 stix-radical symbol top corner
+-\u221A = \uE001@1\uFFFD\u221A@4\uE000@1\uFFFD\u221A\u221A@2\u221A@3 # Sqrt, radic
+-
+-# Integrals
+-\u222B = \u2320\uFFFD\u2321\u23AE\uFFFD\u222B@6
+-\u222C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222C@6
+-\u222D = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222D@6
+-\u222E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222E@6
+-\u222F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u222F@6
+-\u2230 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2230@6
+-\u2231 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2231@6
+-\u2232 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2232@6
+-\u2233 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2233@6
+-\u2A0B = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0B@6
+-\u2A0C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0C@6
+-\u2A0D = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0D@6
+-\u2A0E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0E@6
+-\u2A0F = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A0F@6
+-\u2A10 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A10@6
+-\u2A11 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A11@6
+-\u2A12 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A12@6
+-\u2A13 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A13@6
+-\u2A14 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A14@6
+-\u2A15 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A15@6
+-\u2A16 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A16@6
+-\u2A17 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A17@6
+-\u2A18 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A18@6
+-\u2A19 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A19@6
+-\u2A1A = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1A@6
+-\u2A1B = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1B@6
+-\u2A1C = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u2A1C@6
+-
+-\u27E8 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E8\u27E8@2\u27E8@3\u27E8@4 # LeftAngleBracket
+-\u27E9 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u27E9\u27E9@2\u27E9@3\u27E9@4 # RightAngleBracket
+-
+-\u23DE = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (Unicode)
+-\uFE37 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DE\u23DE@2\u23DE@3\u23DE@4\u23DE@5 # &OverBrace; (MathML 2.0)
+-\u23B4 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B4\u23B4@2\u23B4@3\u23B4@4\u23B4@5 # &OverBracket;
+-\u23DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (Unicode)
+-\uFE35 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DC\u23DC@2\u23DC@3\u23DC@4\u23DC@5 # &OverParenthesis; (MathML 2.0)
+-\u23DF = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (Unicode)
+-\uFE38 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DF\u23DF@2\u23DF@3\u23DF@4\u23DF@5 # &UnderBrace; (MathML 2.0)
+-\u23B5 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23B5\u23B5@2\u23B5@3\u23B5@4\u23B5@5 # &UnderBracket;
+-\u23DD = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (Unicode)
+-\uFE36 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u23DD\u23DD@2\u23DD@3\u23DD@4\u23DD@5 # &UnderParenthesis; (MathML 2.0)
+-
+-\u005E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # circumflex accent, COMBINING CIRCUMFLEX ACCENT
+-\u02C6 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0302\u0302@2\u0302@3\u0302@4\u0302@5 # modifier letter circumflex accent, COMBINING CIRCUMFLEX ACCENT
+-\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # ~ tilde, COMBINING TILDE
+-\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # small tilde, COMBINING TILDE
+-\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u030C\u030C@2\u030C@3\u030C@4\u030C@5 # caron, COMBINING CARON
+diff --git a/layout/mathml/mathfontStandardSymbolsL.properties b/layout/mathml/mathfontStandardSymbolsL.properties
+deleted file mode 100644
+--- a/layout/mathml/mathfontStandardSymbolsL.properties
++++ /dev/null
+@@ -1,43 +0,0 @@
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+-# This file contains the list of all stretchy MathML chars that
+-# can be rendered with Standard Symbols L.
+-
+-#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+-\u0028 = \uF8EB\uFFFD\uF8ED\uF8EC\u0028 # (
+-\u0029 = \uF8F6\uFFFD\uF8F8\uF8F7\u0029 # )
+-\u005B = \uF8EE\uFFFD\uF8F0\uF8EF\u005B # [
+-\u005D = \uF8F9\uFFFD\uF8FB\uF8FA\u005D # ]
+-\u007B = \uF8F1\uF8F2\uF8F3\uF8F4\u007B # {
+-\u007C = \uFFFD\uFFFD\uFFFD\u007C\u007C # |
+-\u007D = \uF8FC\uF8FD\uF8FE\uF8F4\u007D # }
+-
+-\u00AF = \uFFFD\uFFFD\uFFFD\uF8E5\u00AF # ad-hoc: overbar is stretched with the radical extender 
+-\u0332 = \uFFFD\uFFFD\uFFFD\u005F\u0332 # ad-hock: UnderBar (0x0332) is stretched with underscore
+-
+-\u2190 = \u2190\uFFFD\uFFFD\uF8E7\u2190 # LeftArrow, larr, leftarrow
+-\u2191 = \u2191\uFFFD\uFFFD\uF8E6\u2191 # UpArrow, uarr, uparrow
+-\u2192 = \uFFFD\uFFFD\u2192\uF8E7\u2192 # RightArrow, rarr, rightarrow
+-\u2193 = \uFFFD\uFFFD\u2193\uF8E6\u2193 # DownArrow, darr, downarrow
+-\u2194 = \u2190\uFFFD\u2192\uF8E7\u2194 # LeftRightArrow, harr, leftrightarrow
+-\u2195 = \u2191\uFFFD\u2193\uF8E6\u2195 # UpDownArrow, updownarrow, varr
+-
+-\u222B = \u2320\uFFFD\u2321\uF8F5\u222B # Integral, int
+-# If there are problems with the font-supplied glue use a rule:
+-# \u222B = \u2320\uFFFD\u2321\uFFFD\u222B # Integral, int
+-
+-# Using parts of [ and ]
+-\u2308 = \uF8EE\uFFFD\uFFFD\uF8EF\u2308 # LeftCeiling, lceil
+-\u2309 = \uF8F9\uFFFD\uFFFD\uF8FA\u2309 # RightCeiling, rceil
+-\u230A = \uFFFD\uFFFD\uF8F0\uF8EF\u230A # LeftFloor, lfloor
+-\u230B = \uFFFD\uFFFD\uF8FB\uF8FA\u230B # RightFloor, rfloor
+-
+-# same as normal arrows
+-\u27F5 = \u2190\uFFFD\uFFFD\uF8E7\u27F5 # LongLeftArrow
+-\u27F6 = \uFFFD\uFFFD\u2192\uF8E7\u27F6 # LongRightArrow
+-\u27F7 = \u2190\uFFFD\u2192\uF8E7\u27F7 # LongLeftRightArrow
+diff --git a/layout/mathml/mathfontSymbol.properties b/layout/mathml/mathfontSymbol.properties
+deleted file mode 100644
+--- a/layout/mathml/mathfontSymbol.properties
++++ /dev/null
+@@ -1,46 +0,0 @@
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-#  LOCALIZATION NOTE: FILE
+-#  Do not translate anything in this file
+-
+-# This file contains the list of all stretchy MathML chars that can be
+-# rendered with Monotype's Symbol font.
+-#
+-# This file should normally only be installed on MS Windows systems as other
+-# platforms have different fonts with the same family name but different
+-# character codes.
+-mathfont = Symbol
+-
+-#        [ T/L |  M  | B/R |  G  | size0 ... size{N-1} ]
+-\u0028 = \uF0E6\uFFFD\uF0E8\uF0E7\uF028 # (
+-\u0029 = \uF0F6\uFFFD\uF0F8\uF0F7\uF029 # )
+-\u005B = \uF0E9\uFFFD\uF0EB\uF0EA\uF05B # [
+-\u005D = \uF0F9\uFFFD\uF0FB\uF0FA\uF05D # ]
+-\u007B = \uF0EC\uF0ED\uF0EE\uF0EF\uF07B # {
+-\u007C = \uFFFD\uFFFD\uFFFD\uF07C\uF07C # |
+-\u007D = \uF0FC\uF0FD\uF0FE\uF0EF\uF07D # }
+-
+-\u00AF = \uFFFD\uFFFD\uFFFD\uF060\uF060 # ad-hoc: overbar is stretched with the radical extender 
+-\u0332 = \uFFFD\uFFFD\uFFFD\uF05F\uF05F # ad-hoc: UnderBar (0x0332) is stretched with underscore
+-
+-\u2190 = \uF0AC\uFFFD\uFFFD\uF0BE\uF0AC # LeftArrow, larr, leftarrow
+-\u2191 = \uF0AD\uFFFD\uFFFD\uF0BD\uF0AD # UpArrow, uarr, uparrow
+-\u2192 = \uFFFD\uFFFD\uF0AE\uF0BE\uF0AE # RightArrow, rarr, rightarrow
+-\u2193 = \uFFFD\uFFFD\uF0AF\uF0BD\uF0AF # DownArrow, darr, downarrow
+-\u2194 = \uF0AC\uFFFD\uF0AE\uF0BE\uF0B4 # LeftRightArrow, harr, leftrightarrow
+-\u2195 = \uF0AD\uFFFD\uF0AF\uF0BD       # UpDownArrow, updownarrow, varr
+-
+-\u222B = \uF0F3\uFFFD\uF0F5\uF0F4\uF0F2 # Integral, int
+-
+-# Using parts of [ and ]
+-\u2308 = \uF0E9\uFFFD\uFFFD\uF0EA\uF0E9 # LeftCeiling, lceil
+-\u2309 = \uF0F9\uFFFD\uFFFD\uF0FA\uF0F9 # RightCeiling, rceil
+-\u230A = \uFFFD\uFFFD\uF0EB\uF0EA\uF0EB # LeftFloor, lfloor
+-\u230B = \uFFFD\uFFFD\uF0FB\uF0FA\uF0FB # RightFloor, rfloor
+-
+-# same as normal arrows
+-\u27F5 = \uF0AC\uFFFD\uFFFD\uF0BE # LongLeftArrow
+-\u27F6 = \uFFFD\uFFFD\uF0AE\uF0BE # LongRightArrow
+-\u27F7 = \uF0AC\uFFFD\uF0AE\uF0BE # LongLeftRightArrow
