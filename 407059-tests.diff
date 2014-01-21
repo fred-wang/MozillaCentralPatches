@@ -1,47 +1,50 @@
 # HG changeset patch
-# Parent 4d01f80c9ef7ae7f62e07bbdcddc24f26ac1b09d
+# Parent 0e83972cf0600c975d0205bf4143cadf5fd2df78
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4: reftest. r=karl, b=407059
 
 diff --git a/layout/reftests/fonts/Math.otf b/layout/reftests/fonts/Math.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..01e9d1b044b36c37c50d0de22d46998d2f86014d
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..e72a47de28cf21aee222118ad230c9e8494a13ec
 GIT binary patch
-literal 2972
-zc%0o<UuauZ82`TH=FghDG@EUg$z8dHY-~!hB<<!_>TuMBA*+qElraX&ZId=>n<k`b
-z_Xoj^3Dadd-7;NWkx?e@L4267CkY}#_fQoFiXaRJK1_WvQkN`?jo&%<Buy=1VQ-$~
-z+~4>8&hI<tyZ4@R?&<C8>jfK}0wZ|40|E8dPtSf2AQb_OX9I!0o{^nReE`-|0HE~j
-z?c0Cfc4rIuGXREby)SR~4~(4q4gghZ4-Lk(WcU}!L$R+AcQ_i+!p$3Qo~E|XsP2ps
-z;W}#FNcI9%S2UhJezimv*t%GJTsxiwXOK*E(#1Tk#UoFq=VkI~e0-ElOr$Gkpq=vj
-zf!b9-CIuMHg=dd8cKr!9iFF2Fmv?=!gbUyVnYmUlfL<s@W+@zD!<4C=_f%hq3i2yR
-zxDOY=ME5&wm?!^&j`$n2;~HYYY^+5g&q|cw(7rHy4r<#CV@IU}j>vizOCzb`4(#wr
-zjokt-3L8O!SA|W3z(rvjDe6aIOO%~i*d}nGTi9me_mdJO$`B6lC}tx)gGpf<D4o}Y
-zZG`7wTG$e4%EC5*iZ)@J!HRpJ8xoL&6Oe)!3_}#sl+9Kcgl&X=@PZFI$m${0Nm7i_
-zPa~g2r6`VFHHwLmH4f07NS;W=hNEe9>)<xk@AY-4J&BXCu`x~UPNb5Fl$MSqNY}%I
-zqGV`kc7+IpsgFsBlM@NYCJ6()%QVLnr551{c_<|nI(bTZAG+s*9pI*`yOuNr665JW
-zA~hUQ{T{E{sj{&Md^_AeH%o0r8vQgz3MRzOsMHVZ$-|M23jLAP1m&-Ky*`iE>s43u
-zz~75r74hc!*wf~|1iJ_u_^dV1EShcmu<b^r!sboe4A~!5DwTV8hwg^&4lbX)G$U3_
-z=YN*}YX2V;u_`O4*nY9H(DIT15l#G6pn-_qVj~oNSo9l;?Z)B;sr8=WdPO$2zBF5r
-zrPc;mGu6L6lc^c9C8I2W;siwolY*U%3V=hw*g6F^DaMiYu+hL5TqCr=CUC*iG}m_1
-zLOVc9JO~HrRrkXoI6_k*0;4p8Qg8)k;M(MP%<tRXt;6#=?9(B@VXs#QpALQ<cIfbo
-zmP#d#O(w(R0~3*`cgh>}P5Gk!DgRhxD9zVeG#(2NB+}_bJe^2Rk+Zs0$R1O5)*_z8
-z*YOQJhZ#JNZ{k~c0pG@V@FHHqEMCTU@jbkP)A&AK#Tjt2$FP}piB7t8jdp?4a0#x%
-zE%*}dz|ZhIHlPzd*o6mim^!|SH}NZ_G@8j3gE`FQ3b%8{TuaeYyjAv?bLBJ5#bDuf
-zIcTvjZnG=JZ(RiqGkK#+$``cFW;=HaA@U2Mg7zq6wkr=m(8)PQ&Jj6hwrBEOm7%E6
-zW{X`ZNlfFCitd6|c2j#HBm~q==uwDCMuj9xk}Q+VRV8yInX}k+kGcqz-8C;uUX~@B
-zDP@g|S*es&tguM&4>DETVt=s6EX>e_X$aWA2wYY3EcQ}G7cz~^*#)7gdQ3x7MwGG{
-zohxNcJd%-%L^>F`NTlKzt+LDY)pqM>wQGysq;toR=!F_h)1Qqh)2R3BNJ@h@6+%sl
-z<#KaIZYXFC`TY63ESIvjeEyGzn!HwDid5#Go&AR4vTrwQX@H;5Lkp(My!2^ZU6~j7
-z)GD;ol*Z61bnUv9W7V$fV;SFGSL@=D_KCl4lifv|Lkppcu=>qMzGc*VE~+xDr?W`w
-zzh<Q?o3J0l^vyPr(gQnT4}A<@fWt5VBec03q8)LqgwSY3SSRZzC+0I`97D#l6+S~+
-zncD2cJA_siTD#CP{$nw|37Q%3^UXS8A#7llb2-;i(>-3?`kL>kX_{(rOWYHW9f$mh
-yT3`*$L>u=E^mHV49%9Eye&S>^hn)%A1y1Y8kDK#Lm1(VYRjxx><lqpM`F{gqujyL=
+literal 3156
+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
 
 diff --git a/layout/reftests/fonts/math-generate.py b/layout/reftests/fonts/math-generate.py
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/fonts/math-generate.py
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,219 @@
 +#!/usr/bin/python
 +# vim: set shiftwidth=4 tabstop=8 autoindent expandtab:
 +# This Source Code Form is subject to the terms of the Mozilla Public
@@ -71,10 +74,6 @@ new file mode 100644
 +f.fullname = n
 +f.copyright = "Copyright (c) 2014 Mozilla Corporation"
 +f.encoding = "UnicodeFull"
-+f.em = em
-+
-+# Set DisplayOperatorMinHeight
-+f.math.DisplayOperatorMinHeight = 8 * em
 +
 +# Create a space character. Also force the creation of some MATH subtables.
 +g = f.createChar(ord(" "), "space")
@@ -85,6 +84,9 @@ new file mode 100644
 +g.mathKern.bottomRight = tuple([(0,0)])
 +g.mathKern.topLeft = tuple([(0,0)])
 +g.mathKern.topRight = tuple([(0,0)])
++
++################################################################################
++# Glyph variants and constructions
 +
 +# Draw boxes for the size variants and glues
 +for i in range(0, nvariants):
@@ -229,12 +231,44 @@ new file mode 100644
 +f[vstretchy[3]].verticalVariants = "v2"
 +f[vstretchy[4]].verticalComponents = f[vstretchy[0]].verticalComponents
 +
++################################################################################
++# Testing DisplayOperatorMinHeight
++f.math.DisplayOperatorMinHeight =  8 * em
++largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
++
++# Draw boxes of size 1, 2, 6, 8, 10em.
++for i in [1, 2, 6, 8, 10]:
++    s = em * i
++    if i == 1 or i == 2:
++        g = f.createChar(largeop[i-1])
++    else:
++        g = f.createChar(-1, "L%d" % i)
++    p = g.glyphPen()
++    p.moveTo(0, 0)
++    p.lineTo(s, 0)
++    p.lineTo(s, s)
++    p.lineTo(0, s)
++    p.closePath();
++    g.width = s
++
++f[largeop[0]].verticalVariants = "L7 L8 L9"
++f[largeop[1]].verticalVariants = "L8"
++
++################################################################################
++f.em = em
++f.ascent = f.descent = em/2
++f.hhea_ascent = f.os2_typoascent = f.os2_winascent = em/2
++f.descent = f.hhea_descent = f.os2_typodescent = f.os2_windescent = em/2
++f.hhea_ascent_add = f.hhea_descent_add = 0
++f.os2_typoascent_add = f.os2_typodescent_add = 0
++f.os2_winascent_add = f.os2_windescent_add = 0
++f.os2_use_typo_metrics = True
 +f.generate(n + ".otf")
 diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests/mathml/opentype-stretchy-ref.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/opentype-stretchy-ref.html
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,73 @@
 +<!doctype html>
 +<html>
 +  <head>
@@ -245,9 +279,13 @@ new file mode 100644
 +        font-family: test;
 +        src: url(../fonts/Math.otf);
 +      }
-+      body, math, mo, ::-moz-math-stretchy {
++      math {
 +        font-family: test;
-+        font-size: 20px;
++        font-size: 10px;
++      }
++      ::-moz-math-stretchy {
++        font-family: test;
++        font-size: 10px;
 +      }
 +    </style>
 +  </head>
@@ -290,13 +328,25 @@ new file mode 100644
 +      <math><mrow><mo symmetric="false" stretchy="true" minsize="15em">&#x21A8;</mo></mrow></math>
 +    </p>
 +
++<!--
++DisplayOperatorMinHeight = 8em
++largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
++largeop[0] has variants of size 6, 8, 10em
++largeop[1] has one variant of size 8em.
++-->
++    <p>
++      <math displaystyle="true">
++        <mrow><mo>&#x2A1C;</mo></mrow>
++      </math>
++    </p>
++
 +  </body>
 +</html>
 diff --git a/layout/reftests/mathml/opentype-stretchy.html b/layout/reftests/mathml/opentype-stretchy.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/opentype-stretchy.html
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,73 @@
 +<!doctype html>
 +<html>
 +  <head>
@@ -307,9 +357,13 @@ new file mode 100644
 +        font-family: test;
 +        src: url(../fonts/Math.otf);
 +      }
-+      body, math, mo, ::-moz-math-stretchy {
++      math {
 +        font-family: test;
-+        font-size: 20px;
++        font-size: 10px;
++      }
++      ::-moz-math-stretchy {
++        font-family: test;
++        font-size: 10px;
 +      }
 +    </style>
 +  </head>
@@ -350,6 +404,18 @@ new file mode 100644
 +      <math><mrow><mo symmetric="false" stretchy="true" minsize="2em">&#x219F;</mo></mrow></math>
 +      <math><mrow><mo symmetric="false" stretchy="true" minsize="3em">&#x219F;</mo></mrow></math>
 +      <math><mrow><mo symmetric="false" stretchy="true" minsize="15em">&#x219F;</mo></mrow></math>
++    </p>
++
++<!--
++DisplayOperatorMinHeight = 8em
++largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
++largeop[0] has variants of size 6, 8, 10em
++largeop[1] has one variant of size 8em.
++-->
++    <p>
++      <math displaystyle="true">
++        <mrow><mo>&#x2A1B;</mo></mrow>
++      </math>
 +    </p>
 +
 +  </body>

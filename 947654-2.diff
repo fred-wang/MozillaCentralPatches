@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 03e1d7e50f798795faddf8971a581ab1f7ca6ae0
+# Parent f0bf7fa063f3b75f043a2c8b6bb2e949bf2a42e7
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
 
@@ -64,7 +64,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1223,19 +1223,19 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1240,19 +1240,19 @@ nsMathMLChar::StretchEnumContext::TryVar
  
      if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
        // if largeopOnly is set, break now
@@ -346,7 +346,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
 --- a/layout/mathml/nsMathMLmrootFrame.cpp
 +++ b/layout/mathml/nsMathMLmrootFrame.cpp
-@@ -54,17 +54,17 @@ nsMathMLmrootFrame::Init(nsIContent*    
+@@ -45,17 +45,17 @@ nsMathMLmrootFrame::Init(nsIContent*    
    
    nsPresContext *presContext = PresContext();
  
@@ -365,6 +365,54 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    // 1. The REC says:
    //    The <mroot> element increments scriptlevel by 2, and sets displaystyle to
    //    "false", within index, but leaves both attributes unchanged within base.
+diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests/mathml/opentype-stretchy-ref.html
+--- a/layout/reftests/mathml/opentype-stretchy-ref.html
++++ b/layout/reftests/mathml/opentype-stretchy-ref.html
+@@ -7,20 +7,16 @@
+       @font-face {
+         font-family: test;
+         src: url(../fonts/Math.otf);
+       }
+       math {
+         font-family: test;
+         font-size: 10px;
+       }
+-      ::-moz-math-stretchy {
+-        font-family: test;
+-        font-size: 10px;
+-      }
+     </style>
+   </head>
+   <body>
+ 
+ <!--
+ hstretchy = [
+     0x219C, # leftwards wave arrow
+     0x219D, # rightwards wave arrow
+diff --git a/layout/reftests/mathml/opentype-stretchy.html b/layout/reftests/mathml/opentype-stretchy.html
+--- a/layout/reftests/mathml/opentype-stretchy.html
++++ b/layout/reftests/mathml/opentype-stretchy.html
+@@ -7,20 +7,16 @@
+       @font-face {
+         font-family: test;
+         src: url(../fonts/Math.otf);
+       }
+       math {
+         font-family: test;
+         font-size: 10px;
+       }
+-      ::-moz-math-stretchy {
+-        font-family: test;
+-        font-size: 10px;
+-      }
+     </style>
+   </head>
+   <body>
+ 
+ <!--
+ hstretchy = [
+     0x219C, # leftwards wave arrow
+     0x219D, # rightwards wave arrow
 diff --git a/layout/style/nsCSSPseudoElementList.h b/layout/style/nsCSSPseudoElementList.h
 --- a/layout/style/nsCSSPseudoElementList.h
 +++ b/layout/style/nsCSSPseudoElementList.h
