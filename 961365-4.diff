@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 90ffe2ad7eab9bad2d3ea5eb8e77e92d998284f6
+# Parent ded5eb24292a3df4558eea16fd81477c3bfe3d2f
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4 - Use MATH constants for scripts. r=karl, b=961365
 
@@ -127,7 +127,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
    ////////////////////////////////////
    // Get the children's sizes
    ////////////////////////////////////
-@@ -379,57 +385,60 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -381,57 +387,60 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
          multiSubSize.SetTopAscent(std::max(multiSubSize.TopAscent(),
                                         subScriptSize.TopAscent()));
          bmMultiSub.ascent = std::max(bmMultiSub.ascent, bmSubScript.ascent);
@@ -186,15 +186,15 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
          if (bmSupScript.width)
 -          width = std::max(width, bmSupScript.width + aScriptSpace);
 +          width = std::max(width, bmSupScript.width + scriptSpace);
-         rightBearing = std::max(rightBearing, bmSupScript.rightBearing);
  
-         if (!prescriptsFrame) { // we are still looping over base & postscripts
-           boundingMetrics.rightBearing = boundingMetrics.width + rightBearing;
-           boundingMetrics.width += width;
+         if (firstPostscriptsPair) {
+           // we add the italic correction to the first superscript
+           rightBearing = std::max(rightBearing, italicCorrection +
+                                   bmSupScript.rightBearing);
+           firstPostscriptsPair = false;
          } else {
-           prescriptsWidth += width;
-           if (firstPrescriptsPair) {
-@@ -440,28 +449,37 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+           rightBearing = std::max(rightBearing, bmSupScript.rightBearing);
+@@ -450,28 +459,37 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
          }
          width = rightBearing = 0;
  
@@ -237,7 +237,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
  
          maxSubScriptShift = std::max(maxSubScriptShift, trySubScriptShift);
          maxSupScriptShift = std::max(maxSupScriptShift, trySupScriptShift);
-@@ -619,17 +637,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -628,17 +646,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
                maxSupScriptShift;
              FinishReflowChild (supScriptFrame, aPresContext, supScriptSize,
                                 nullptr,
