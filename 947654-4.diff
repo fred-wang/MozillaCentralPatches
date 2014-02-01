@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 46be12231aa78e3e49a0b8440bd28dee83a6e7e8
+# Parent c0057137a898469a00a638043d13f989f4c604de
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4: Make the font-family on <math> and <mtext> tags to be -moz-use-math-font (font.name-list.mathml preference) and 'initial' respectively. b=947654, r=karlt, heycam.
 
@@ -8,7 +8,7 @@ Part 4: Make the font-family on <math> and <mtext> tags to be -moz-use-math-font
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -1490,16 +1490,34 @@ nsPresContext::GetDefaultFont(uint8_t aF
+@@ -1484,16 +1484,34 @@ nsPresContext::GetDefaultFont(uint8_t aF
        font = nullptr;
        NS_ERROR("invalid arg");
        break;

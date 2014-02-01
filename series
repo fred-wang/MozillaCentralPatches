@@ -1,9 +1,5 @@
-941611.diff
-945254.diff
-try.diff
 930504.diff
 663740.diff
-407059-0.diff
 407059-1.diff
 407059-2.diff
 407059-3.diff
@@ -19,6 +15,9 @@ try.diff
 961365-5.diff
 945183.diff
 try-c.diff
+try-r.diff
+try.diff
+try-w.diff
 bug687807-reftest.diff
 download-fonts-1.diff
 mathml-clipboard-1.diff

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent c4d4e8990fa071300cdfb2945329b1e3b8d7cd44
+# Parent 71f654530f329b3eef16360088329a6fe5fcb305
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -282,14 +282,14 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  class gfxSVGGlyphs;
 +class gfxMathTable;
  class gfxTextContextPaint;
+ class FontInfoData;
  
  class nsILanguageAtomService;
  
  #define FONT_MAX_SIZE                  2000.0
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
- 
-@@ -306,16 +307,88 @@ public:
+@@ -307,16 +308,88 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -378,7 +378,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -428,16 +501,17 @@ public:
+@@ -429,16 +502,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -396,7 +396,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -451,16 +525,17 @@ public:
+@@ -452,16 +526,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -1001,10 +1001,10 @@ new file mode 100644
 diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
 --- a/gfx/thebes/moz.build
 +++ b/gfx/thebes/moz.build
-@@ -20,16 +20,17 @@ EXPORTS += [
-     'gfxFont.h',
+@@ -21,16 +21,17 @@ EXPORTS += [
      'gfxFontConstants.h',
      'gfxFontFeatures.h',
+     'gfxFontInfoLoader.h',
      'gfxFontTest.h',
      'gfxFontUtils.h',
      'gfxGradientCache.h',
@@ -1019,9 +1019,9 @@ diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
      'gfxPoint3D.h',
      'gfxPointH3D.h',
      'gfxQuad.h',
-@@ -245,16 +246,17 @@ UNIFIED_SOURCES += [
-     'gfxContext.cpp',
+@@ -247,16 +248,17 @@ UNIFIED_SOURCES += [
      'gfxFontFeatures.cpp',
+     'gfxFontInfoLoader.cpp',
      'gfxFontMissingGlyphs.cpp',
      'gfxFontTest.cpp',
      'gfxGradientCache.cpp',
