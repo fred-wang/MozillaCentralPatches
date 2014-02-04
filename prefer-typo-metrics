@@ -1,0 +1,87 @@
+# HG changeset patch
+# User Jonathan Kew <jkew@mozilla.com>
+# Date 1391461521 0
+#      Mon Feb 03 21:05:21 2014 +0000
+# Node ID 127c563e24f1a8df8a9446be200c86428dbd345d
+# Parent  71f836369a6328803fd07726e8fb3f681c06c2cd
+bug 947650 - [GDI & Mac fonts] prefer OS/2 sTypo* metrics to hhea ascent/descent if USE_TYPO_METRICS flag is set, and for OpenType Math fonts.
+
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -704,21 +704,27 @@ void
+ gfxFontEntry::DisconnectSVG()
+ {
+     if (mSVGInitialized && mSVGGlyphs) {
+         mSVGGlyphs = nullptr;
+         mSVGInitialized = false;
+     }
+ }
+ 
++bool
++gfxFontEntry::HasFontTable(uint32_t aTableTag)
++{
++    AutoTable table(this, aTableTag);
++    return table && hb_blob_get_length(table) > 0;
++}
++
+ void
+ gfxFontEntry::CheckForGraphiteTables()
+ {
+-    AutoTable silfTable(this, TRUETYPE_TAG('S','i','l','f'));
+-    mHasGraphiteTables = silfTable && hb_blob_get_length(silfTable) > 0;
++    mHasGraphiteTables = HasFontTable(TRUETYPE_TAG('S','i','l','f'));
+ }
+ 
+ /* static */ size_t
+ gfxFontEntry::FontTableHashEntry::SizeOfEntryExcludingThis
+     (FontTableHashEntry *aEntry,
+      MallocSizeOf aMallocSizeOf,
+      void* aUserArg)
+ {
+@@ -3809,20 +3815,22 @@ gfxFont::InitMetricsFromSfntTables(Metri
+         if (len >= offsetof(OS2Table, sTypoLineGap) + sizeof(int16_t)) {
+             SET_SIGNED(aveCharWidth, os2->xAvgCharWidth);
+             SET_SIGNED(subscriptOffset, os2->ySubscriptYOffset);
+             SET_SIGNED(superscriptOffset, os2->ySuperscriptYOffset);
+             SET_SIGNED(strikeoutSize, os2->yStrikeoutSize);
+             SET_SIGNED(strikeoutOffset, os2->yStrikeoutPosition);
+ 
+             // for fonts with USE_TYPO_METRICS set in the fsSelection field,
++            // and for all OpenType math fonts (having a 'MATH' table),
+             // let the OS/2 sTypo* metrics override those from the hhea table
+             // (see http://www.microsoft.com/typography/otspec/os2.htm#fss)
+             const uint16_t kUseTypoMetricsMask = 1 << 7;
+-            if (uint16_t(os2->fsSelection) & kUseTypoMetricsMask) {
++            if ((uint16_t(os2->fsSelection) & kUseTypoMetricsMask) ||
++                mFontEntry->HasFontTable(TRUETYPE_TAG('M','A','T','H'))) {
+                 SET_SIGNED(maxAscent, os2->sTypoAscender);
+                 SET_SIGNED(maxDescent, - int16_t(os2->sTypoDescender));
+                 SET_SIGNED(externalLeading, os2->sTypoLineGap);
+             }
+         }
+     }
+ 
+ #undef SET_SIGNED
+diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
+--- a/gfx/thebes/gfxFont.h
++++ b/gfx/thebes/gfxFont.h
+@@ -261,16 +261,18 @@ public:
+     bool IsFixedPitch() const { return mFixedPitch; }
+     bool IsItalic() const { return mItalic; }
+     bool IsBold() const { return mWeight >= 600; } // bold == weights 600 and above
+     bool IgnoreGDEF() const { return mIgnoreGDEF; }
+     bool IgnoreGSUB() const { return mIgnoreGSUB; }
+ 
+     virtual bool IsSymbolFont();
+ 
++    virtual bool HasFontTable(uint32_t aTableTag);
++
+     inline bool HasGraphiteTables() {
+         if (!mCheckedForGraphiteTables) {
+             CheckForGraphiteTables();
+             mCheckedForGraphiteTables = true;
+         }
+         return mHasGraphiteTables;
+     }
+ 

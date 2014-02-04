@@ -1,0 +1,59 @@
+# HG changeset patch
+# User Jonathan Kew <jkew@mozilla.com>
+# Date 1391461528 0
+#      Mon Feb 03 21:05:28 2014 +0000
+# Node ID 8e432d8f005ad4096245a1a98c8b3c034cf2e516
+# Parent  127c563e24f1a8df8a9446be200c86428dbd345d
+bug 947650 - [FT2 fonts] prefer OS/2 sTypo* metrics to hhea ascent/descent if USE_TYPO_METRICS flag is set, and for OpenType Math fonts.
+
+diff --git a/gfx/thebes/gfxFT2Utils.cpp b/gfx/thebes/gfxFT2Utils.cpp
+--- a/gfx/thebes/gfxFT2Utils.cpp
++++ b/gfx/thebes/gfxFT2Utils.cpp
+@@ -109,25 +109,38 @@ gfxFT2LockedFace::GetMetrics(gfxFont::Me
+ 
+     gfxFloat lineHeight;
+     if (os2 && os2->sTypoAscender) {
+         aMetrics->emAscent = os2->sTypoAscender * yScale;
+         aMetrics->emDescent = -os2->sTypoDescender * yScale;
+         FT_Short typoHeight =
+             os2->sTypoAscender - os2->sTypoDescender + os2->sTypoLineGap;
+         lineHeight = typoHeight * yScale;
+-
+-        // maxAscent/maxDescent get used for frame heights, and some fonts
+-        // don't have the HHEA table ascent/descent set (bug 279032).
+-        // We use NS_round here to parallel the pixel-rounded values that
+-        // freetype gives us for ftMetrics.ascender/descender.
+-        aMetrics->maxAscent =
+-            std::max(aMetrics->maxAscent, NS_round(aMetrics->emAscent));
+-        aMetrics->maxDescent =
+-            std::max(aMetrics->maxDescent, NS_round(aMetrics->emDescent));
++        // If the OS/2 fsSelection USE_TYPO_METRICS bit is set,
++        // or if this is an OpenType Math font,
++        // set maxAscent/Descent from the sTypo* fields instead of hhea.
++        const uint16_t kUseTypoMetricsMask = 1 << 7;
++        FT_ULong length = 0;
++        if ((os2->fsSelection & kUseTypoMetricsMask) ||
++            0 == FT_Load_Sfnt_Table(mFace, FT_MAKE_TAG('M','A','T','H'),
++                                    0, NULL, &length)) {
++            aMetrics->maxAscent = ceil(aMetrics->emAscent);
++            aMetrics->maxDescent = ceil(aMetrics->emDescent);
++            lineHeight = aMetrics->maxAscent + aMetrics->maxDescent +
++                os2->sTypoLineGap * yScale;
++        } else {
++            // maxAscent/maxDescent get used for frame heights, and some fonts
++            // don't have the HHEA table ascent/descent set (bug 279032).
++            // We use NS_round here to parallel the pixel-rounded values that
++            // freetype gives us for ftMetrics.ascender/descender.
++            aMetrics->maxAscent =
++                std::max(aMetrics->maxAscent, NS_round(aMetrics->emAscent));
++            aMetrics->maxDescent =
++                std::max(aMetrics->maxDescent, NS_round(aMetrics->emDescent));
++        }
+     } else {
+         aMetrics->emAscent = aMetrics->maxAscent;
+         aMetrics->emDescent = aMetrics->maxDescent;
+         lineHeight = FLOAT_FROM_26_6(ftMetrics.height);
+     }
+ 
+     cairo_text_extents_t extents;
+     *aSpaceGlyph = GetCharExtents(' ', &extents);

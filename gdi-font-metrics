@@ -1,0 +1,563 @@
+# HG changeset patch
+# User Jonathan Kew <jfkthame@gmail.com>
+# Date 1391283746 0
+#      Sat Feb 01 19:42:26 2014 +0000
+# Node ID 08ad04b3cd20dbc62e0bc6ca7aa8ab46c508250c
+# Parent  aaaccd50fa2ee29a6203761e6701fac23aef2352
+bug 657864 - use more consistent and properly-rounded line-height metrics for GDI and Mac font backends. r?karlt
+
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -3800,63 +3800,78 @@ gfxFont::InitMetricsFromSfntTables(Metri
+             reinterpret_cast<const OS2Table*>(hb_blob_get_data(os2Table, &len));
+         if (len >= offsetof(OS2Table, sxHeight) + sizeof(int16_t) &&
+             uint16_t(os2->version) >= 2) {
+             // version 2 and later includes the x-height field
+             SET_SIGNED(xHeight, os2->sxHeight);
+             // Abs because of negative xHeight seen in Kokonor (Tibetan) font
+             aMetrics.xHeight = Abs(aMetrics.xHeight);
+         }
+-        // this should always be present
+-        if (len >= offsetof(OS2Table, yStrikeoutPosition) + sizeof(int16_t)) {
++        // this much should always be present in any valid OS/2 of any version
++        if (len >= offsetof(OS2Table, sTypoLineGap) + sizeof(int16_t)) {
+             SET_SIGNED(aveCharWidth, os2->xAvgCharWidth);
+             SET_SIGNED(subscriptOffset, os2->ySubscriptYOffset);
+             SET_SIGNED(superscriptOffset, os2->ySuperscriptYOffset);
+             SET_SIGNED(strikeoutSize, os2->yStrikeoutSize);
+             SET_SIGNED(strikeoutOffset, os2->yStrikeoutPosition);
+-        }
+-    }
++
++            // for fonts with USE_TYPO_METRICS set in the fsSelection field,
++            // let the OS/2 sTypo* metrics override those from the hhea table
++            // (see http://www.microsoft.com/typography/otspec/os2.htm#fss)
++            const uint16_t kUseTypoMetricsMask = 1 << 7;
++            if (uint16_t(os2->fsSelection) & kUseTypoMetricsMask) {
++                SET_SIGNED(maxAscent, os2->sTypoAscender);
++                SET_SIGNED(maxDescent, - int16_t(os2->sTypoDescender));
++                SET_SIGNED(externalLeading, os2->sTypoLineGap);
++            }
++        }
++    }
++
++#undef SET_SIGNED
++#undef SET_UNSIGNED
++
++    gfxFloat ascent = aMetrics.maxAscent;
++    gfxFloat descent = aMetrics.maxDescent;
++    gfxFloat lineHeight = ascent + descent + aMetrics.externalLeading;
++
++    // Round up maxAscent/Descent to whole pixels; take account of precision
++    // of mFUnitsConvFactor to avoid rounding up by a full pixel.
++    // (See karlt's patch for DWrite backend in bug 657864.)
++    const gfxFloat precision = 1.0 / (1 << 23);
++    aMetrics.maxAscent = ceil(ascent * (1.0 - precision));
++    aMetrics.maxDescent = ceil(descent * (1.0 - precision));
++
++    aMetrics.maxHeight = aMetrics.maxAscent + aMetrics.maxDescent;
++    aMetrics.emHeight = floor(GetAdjustedSize() + 0.5);
++    aMetrics.internalLeading =
++        std::max(aMetrics.maxHeight - aMetrics.emHeight, 0.0);
++
++    lineHeight = std::max(floor(lineHeight + 0.5), aMetrics.maxHeight);
++    aMetrics.externalLeading =
++        lineHeight - aMetrics.internalLeading - aMetrics.emHeight;
++
++    gfxFloat sum = ascent + descent;
++    aMetrics.emAscent =
++        aMetrics.emHeight * (sum > 0.0 ? ascent / sum : 0.75);
++    aMetrics.emDescent = aMetrics.emHeight - aMetrics.emAscent;
+ 
+     mIsValid = true;
+ 
+     return true;
+ }
+ 
+-static double
+-RoundToNearestMultiple(double aValue, double aFraction)
+-{
+-    return floor(aValue/aFraction + 0.5) * aFraction;
+-}
+-
+ void gfxFont::CalculateDerivedMetrics(Metrics& aMetrics)
+ {
+-    aMetrics.maxAscent =
+-        ceil(RoundToNearestMultiple(aMetrics.maxAscent, 1/1024.0));
+-    aMetrics.maxDescent =
+-        ceil(RoundToNearestMultiple(aMetrics.maxDescent, 1/1024.0));
+-
+     if (aMetrics.xHeight <= 0) {
+         // only happens if we couldn't find either font metrics
+         // or a char to measure;
+         // pick an arbitrary value that's better than zero
+         aMetrics.xHeight = aMetrics.maxAscent * DEFAULT_XHEIGHT_FACTOR;
+     }
+ 
+-    aMetrics.maxHeight = aMetrics.maxAscent + aMetrics.maxDescent;
+-
+-    if (aMetrics.maxHeight - aMetrics.emHeight > 0.0) {
+-        aMetrics.internalLeading = aMetrics.maxHeight - aMetrics.emHeight;
+-    } else {
+-        aMetrics.internalLeading = 0.0;
+-    }
+-
+-    aMetrics.emAscent = aMetrics.maxAscent * aMetrics.emHeight
+-                            / aMetrics.maxHeight;
+-    aMetrics.emDescent = aMetrics.emHeight - aMetrics.emAscent;
+-
+     if (GetFontEntry()->IsFixedPitch()) {
+         // Some Quartz fonts are fixed pitch, but there's some glyph with a bigger
+         // advance than the average character width... this forces
+         // those fonts to be recognized like fixed pitch fonts by layout.
+         aMetrics.maxAdvance = aMetrics.aveCharWidth;
+     }
+ 
+     if (!aMetrics.subscriptOffset) {
+diff --git a/gfx/thebes/gfxGDIFont.cpp b/gfx/thebes/gfxGDIFont.cpp
+--- a/gfx/thebes/gfxGDIFont.cpp
++++ b/gfx/thebes/gfxGDIFont.cpp
+@@ -279,17 +279,17 @@ gfxGDIFont::Measure(gfxTextRun *aTextRun
+ 
+ #define OBLIQUE_SKEW_FACTOR 0.3
+ 
+ void
+ gfxGDIFont::Initialize()
+ {
+     NS_ASSERTION(!mMetrics, "re-creating metrics? this will leak");
+ 
+-    LOGFONTW logFont;
++    mIsValid = false;
+ 
+     // Figure out if we want to do synthetic oblique styling.
+     GDIFontEntry* fe = static_cast<GDIFontEntry*>(GetFontEntry());
+     bool wantFakeItalic =
+         (mStyle.style & (NS_FONT_STYLE_ITALIC | NS_FONT_STYLE_OBLIQUE)) &&
+         !fe->IsItalic();
+ 
+     // If the font's family has an actual italic face (but font matching
+@@ -298,156 +298,110 @@ gfxGDIFont::Initialize()
+     // in a possible glyph ID mismatch between shaping and rendering.
+     //
+     // We use the mFamilyHasItalicFace flag in the entry in case of user fonts,
+     // where the *CSS* family may not know about italic faces that are present
+     // in the *GDI* family, and which GDI would use if we asked it to perform
+     // the "italicization".
+     bool useCairoFakeItalic = wantFakeItalic && fe->mFamilyHasItalicFace;
+ 
+-    if (mAdjustedSize == 0.0) {
+-        mAdjustedSize = mStyle.size;
+-        if (mStyle.sizeAdjust != 0.0 && mAdjustedSize > 0.0) {
+-            // to implement font-size-adjust, we first create the "unadjusted" font
+-            FillLogFont(logFont, mAdjustedSize,
+-                        wantFakeItalic && !useCairoFakeItalic);
+-            mFont = ::CreateFontIndirectW(&logFont);
+-
+-            // initialize its metrics so we can calculate size adjustment
+-            Initialize();
+-
+-            // calculate the properly adjusted size, and then proceed
+-            // to recreate mFont and recalculate metrics
+-            gfxFloat aspect = mMetrics->xHeight / mMetrics->emHeight;
+-            mAdjustedSize = mStyle.GetAdjustedSize(aspect);
+-
+-            // delete the temporary font and metrics
+-            ::DeleteObject(mFont);
+-            mFont = nullptr;
+-            delete mMetrics;
+-            mMetrics = nullptr;
+-        }
++    LOGFONTW logFont;
++    mAdjustedSize = std::max(mStyle.size, 1.0);
++    FillLogFont(logFont, mAdjustedSize, wantFakeItalic && !useCairoFakeItalic);
++    mFont = ::CreateFontIndirectW(&logFont);
++    if (!mFont) {
++        NS_WARNING("failed to create HFONT");
++        return;
+     }
+ 
+     // (bug 724231) for local user fonts, we don't use GDI's synthetic bold,
+     // as it could lead to a different, incompatible face being used
+     // but instead do our own multi-striking
+     if (mNeedsBold && GetFontEntry()->IsLocalUserFont()) {
+         mApplySyntheticBold = true;
+     }
+ 
+-    // this may end up being zero
+-    mAdjustedSize = ROUND(mAdjustedSize);
+-    FillLogFont(logFont, mAdjustedSize, wantFakeItalic && !useCairoFakeItalic);
+-    mFont = ::CreateFontIndirectW(&logFont);
+-
+     mMetrics = new gfxFont::Metrics;
+     ::memset(mMetrics, 0, sizeof(*mMetrics));
+ 
+     AutoDC dc;
+     SetGraphicsMode(dc.GetDC(), GM_ADVANCED);
+     AutoSelectFont selectFont(dc.GetDC(), mFont);
+ 
+-    // Get font metrics if size > 0
+-    if (mAdjustedSize > 0.0) {
+-
+-        OUTLINETEXTMETRIC oMetrics;
+-        TEXTMETRIC& metrics = oMetrics.otmTextMetrics;
+-
+-        if (0 < GetOutlineTextMetrics(dc.GetDC(), sizeof(oMetrics), &oMetrics)) {
+-            mMetrics->superscriptOffset = (double)oMetrics.otmptSuperscriptOffset.y;
+-            // Some fonts have wrong sign on their subscript offset, bug 410917.
+-            mMetrics->subscriptOffset = fabs((double)oMetrics.otmptSubscriptOffset.y);
+-            mMetrics->strikeoutSize = (double)oMetrics.otmsStrikeoutSize;
+-            mMetrics->strikeoutOffset = (double)oMetrics.otmsStrikeoutPosition;
+-            mMetrics->underlineSize = (double)oMetrics.otmsUnderscoreSize;
+-            mMetrics->underlineOffset = (double)oMetrics.otmsUnderscorePosition;
+-
+-            const MAT2 kIdentityMatrix = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
+-            GLYPHMETRICS gm;
+-            DWORD len = GetGlyphOutlineW(dc.GetDC(), char16_t('x'), GGO_METRICS, &gm, 0, nullptr, &kIdentityMatrix);
+-            if (len == GDI_ERROR || gm.gmptGlyphOrigin.y <= 0) {
+-                // 56% of ascent, best guess for true type
+-                mMetrics->xHeight =
+-                    ROUND((double)metrics.tmAscent * DEFAULT_XHEIGHT_FACTOR);
+-            } else {
+-                mMetrics->xHeight = gm.gmptGlyphOrigin.y;
+-            }
+-            mMetrics->emHeight = metrics.tmHeight - metrics.tmInternalLeading;
+-            gfxFloat typEmHeight = (double)oMetrics.otmAscent - (double)oMetrics.otmDescent;
+-            mMetrics->emAscent = ROUND(mMetrics->emHeight * (double)oMetrics.otmAscent / typEmHeight);
+-            mMetrics->emDescent = mMetrics->emHeight - mMetrics->emAscent;
+-            if (oMetrics.otmEMSquare > 0) {
+-                mFUnitsConvFactor = float(mAdjustedSize / oMetrics.otmEMSquare);
+-            }
+-        } else {
+-            // Make a best-effort guess at extended metrics
+-            // this is based on general typographic guidelines
+-
+-            // GetTextMetrics can fail if the font file has been removed
+-            // or corrupted recently.
+-            BOOL result = GetTextMetrics(dc.GetDC(), &metrics);
+-            if (!result) {
+-                NS_WARNING("Missing or corrupt font data, fasten your seatbelt");
+-                mIsValid = false;
+-                memset(mMetrics, 0, sizeof(*mMetrics));
+-                return;
+-            }
+-
+-            mMetrics->xHeight =
+-                ROUND((float)metrics.tmAscent * DEFAULT_XHEIGHT_FACTOR);
+-            mMetrics->superscriptOffset = mMetrics->xHeight;
+-            mMetrics->subscriptOffset = mMetrics->xHeight;
+-            mMetrics->strikeoutSize = 1;
+-            mMetrics->strikeoutOffset = ROUND(mMetrics->xHeight * 0.5f); // 50% of xHeight
+-            mMetrics->underlineSize = 1;
+-            mMetrics->underlineOffset = -ROUND((float)metrics.tmDescent * 0.30f); // 30% of descent
+-            mMetrics->emHeight = metrics.tmHeight - metrics.tmInternalLeading;
+-            mMetrics->emAscent = metrics.tmAscent - metrics.tmInternalLeading;
+-            mMetrics->emDescent = metrics.tmDescent;
+-        }
+-
+-        mMetrics->internalLeading = metrics.tmInternalLeading;
+-        mMetrics->externalLeading = metrics.tmExternalLeading;
+-        mMetrics->maxHeight = metrics.tmHeight;
+-        mMetrics->maxAscent = metrics.tmAscent;
+-        mMetrics->maxDescent = metrics.tmDescent;
+-        mMetrics->maxAdvance = metrics.tmMaxCharWidth;
+-        mMetrics->aveCharWidth = std::max<gfxFloat>(1, metrics.tmAveCharWidth);
+-        // The font is monospace when TMPF_FIXED_PITCH is *not* set!
+-        // See http://msdn2.microsoft.com/en-us/library/ms534202(VS.85).aspx
+-        if (!(metrics.tmPitchAndFamily & TMPF_FIXED_PITCH)) {
+-            mMetrics->maxAdvance = mMetrics->aveCharWidth;
+-        }
+-
+-        // Cache the width of a single space.
+-        SIZE size;
+-        GetTextExtentPoint32W(dc.GetDC(), L" ", 1, &size);
+-        mMetrics->spaceWidth = ROUND(size.cx);
+-
+-        // Cache the width of digit zero.
+-        // XXX MSDN (http://msdn.microsoft.com/en-us/library/ms534223.aspx)
+-        // does not say what the failure modes for GetTextExtentPoint32 are -
+-        // is it safe to assume it will fail iff the font has no '0'?
+-        if (GetTextExtentPoint32W(dc.GetDC(), L"0", 1, &size)) {
+-            mMetrics->zeroOrAveCharWidth = ROUND(size.cx);
+-        } else {
+-            mMetrics->zeroOrAveCharWidth = mMetrics->aveCharWidth;
+-        }
+-
+-        WORD glyph;
+-        DWORD ret = GetGlyphIndicesW(dc.GetDC(), L" ", 1, &glyph,
+-                                     GGI_MARK_NONEXISTING_GLYPHS);
+-        if (ret != GDI_ERROR && glyph != 0xFFFF) {
+-            mSpaceGlyph = glyph;
+-        }
+-
+-        SanitizeMetrics(mMetrics, GetFontEntry()->mIsBadUnderlineFont);
++    if (!InitMetricsFromSfntTables(*mMetrics) &&
++        !InitMetricsFromPlatform(dc.GetDC())) {
++        return;
++    }
++    if (mMetrics->xHeight <= 0.0) {
++        // old WinXP fonts with OS/2 table v.1 don't provide x-height
++        mMetrics->xHeight = EstimateXHeight(dc.GetDC(), mMetrics->maxAscent);
+     }
+ 
++    if (mStyle.sizeAdjust > 0.0 && mStyle.size > 0.0 &&
++        mMetrics->xHeight > 0.0) {
++        // calculate the properly adjusted size, and then proceed
++        // to recreate mFont and recalculate metrics
++        gfxFloat aspect = mMetrics->xHeight / mMetrics->emHeight;
++        mAdjustedSize = mStyle.GetAdjustedSize(aspect);
++        ::DeleteObject(mFont);
++        FillLogFont(logFont, mAdjustedSize,
++                    wantFakeItalic && !useCairoFakeItalic);
++        mFont = ::CreateFontIndirectW(&logFont);
++        if (!mFont) {
++            NS_WARNING("failed to create HFONT");
++            return;
++        }
++        ::SelectObject(dc.GetDC(), mFont);
++        // force recalculation of key metrics
++        mFUnitsConvFactor = 0.0;
++        mMetrics->xHeight = 0.0;
++        if (!InitMetricsFromSfntTables(*mMetrics) &&
++            !InitMetricsFromPlatform(dc.GetDC())) {
++            return;
++        }
++        if (mMetrics->xHeight <= 0.0) {
++            mMetrics->xHeight =
++                EstimateXHeight(dc.GetDC(), mMetrics->maxAscent);
++        }
++    }
++
++    CalculateDerivedMetrics(*mMetrics);
++
++    // Cache the width of a single space.
++    SIZE size;
++    GetTextExtentPoint32W(dc.GetDC(), L" ", 1, &size);
++    mMetrics->spaceWidth = ROUND(size.cx);
++
++    if (mMetrics->aveCharWidth <= 0.0) {
++        // if OS/2 table was missing from an sfnt (unlikely on Windows?),
++        // we'll use the space width as fallback
++        mMetrics->aveCharWidth = mMetrics->spaceWidth;
++    }
++
++    // GDI doesn't do subpixel positioning, so round the average char width
++    mMetrics->aveCharWidth = ROUND(mMetrics->aveCharWidth);
++
++    // Cache the width of digit zero.
++    // XXX MSDN (http://msdn.microsoft.com/en-us/library/ms534223.aspx)
++    // does not say what the failure modes for GetTextExtentPoint32 are -
++    // is it safe to assume it will fail iff the font has no '0'?
++    if (GetTextExtentPoint32W(dc.GetDC(), L"0", 1, &size)) {
++        mMetrics->zeroOrAveCharWidth = ROUND(size.cx);
++    } else {
++        mMetrics->zeroOrAveCharWidth = mMetrics->aveCharWidth;
++    }
++
++    WORD glyph;
++    DWORD ret = GetGlyphIndicesW(dc.GetDC(), L" ", 1, &glyph,
++                                 GGI_MARK_NONEXISTING_GLYPHS);
++    if (ret != GDI_ERROR && glyph != 0xFFFF) {
++        mSpaceGlyph = glyph;
++    }
++
++    SanitizeMetrics(mMetrics, GetFontEntry()->mIsBadUnderlineFont);
+     if (IsSyntheticBold()) {
+         mMetrics->aveCharWidth += GetSyntheticBoldOffset();
+         mMetrics->maxAdvance += GetSyntheticBoldOffset();
+     }
+ 
+     mFontFace = cairo_win32_font_face_create_for_logfontw_hfont(&logFont,
+                                                                 mFont);
+ 
+@@ -501,16 +455,96 @@ gfxGDIFont::Initialize()
+     printf("    internalLeading: %f externalLeading: %f\n", mMetrics->internalLeading, mMetrics->externalLeading);
+     printf("    spaceWidth: %f aveCharWidth: %f xHeight: %f\n", mMetrics->spaceWidth, mMetrics->aveCharWidth, mMetrics->xHeight);
+     printf("    uOff: %f uSize: %f stOff: %f stSize: %f supOff: %f subOff: %f\n",
+            mMetrics->underlineOffset, mMetrics->underlineSize, mMetrics->strikeoutOffset, mMetrics->strikeoutSize,
+            mMetrics->superscriptOffset, mMetrics->subscriptOffset);
+ #endif
+ }
+ 
++bool
++gfxGDIFont::InitMetricsFromPlatform(HDC aDC)
++{
++    OUTLINETEXTMETRIC oMetrics;
++    TEXTMETRIC& metrics = oMetrics.otmTextMetrics;
++
++    if (0 < GetOutlineTextMetrics(aDC, sizeof(oMetrics), &oMetrics)) {
++        mMetrics->superscriptOffset = (double)oMetrics.otmptSuperscriptOffset.y;
++        // Some fonts have wrong sign on their subscript offset, bug 410917.
++        mMetrics->subscriptOffset = fabs((double)oMetrics.otmptSubscriptOffset.y);
++        mMetrics->strikeoutSize = (double)oMetrics.otmsStrikeoutSize;
++        mMetrics->strikeoutOffset = (double)oMetrics.otmsStrikeoutPosition;
++        mMetrics->underlineSize = (double)oMetrics.otmsUnderscoreSize;
++        mMetrics->underlineOffset = (double)oMetrics.otmsUnderscorePosition;
++        mMetrics->xHeight = EstimateXHeight(aDC, metrics.tmAscent);
++        mMetrics->emHeight = metrics.tmHeight - metrics.tmInternalLeading;
++        gfxFloat typEmHeight = (double)oMetrics.otmAscent - (double)oMetrics.otmDescent;
++        mMetrics->emAscent = ROUND(mMetrics->emHeight * (double)oMetrics.otmAscent / typEmHeight);
++        mMetrics->emDescent = mMetrics->emHeight - mMetrics->emAscent;
++        if (oMetrics.otmEMSquare > 0) {
++            mFUnitsConvFactor = float(mAdjustedSize / oMetrics.otmEMSquare);
++        }
++    } else {
++        // Make a best-effort guess at extended metrics
++        // this is based on general typographic guidelines
++
++        // GetTextMetrics can fail if the font file has been removed
++        // or corrupted recently.
++        BOOL result = GetTextMetrics(aDC, &metrics);
++        if (!result) {
++            NS_WARNING("Missing or corrupt font data, fasten your seatbelt");
++            memset(mMetrics, 0, sizeof(*mMetrics));
++            return false;
++        }
++
++        mMetrics->xHeight =
++            ROUND((float)metrics.tmAscent * DEFAULT_XHEIGHT_FACTOR);
++        mMetrics->superscriptOffset = mMetrics->xHeight;
++        mMetrics->subscriptOffset = mMetrics->xHeight;
++        mMetrics->strikeoutSize = 1;
++        mMetrics->strikeoutOffset = ROUND(mMetrics->xHeight * 0.5f); // 50% of xHeight
++        mMetrics->underlineSize = 1;
++        mMetrics->underlineOffset = -ROUND((float)metrics.tmDescent * 0.30f); // 30% of descent
++        mMetrics->emHeight = metrics.tmHeight - metrics.tmInternalLeading;
++        mMetrics->emAscent = metrics.tmAscent - metrics.tmInternalLeading;
++        mMetrics->emDescent = metrics.tmDescent;
++    }
++
++    mMetrics->internalLeading = metrics.tmInternalLeading;
++    mMetrics->externalLeading = metrics.tmExternalLeading;
++    mMetrics->maxHeight = metrics.tmHeight;
++    mMetrics->maxAscent = metrics.tmAscent;
++    mMetrics->maxDescent = metrics.tmDescent;
++    mMetrics->maxAdvance = metrics.tmMaxCharWidth;
++    mMetrics->aveCharWidth = std::max<gfxFloat>(1, metrics.tmAveCharWidth);
++
++    // The font is monospace when TMPF_FIXED_PITCH is *not* set!
++    // See http://msdn2.microsoft.com/en-us/library/ms534202(VS.85).aspx
++    if (!(metrics.tmPitchAndFamily & TMPF_FIXED_PITCH)) {
++        mMetrics->maxAdvance = mMetrics->aveCharWidth;
++    }
++
++    return true;
++}
++
++gfxFloat
++gfxGDIFont::EstimateXHeight(HDC aDC, gfxFloat aAscent)
++{
++    const MAT2 kIdentityMatrix = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
++    GLYPHMETRICS gm;
++    DWORD len = GetGlyphOutlineW(aDC, char16_t('x'), GGO_METRICS, &gm,
++                                 0, nullptr, &kIdentityMatrix);
++    if (len == GDI_ERROR || gm.gmptGlyphOrigin.y <= 0) {
++        // 56% of ascent, best guess for true type
++        return ROUND(aAscent * DEFAULT_XHEIGHT_FACTOR);
++    } else {
++        return gm.gmptGlyphOrigin.y;
++    }
++}
++
+ void
+ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize,
+                         bool aUseGDIFakeItalic)
+ {
+     GDIFontEntry *fe = static_cast<GDIFontEntry*>(GetFontEntry());
+ 
+     uint16_t weight;
+     if (fe->IsUserFont()) {
+diff --git a/gfx/thebes/gfxGDIFont.h b/gfx/thebes/gfxGDIFont.h
+--- a/gfx/thebes/gfxGDIFont.h
++++ b/gfx/thebes/gfxGDIFont.h
+@@ -59,16 +59,23 @@ public:
+     virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                         FontCacheSizes* aSizes) const;
+ 
+     virtual FontType GetType() const { return FONT_TYPE_GDI; }
+ 
+ protected:
+     virtual void CreatePlatformShaper();
+ 
++    bool InitMetricsFromPlatform(HDC aDC);
++
++    /* Return an estimate of x-height of the font selected in the given DC;
++       based on measuring the 'x' glyph if possible, else use a default
++       factor of the ascent that's passed in */
++    gfxFloat EstimateXHeight(HDC aDC, gfxFloat aAscent);
++
+     /* override to check for uniscribe failure and fall back to GDI */
+     virtual bool ShapeText(gfxContext      *aContext,
+                            const char16_t *aText,
+                            uint32_t         aOffset,
+                            uint32_t         aLength,
+                            int32_t          aScript,
+                            gfxShapedText   *aShapedText,
+                            bool             aPreferPlatformShaping);
+diff --git a/gfx/thebes/gfxMacFont.cpp b/gfx/thebes/gfxMacFont.cpp
+--- a/gfx/thebes/gfxMacFont.cpp
++++ b/gfx/thebes/gfxMacFont.cpp
+@@ -275,18 +275,16 @@ gfxMacFont::InitMetrics()
+             mMetrics.xHeight = ::CGFontGetXHeight(mCGFont) * cgConvFactor;
+         }
+     }
+ 
+     // Once we reach here, we've got basic metrics and set mIsValid = TRUE;
+     // there should be no further points of actual failure in InitMetrics().
+     // (If one is introduced, be sure to reset mIsValid to FALSE!)
+ 
+-    mMetrics.emHeight = mAdjustedSize;
+-
+     // Measure/calculate additional metrics, independent of whether we used
+     // the tables directly or ATS metrics APIs
+ 
+     CFDataRef cmap =
+         ::CGFontCopyTableForTag(mCGFont, TRUETYPE_TAG('c','m','a','p'));
+ 
+     uint32_t glyphID;
+     if (mMetrics.aveCharWidth <= 0) {
+@@ -374,20 +372,20 @@ gfxMacFont::InitMetricsFromPlatform()
+                                                       nullptr, nullptr);
+     if (!ctFont) {
+         return;
+     }
+ 
+     mMetrics.underlineOffset = ::CTFontGetUnderlinePosition(ctFont);
+     mMetrics.underlineSize = ::CTFontGetUnderlineThickness(ctFont);
+ 
+-    mMetrics.externalLeading = ::CTFontGetLeading(ctFont);
++    mMetrics.externalLeading = floor(::CTFontGetLeading(ctFont) + 0.5);
+ 
+-    mMetrics.maxAscent = ::CTFontGetAscent(ctFont);
+-    mMetrics.maxDescent = ::CTFontGetDescent(ctFont);
++    mMetrics.maxAscent = ceil(::CTFontGetAscent(ctFont));
++    mMetrics.maxDescent = ceil(::CTFontGetDescent(ctFont));
+ 
+     // this is not strictly correct, but neither CTFont nor CGFont seems to
+     // provide maxAdvance, unless we were to iterate over all the glyphs
+     // (which isn't worth the cost here)
+     CGRect r = ::CTFontGetBoundingBox(ctFont);
+     mMetrics.maxAdvance = r.size.width;
+ 
+     // aveCharWidth is also not provided, so leave it at zero
+@@ -397,16 +395,20 @@ gfxMacFont::InitMetricsFromPlatform()
+     // legacy font, but that's a sufficiently obscure edge case that we can
+     // ignore the potential discrepancy.
+     mMetrics.aveCharWidth = 0;
+ 
+     mMetrics.xHeight = ::CTFontGetXHeight(ctFont);
+ 
+     ::CFRelease(ctFont);
+ 
++    // Ensure emHeight is rounded to device pixels, as it is used in normal
++    // line-height computation.
++    mMetrics.emHeight = floor(mAdjustedSize + 0.5);
++
+     mIsValid = true;
+ }
+ 
+ TemporaryRef<ScaledFont>
+ gfxMacFont::GetScaledFont(DrawTarget *aTarget)
+ {
+   if (!mAzureScaledFont) {
+     NativeFont nativeFont;
