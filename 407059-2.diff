@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0ea6b028ce53fa19e375f565e160346fdaca3704
+# Parent 2e2a6e5e9a57f6ee8475d25698aa73b26d36f898
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: make nsMathMLChar use the MATH table. r=karl, b=407059
 
@@ -718,7 +718,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +            GetMathItalicCorrection(aGlyph.glyphID, &italicCorrection)) {
 +          bm.width -=
 +            NSToCoordRound(italicCorrection *
-+                           mathFont->GetMetrics().emHeight * 
++                           mathFont->GetAdjustedSize() * 
 +                           mFontMetrics->AppUnitsPerDevPixel());
 +          if (bm.width < 0) {
 +            bm.width = 0;
@@ -767,7 +767,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +      displayOperatorMinHeight =
 +        NSToCoordRound(mathFont->GetFontEntry()->
 +                       GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight) *
-+                       mathFont->GetMetrics().emHeight * 
++                       mathFont->GetAdjustedSize() * 
 +                       mChar->mFontMetrics->AppUnitsPerDevPixel());
 +    }
 +    nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch, largeop);

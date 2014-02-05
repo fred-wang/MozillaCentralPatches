@@ -1,0 +1,6 @@
+# HG changeset patch
+# Parent 7abb145b601bbb2a51523b6cb2f2bae0319f1fae
+# User Frédéric Wang <fred.wang@free.fr>
+try: -b o -p all -u reftest -t none
+
+

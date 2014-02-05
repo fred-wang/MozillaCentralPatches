@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent f0bf7fa063f3b75f043a2c8b6bb2e949bf2a42e7
+# Parent a7ef6dc71518637ced07d77b8c3eae1ecc2a180e
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
 
@@ -64,7 +64,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1240,19 +1240,19 @@ nsMathMLChar::StretchEnumContext::TryVar
+@@ -1216,19 +1216,19 @@ nsMathMLChar::StretchEnumContext::TryVar
  
      if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
        // if largeopOnly is set, break now
@@ -116,7 +116,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -102,18 +102,17 @@ public:
+@@ -100,18 +100,17 @@ public:
  
    // helper to give a style context suitable for doing the stretching to the
    // MathMLChar. Frame classes that use this should make the extra style contexts
@@ -346,7 +346,7 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootFrame.cpp
 --- a/layout/mathml/nsMathMLmrootFrame.cpp
 +++ b/layout/mathml/nsMathMLmrootFrame.cpp
-@@ -45,17 +45,17 @@ nsMathMLmrootFrame::Init(nsIContent*    
+@@ -54,17 +54,17 @@ nsMathMLmrootFrame::Init(nsIContent*    
    
    nsPresContext *presContext = PresContext();
  
@@ -370,15 +370,15 @@ diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests
 +++ b/layout/reftests/mathml/opentype-stretchy-ref.html
 @@ -7,20 +7,16 @@
        @font-face {
-         font-family: test;
-         src: url(../fonts/Math.otf);
+         font-family: stretchy;
+         src: url(../fonts/math/stretchy.otf);
        }
        math {
-         font-family: test;
+         font-family: stretchy;
          font-size: 10px;
        }
 -      ::-moz-math-stretchy {
--        font-family: test;
+-        font-family: stretchy;
 -        font-size: 10px;
 -      }
      </style>
@@ -394,15 +394,15 @@ diff --git a/layout/reftests/mathml/opentype-stretchy.html b/layout/reftests/mat
 +++ b/layout/reftests/mathml/opentype-stretchy.html
 @@ -7,20 +7,16 @@
        @font-face {
-         font-family: test;
-         src: url(../fonts/Math.otf);
+         font-family: stretchy;
+         src: url(../fonts/math/stretchy.otf);
        }
        math {
-         font-family: test;
+         font-family: stretchy;
          font-size: 10px;
        }
 -      ::-moz-math-stretchy {
--        font-family: test;
+-        font-family: stretchy;
 -        font-size: 10px;
 -      }
      </style>

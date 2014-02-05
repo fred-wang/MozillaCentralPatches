@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent e8554deb3c1caa1addc93d604d6dab6dea16613d
+# Parent 4ed4a2a3f14a6a059433b59582ec1caaf9888d97
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1 - Add helper functions to access MATH constants and use them to get the AxisHeight. r=karl, b=961365
 
@@ -25,7 +25,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
  class nsMathMLFrame : public nsIMathMLFrame {
  public:
  
-@@ -155,16 +157,48 @@ public:
+@@ -154,16 +156,48 @@ public:
      if (aFrame->IsFrameOfType(nsIFrame::eMathML)) {
        nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
        if (mathMLFrame)
@@ -61,7 +61,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 +      gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
 +      aValue = NSToCoordRound(mathFont->GetFontEntry()->
 +                              GetMathConstant(aConstant) *
-+                              mathFont->GetMetrics().emHeight * 
++                              mathFont->GetAdjustedSize() * 
 +                              aFontMetrics->AppUnitsPerDevPixel());
 +    }
 +  }
@@ -74,7 +74,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
      aItalicCorrection = aBoundingMetrics.rightBearing - aBoundingMetrics.width;
      if (0 > aItalicCorrection) {
        aItalicCorrection = 0;
-@@ -286,20 +320,21 @@ public:
+@@ -285,20 +319,21 @@ public:
      // should switch to this API in order to scale with changes of TextZoom
      emHeight = fm->EmHeight();
  #else
