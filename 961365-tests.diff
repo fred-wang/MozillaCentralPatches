@@ -1,219 +1,219 @@
 # HG changeset patch
-# Parent 9a252dba2debbfcd8eddb710e18df6feb9a1cbff
+# Parent 893660c4d2852054cbf5cc02434b43cd0c72b45f
 # User Frédéric Wang <fred.wang@free.fr>
 Part 6 - Reftests. r=karl, b=961365
 
 diff --git a/layout/reftests/fonts/math/fraction-1.otf b/layout/reftests/fonts/math/fraction-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..df350179e75443f533bd531649dc7a236dd9bc99
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..65a79827e6f714643dfb1b68550fd387a653de3c
 GIT binary patch
 literal 1908
-zc%0o;OK1~882)B=vu)Fuszfas>!9@sO}DA_Q0qY}i-@r;mLlS7jcF5Ux?vk7_EhLG
-z1;K-0@l+H9MG?h=NbuyT(u?TP77r?VR2mhH|Ljg5k&5x^Y-axNf6g~Mvy-mg-Y(Q)
-z6e^5P)8u!a9efA)>H)kl&ED9Bv_D6Bk@RqEfA1khKYaqwLjXJ8b*wqM>Op9nFem@n
-zc-qQfh58&&ACc`qGGU$n5xaehd{3$GNs>W1rEehonR;U~oy}Dngitj|Lv`B9WuSBu
-zWMY1O$Vw-g*T33C`Y52ZWbEN=X$-poP4MAhA{4lqd)s}cuHy@8HBk)H>mI&bDrKvN
-zA`#^%LOH3`FIvhPIlJ8vnpV#~!$-<>Ws3AGo@5`<%4$T2UbB$(dlldrvE<%diZ}gY
-z43{ei;@*OF8;(lM;749!h2(_9Dz@Ui#2WmpQDPrfvL1<bvgat0X@c7kH%nlK5H3nA
-z=v<Rn#bMl#SVM>fCH8@{W{GvOpF<~XWN;Y{QW!uISz5ym#IciP6b4#ocQ|4cH9`@C
-z^jM^eEQj*MXi-jz&=AmRXD&Obfn=8Ni0|Z4qh&Xb*(0gJL5p|VPR4euY|5s%em5<?
-zkk~}ipx?3L!resJ`<bpY>q>{%C0tGsV#U!;eYrB8r;Tvb?cNGt+Cy2>b_NnW8Zme~
-zU!07Twx(#4AX@>kJ|f{@Sh_it7ZXHWDQKZD;S5tOH;k5uVHmuEn(`EQJuG*;L+p~P
-zYoaWTnyd3t$s0?v^Jk3d%N^A6_Ba23&{R*9M$w987R>0w2V<;u$*X7LJ3LaXLvaHu
-zhLz$*wYW|j53q(=<z^|MHuOxE0$PI~HJAFD^Z5l3sLE6Gg>kno46F>}{;Dvl!+5<K
-zs;Ib~c6e`P-@+o9@)N<JFt&M1zA!gdV1>fhnSxqa`^}vD@YB=_-yg4;8~Zx*eXJ@N
-z{B}2#Uy~2`F~8=ieUsBdmfe}c<Hrn(&?VTR|LdE5A?2<LVkd}3f90inJ}qCv-NV-3
-zaO;v7!i--2k0*rp(Lcdjl8q$i?^^McYvNuFU^VK|@JBjcWQZafT@-Zdde(Wl<PrZi
-GqW=N~67UNE
+zc%0o;OK1~882)B=vu)FuR*7w~u?`xakaU|`5858IvWPU+Vkt#@tubvPO*d?#)Se1G
+zMi4v*iU$#IiXw;yk<g1?ta#I-^`xRlrBTuN&+haQsamhjX6FC?=X|p>JL&E3??o*p
+zp~C1kO@4cN|69P<1mLx4_9xC}qY=_eq=yrG`wuAkiKBoX0@z^hk=FR?`=N`3Ir&c|
+zvsMnP)Te;@fNcBHDeKJl#Iru~J*K`ZO$Oz--c0xt^+-CKAFnnDp=yMN>Z~=MgL0T4
+z6Z7k%RyNhT?&Sv3Cjq4`XOHE}Q`iY;f)581p}^(w!5b&*IzOXU6UFeN@yU**QnqR+
+z5>bvKlw(@cqNSpd^RPQY)0)^P_(-{`%#eP`lk5Z9S&azMYZkJ8tpZFFOYY63c+)S&
+zaJhmY?k-rj;E==&eiS5DNM4gz#b&&dSc9KMB=(`6^+~LgeVihhCb;#uSpqYJa86=D
+z=ZeHC4&u7R8bT~6u@9WJO01LpG`e9UhYN6!!7$Ru(;BuRiR~ogFwjQ3!;zq<35pn@
+z$0A*1Ig}?xi*hoAMuBcScfrXFr}KPUayyS3Z993wp2&=hSiIYIa<*gTGd9HyxoOFT
+z#3)UJA;(Gzca*UAGhJuil@75>xtwCeieoqR<;r-T4#IJ_dn<rxkLFF=8BXzd%;3BE
+z;$)<BMB`CGb_K)+h=hYN>E={kOb~OWpoM{yGe)u8Fxp~<Vel2yl&8S!VY%a-VwYT9
+z6J=@CT%DK8-dKJ!f5w=;+(E5ufAjwbP4z^1675)K!Hhn9Fve<^ym}_S!=6$dO3kbk
+zR!ZyDQloY;z*^oYx5@#vrSE1rptbl>bAF(;P*?zgssc4%7<cNzKz$hZR)<j?#;Y|@
+zMa8YO!+TctEi96$JP`~EV;eUWigQy%RxEy*Evm(aujbtQAEsXX_Hgao)R)<BQ&qv>
+z*E^xY+CspO`8CgU-FzWr#hocUe$28MU4otZzrNY$QttR;l-I5ijiHs7?)$iW4R;UQ
+zf5GibVhA&O`QINA?xKH!29gny^LMRyDm8Jh2CxQAX!$K2FET_C5f=sBx}J4jE_uYi
+Hjp#oCJOb?w
 
 diff --git a/layout/reftests/fonts/math/fraction-2.otf b/layout/reftests/fonts/math/fraction-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..2ddf3577711453dcd894342e6b9bb320346e99e8
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..3ff6392d57cb40802d7e4679e3a870814b10d82c
 GIT binary patch
 literal 1908
-zc%0o;OK1~882)B=vu)Fuszj~0mO-OdA?Y?%5v>O;E+WP%mf}ItHKt9Z>4t5T>Z#CU
-z1U(6gCs7a-A1EF~f?hmTya;-;-Yi}#jf%#9cBgqr#d>u%GynHL=bN3`N&mn=KUy&X
-z6=t7h@w+egeF6gQ06tjOK=N!ZI8J(*bR)TEV85d8xCQ7DfF0{U+Lc)LC~}D~C;zEb
-z&dy_r`U+5=kZo@!ZJ+s(ymOm;&#7<EkU=@2uOU23J(|fC#+yw-Xd0oRIcJaOp&Ta2
-z#QgfGolBd>`zYxXfYP0J#tM~5Yy~vIhl7bw;L2F%!;@{jU(l+FVtBLa@!NVSTQd}i
-zC`S>>ajm^(X=vm;?2XX0b~cLuDc6)K(l7gxeMS#!5g~d@HS6~(zzbr@{kar>`dSQ^
-zD+uF$)w&UfBxVSrD6vBFy2L6r;FH7}f-EX=087~siFLA%QzX*_w}W1mzzh+blUUHX
-zDzS<KxFNBI2n$Ob0B2ni>tsKTJ~+tZ0$gM<j0_62hEAlgnPdVcx@mVfk`#53B1Y)3
-zNf%iz<%!XzoGhVHpwG!)aI?di0`E+1<_WWVD^EHXvm+xm?{nO|<JyI+Lvcf1TB@2D
-zqp2|D+9~0V5%zzU=PY>AC3b0#Q=C|F?4-U>8Q-(b!?EfLU^$}&%W;R(JP|kfPF|ag
-zlx?v@Opsj!u|Xo?VobU@l@}AlJt=5mFzt>}EH};WxM`Yv5jEv0@Vg;*yjSd!r)#1t
-zjhd(PO2r>5ALq{)(-%6ZjqPv#|DdV9s7#;-3oMw?hY!YBYu&47;yXN8ZbNwuD;r9A
-zty*5CT?(;|kIJn|NbNXsvl7xef@nEE*i|f6L8z%nEnwhYn*l5}@L-vNW&`h*LlqS_
-z(UI7-xNo6Grtw5DD2%OJUo6c{mRPCub-JXMR(`YQW`0_F>HE_abCX}EzfU%W!{6>j
-ziYtntAm-ORwfp89Asg;Y;R#}z#px34)&KR)zLs*!B4V!-jiJAXZJhCAwbiw}`WoII
-z_WXu>>S72pdig(|5#CMz1S?5KNzUK3;%U^xy&A%Dw4>vXwEV~jMMOOm_Uii9d0F>}
-Ie;d(%0qjEY3IG5A
+zc%0o;PizcP9RA+S?6lpkZ8eLE(Y&yVCcB+(5upw=CL&ffn#O@J*0#IS?QEt?%Be|@
+zE8!#|;vjB>NW?*8!+{Ip$W7gdE9oMv-<x^eKT_1yn|<&1{r<l1&3p59Xk=svt(bud
+zbI`K*ttWfm1A$HeZ!K#ic{&%1l3pg=NbVllr|8>n0(t~sM}`jfCYIleTp-NJe<GE$
+z^H`=n1JwIu+mlJ#r@kkj50mc^^=%n4D97|Qgg;S_W^#q;W|I(_CTM8R+0%I_hX^t;
+zzdmW_(x&l-=4Ug2(wBFp3YA%G0W`sfgNab!l6xJ;+Xg<PRTIVVYSq)8dMR5o6p1KD
+z5z0}mvu0^%<UHh!(6mnW2?0{BC@)CA=u7qy{j5cV=q=T(U#kF*i6!^vQvB&_F<h=7
+zj5}3pHx5e75JXX8h2&L<Rcyd}i8TaSRN?^I*|5Yq*{3OzX@c7UFH2yC2+l|>=v<aq
+z#eQ6qSVM$`B@TeIUWs+GpTr;><Z%uzvKU7O1zN)<q_CM}0w(%scQ}$1b)F(7=&?x`
+zSuW*?(Waa%p-EuS$)9tx<Cy~Al-kS_X5SW`bk1idCTu?FxOvC53t5Na#=NvtH8Dn0
+zVa&Bt!W|>*|18g0@T5!Z(jKQcvEtZ4eX%mWXRC)})fK>UCJUD1j;DDdZt@+xHW?{f
+zV~Lm`y98pRM8d_CbaN^%CWw1d(86fiouXK7ntgH8H2D&0%2VKXL+<#1*d<TbL|Ga&
+zPv@12KUUr?oH3>^c2FDJ-~9hUQ+-jHK|dB*FryD2jIq|bSI@+Ec%a;d@)}k)l=51&
+zyh^(eVqNc)o0X8-HGHEI(z=3ZIXl{0ELK6NsYoqg;C7n<v>Uj)+(5H|*Bwwr#f@|%
+zb}sE(sF7(r5ey1r>(&=b^Rp#ZDt(zNsil=)t@#f>EWPyY!HW6WFLU2!o5JC*w<E<B
+z#ZV9nYkslo#w#Hk?o8ncVvfb>5**O~_07JNvgeOce!EIE#{M4G{lSmbR@d_CYj}Iu
+z{|oM~iy_SD<$r%jco+Q>tRxvFxp3Etr%@C4Y6u<ZMAvU=`H>Ndh<YgO)%C3lvhET8
+HHlqIoBtY&B
 
 diff --git a/layout/reftests/fonts/math/fraction-3.otf b/layout/reftests/fonts/math/fraction-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..2260f37395ec67e6b9c87db01d0aa33382133c21
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a35296253afe36c631792c9756e86b7f7fef605e
 GIT binary patch
 literal 1908
-zc%0o;O=uHA7=5$5*|up+t3<6B!=Ux2LeouZMQVG{!Xjd<VksUJU1Qornr_%esh$cw
-zrsz$uc#;Z&MG?h=NDvR66fc6{#d@=NRT?WAzuBF(iB^nPXEXD??|0tJ&QAIV2Kv#6
-z38*moOq1VzZq5U~769)}b0Bdc>mMh*M0z-JVBnCV@0$Vi5Wr6MpXi9MeGr-=%*lT?
-znYD6QqrL#tM`SygPFd%_C+^%P-&5*)(_~Oi>zfIGrrw&)=Ev&|LZ};|p+0Mk=b#)T
-z$i)2msFh8{BJbKrp8%9t&K}E`C$R_61RoA2LV>H<tutqudcL4h6UFd)<HI+VQnq?1
-z5>bvKlv7&EilwTN^O!qA(^}YP_(-{-yd?daC)p=-vIY^NH!NrUS_ODUEV(zA;!VF2
-z!{rKsxVLQGfuj;L_)(BpAvrCvitYF)u?9bDmDq=7c3fhe?Bf*4G{NnNn<X$q2p1(5
-zbgoOR;xKMXtRcjL68peehr~MB&!G=Ca<~i!84M$hJgs3Dl4v6thk+Qq9gYM=U7?5(
-zdMwgKmP2`Bv?wP-XcXwPbC;dWa5~R-CEIx1i0$DC`$}eH#NvInld~NwpRp-!$W2Qw
-zC$^)LjE<EQ?smf7&vc!6S31Nl<#LJ=D~@jJtCjIQU4-Lq_f`PY9?hG!Go0e_sKLAW
-z%4DQ;wa429*&2uq5(x)m(#@&7m>}v(K?{Q^XN+RGVZ@?_VelGi%2VL=uzce^;w`zl
-zCd$&NxjHYGy|MgZ>5MUbwS!vS{^tJ=n(B%2gxKHT7tH9x2V<<UV(Xds4v&<YP}<B&
-zVWqT1Ep61M0xa@DnJEX<$njg{fEMwi;nHA7p|A`Bbp>j^FlL*=Kyw)P*M?Ca#@lsJ
-zMa7+TB=*<#Ev%5KJ`oHGV_UZsiVKrPRxEy<E2_l}i{`@o4^uCGd%S*O^6T8U$+}>0
-zaW+&~UkLcIwC0z+w_Xcbb!Q5XA9E~9mtc?nuRHrn%H1`@P7{rx8tYQ5wu!FDc@J0G
-z-FMje3+}9lA<Ss=zds?|OaBBLNVbw(x@*N#t%-XzfOTj=<d2NJ$Ph)ex+v(@^{h*>
-K;t~HgqW=WFQt=7^
+zc%0o;OK1~882)B=vu)Fuszh6941>l;g`}IbifDV#!Xjd<#Zo*dy2jW<l5W^Wsh$cw
+zM)amAp2VA?2;xB`h@cmh9tAJfo5gFTQPKF%?zByO)~mCb`M>`;-^|WV28V|S(TYi^
+zFa}JM-+pS&0=^CaZ%uPJb*2!Dl3pb}oZ2(IPtkYY0`w5Tjtm~|POiEix=5Il|3tcA
+z6|q8n4yX^vwl|xxPJK<i7$V<e>N~PzP>$)Hgy*P7vxU+`vq1<=c^aAv)<hA?A%aZI
+zua8-UOd|58i}XoANfhnzQf&&ofF}5GFcAt|%3qy3-q!aKt(qu?>Go&a>ZNSWP$Z%p
+zMJPwLjwMS&Bj+J^gr;?{IrvDqro1HmvM1RG^sp8YqPHw&{a6KfLM*vAm*P#o6vO2T
+zg1EbA-Hd}0Gx$-KSRr{`VilY4USbV?7M0kCm2602o$M17$uz<3fSV;SLkMRj7Idyi
+ztYSZINUR~mf)e|{S+~SG*-v5sHi|e82RV!)ixRD2E7Is9nS_A^y&aAeMO~nXJUtfa
+zBFmvXF<O+9BQypK*v0csZZuosThm=UX(W1i%D#}x=Pf>9J4M^EN;#Y2PP=L8#l#qT
+z$mm#U;f@jZex~azxzZta8JAO>SaIy4{;M*cXFK7f+r1UQw8u)O?Tlu4GH&o)d}%UL
+zw#Sk&L3SC$Mu>!iap~q%UQ7^orJ#k8j5AKL+%OVx!!Y<VYRXgK^{{;7ec~;-x+cof
+zsJS|?)x5FxZsCkE{Z|LIvHi{eA2ihywMntRKQEZkhY!YBYu(l}@f{whwxQa|s$r$N
+zUahuk7XvKvPPtVJsF9(YwSX4!qvhO4ce%U>0!?LVzA)~zg@Kh}+*=h!a~Q8zLlqUb
+z(2>}^yl-KNOyh}QP#D{=v0Ry-s<2As(@aIJto>}x&wexY%9n?0=BGZ*e3@zr20z~k
+zmDiL5ek`o{W&h1-Asg;Y;qhaJ#px34)Bkm6UrD*`k5OK`PBcz0vo6JI>*$J{^>Dr2
+zeTO|i;GVh|!i+Zm>m$Pb^iQysWR&E>T`QhOP28&itVRbSzh&e_hA1NHqM%#Xvo6TG
+JNBrA}{vDhA?+gF{
 
 diff --git a/layout/reftests/fonts/math/fraction-4.otf b/layout/reftests/fonts/math/fraction-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..00bf528cb77fe02e6e78ca8cc25d8d828d28630e
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..553086d34ae5c3732f27ce208bb08a1161a9ef88
 GIT binary patch
 literal 1908
-zc%0o;OK1~882)B=vu)FuR*ALJ7zV9RXu3_S2W<~pSVfGrSc(Tl*O)eurW>|Vs;5Ga
-zDR>hso{EB?D57`}34-8B@gjN=tT!K5rLm>Pe|D!$q801a+06Xk|D11jW+#0E1AVB+
-z1XLKkrpa$VJNOy!H3N8Wngj9k8UHxxMbg9Z{R4*-J>moO5Wr6K9dD1Vy&sw)%*lTy
-zk+HH^qdo`Jhh#gDN?PX@<F{^-?+NuiDKaRh^cKQjskf#wx$#<q5NbwfsLfd8St!Q{
-zGBLkCYGsl!{w_-T1fX<e?Xg^G5?z2M_;4^03QP_6zd7B|{SEb+D27)X9=xuUveiP7
-zh;kI6oYb1jma0b1W9|q|Yi3_TYgVo)FG#=QN%jSutWJdJb<0`5Rso(8OYY63c+;0-
-zxLiRHcbBc(a8zOjKk^bQB&Q`-u@xUB*5GHY68q4|`X$!MK2DKL6WortSpqYJa6w{0
-z=c>di4&%DS8bT~6u@9WJORSUqEP7!hi%W2j#xPRI(HeFjft@5{FwjA}!x5*b%M>v}
-zk43u3awt!X7UiS~jRL)P_L7qxPUZNH#7-VFI=Xn=zMLKzv3RfTWNpXFrEQ8Ea?=va
-ziEZKt3^`UpxZ4POKht&QT<H+Iq{}HvtT^^kU#X1e*-bd+c5ekR?a`cRJHtsHiyC|{
-zFHc6w?zUK)AiD};gG9o?m~?Y0FD8h(QqaO+(ix*zZWtX=!!Y<NYRXgK^|0LWZm~<Q
-zu8FcVYOc;pC2uT!SUO`&U+JJ$x4-%SgQj|-G=Wa6uwX_XJ{V*56|bI&@9;>m0mT+p
-z3@gP=YH@=$6=0DM%8gP$jr7ly0$Rk6x{HJD`TQ~n)a0r8!no5A1{%Y-w>FI0Fy5|%
-zDk^TLBe8FF-$I#8^@(6m7~8xhUznRLutMScY(XtF&6{(dewcb;;nDiJ$?vlZlQqHM
-z{GCvKeLmpF(wblN%)An^>dq7%KW15!F2Qd7U*GIYDR-?RcA97m{ca8%UO86VSjLrh
-zcMm&%!JQQ`gc-g3#m9tu=%1j8WGl&~yH-5anz&a3Schgr{>a{o3{ga@i-K-l&$=Wl
-J9`SD@`cK-I@CyI{
+zc%0o;O=uHA7=5$5*|up+Rnl59hCyT1Leg!j9<&~`u!<PlVksUJU1Qornr_%esh$cw
+zrr=FbJc&0&5yXQ?5JWwwc=RGzZ~k1BMvKO8cBf5JtJbTtnfc!LJ8yPoC;dZ1{b<G%
+zR2Y4x$!|VB@DcE}19)qiL&>wbSd{cK>EYzQp@WJZ@d0`WV8{B8b|u!_4b2ed<Uf_l
+zS$V8dp91PVvhB~Ltux<~&j-o(kov9+8I%+H2Ew1IM>Dy?WTQa{4P!Jk=B&v)lmUWF
+z%&(7IxpacRiIYABDBXE`qEMN}4nPxpIG6|pW=5WMoNVd+f@Vz=!>e^qI%}nDjZh?_
+z97QO{wf3r|u90)V9ieIM>@#T1$`$1W>6bjoKB0#-i4eVMF>7fR;1RLp-du_|eKm&5
+z6$Ej6(b|C{5;OQwlvp8oRbmxe@LpmKeioJ3ht+IQVx8=h6v;Hf?Xa6AFhdCEBo=fo
+zORVA$u1TyR#DWt0z*(2XI@wR74>t0+00&u&B7*|0VH;A|PBH-l-LyL#Ns78i5o7dN
+zq>C(v^2BISPL|L(&}Zi_IN8xmfp1G~=Lw^G2T$4;vtwfx@3Wn}?O27ZO>rY`T52&d
+zCXT>}W2J;UM%eqAuCw4uhuEcEPH|$zv77pGWjxPL!U?x~D}ZT_7fjn3P4h(D;JbNs
+zGE#QN5-~w`1;mDlgo6p`=2Tux5O<}Zh2gX_L9yI0y5ojn@D<dQr@-rBx#PWJmt0*F
+zWogu0omVQ}Sb4W_#+bg`L9K6p^Zy4;^+aU~Jy>SJj6QrY#+qwhJrm#I;c^Sg8(2B4
+zlsBs7b=pjTMcyelDgiYzc)b$PB7QWTAMPp^7eSz*NX-|<t(GvbI*dDO!e|WR^;)Q+
+z;#N8mdsg->RLRtz2nL0*O`D6Qx#<!smA=lF)Kc3wbMC_rQ!mZmZ=IX|Iy*nz5Db31
+z6)LtC1AZ*5`NiJruY|0-Glj>GSr(^Duvh=rH~Uh`&Ob(Z?JCh2`PCdaw0x|#zKUz@
+z?jH6m!96uGgc-g3?+*y?rGJ7pl2MWicddBpHF2*7uomrz{Fc2J8KQ`&i-K-l&$=LM
+J9`SD@`cD#-?G69{
 
 diff --git a/layout/reftests/fonts/math/fraction-5.otf b/layout/reftests/fonts/math/fraction-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..ef1c1d0677a6cac5c85653df499c699c3d59e7d7
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..c42f858054cee97b2aa3599a04b763885139af71
 GIT binary patch
 literal 1908
-zc%0o;O=uHA7=5$5*|up+TS;rh7zV9cg{IrYdeC~%!Xj#{VksUJU1Mw_O*d?#v^^Di
-zGlDlk@gxd@qKM)_BzO=HqVyto(|S{Stu$3MezQAm5`VB>o!y!5eZTW&cXoDQaBu*P
-zn1TwU-!%E1=lkXWUps*Jra726m-Ua6ULrl5*fY3K(IY-U4*~4hz|rnl%Y)D*!kql4
-zl36Q<Rq6{seMGjs>6CTmTjKUD@;#-#BTWY7guagOJoS!rHa}i(5JKGu4fR=TJO|}4
-zK_=$cN3CoszTsV*^eI5;$=PH1@-(&sn&891L@034I`HyjQ{QJaYN8ls);xSuEoG~R
-zA`#^%LOHIrS1dJ+oQK^Jn%2(dL2Fj7Dz8Yt>`69<IBO6gdc$(o&sBhD#FBe+Dc<yz
-z7%o>3#Jy$fW*m~3!H<H(3dw5{tJs8(5^M0Y4vBqeW=AB}$v#ezOcUG=x>*7<gm7MB
-zLFbCZD)!^L#2P{@D6tQmbxW+1{WSVvBZmn%$Y2<0<Y^6^NMb9=7!35#+u=x1)FefW
-z&}ES>vK-12qeVFxLZd*xottnn!|6QlOm5{dqh~u$*pr!&5sUZRPR@3$e8#4@vu;{)
-zIk5}9WOS^gaCZ^*Zqs$<UFi_Jl*=hftT=X3|6Li+(@Qw!c5ekR?a{nxJHsg+iyC|<
-zuS`ZtZ&$2KkX-?>AtK>mOu9Lh7ZXHXDQICR<&04*H;kUBVHkV`HRUewdRV^kKJk`Z
-zT@z(#)LfmH%idW2u(ZdR{=1D@+y3VN51Q(U@)YQN`E|jJK72678mk^X6W`&%QWHw+
-zSShTO)~ls8+NA)Cd{Azd18U^RjdDPX_|b4-sJl>D27$T)HD4Hao5DbI824Mks1M`q
-zYN(>(7TOZKR`xAa$kgr#28FQ=8w<sS=^`r@7iWuVvF(ew@aem$7r#DkU6@{+{W@J2
-z41T#ADzp{?ek`r|)$SWJLe`v_!sEv*i_#(3r~m7deJ$m-6~ta68fX9P4(zXu)z(&U
-zwcUM(@t<(KDn|T6=;42RLU=d*3ED_@kX$-z#Z{|`b2Wg~Xh-Ca^t{LrMRd3*=+^bD
-MOS0+`e;d(%0JW>|3jhEB
+zc%0o;OK1~882)B=vu)FuR*70QhC$;Kl5P|0LF+*ai-@rnOYxxS8e<b_x?vlodMfm0
+z1aE@kNxUhFARa`5f_hQu(VMn6rB|h~rN)1Dr%mFsUY*^U|NEcw&F<`M-@rg0S}_h4
+zMz3k|yDtvT0KN_YA53!~bv_@9l3pP_oZ3HdP|+hkKo0@zc;B(k#L9=EtAsiEPp9)%
+z0V~v3fcl7R2eKLK>_X~wKlz?g-<>6ca#G(w_%rorHeVcTHVC0<n1<%OHCBLflpquH
+z>myb^lic(^N%}aTbQSE;Vs!$$08Q}WU?LQ_a{BrDQ*Aw8(5i`Im|XjEXT6lI8Hz-d
+zqX^}M)={%GG;$twM`&6H`wUvMazlAT`ZZ6o86;VY2+>=XvVN=rJR_Fen@jPguf=e=
+zf*|fMS-0Yd#0-9vBvwe?lvu?Ue3V#&pG771p`G<htdo6=BAF(*9d@$>W(eVe#DdOs
+ziB%lJEr~URSWsdgIO~*HC;J)n!bSm?;2?(~WKpCwY)2Y9NG4#Qi{1`LilQ!4#4ueJ
+z=_1RaJTY37lOr?&^xB0>PHre$<lECbc*5w~#Z&g>-0-l)du^v+J617gQ`|W>ExnW&
+zLpK>6D=pkH!rpDV&Y~+FVwZ6_#fcTi9_qg;<9WIXC*1C>0H!@sG;L=n!xM3X@8Pw{
+zNa>CxVuI{4hz$}62cy!>sl1pV?n*%mgBfR(V!2^-#SO#Y%cv=Lf!D+GjrWMR<m#Fz
+zOQYuMyju0f>h$6sWBRW)YGeDG|37G|C#vJ1^X2CSGy3qs7;CM2^h|t*hbwKUY+#kJ
+zQrW0h)@oM+EHbU!sRq<Y|Ltl(i}=xUaj>&gS^|Nl5;b2K_u9fhdl(N^hS40xyH!v{
+z#ci}D_Ac*RsF7*h5ey1rn>LrqvlC@jE`OaWtK~Iw=Ip0$re2<Zyn1%x>(u;2Q!qGp
+zFH~Ax3iz?O<~RFpPYT&^W(toVQ!Gx0V2}Q<Pxh^pJO3EvwVOoa-0$6iLyfW8x*D#x
+zyYDdh15Vb(h<^w@{Dmik_tBqV4aq3U#j{pijhZ-D16YL)M1D)piwsdj)I~wJu4i48
+Kb(i?ti2fbzn(Yn%
 
 diff --git a/layout/reftests/fonts/math/fraction-6.otf b/layout/reftests/fonts/math/fraction-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..ca06d49a40fdf85af265cc99c35a82709e4f06b6
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..7e1b982e99f36087cb48ce314dcc17f22e7a290e
 GIT binary patch
 literal 1908
-zc%0o;OK1~882)B=vu)FuYDsIwwG0|-D>U7v^?}xd78Vs_6-yCRbd9lzG~KX`Qau%V
-z5h8dK6i=ccD2gZ^M1mJRDPBa6)|;ZoN~5CjpWW#rrDD7~o0<RnpYzSm>||hYZ~*m~
-zfC{tUviP0nd%ggH769)pYcO#p8yqLSM7ojKIk;QVx4Z@P2*3^x9O{a%co4Znn3MlR
-zGHd6sOnm{UkI1$wow85;Ox(UjzNgeTr^%ok(^nIorXEda^W(K9A=He}P@A>Kb5ITt
-zWMY1O)Xt`Qqf=W+p8%BZoHLd$Pofvl1RoA2LV=4%8ja%(eP2<piDG!Y^5L6>Qnp$s
-z5>bvKl%rb9yrrU%^ME%((^}Xx0;F73UXp&<m+UioSe*#b>*lf+R{@?8OYYC5_|wnF
-zaJhmo?#)@-uwP<^APN#IB(F)VVm&@etRcvv5(luH9h6un`#421O>o=iWeLm>!C8p~
-zohuTn*o*5DYlyJ0!~t;DC9zKSljw(o9L~c<2E#}rPitsL5*;MtFwsrB!;zq<3luRz
-zk4?JBaw$)YHsxdpjRO5n?!22BPUm@hvV+IX?p~g7E@VbVY~Js<Imfm08HeIdduhqJ
-z#7=A`qiZLHyOXg0vpi?slP<AKd7NUzienq~rONo8O@!lK_g4VR8O>XcJDlS2n8~;C
-z`N>Gx)EVy-WUC-HL?m2{NjInRVuF|_1uYDv+%byfrr8}cO_NtqQ=S698*<0{#4dTd
-zCd$&Nc{(qb{jvOE_KY!ose@YC{^tJ=n(B-41bVQ<f*F1IV2sr-c=b$thx<wmD6M8C
-zLn*CMODnZYA=dgqxmgaWtp{(ELt1MPb?1h<3WYfkswq$l7`WSD0Lu;BUtyruz`I7M
-zqT&WR65Ff$7Us!Ro(Kkov9;?8#hJ+>D;B>^71d(%cWdU;FH0}}c-%BI`EBaQWKB5y
-z{cfbtR0stzyXKcWZoC$<;?5MFAf{N1F2O$iU*GI2DK}OTdyQzEt|E^1sO=LS>s3Bp
-zT*I^VEW$mN`HWuv&nJX;&_6*l$tcO$yH-4vnz&a(XhaKI|H#UZj8H_>Lt(G3Z=ID3
-J9`SD@`fr%t@CyI{
+zc%0o;O=uHA7=5$5*|up+RidplmO-OdA?Y@4RkR+ou&5You@n(S*BF~f(hb`vt*1f{
+z3K6^s7Ej_$Q3UZI61?ceN^g3!y(xNB8WoM->`s4Ds@AKsnfc!LJ8yPoC%ygsy{N|+
+zR2V&`$?v^5^a=1a0eEMc{fUdYXoU1K>EXow{)39X>kXiX0CuAHcw2nUqtJE2ocw2#
+zIV+D<>PtX<Otu5*ly&|`;#D8{o>AYKCWCTXZzlYidL*4IjMN&0P?M#hHfN3Gp&TQ~
+z#Qge@l}mL-rgxJ*1}N=$d$>>;M<<{OJ{(Mh0@qGn&7NuK{(^c<6vI^Giye!lY_(7%
+zq8vpir?jR8OI0K1F?WQfHL=g|k#b9!B>jdb*++D+IuWAR&1WsG0z4;{+?z}BreBER
+zas@#=n73}lQHdG+C`zo5oRC<>7QB~OgP%nt_F*;alUOJF2t_hYa695=3Cs|}C5Z){
+zn-Z%yjN1}x2(h5VK5*71u}=1L=z)zqM&TfXL8MWjHMAm$?Ihzc&`!I<k)Wt66p^LJ
+zB3)!TlqW`uax#R5fF3(P>SPAf1>Tz6&f`XVCr{W{GTE%fdu%6fJ60iMQ``kNEjgbU
+z#ZEFhR#Ld5guS2XIt#9Jh+WF%6eCs~d#Ep0#`AO$j=SAk0Ze<SVA{@LipOIH-@_Ls
+zBc&@Ej|#FYAT~fG91Kf0r}AQgm@5S>45XZ4isgpU9y1Jsub`$p1zr!!9q$&q<m#Fz
+zOQYuMyi)PT%FNsuWBPIjwYvSy{~t8f6O}P^V3`Fo`tZRRt6%i$nfMNmlp9cPX63L_
+z-l&!vwd(=aGNatB1k{$kJC%Ue;z!-(fwp3C9t3KN)O=ywZwLdc!+5wRjM^~Xu7xTp
+zZlfcycV*wg0-5R)!Jsg<X>+kOJ6>X?(%0#dT3Y|joc-|A)Jxx=teYMGI{kgTCK&v7
+zKU7>-4EQm(=E;3`ri84zGlj>GX%?ePuv`DvH~U)39e<4S+62+Ku!1<+qpct4Sa0y~
+z(i*O<V+ro4&S&)Ue>^3;kNyePlZ=p@yKBW$t%-XzfVF5s%WqkEks*qRxG3n>^{jJp
+K(IftCME?bMi0%yl
 
 diff --git a/layout/reftests/fonts/math/fraction-7.otf b/layout/reftests/fonts/math/fraction-7.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6792cd87745fa2865da87f0fcde7321a53d76f33
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a7e7a146cd939ed80141df331e0bde17050bad95
 GIT binary patch
 literal 1908
-zc%0o;O=uHA7=5$5*|up+t3<6B%b>OXK+|nvEoght!Xl-yinVx9bd9lzG~KX`QhO>C
-zyhQLOD4s+?P!v%-hy+hPReBLUT0JS^t<qG{_|5L5ZKPtnI=eI9`+n!m?(FQq;NSr2
-zF$on$uW9o8(|un6UlV|Lra2hDknxX`UL-vnKQMSm(YxLNdI(@A29C8y*FFwiCCtfx
-zCXunSSffq@>Qk~EOeL*zKjQc9lJ5oey(uy%r}WK)=c%`(GP&_ugAi&)XsFFt<5?(2
-z2r@ChK5Au>ovj~wNS_3hj;uYFD@|b!pb0)4OoRegjt3e~H*|kRy(WrbcH@)RE2V6;
-zP$Z%pMJOk=re#Y-Bj*u!gr+sIdH6`Vq0Eqe&6DgiVysSt=ygk3zgGcX5=-vQrFhdX
-z$8foVARaDRTX9%o20!u=D<p49tYSMpO02=pS|s+NksXy-C;K=>GEH#nce4a$2;ri{
-zg3fh`RrKMO#2P{@D6tQmwM(p%{VaN6Ba6#$kj5}l$k7^hB7t2bqcG4xZ-*mJQ4<s~
-zLYGCl$Z{x8j27jj35^21cJ{K99!}->&crSrH9Ge2xIK{`8L@b;?PP7o%B5|JJMX3?
-zmJ-|0MMlR;2zMJ{?>1d$&Xo?aOS+sQ#EN4d_0`IFo=(D1w|gsqX^-Yi+Zj&sXvE<A
-z`0`|=bhbs?1lcNx4G{?kW75s3yqF;3N<j-lNoR~=xnXof48!16)Reox>tXrEyTw~_
-zbxo9|QFC=(DtTk+eR+>DeYK5R+5YDL51Q(U(j;P7Wx<R-d@#o9S3G(qzQg`v1B#nj
-zF{~7~sKt%i)c|XLuiPmG)aIkNO98FfkGe}k?fLu?2-M`M`NDY65C$5<c(gW*+A!X(
-zgDNWSpe?b#x^H2bOy!PXP#D{~EnireDzHLfaju{iHheP|KK(TH!uMzE7p4~HzE9Nz
-zgWn#6^6T>fKgw&K>A5{CWW|{&Jbuiv2pxjm`oBKeS5oe-BK9WHIA29v%oExs54V1*
-ztl|1&zu{PAKBI^K<2m6T`V(v**+Q~>){3iA6X$9G>(GSeKeF;7Lln{CqM%#XvzFzG
-JOZ;s_{{?C8@CyI{
+zc%0o;OK1~882)B=vrW^Oszj|A%b>A7An7)-3fdmDut;fai=lW>bd9lzG~KX`Qax1)
+zULtrC6i?z!Q3UZI61>=p6>oa9^`wY5rBTuN&+haQsamhj?#%!F&-rF|cD6sA?ne_Q
+zpu*@eO@3#p_aoqI0r18&)2XwCSd{cC>5<fd^dUvx`wGy*06W@$q&>0bLHG(`PX3db
+zf>p#SbqY`)lI>tFYn}d{dOk?LC)D@k$e<k8Hxd3sJ(??&#{C8%G>p*TFIeM6C<6qU
+zm|q{Y3fa!Kx80;q07^&E9xK%*u^Z3?9}Xr$fy?PjCr>nYeMXZeis9vkXS<e4+5Au>
+zq8vpi$F!D3OI;)9fIC9dTG%J}NV%>|lYZ5c>;salQH1D?3t7Kb0iF^|?#-om(=Wzw
+zxq=YxEm+%dSYn0%$`UIiZ%C|S8{SE*A;6*%`>>h~O01K8oFbVfxb?YN0yBhhPGUjl
+zn#3x4aZ_RqVHT3u2hQ3h*2#VfJ+M*41vtoK7&(+^4Lgv*PLc^2=%Ba5k)o)J6fr`V
+zMY_mxC{K(Q<>U#C0zG!|f|DQ4mH3X#PM$D2cJq{dF+Vb5@gCbL+KyGq+Z1=kP0K7K
+z#;})+j+GJa7-8==U1!Oa4zbI+oZ`faV;}Y9%6Ohm!U?x~D}ZT_mQ33j&hkXu;QRRE
+zWTbS)5-~w`1;mDkgo82Z=2Tux5O<}Zg`uo7MzP#5I^u?5@D<dQyTI!a`Nq4%TXJ<x
+zl%-K~bzZA^V{LYRk1>6@jauLS=Kl|x>WSI}l2~TJj6QrY#+sHqdM3WZzG^e7n^-lX
+zR5z>D4ce6;Yn@eY*Me&6;H_FvYYm|B{7`$jya0j?Woo_%?lwn&)e+oZ6M;X1*K47Q
+zirZ;R>|fcput=tUM=&UiZP{9`%uQBUrSfH_qE^;_HRs;{F!jo}N9*P$zs!7_YzT$E
+z-VK-6m4gAyuX(!r)=MGl&P?G6V1~u%5bV<b^~t`Fa@QZDymo_VoLNC!(i7T754XLq
+zui^TWzu;tjKBI^K{W0Ng`V*`t86`P?){3iM6X$9WYte$%-?H)|!xRy9QOK?9S?A@F
+JOZ;s_{|QK#?hOC{
 
 diff --git a/layout/reftests/fonts/math/fraction-8.otf b/layout/reftests/fonts/math/fraction-8.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f7d11fa29d3956686d8be6aeacab25aaa3c8baa7
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..780c691a45a994c274f6e0eb492aa9b837fc9b71
 GIT binary patch
 literal 1908
-zc%0o;O=uHA7=5$5*`{eswWL}xmO-nwLep)kRkS_W!Xj#{VksUJU1Mw_O*d?#v^^E-
-zEd_6a;;ASIiXw^!k>E)$iWkA76+9?{C#6x*_|5LLNlL|fb#`aI_x;YB-PzfJ!NCF4
-zVG1gYe$(W)pC9}T_?iH`HO;~J`AlG(^djkz_`bpYioS6dpoal=eBf9|Y|Z`f3}H_G
-z(}|3g#VYj~pgts9Un*&x{TaV?lYCF8cc;jpoYXfE{zAPamC23!4MM0Hp~0WA#<Nh4
-z5M*M0ebmY%yIbG)kv;_|omqP<SDMBSKofj8m<R<f4eaeZRp0X!b($!KSL+_Uu9UL*
-zp-4nIicn5yO=U|}Bj*u!gr+sIFYu9aRe3@BWlyqC=wh`ZM6X@UT3Q8oN-ViIm*P!d
-zj^T0zA>3WGZpC4V83M>ltdP7Wv5GDDAhCu3YmwN8)$FLmI@!l5l4*k5Ava54hA=Kj
-zEa+U3Sj7QcmsmrXg(UWYvkr-MvY$aeY-BM32Wbo=g&eJ+6$!MFjKM%By&aA?MNLw~
-z2wfKGBFmvXF<O+9CNv84+t~>xJ)Fw%)<heR8J#<L+@4I2j99$icCxl(<<d6AopaL?
-zi;3;nO-9E`2zNVS?>1d$&Xo?aOS+t*#EN4N_2tTVo}GkaZueFI(;m&4wlkdMv8ciK
-z@bYA&>}-#<3$iO9Hbf*Gj7c}A@?wIhD+MhKC7m&f<%ZE2H4KBVpr+gfUXRE(-Xq?U
-zt81bxjhd_TQpp=j?-uqL)0f+*)$MQo|DdU!C{3XY%Pg4DhY!YBUB#nk;yXN4tVeMJ
-zD@K&!Mzy$3n+dY!cgl@YP;EXsTMBB;0n}a`>d5C8L9ixI%@@I)`UtQ(f_rNs@JH~b
-z0jj9Djkd(zm3<3kGSxeRL1Apu=6qp(y1)vBZ*v8;u=cw-|M8cp7k)fyoS*(S_hY&y
-z6#9NAoNvqr16Ww|i{9B+LROub!V|z8i_#(3qyOuZeJSPk6~ta68t0aG1rJmxU7pa^
-zmvLnc*VeTJSH=-$^zeT^CfrMZg0&=DNG_bU;;Pofxf(<Rn$Y}5_FiO|B3fJ&a_f55
-M1zB;4zm4d>0g4yz3;+NC
+zc%0o;OK1~882)B=vu)FuT1mBHEQ3aEg{0fm7g`TmSVWDrSc(Tl*BF~f(+%4w)l;F~
+zA_yJ?#glkbe1Lcm30~BL6^|aR;6V{QDNQRH|Jj{3NvT?|&hE_r{m=PkcXqaKV4x3;
+z7>5d@*EIQ^mj}K8zE%M5OmiS{HXDtQULrl5*fX$C(bsMV^bo*~_8sYrH$MzrCd|oy
+zGMTk<Sf;)J)JJ67n@(A$e<WV@lkX|@ZD}$n$MrRYzfzB+v-z=lgAnS5X{gUyV>u{?
+z2{JLiK4N84+uA?uC4C%Fx^nhtzC3{~fF}5GFcAt|I`rV`iKd=!Xw*b8yjk^pbG4MM
+z9*RViqX^}g)>^UDG;$txM`&6r`wAZ^*Of`quXvJuMmK8^A$r4n*1{^lGh)fTxfE~u
+zN(`4P2;$znbt4W*%-}~sVuj=liB)XCM~OA~SwvzVma~3|b+V69B+~@9gKn0<3?ZD8
+zSkSp9v5Nh;DY1qS3rg$*XPpx3WIu&o*vR1m9Aq$rH1f2Db|le3G7bY>^maHB6m^jz
+zhUv0M7g-MFiP55*451OA*UnvVGDGP+Z%=mcxY4zRC+v%v;bDvS+D^`PtbE3%xHE2A
+zay~JN9b|N@q;N+Gd$;L2^R9G=UCQMYBUT(csV`Q>^K2y?ce}R&nD$8Cw4I?8kH-wY
+zlUF7qWotAZ6=at{Y>-Ge7?o~L<;4UsR|;AfOgW<z%MGI|W*7!vLQS~~ydIWsyhpqx
+zSJy;Y8Z}qv<+3-H-_PwarZ2WpYun%a|3OndQ65J(7FjT(4<C%N#;Qlp#CLeG)P&L+
+zRthVnwQ6aVb~(V>-Yd7u0ky6FRym-x`O$EGu(ME@2Z6c*HD4Hao5H~IFzz>pQ6I+J
+z6;MURO|&I;E$v&Vkg44f3<_iG))$J?6Gc`m&P)~6;>uZb`qNKSFMfaAGCeUf^?jl)
+z7@WNuDzp>=e$1_Ta`&w_Le`v_!sEvji_sz2qyOuZeJ$nYKSp`&2GKaPxGS)~O6m55
+zwz`6=Yq+-V1-LqnFr$b6;|by2^e0$JGD33htQA+SCeGCWR-hGazh&=5hA1N9qM%#X
+Nv(Cw?OZ;s_{{?8l?G69{
 
 diff --git a/layout/reftests/fonts/math/fraction-9.otf b/layout/reftests/fonts/math/fraction-9.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..476ecd2c78d1e08a750c7c3e52c394ff02e996cd
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..5a48ac68cd810f693e94355a542a47eb5209f743
 GIT binary patch
 literal 1908
-zc%0o;OK1~882)B=vu)FuR*AJ@EQ8i3G~K4HMXd)dtPdKiSc(Tl*BF~f(+%4w)l;#@
-z6ub$FCs7a-MHCMr!IOAUya*nx7g0QTsWfe=@t@sklStKib#`a|?|;rWyR)->{r!EY
-z#TZl=J*LU;z3Tl2_!<FxFwOqh`LutO^aAPO*xvpFioU)J&_e(_-gm4uy7EzIf-ool
-z>3G`8V1@b;P@j-(Uov5xosZqUL%!$KcO=Q6oYdD5o}%8IOlL={4MM0IqM<r%jb@-6
-zA;`r1`mmKwbZ!5%pY$<6Y0KCn+2S}l08Q}WU?LQ_a<Fs9sk-j(sMSO<yj}D7UAdI4
-z8j3`eqX^}M)>yJsG;$tsM`&6jn}Uy&>&k1=uX>VwMLVkzA$rYX)~{877sQf#b1B~R
-zr5G+(5X6H;>t-C5n8A;n#0tq9606vR&k}3!vu25XsAoqd*2z9fkxUcZdfhC68A7-q
-zv7mEJVikvQQ(_Gv7L?cr&RQkb$$kbsu#v$fI7nd-Nn~jaTM@@Ll2I6FqqoBmqo~Ui
-zF+`U|y2x@UPmC7jqzDZIJ$B}jlNwBB`PTS09yQuJc+9?>8XB^AkL_e^$I7N`iaY0~
-z#TOG>u#=3A6&LOn!rpDV&a5jPVwZ3^MTiy0F6v8_@jRV`qi*+B0Mj1Mnzl2T;L(V|
-zck$9>q;$4KTLjr<5E~#84o0M#Q+Y8##Fc^;1`^H)#d5=Fix`H%mr+yh0<VYV8}Alx
-z$<;McmPXChd9mn?#g7YnjOj~l)XMfZ|9{X_PZY<{jwKe%=)(tNthVgYGw~hv7V1z~
-z#|mMkuwE^!(Ix_{>7#PH7*Lyz-YN#PCO>K}4z%WSiy%;yqvi|aeq9)-598s=Fsj3N
-zzY40TxP`XF?&W<8B{G#ef<a+y!^T{GdOXka`I*VQns1mjr@#C#_59q^)zjlMlXK%$
-z!QkxuP;PZD;K#z6U+=l~R>+DoQ+WKCWDz<9yY+v4vTvl^zKqx#MC06_Ljs3rX!o$T
-zwuH-TxVH9RaCsbIMh}1f8R0$jCuktqOmg9@6<4Ju&eZ@`p%G2LrRGJ3D5BX#LAS1F
-MU65s$_}hs76J;y!3;+NC
+zc%0o;O=uHA7=5$5*|up+ZHZbjmO-Pog{0fmAJlr#!Ya~Oi=}u_bd9lzG~KX`Qau$5
+zULtrC6i?zwMG?e<NbsTvDjq#rFQRzxqBN~&{APFBBvQ3ro!y!5eZTW&cXoDQXlMY9
+zn1l+W&oue%=l!1nUn_vOra6>2osC9FFOeQj>>k>u=xetDdI(^L2M%?`o9~A%5$5DS
+zp3GV~EK{EW>I1UvNvEun-xDte$@iH0)-)NEqxu@cU#LgY+5AMkK?rrDG}LFUi5!%J
+z1eus$AG5NlZJqD;l0FG2-8p+aU!KBdKofj8m<R<f?7MaGSX1v;G-{$4UaxxESuJI&
+zhawT>C_*`+wN@-OjhqMF5t`P@zQ9MyRplk=mp#cop@%hy5WQg`>(?s46Jp7|xfE~u
+zN(`4P2;%O7bt4W)%-}~sVuj>2iB)XC2Z=TKSwvzVma{>Lb+S)TB+~@9em6^Ch7it3
+zEa+U3SjB!^msmrH1ts=@vo48svY$X7Y~*kb4l)=)8hKhnJCf)i8Ha&xdOI8miaJjb
+zqjXuMi!6uo#As1YhR_($XXnm2nUQp!w<kMz-00rS6ZZMc=%~f}Y$s<sRz71>+$lFL
+zxsVveb}~9vQn;gpz1wu1c~?5bF6DBH5i5=z)E6t`dA1OayWLv>OnWSE+RjLd$72TH
+z!7G!IvLzai3bIQeHcTWOj7vAC@?wIRD+MhKr<`$$<%ZE6GYo?-p{CpgUJuJR-Yedc
+zt81bxjhd_Ta@iZp@8<Uy(-+&Qwe4^I|DdU!C{LmXi!7MYhY!YBW7VT);ydgwHKDYI
+zmBLDCty)^8T?(+acgoFjKy4emQ4VNrel(mN?kW@(K%lNb%@@X<rZBKPjC;*t)Q9n=
+z1*)jHiMGVfrF{z(GPOH`L1Ap&`a*GLs>q7P+3BKMTsddXeEebR#cvN+%uLNrf19cc
+z2IuaC3M&c$Kjzo`a@UR5Le`v_!sEv@i_sz2tN-hheI;e*AEUf>jcA<ub4Xx64Lu&#
+zR#$L!4cFH53$BhM%;@2Ne?)i}{Rvi*jF6l^YsFQoiE}l87PO-6x757I5Jf~>6m;u)
+N)_GZViNB5LKLJD4?G69{
 
 diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math/generate.py
 --- a/layout/reftests/fonts/math/generate.py
 +++ b/layout/reftests/fonts/math/generate.py
-@@ -223,8 +223,125 @@ for i in [1, 2, 6, 8, 10]:
+@@ -223,8 +223,149 @@ for i in [1, 2, 6, 8, 10]:
      p.lineTo(0, s)
      p.closePath();
      g.width = s
@@ -222,6 +222,30 @@ diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math
  f[largeop[1]].verticalVariants = "L8"
  
  saveMathFont(f)
++
++################################################################################
++# Testing AxisHeight
++f = newMathFont("axis-height-1")
++f.math.AxisHeight = 0
++g = f.createChar(ord("+"))
++p = g.glyphPen()
++p.moveTo(0, 0)
++p.lineTo(em, 0)
++p.lineTo(em, em)
++p.lineTo(0, em)
++p.closePath();
++saveMathFont(f)
++
++f = newMathFont("axis-height-2")
++f.math.AxisHeight = 20 * em
++g = f.createChar(ord("+"))
++p = g.glyphPen()
++p.moveTo(0, 0)
++p.lineTo(em, 0)
++p.lineTo(em, em)
++p.lineTo(0, em)
++p.closePath();
++saveMathFont(f)
 +
 +################################################################################
 +# Testing Fraction Parameters
@@ -341,178 +365,231 @@ diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math
 +saveMathFont(f)
 diff --git a/layout/reftests/fonts/math/stack-1.otf b/layout/reftests/fonts/math/stack-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..7d60b64f12b190e3421fad7f25084a17ec620d53
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6c365555d3e41a4c78c4d8c933e2c51206b4a9fe
 GIT binary patch
 literal 1864
-zc%0o;O=uHA6#iy+vq@`ATdB5SEQ1zpg~V-Y1+{`&Sv?qAu~Y>`ml~UB(+%4wt*1f}
-z4^dP+>Crzth$4aqk>Ev7RWBlVt2afD)u#T%H@lOXNK5tVOy0cjy?KB0vy<-L-fk?y
-z7*rTtrpXUZZ0rHFDFAOwvp0SsT|EN$CP)s)xApE)^dlEYeh;t%-TT(X>K@deC(LR7
-zXn)$uV6plfP%n{gdop1i`w_o$i{_pXZAg+rIjk=yEaEpO)7g=LK?we>Gz8MtNCpa}
-z2WzB3AF|Sk`w{yK$zy=BIAafIi{n^N^}VKf4kk<~@aAXdj?{F1#v)Aw!>fjeugke?
-z0VooYk0OLaTH|j`MWe|ccZ8-jvMKmTxT=U<xae{A5$&u>nCMlrUVlabo>G<E%cXef
-zf7@`mf)MV_YFA^A#0-9%l~^HuSz;9{@m69DeioG2hg!BlVx9E+$&zWJw%x9mz>IR8
-zl30{;L1Gm<a7AK`Y`#nE184OT>j<%(=z@(5M&TfZ0VI*7HMF1~t;Az6&_<`j5htrN
-zWHCtHB3XDj<R?apd{TslfG#^T>ZAseS>Dp$%40^`dLFmWqy`5q-eo%(+p)4Ko9u?k
-z#iAr95upSa&RYE^BLuvk=?2TX+@YcpZYfbJhGP>^rMIW+ARKeaD;cIelr?Q<Ai-l%
-zgKy$82ceEgEFwyqzl=Ug>CmjVDo!Cq(5TBr5$H=e!?X}?7;RC*F!=nT<OzEemZ#Y%
-zPQaBl5sgO8m3gt~jm3AR`@{6PE@5R`X#PKFs>h0BXvZ82X7o{mF%~H8I};z+?m`U;
-z%UL0;6jrE(2JL*1HN8`A7K3Wj-s{Dn)>MtE(|zl5xmghO=cxI@xKR@ZYQwl)7e*kA
-zmrJ0Eh->H)bo|{Vmz9)V1O|n%m8)|3>G3?v=VvDKYJS;QbNa(iQ_p{Uv~+rWX7by(
-zKNR|Uw?4Nt7p#^`qc*YS`YXXJ-a#=_jY$@zhpkip*ByN!`Pzj|_kN->j{ikWaW>Z^
-zFX2-AQ{P@jW&Vuz{l{a%Tj+IPM!cDL>HQSFQfej&VhI}2G;dX&Wj$FmyC~$w^|U2k
-J*2O=FpkL%q<Q4z`
+zc%0o;O-vI(6#iy+yDd<P8dMT0nP}r*(z+Be5g}1As|P9&32LIz4OUvEY_n7&oJfeL
+zYSehrBN|Ue<Hdt9jTgO$dNCSrc+==nrT*48yHjk9_;dA5XWsYTyubO`Y45;5FX}J}
+z6-Kvd^8GWL`vC17fM=#TkT{l!MgZRo$>GGdfnADz=q$;v0Jg7p&xZKoTa9N3bDBRq
+zl(Dj?S04cCdD3l9C9NZ06A$}o?k@FBDN-m0^=85%ek7I2oeCI);NMC^AY+}%LZS3v
+zO*H7ERwj8fYJVVk5>V>1_E@eog^g6-Q<~>s!juAU>3Dvqq4PcJG!YC>mfv4r$t4A#
+zNJKu05DsWfKQvWDlYQ<8O>1KB;3MIZB6i`N$JraSu^M5b*UWqU90j;XRdO$v;-&v#
+z!{rJ>xG}F?jolJ6_;Ffdh4=-DRjkAdi8c6HP+}hzu}u=|q~A-HOcS;BxLyJ?%5_3w
+zQO;S3RqVh;i8ZqMBC!vgHA<`_#CD<^HnJFpgEWSbLXOt37DHG^JPre`bUGXfvYH@^
+z5o#96!pk8)F<Ru4CNv6k+u3m^J)Fw%wL|N8+-Tj%6ZS-UWW?g#wv)9TE0?y(Zj4+k
+zN^%@gN`SGPHFP{m!26kQu$;>sDk|xg5~E@`I;dBBd%AYQakqOV!?Z_prtJ(Tc|2zD
+z4lZ*LYLCXFqO^s}7^IXA&3dci6jB6@xm*;1!K5=r3*m;*8Z!)oFC0pqu-C)#G&{u!
+zxUwdq(WtpHFO|Hp^s;<^nEtCvSWSPL{|`v@SZNY%_{D-5ebiu#1<L!*#0S<>Y(TM@
+z6~jt#g<4#$oe8p*m&(;rP;Kd-E(NugTGX5z+>p=DgP=c8<O}0ULl{^T#<j&^1j2Z{
+z1geO*hAu(--(7N9NySBAP#9aeDqonJDzHM~<7`1KEc;~6z5ZtEh0nK_&P{!s{XFFl
+zg+5(x%rDIcYvt02X1b=I2wwFLikVu>vKT#Vo%+A-=p)J3|JKT-{<l=d(Z7f(&gQb@
+zWn8A8^=%cs!k^K;f4xJvi(dC-#3RJZ@26<hQiOUCOVEUt1*`Hb8_6Q#qL3Tc)0TNf
+J6aOHhe+O!c;TZq`
 
 diff --git a/layout/reftests/fonts/math/stack-2.otf b/layout/reftests/fonts/math/stack-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..df70ad5150e680b6000262b424b53faf048a09e6
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..d0d12474cd499b7a5c21effb9aa7e31d5f62846d
 GIT binary patch
 literal 1864
-zc%0o;OK1~882)B=vq@`ARjRER%b>*<B;BUAV5y*1R*}ZGSgMGkON~vm>Beo8wx>ez
-z6h+089)00K1Qk4p1VQjr^&*0|dQ-eAO?}0Gb|*E_7WL{(X8!Mg|MS>McVAyO7GVM^
-zj84<!2cK{01+<R<UYllL{6xBX6!1+EAC7PD+pXv;KM?;8U<bPQHN}?Rt35}Ulm6&H
-z+R9+D`V3Gnl59sZVIBJxzkQQ*k7=|eNuV6oR}mKR8<XkmXuu!@|2CQeX=^kCrH3G^
-zr%4~S(uw;`r)G(t0F=cUdn8+&#Ad4R73n#cFa@G*T~CkHbbP`hO$5Wsx(BbyscZo#
-z5|NK0m_u6qPf0~1Wsf^U)9Tqr_=vfph+VkgQT72XtV)>ZRdZgyMgg8smE6mvc<F!I
-zaJhmI?#@ZqVXwptew>w9A$mz-6>IQDVhw&4l-P$QtW9E_<on5zX`;3+*GphVxlT(g
-z$~iBwik-MDu|_suCH8@{T8VXp*e-O!Mh0VWkisC6$kG}%U;rD5#$ceCPKP5-R^wzb
-zMBO4@csb-JW{Z4Mgoc4mJ2U2_29sI7VPGSV8O@t{+#XL24OzU?b~3hOWm7iUjgX5)
-zNlqd{NidSN22Mr@ct6t(mUXE^MJ3!)qErk=JB><jPuA+<$Xv-V?cuCxJA(-xiyFM0
-z%N&GSBe94mZQ(NdDWyYNZ&jQ^il9-KiXzaTa7Jh$+%TG>hGFo9L&+2NMp&L^hd2S3
-z*F-d$HJ9hbqBj@cmhKPJ=evZJ?N9pups5}yPM`(zESS+p4aQiYwC_xOU|oe86jrf9
-zSShSl3w7GLAZvK5+$aXshTdz%pw>{0sx$pfx!fEG`g7ELVO*~X153iVwKR-C7%!GV
-z6%p6dC20M-OD-!Zy9f*lV{6vt@-vfpme0>l=hgg*&*seg@1~yr@^Jag<m~j9Nq;Ex
-z`A%(ac`jHjmqu-B>$R7HR=k5kQ;lgBrH8FU|JNOTF6pM<Rlz;K%h>V1h$+tIs-z`c
-zYQM@`%0`(#qkaGOi11c=-B%E8BwBhuMX%%<X#}wh^=MeID$lZ(EE-)Da^rf^5-scE
-HA4H5FTub8@
+zc%0o;OK1~882)B=vq@`AeblyMEJF>xAn7)>1*L*oSw)PkSgMGkON>pl>Beo8>ZwpX
+zMN#pjM-@*Z=)r?X5J4|my@=qg-W0D&Q(y6)-APT<qF$ZJ%>VuGe;zyO8yM)rJd8ty
+z(QBG~|K$4Jfc62vE7KfE9Lq){fbSXc;l$>F?TWtiJ@Ib=wy$qbdwk)Y#&d)@=?^Ef
+zRu1#kCxCj9WLwfH>&Vx{Q;LTNG`iCyP!8(L2#ffUbT&U0FbKiFiKal-8p}cHC&*f8
+z(nqXp>Tdgq8REwQWq!^c&6g*zj_P|!dJZN`fmqk0#fKVtK4P9Gg5gE;<F(aPwg41~
+z$VU;(0j=eSq^6Ow-<_dpE$jn)#9UFtE?n>^dyh_5CrtFZS+Ad?01v53?&VUv^gnF4
+zTtNu8XQeB#OJW8;&PuEhy(F=UHoTTtgP#Q@_F)0*mRKkGUb1AGsBNd~B`~90CnXl;
+zoR?U|R$P`?BbzT0`@mVF#5zK38+u_QhtqJ7!4T5O(;8MIi8VyyFwjA#!;v7XGh{JL
+z-6CFiIpim1i+nPKMu1*BciPDerSp7sat)6g9qV|)K9d<9ws^1Y<ZQ>vXKb<?B^Qg5
+z97mLrU^H(fk4Fi3Khq7Ccd0`~rQA|tR1C)k8nxb@tjopG*^*(}BYD$yhEhBpGx!EB
+za}er^#-pONxyu-&ln!aVRdEU_g2r4biojsX8Ks4A!{~?^hQa3!B~REJVR@Q8;sjh?
+z6VYhaT%MQ9-duiDxj#(*-6gDTf71U4P4!559G&>hf*F0(V2lMS`_9A%wzJfL(lS;G
+zE2ZUXsaZQ0WUX(M8|9$dy8Bu=sI}Ik?$ls=p)d=A{sJ{$7}p!Zz=AMtE({|O#`8r`
+zMZ{Hf3A+C7lFLe}E&_wXSlfz1aeAW2ip80!qFQYFWKO^PX6nVy_m)gg%uIcr@P|U5
+zZZ#H`6oU0~Y1E!=y!JxSns-oW>M_M)^sx2l|GJ}-lCJ$#72NTwj2-=pnBr`%N?O5{
+z_OraRYE=0%+V`*b32&s=y@_aqXyyGBy_Sp62x1Xh&^l*To@FChL|hbd<9gBxt?J?*
+GM2zp_cHkNS
 
 diff --git a/layout/reftests/fonts/math/stack-3.otf b/layout/reftests/fonts/math/stack-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..465603fd3d86e2eb5e2abafc409339c772ea79e3
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a81e9e41585809237f7b03387544714440b263c7
 GIT binary patch
 literal 1864
-zc%0o;OH30%82)B=yDeA?5>SklOqAdwp)5s6G?=KE)fg*22%4zT4OUvAY_n7Yo=AwN
-zYSehrqpx@{CdTMNP2<UvkBc$!1~&~?3>6>spWP|6DiN>#)0zMKpYzXSr`<h0-B^M#
-zs4%)rlOKJv`5>T819)$mJ+U*X$`Qc#isW!?d(Un~UpYncM}QsaKGYIj_OSLMVNUjw
-zeJLxArRqySy+XPjiMVy@d+gpFvOTBXksyU~Twg_4<Zn!*G9v+l5d7O{2&Al$G?e`W
-zSv?K<kd=x*ZXNzc@))2jP20nn!Z<cjeecN5!GtT&WbA%+qN?*VmS`dw-mZA`u9Qm(
-zK#_=I6d@eb>gP3OM8^H@2u-VJ)9{gST@kx*+2d>qZLC7L=oNEOzh(hmP?g-9OYx?k
-z_u+B{Av~DVHesK{41QdYSRsB@VijxfL1GPl7L?eBYStmKPWr>-$uv>hUN=f$MsuB&
-zSd?=~Vih}aO=69FzDeu@XSEXR2(ex0f{ipr;UI~AB#@ystVbU<5Rbw@E1eEUjJ(d1
-z#~?L}WD(_1oER;NNfH_Yy6p6*lk87q`1-yLJZiLV;xYSta&XY%UAB|99V?Tx$#0lK
-zESh8h&1fSrWAzO*6Yzefn=IpUhl+~3r9`M0jxE&7qdi?a;i%ial406I8Pj(9<2)KM
-z_!chbAk^L*Z5E|1Tt+WV>5$c16{nOUX~gBC2=vCCVOj_`jMj)@7<}PW@`Sw}mZ#Y%
-zPQaBlk&Q;pm3g7yjfKhL{bBl_E@3(S&Hf*d>aoI@*xcV2%;=*AV=PeIcP2itz4<ES
-zSFwCp$*)%PE3}J2)-b8uE(Fzv12+pnt)UVX=XzVR**OsOXNi1a+^Px#)nVLS7Dgb9
-zH#Ja2#&vWF+81}pWhEsSfk9zx&Dv~kW<1Aoxi1qrHMe}$ocZ*_)N@~-)Xj{4nfN;H
-z4~1s$*JkUo!AiL_qE}mQz7@Re9Tb*IOt1(&Y@PbQ?&xdDH!kcF+*7i{rx%e^Ec1rs
-zMO>s`^=&1+B%aZ}e}77NE4}W^i8m52zMrC%OO4cns6jm%7OcwitR;^|7lqusp0>zK
-Jn)nA1{U<n&;}-w`
+zc%0o;OK1~882)B=vq{^Ss?=I(EQ1DLkaU~2g3^LoSw)QXQL3P#ON~uz(+%4w>ZwpX
+zrJ~|Vk5xR0;6V=}!HZt3^&*0|dQ*B;n)-_W>`rQ;7WL{snfbr}IsZI%(%aY9i#m)!
+zh0$Z0{OI(SgMjt{z-!a&OPt9>BY<y;<Zxnp-)==;HB0h4fF0>Q)EZxQzhQzfC;Q2P
+zjFrU_^%<aECEbox(mM4u@%#YU9#h|(B875XZze4AM^c&G`G7$P{%te_GS>Mll>G!*
+z6Ak)^l}SEm8~sA^7@#c4+M~JBI6A1lS7hg4!WCH8TBtiw-}Mo7nn;G1E1zzv<dOnV
+zB%&Ba2*<RhADSv6<9>I9rZuq-@R4vs5xa23<7^h~tVX!#H49NcX91p2mE4<4@uvUb
+z!{rJ>xVNBPhkX(=_;E>Mh4?jzRjk1qi8c6HP+}jJvdt3fq(4laOcS;3b)y7kG}l>)
+zMLCxxR<RS;CDzF2i^M)~)*!Kt5Zi?w*vR4n9HcRb6mqnN4H&>i;&B*gqtoF?kk>`>
+z7^Y^CETSBW6Qe~jX+k4FkDa~Xqz6+uzF}Y^j~i_rJYio<4-Z?s$9A%|W98B|`HfPD
+zMUxC6igprn*1%AdfcG=qWI2~RR8-O}B}T<?Y^7cu?dduR$KCFg4AUOTnYJ^S<nfrn
+zw{kfLq0VSLDoR_tjDDKZA*;74PANswn9D^G=ubMMv=D9>Z85_z_~NPL341*(PqRy$
+zfGcYv8;zPP^HRwhOK;2fhv~n&gw^yX`+q>H$4X;jbAMehqmLSlu|Rp>nfSo=7VA-L
+zX2q~lT&)&YY7;@$@>aQB3aTv!CQCuBr4}{k`djn)1rYS-iF{$)st*H8!??37j6fLE
+z%b|*l>**47{@o>)l~h~=28FRTYx9M<@d7Ip=4T3Oq4ASB_x_uy7d}5+F*iOx^LgAK
+z3VpiUkYAAx*2<+3O?6Mc6ujyk6qZ`duoyjTUHZT7=nKg=E$$NBQ?bLR|01VY=1s}V
+zxJ*Cm+beoSJfnU8`iO8hz3z>~BgD(^r)bqugnAIm(S(*otMWV>$RpySkek=jmU%@J
+I{~)4&2fw=D8UO$Q
 
 diff --git a/layout/reftests/fonts/math/stack-4.otf b/layout/reftests/fonts/math/stack-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..dbef307cc1e2b4f0078f7e71751cf06805ebfa36
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..c9f1ca9287deb0cd2ed98b62266d1d1461080d82
 GIT binary patch
 literal 1864
-zc%0o;OK1~882)B=vq@{3s#Faa!=Od2(6~*kpj1#RtB1xahU%d{mKvI9(+%4w)l;E(
-zilX94kM)5E5kwGC33~CQ_9B9}dQ<dRX?(_ib|*EF7VFiS{PTbRbN+ekq&Jo7#UhMB
-zh0$%Aynk}b0YIAu@WwP#$rHK8QNZ_t<VbQyYLB8Hc}DVkfF0^Rura>mUdwsHob1O2
-za#kKq>T^K7M7o`sv~~PP^7c)#Jt5khA%${SUrAWxZ_VTiqXB~u{M%^=<gC#=lzjwQ
-zm<D~=%B3GBPE|-A1C*w`JyNKQV-wZ)n(Q1*xB}6($Nr<uU7xW?6Ui{S;{NMeE?WSK
-zL=>Y4p<fIC*3>mJ?sG?IT9{44N5WM_?7~HlvyVuy2H~PN%trm01$atTa&IohoBp>C
-zmn#V2?yPn#_Dam)$2o}=;+G{>u^MkB*5GGBiG5hiHcPCN{vdfWP1M%oMhVPlu2T|=
-zaxO@$Vi&GRtdY-miGAR#MPeNxwj15Bk;fT0$YKx~6le|WF@QGWaTw^J)8R;x*IDuy
-zqHd8aq8y47qeU@ULc>6}oj>Db2Qvk}exQxVjgCz`X`jsw4OzU~cJj7k6|y$@jZlb1
-zlbl4mIQ)@<HE^<>fcG=qWCfQyR8-n6B}T<?Y$d9X_H><u<1Tq6!?cGBrtJ)-c|2zD
-ztz6DQsIxuZE=rrfj6RyuA*;74PANswn9D^G=u0~zv=D9>9Wlc&`24Bl340Wgr`aV=
-zz?C(TjYiFtd8Oiwm3P(q!}Pf>VSW3X{Xb}`$0}n;V2%Yd`l!Je3sm==i4Ux&+>G){
-zR*op;Rcd*Kc0S0W@01&rpc>sjQ3-0%Ml_u6+gL2lf}p=h%@@J-<_NGjf?G=>2t@E|
-zDO8bh9bJOXg<W!4NzFxIP#9airdXO8FR@bT%T!4%E&poHeE4bVrEd?G&5VDU`Zn$l
-zg}&ZtDK0Ap8|Bidz1TJ}DR|vGC@hVbVljHyy7YhD(U+2MSb*;}VE?BD_$54FmsfF3
-zjyip!hHBy&?fZ{MgtyV_zMOa~@#_02dcD+26vR@55uLXx&$ER*T3r-!^LpAUuj%3+
-GM9?pQT;vu2
+zc%0o;OK1~882)B=vq@{3s<c`#hCzecLgF^D1*HYGvU)JqVyPZ{Ej2XJrW>}YsHZ~l
+zl!}TcJ*s#T!HbAU(1Tul^df?{dQ<eMG(O`$yOWwo>*MN7{`tTEIsZI%(my!Zk0qFd
+z3Zu_7`N5gZ`vC0&fS0B@m^z+|MFHPalEbNOgS!;{@I#W{0PH~jzKw}xw_BzObFv>D
+z&RKahsgD8m0_nDA($=wWsV4(uyHC`eA%${CUqx8tk7ja(Qvrhz{99=V<g8P9D0>OA
+zHX8IXE0?~ToT!jI2`Ei@d%RGY!X~Qk1=%^6a0Mdm#{MJCJs+_|6Ui{M@=-@Emn{HA
+zB8pLja8PUesi|vZ-0P0ev^MquJ`ye~Vi(SPoV`PmH3%2IVLs~DEWiV*l6!M0-t<3x
+zxLiR9x8}9$ut#DBKh8?55Wgs~iZys8u?9a2O6<c@)-AD4`u*g|G*R1bH%eeeb4^Gr
+z$~h;oiXFHlu|_^$CH8@{7KwF)*iQ7pMjof(Ad3-XP@pwzz%bg0Ct#qHPKP5!UT4T-
+zl)6Q-h;k@Sj26XY35@}LcK)=J9my2<hT(ReFgiE!lzk>UI%@Gg+sWIGRmj@pH%=iI
+zO>zP;arol}YxqQrfcG=qWCfQyR8-n6B~Ha~Y$2+T_H<o@6E1lr!?ec=rtOTRc_MD`
+zEnLn)s4JF;iP9D?V~D17$m*?%Q%aFE?s8EChSJVBErc6JXWTFhzIZBm!XAa?Y4(T{
+zaAi$oqfv8ZUa5Fv<#qM`Fnys*Sl|9+{|}n#vC1TpSYW}7K58(=0@ZzI;se`VZbo?(
+zD~FZxYPGyln+~$bYvp<+s73~^R)Sij5e+AYHWrKXAm}er^M!G(ISecf<HoWu0%1H~
+z4pn4aPnV$U?=HElq~;<pD2%OHTP)2@l~}3tX||-6R(v++-hMar(w94}b5oyYzfAc<
+zq0cv4imk<9qg)!br@dEa1h0Dsg{2X*EKUzwkN&Sa`b_eU-+FoN3NY~gFZ`08ugj~r
+zCP$q<Swl7PjQ0K8J;J^8y00J}C0>0$MX#5lL_sV^8zPHV<$1P{N7O|jH?OCy@|rIG
+HK?MB(2AAO(
 
 diff --git a/layout/reftests/fonts/math/stack-5.otf b/layout/reftests/fonts/math/stack-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6da0a34e8e495540d878cb9830cc999a8ca0dd6e
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f1ad7e1d10ba4e631aa940a7d1039a84541e30a7
 GIT binary patch
 literal 1864
-zc%0o;OK1~882)B=vq@{3YN@qitb+z$(6~*Epj6OCRuN+rL-nBOQbQAMx?vlodMXr8
-zQB*wX(H9;>5W#~=@Z_mJ4kCDKZ;IDSV|~PbcBeIw7WL{(X8!Mg&i~KMPI}YnUM#{W
-zR2WIq<j3A@O#|8#fOn>uPMyj(jsU)K;=`$(={<_Rd=>E@0CuGJ(5BduhpiV0bJCya
-z&szmFsV@Na3dwr18SCWt)V({Tdq!hRmITT%eFb3=Ka$NCM*;>R_;=70$Xg=?C<h3#
-zcAE4dE1!9q7*U8H1(c?OJzT7gVKe3Tmh>D<m;!B)p5*c7?$21HiC}oW?9tm=Dq8@G
-zMC79g=BU>GOH$WJdBB~aY3*zZK4PvbVizuZlzl>+H3$>EVb1IKD8O^dl6z|@-txa}
-zxU3+A2XoT3*e@}I9~UH6h+dUg#cI5lSc9JhCH7%4+aj?}^221wG?Cjr*GphVYn_o;
-zq;pAP6}xavVvTIRN$dk>trF`9vE4|*MgiyGAcp~DQKTByqaPcH#$cd}PKP5!R_DoL
-zkh(>@@N&pc%oh3N2n_*AyKv6Q4P=Xaeg6g?GrBhOlzl!oIB4;t?G$XsD&}mm8zvWv
-z7CDVhB#13q{iiz#ct6t(R&=RDNoCwrqLd8BHX8Nbo-9E)<_<4qnD$W7w4H$rk3|i>
-zjmtF%B|2lBBDICn=%Xba(t1^K3Mqm{T`H15U&a}xLbzdcMGeE?3x|>??2WKI&2Di5
-zF0YAbG;1!;t5t8VPR`yRrq6c?>)W67|3OndQXNGc^AybJqXuIvFuU(ed|>-3&8Vzk
-zm9SD-saBS07lW*0Qn_6XsvQS!R)bncBO1>3Z7P-KK+s>J<_qIia~N10#@!`h1j2aL
-z0#!s@N0%V+cb8mdQgaa)6vkGsDV3+k%B)=eGEr8`Z8PTd#~-F%{`z?7^w^h)uVemD
-zXy$%vX=y3gC`+R@zWwHFLF?W@p=rbfi_*i^t^ezezLa$1{OaJ|8s^4d#*9nbcnz+N
-z5ue8<UhmIn-@iX0yq#Y6Hlh)tv+t+q^<0ET5G`m&$AVdTmaSwFaZ$*P>q%#6O&9+l
-GV*CV7-r*Sl
+zc%0o;O=uHA6#iy+vq@`AwbWWM)<J{XLgF?tf>J@PtRlu*4Ap~0ml~RA(+%4w)l;E(
+zilX94k1C!-@S>m+yy(UHa}dE>dsDnBjlc2D?zAS-qF$ZJ%=_N&yf-sD=}o75u?XW(
+zVf2_LA9%GT4QL+$yfMvm>O?*o0eq9hhf_P!dlY@eYU1Ak>~QbFjq#;-Th0^aq(3&8
+zw+dLSJ_XcEB-@$ISjWGop7oLL5sl4R5-0=uO2Q(3B%3de1q?#)Z>K4cx5f%k4iIE*
+zH0dK&KJzd+rVu|4D2ogBXt6qhO_bkj(sM9j3bd}hf8}UX_a`jUL@>Nu{-m>($`*hk
+z5&0;BIij`wlGHU)9&l%9S{wTaA2C-Iu?rVH%03{$8ia}7Fz5Aq6yPys$-T7{Z~0#~
+zTviamojK_`?3b9qk8=_$L@!IMVh!F(tijKM68o@(ZI)Ok`604on#gUR>m@LwwN6Pa
+z(zzh9ie0!Ou|_uEB=&)`7KwF)*lzT|MgeEwAcrAjQKT9+U=STd<1o-gr^AsVtFvS=
+zOx+@0csb-JW{Z4sghqfKyKu(I4P}db!(a!G8(o`t%08PL9=3Ro?G$XsD&}mm8zmQu
+z7CDJ1lEfCR!IMz}-p_P{6<z93QW-au7$w88l}5d{Crc8JyTeNvrae+LZD%OM<1vG8
+z<#G)|$!I((Qd>BUep=EYtydMNkRoWzr6LLRXPi+ggd0Xz%rFeTa431g-U!Rn>=q~B
+z@|uW7v*z-=TJ`4Y^z8j%`h1tLzWqu6A2ih?)o~;+Pr-~nYB0tEv-{4(2ez-$gvv@*
+z2`iOVYGt{0KFHdqm7CR|+TM4)8r0ew(QvwdW2rO;g8mXUUl=!<!oZR+ZY>QX5XOsU
+zs3PKex&+C;yW}#Hnv1}oFt%oGsXQ}LX65qdsj^yb{bJ6%|6%IoulJVCOnjdDI^hq6
+zzT9ppEh_~ZWogtVw_SfJXx%#~G>w>IF?!g#^?%*b=aP2LuMY05VXpmU%!IT})Zp3}
+ziFs@i_5O_Z{rdyL+vs&~B^n_*`+kaE&qZhi(Tp~<FPN2Q*+Lc(7lquoo^+Phbny=&
+F#!pc2-x~k`
 
 diff --git a/layout/reftests/fonts/math/stack-6.otf b/layout/reftests/fonts/math/stack-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..46e92cc11ce8219917a744e324d9434c9bcdc734
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..bbae9bc9197b6974bd47852c48478758a931e54e
 GIT binary patch
 literal 1864
-zc%0o;OK1~882)B=vq@`AZK+x@#zBiOXxt{YqE=BWtBA1`YxUr3siBEB-LQ>Pdny!9
-zQB*wX(H9;>5W#~;@Z`w{LJ_>xo8nbz>MQ=UJ82WKKCaH>pa1)x^Uq@^T|GTrn1fNM
-zFgi_>AAPmq0HA#Y@Y*zc5+^gY!+`G@$>GGdo?VK*Xer6>0CuQr|Jqpn{l@czIoXf*
-zWvndbs!sv+66v<5lGcfDi95H*_L!(WMGEDJzL>Dc-<-<ih64s6__xv!$XLT!DBT2E
-z6Ak*Hl}Q%XkN8L)1(dm2dni{L!#b*Ooa`J-xB{WbmQBa%IzC~JCX(Uh!UyA(T($rd
-zi6}-9!eOmxMpM<u*zJzcv?lfuRD*I=5xa2F<Lm?CtVX!#HPcZ)X91p2mE4<4@ur{g
-z;c^8b+?&>}z+Q<N{5U7ELj1DCDwg4m#2Wl8D6tRoSi8hJ=?{`8(?o51+$ez=&2?I0
-zQO*U4RqVhOi8b>1DzOioHA<`_#CD<+HnKPi2Wj*pg&eJ675cE6cnk(w>2x>}<TXMb
-z1Jo^&MU+EvVzekGO=uA4w6kZObbl(xSM{ytF{5=IPuL^rfdPwm+D_JXtX$eAzaa{-
-zXp&QCK|6^#tM60`0q<wJ$#O1tsHmh{N|cJ>*ho|z?djSG$6WGChG`GxOxx*C@>ta1
-z8@Zf=P+Lo^MU*ys8ND>6LsoB9oKlLUQJ0G%(3^CIXd&D%TBC+x@Yz$z6ZR-9PqRau
-zfGcYv8;zPP^HRwhOK;2fhv~n%gw^d&_Wz)%9xII^j$bU8(MJu&SfIS`OnhK_ighS1
-zX2q~lT%r~iYUhJ2@>aQ73aXKP*GoYyQj3~1y=(LNX%O`1srkaVQ5Od0g>kz+j6fJK
-z8lZ}dE9nxn{oN&(l~h~=28FR@%kzcFu>va;rX~t%VZmo}^8I&HFMN48e{yVU;>(yn
-z6#9I(F+V>atd&cn_H6U@mx5QlgThja2^OV?twaCU9epnOn%}zxchhj~FLTDFZ@dDR
-z+t2!V1y#f|+V^jd2ydp>eF5=i;^p^K^lGV@D2N6$Au?-Ko@XO@G`lF|=Jm8?UeU!r
-Gh@c-UBH<YT
+zc%0o;OK1~882)B=vq@`AtF*OZtb+z$kaU~aic&$XtRjt7tkr|BrG_T9>4t3-?Ws^a
+zMN#pjM-@*Zh~Pmac+rb51QEQ|o8nbz>MQ=UJE@6SA6IAc&;R|;`RB2dzW)9`%)<m!
+z7(J%R55L&3570gUcx9UX$>Z5*1n@l}Ih@?mzeCX%FC+Oazz+27ZI3Uw-E@{PC;QRC
+ztd+xj^%0<6Al=q<$~yKn`FIc6?h|#TNueClmk<{DBk64ZRKOqv|7IEjS?g2|%5H+J
+zl?Hv(%BG6z$9*JE0LuKFJ(e#|Vjb1@lI$EzxB{W2cM3-ux<6u`CX(U#qK9j%xoiO_
+z5>bpIgo9e^4^2%Y<8F6^rnRyUpc<6Rir9to9%t{7V0FSpubYkfIScTBs^s2WiZ}fa
+zA1+rA!mU~DO6-!D!H+W%E5t8KtYSG{ORT}qf)e}C$hsufNxz>wnI>xMb)y7kG}j4<
+zMLFjrR<RA2B-Y61i^M)~)+Dix5ZjI(*vR2D9Aq$rH1f2D)fmJY;&B-0pwr<<lGiwS
+zj8L~o7EunxiP55%453k=$IhL0GDGP+Up=^n$BmA4JZX<-Mn){&V>>z9vGN(4{KhE6
+zqDh7kMHh*AYj8M9!26kQvb@V3Dk|lc5~E@`HWJlFd%8}-ahJT3VcMg4({_eZJRURn
+zMlR<d)ESLOMQL-FF+fu~Wc60XDWymnbGax211V>W7QzjqBW4%|pF5R2VUNP{G`qzK
+zxUwd)(WtpHFPFWs{HAh$nEtCvSlj+&{|}n#vGN2G_{D-5ebiu#1uFZ_#0S<}YCvfT
+zD}|NPQnj>5I~!zeZ<OohpxU<QYB{L2)uZm@KzpGu3xfUvHD4Il8p1$h7&jJ#5eVbi
+zLZ~9+D!K%ne|O1cB~=%JL1Aq9ib8REvdD_XnW>^$Z24qPzx!tD#m{$}rzdBoK2Q2X
+zp-(rP3eAOJy<8f#C!4N57rf>j6qb5Su^2sU-TJ@o=u^qp{?-e@oitqe%bW@6o2bH-
+z_Om`wMOE>P_WkQU!kg%IZy_EbUU@%7uazQ1K`cZo+UBgv^K2rIh>JpQUQb)$RbBjp
+G2>K2!G~XKl
 
 diff --git a/layout/reftests/fonts/math/stretchy.otf b/layout/reftests/fonts/math/stretchy.otf
-index b019fe3dc4ce5ceaabe4514b867d2520d7bebc97..f3728d8af14245c0920f7fa1133ea90113ac7fa0
+index b019fe3dc4ce5ceaabe4514b867d2520d7bebc97..bae226837d3ef1a5a1ac7e548b25979a932e0d43
 GIT binary patch
 literal 3236
-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
+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
 
+diff --git a/layout/reftests/mathml/opentype-axis-height.html b/layout/reftests/mathml/opentype-axis-height.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/opentype-axis-height.html
+@@ -0,0 +1,48 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - axis-height</title>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: axis-height-1;
++        src: url(../fonts/math/axis-height-1.otf);
++      }
++      @font-face {
++        font-family: axis-height-2;
++        src: url(../fonts/math/axis-height-2.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      function assert(cond, msg) { if (!cond) { throw msg; } }
++
++      var epsilon = 5;
++      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++    
++      function getBox(aId) {
++        return document.getElementById(aId).getBoundingClientRect();
++      }
++      
++      window.onload = function() {
++        assert(almostEqual(getBox("plus1").top - getBox("plus2").top, 10 * 20),
++              "Bad AxisHeight");
++
++        document.body.innerHTML = "Pass";
++      }
++    </script>
++  </head>
++  <body>
++    <p>
++      <math style="font-family: axis-height-1;">
++        <mo id="plus1">+</mo>
++      </math>
++      <math style="font-family: axis-height-2;">
++        <mo id="plus2">+</mo>
++      </math>
++    </p>
++
++  </body>
++</html>
 diff --git a/layout/reftests/mathml/opentype-fraction.html b/layout/reftests/mathml/opentype-fraction.html
 new file mode 100644
 --- /dev/null
@@ -579,42 +656,42 @@ new file mode 100644
 +        /* inline style */
 +        var ref = getBox("ref").height;
 +
-+        assert (almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
-+                "Bad FractionRuleThickness");
++        assert(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
++               "Bad FractionRuleThickness");
 +                                                            
-+        assert (almostEqual(getBox("n1").top, getBox("n2").top) &&
-+                almostEqual(getBox("d2").top - getBox("n2").bottom, ref * 10.5),
-+                "Bad FractionNumeratorGapMin");
++        assert(almostEqual(getBox("n1").top, getBox("n2").top) &&
++               almostEqual(getBox("d2").top - getBox("n2").bottom, ref * 10.5),
++               "Bad FractionNumeratorGapMin");
 +
-+        assert (almostEqual(getBox("d1").bottom, getBox("d3").bottom) &&
-+                almostEqual(getBox("d3").top - getBox("n3").bottom, ref * 10.5),
-+                "Bad FractionDenominatorGapMin");
++        assert(almostEqual(getBox("d1").bottom, getBox("d3").bottom) &&
++               almostEqual(getBox("d3").top - getBox("n3").bottom, ref * 10.5),
++               "Bad FractionDenominatorGapMin");
 +
-+        assert (almostEqual(getBox("ref").top - getBox("n4").top, ref*3),
-+                "Bad FractionNumeratorShiftUp");
++        assert(almostEqual(getBox("ref").top - getBox("n4").top, ref*3),
++               "Bad FractionNumeratorShiftUp");
 +
-+        assert (almostEqual(getBox("d5").bottom - getBox("ref").bottom, ref*3),
-+                "Bad FractionDenominatorShiftDown");
++        assert(almostEqual(getBox("d5").bottom - getBox("ref").bottom, ref*3),
++               "Bad FractionDenominatorShiftDown");
 +
 +        /* display style */
 +        ref = getBox("dref").height;
 +
-+        assert (almostEqual(getBox("dd1").top - getBox("dn1").bottom, ref * 20),
-+                "Bad FractionRuleThickness");
++        assert(almostEqual(getBox("dd1").top - getBox("dn1").bottom, ref * 20),
++               "Bad FractionRuleThickness");
 +
-+        assert (almostEqual(getBox("dn1").top, getBox("n6").top) &&
-+                almostEqual(getBox("d6").top - getBox("n6").bottom, ref * 10.5),
-+                "Bad FractionNumeratorDisplayStyleGapMin");
++        assert(almostEqual(getBox("dn1").top, getBox("n6").top) &&
++               almostEqual(getBox("d6").top - getBox("n6").bottom, ref * 10.5),
++               "Bad FractionNumeratorDisplayStyleGapMin");
 +
-+        assert (almostEqual(getBox("dd1").bottom, getBox("d7").bottom) &&
-+                almostEqual(getBox("d7").top - getBox("n7").bottom, ref * 10.5),
-+                "Bad FractionDenominatorDisplayStyleGapMin");
++        assert(almostEqual(getBox("dd1").bottom, getBox("d7").bottom) &&
++               almostEqual(getBox("d7").top - getBox("n7").bottom, ref * 10.5),
++               "Bad FractionDenominatorDisplayStyleGapMin");
 +
-+        assert (almostEqual(getBox("dref").top - getBox("n8").top, ref*3),
-+                "Bad FractionNumeratorDisplayStyleShiftUp");
++        assert(almostEqual(getBox("dref").top - getBox("n8").top, ref*3),
++               "Bad FractionNumeratorDisplayStyleShiftUp");
 +
-+        assert (almostEqual(getBox("d9").bottom - getBox("dref").bottom, ref*3),
-+                "Bad FractionDenominatorDisplayStyleShiftDown");
++        assert(almostEqual(getBox("d9").bottom - getBox("dref").bottom, ref*3),
++               "Bad FractionDenominatorDisplayStyleShiftDown");
 +
 +        document.body.innerHTML = "Pass";
 +      }
@@ -699,11 +776,11 @@ diff --git a/layout/reftests/mathml/opentype-stack.html b/layout/reftests/mathml
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/opentype-stack.html
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,125 @@
 +<!doctype html>
 +<html>
 +  <head>
-+    <title>Open Type MATH - fraction</title>
++    <title>Open Type MATH - stack</title>
 +    <meta charset="utf-8"/>
 +    <style type="text/css">
 +      math {
@@ -749,26 +826,26 @@ new file mode 100644
 +        /* inline style */
 +        var ref = getBox("ref").height;
 +
-+        assert (almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
-+                "Bad StackGapMin");
++        assert(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
++               "Bad StackGapMin");
 +                                                            
-+        assert (almostEqual(getBox("ref").top - getBox("n2").top, ref*3),
-+                "Bad StackTopShiftMin");
++        assert(almostEqual(getBox("ref").top - getBox("n2").top, ref*3),
++               "Bad StackTopShiftMin");
 +
-+        assert (almostEqual(getBox("d3").bottom - getBox("ref").bottom, ref*3),
-+                "Bad StackBottomShiftDown");
++        assert(almostEqual(getBox("d3").bottom - getBox("ref").bottom, ref*3),
++               "Bad StackBottomShiftDown");
 +
 +        /* display style */
 +        ref = getBox("ref").height;
 +
-+        assert (almostEqual(getBox("d4").top - getBox("n4").bottom, ref * 20),
-+                "Bad StackGapDisplayStyleMin");
++        assert(almostEqual(getBox("d4").top - getBox("n4").bottom, ref * 20),
++               "Bad StackGapDisplayStyleMin");
 +                                                            
-+        assert (almostEqual(getBox("dref").top - getBox("n5").top, ref*3),
-+                "Bad StackTopDisplayStyleShiftMin");
++        assert(almostEqual(getBox("dref").top - getBox("n5").top, ref*3),
++               "Bad StackTopDisplayStyleShiftMin");
 +
-+        assert (almostEqual(getBox("d6").bottom - getBox("dref").bottom, ref*3),
-+                "Bad StackDisplayStyleBottomShiftDown");
++        assert(almostEqual(getBox("d6").bottom - getBox("dref").bottom, ref*3),
++               "Bad StackDisplayStyleBottomShiftDown");
 +
 +        document.body.innerHTML = "Pass";
 +      }
@@ -800,7 +877,6 @@ new file mode 100644
 +    </p>
 +
 +    <p>
-+      <!-- Same in display style -->
 +      <math displaystyle="true">
 +        <mspace id="dref" height="1em" width="1em" mathbackground="green"/>
 +      </math>
@@ -829,7 +905,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -144,16 +144,18 @@ skip-if(B2G) == maction-dynamic-1.html m
+@@ -144,16 +144,19 @@ skip-if(B2G) == maction-dynamic-1.html m
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
  == whitespace-trim-1.html whitespace-trim-1-ref.html
  == whitespace-trim-2.html whitespace-trim-2-ref.html
@@ -838,6 +914,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == whitespace-trim-5.html whitespace-trim-5-ref.html
  == operator-1.xhtml operator-1-ref.xhtml
  == opentype-stretchy.html opentype-stretchy-ref.html
++== opentype-axis-height.html data:text/html,<body>Pass
 +== opentype-fraction.html data:text/html,<body>Pass
 +== opentype-stack.html data:text/html,<body>Pass
  == scriptshift-1.xhtml scriptshift-1-ref.xhtml
