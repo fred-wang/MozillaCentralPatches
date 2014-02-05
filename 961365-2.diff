@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent aea16baf89d38290a1e02ae7ba379bfaf2114d50
+# Parent 7a74ea76955fa6a25168c3d481382abdef9d73ab
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2 - Use MATH constants for radicals. r=karl, b=961365
 
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -348,8 +348,38 @@ nsMathMLFrame::DisplayBar(nsDisplayListB
+@@ -352,8 +352,38 @@ nsMathMLFrame::DisplayBar(nsDisplayListB
                            nsIFrame* aFrame, const nsRect& aRect,
                            const nsDisplayListSet& aLists) {
    if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty())
@@ -48,7 +48,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -176,16 +176,23 @@ public:
+@@ -175,16 +175,23 @@ public:
    {
      if (TryGetMathTable(aFontMetrics)) {
        aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
@@ -75,7 +75,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
-@@ -204,17 +204,17 @@ nsMathMLmencloseFrame::BuildDisplayList(
+@@ -202,17 +202,17 @@ nsMathMLmencloseFrame::BuildDisplayList(
    mencloseRect.x = mencloseRect.y = 0;
  
    if (IsToDraw(NOTATION_RADICAL)) {
@@ -94,7 +94,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
  
      nsRect rect;
      mMathMLChar[mLongDivCharIndex].GetRect(rect);
-@@ -316,59 +316,60 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -314,59 +314,60 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
      }
  
    nsBoundingMetrics bmBase = baseSize.mBoundingMetrics;
@@ -170,7 +170,43 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
        IsToDraw(NOTATION_CIRCLE))
      dx_left = padding;
  
-@@ -550,35 +551,31 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -497,32 +498,32 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+         GetMaxWidth(PresContext(), aRenderingContext);
+       
+       // Update horizontal parameters
+       *dx_leading = std::max(*dx_leading, radical_width);
+     } else {
+       // Stretch the radical symbol to the appropriate height if it is not
+       // big enough.
+       nsBoundingMetrics contSize = bmBase;
+-      contSize.ascent = mRuleThickness;
++      contSize.ascent = mRadicalRuleThickness;
+       contSize.descent = bmBase.ascent + bmBase.descent + psi;
+ 
+-      // height(radical) should be >= height(base) + psi + mRuleThickness
++      // height(radical) should be >= height(base) + psi + mRadicalRuleThickness
+       mMathMLChar[mRadicalCharIndex].Stretch(PresContext(), aRenderingContext,
+                                              NS_STRETCH_DIRECTION_VERTICAL,
+                                              contSize, bmRadicalChar,
+                                              NS_STRETCH_LARGER,
+                                              StyleVisibility()->mDirection);
+       mMathMLChar[mRadicalCharIndex].GetBoundingMetrics(bmRadicalChar);
+ 
+       // Update horizontal parameters
+       *dx_leading = std::max(*dx_leading, bmRadicalChar.width);
+ 
+       // Update vertical parameters
+-      radicalAscent = bmBase.ascent + psi + mRuleThickness;
++      radicalAscent = bmBase.ascent + psi + mRadicalRuleThickness;
+       radicalDescent = std::max(bmBase.descent,
+                               (bmRadicalChar.ascent + bmRadicalChar.descent -
+                                radicalAscent));
+ 
+       mBoundingMetrics.ascent = std::max(mBoundingMetrics.ascent,
+                                        radicalAscent);
+       mBoundingMetrics.descent = std::max(mBoundingMetrics.descent,
+                                         radicalDescent);
+@@ -548,35 +549,31 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
    
    aDesiredSize.Width() = mBoundingMetrics.width;
  
