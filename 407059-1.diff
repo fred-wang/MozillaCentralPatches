@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 71f654530f329b3eef16360088329a6fe5fcb305
+# Parent 11a3e48b680348fab37e9b64014ca4a2576a5d51
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -7,7 +7,7 @@ diff --git a/gfx/thebes/MathTableStructures.h b/gfx/thebes/MathTableStructures.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/MathTableStructures.h
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,121 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -18,6 +18,11 @@ new file mode 100644
 +// Arrays of varying size are indicated in comments. Typically, gfxMathTable
 +// will read the header of the structure first, verify that there is enough
 +// space for the specified arrays and then use a pointer to browse these arrays.
++
++#ifndef MATH_TABLE_STRUCTURE_H
++#define MATH_TABLE_STRUCTURE_H
++
++#include "gfxFontUtils.h"
 +
 +typedef mozilla::AutoSwap_PRUint16 Count16;
 +typedef mozilla::AutoSwap_PRUint16 GlyphID;
@@ -122,6 +127,8 @@ new file mode 100644
 +  Count16            mPartCount;
 +  // GlyphPartRecord mPartRecords[mPartCount]
 +};
++
++#endif
 diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 --- a/gfx/thebes/gfxFont.cpp
 +++ b/gfx/thebes/gfxFont.cpp
@@ -254,7 +261,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +
 +bool
 +gfxFontEntry::GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
-+                                   uint32_t* aGlyphs)
++                                   uint32_t aGlyphs[4])
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
 +    return mMathTable->GetMathVariantsParts(aGlyphID, aVertical, aGlyphs);
@@ -289,7 +296,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  #define FONT_MAX_SIZE                  2000.0
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
-@@ -307,16 +308,88 @@ public:
+@@ -309,16 +310,89 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -298,10 +305,6 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      // (e.g. animated SVG glyphs)
      void NotifyGlyphsChanged();
  
-+    // Call TryGetMathTable to try to load the Open Type MATH table. The other
-+    // functions forward the call to the gfxMathTable class. The GetMath...()
-+    // functions MUST NOT be called unless TryGetMathTable() has returned true.
-+    bool     TryGetMathTable(gfxFont* aFont);
 +    enum MathConstant {
 +        // The order of the constants must match the order of the fields
 +        // defined in the MATH table.
@@ -362,13 +365,18 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 +        RadicalKernAfterDegree,
 +        RadicalDegreeBottomRaisePercent
 +    };
++
++    // Call TryGetMathTable to try to load the Open Type MATH table. The other
++    // functions forward the call to the gfxMathTable class. The GetMath...()
++    // functions MUST NOT be called unless TryGetMathTable() has returned true.
++    bool     TryGetMathTable(gfxFont* aFont);
 +    gfxFloat GetMathConstant(MathConstant aConstant);
 +    bool     GetMathItalicCorrection(uint32_t aGlyphID,
 +                                     gfxFloat* aItalicCorrection);
 +    uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                 uint16_t aSize);
 +    bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
-+                                  uint32_t* aGlyphs);
++                                  uint32_t aGlyphs[4]);
 +
      virtual bool MatchesGenericFamily(const nsACString& aGeneric) const {
          return true;
@@ -378,7 +386,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -429,16 +502,17 @@ public:
+@@ -431,16 +505,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -396,7 +404,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -452,16 +526,17 @@ public:
+@@ -454,16 +529,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -418,7 +426,7 @@ diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.cpp
-@@ -0,0 +1,459 @@
+@@ -0,0 +1,457 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -426,7 +434,6 @@ new file mode 100644
 +#include "gfxMathTable.h"
 +
 +#include "MathTableStructures.h"
-+#include "gfxFont.h"
 +#include "harfbuzz/hb.h"
 +#include <algorithm>
 +
@@ -435,7 +442,7 @@ new file mode 100644
 +gfxMathTable::gfxMathTable(hb_blob_t* aMathTable)
 +  : mMathTable(aMathTable)
 +  , mGlyphConstruction(nullptr)
-+  , mGlyphID(0)
++  , mGlyphID(-1)
 +  , mVertical(false)
 +{
 +}
@@ -526,13 +533,13 @@ new file mode 100644
 +  }
 +  start += offset;
 +
-+  // Verify the validy of the MathItalicsCorrectionInfo and retrieve it.
++  // Verify the validity of the MathItalicsCorrectionInfo and retrieve it.
 +  if (!ValidStructure(start, sizeof(MathItalicsCorrectionInfo))) {
 +    return false;
 +  }
 +  const MathItalicsCorrectionInfo* italicsCorrectionInfo =
 +    reinterpret_cast<const MathItalicsCorrectionInfo*>(start);
-+  
++
 +  // Get the coverage index for the glyph.
 +  offset = italicsCorrectionInfo->mCoverage;
 +  const Coverage* coverage =
@@ -582,7 +589,7 @@ new file mode 100644
 +
 +bool
 +gfxMathTable::GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
-+                                   uint32_t* aGlyphs)
++                                   uint32_t aGlyphs[4])
 +{
 +  // Get the glyph assembly corresponding to that (aGlyphID, aVertical) pair.
 +  const GlyphAssembly* glyphAssembly = GetGlyphAssembly(aGlyphID, aVertical);
@@ -602,14 +609,13 @@ new file mode 100644
 +  // XXXfredw The structure of the Open Type Math table is a bit more general
 +  // than the one currently used by the nsMathMLChar code, so we try to fallback
 +  // in reasonable way. We use the approach of the copyComponents function in
-+  // github.com/mathjax/MathJax-dev/blob/master/fonts/OpenTypeMath/fontUtil.py 
++  // github.com/mathjax/MathJax-dev/blob/master/fonts/OpenTypeMath/fontUtil.py
 +  //
 +  // The nsMathMLChar code can use at most 3 non extender pieces (aGlyphs[0],
 +  // aGlyphs[1] and aGlyphs[2]) and the extenders between these pieces should
 +  // all be the same (aGlyphs[4]). Also, the parts of vertical assembly are
 +  // stored from bottom to top in the Open Type MATH table while they are
 +  // stored from top to bottom in nsMathMLChar.
-+  //
 +
 +  // Count the number of non extender pieces
 +  uint16_t nonExtenderCount = 0;
@@ -637,7 +643,7 @@ new file mode 100644
 +  uint32_t extenderChar = 0;
 +
 +  // Clear the aGlyphs table.
-+  aGlyphs[0] = aGlyphs[1] = aGlyphs[2] = aGlyphs[3] = 0;
++  memset(aGlyphs, 0, sizeof(uint32_t) * 4);
 +
 +  for (uint16_t i = 0; i < count; i++) {
 +
@@ -769,7 +775,7 @@ new file mode 100644
 +  }
 +  start += offset;
 +
-+  // Verify the validy of the GlyphAssembly and return it.
++  // Verify the validity of the GlyphAssembly and return it.
 +  if (!ValidStructure(start, sizeof(GlyphAssembly))) {
 +    return nullptr;
 +  }
@@ -872,7 +878,7 @@ new file mode 100644
 +
 +  // Make mGlyphConstruction point to the desired glyph construction.
 +  start = reinterpret_cast<const char*>(mathvariants);
-+  if (!ValidOffset(start, offset)) {
++  if (!ValidStructure(start + offset, sizeof(MathGlyphConstruction))) {
 +    return;
 +  }
 +  mGlyphConstruction =
@@ -882,15 +888,14 @@ diff --git a/gfx/thebes/gfxMathTable.h b/gfx/thebes/gfxMathTable.h
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.h
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,122 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 +
-+#ifndef GFX_MATH_TABLE_WRAPPER_H
-+#define GFX_MATH_TABLE_WRAPPER_H
++#ifndef GFX_MATH_TABLE_H
++#define GFX_MATH_TABLE_H
 +
-+#include "gfxFontUtils.h"
 +#include "gfxFont.h"
 +
 +struct Coverage;
@@ -913,12 +918,12 @@ new file mode 100644
 +     *
 +     * The gfxMathTable object takes over ownership of the blob references
 +     * that are passed in, and will hb_blob_destroy() them when finished;
-+     * the caller should -not- destroy these references.
++     * the caller should -not- destroy this reference.
 +     */
 +    gfxMathTable(hb_blob_t* aMathTable);
 +
 +    /**
-+     * Releases our references to the Math table and cleans up everything else.
++     * Releases our reference to the MATH table and cleans up everything else.
 +     */
 +    ~gfxMathTable();
 +
@@ -960,7 +965,7 @@ new file mode 100644
 +     *
 +     */
 +    bool GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
-+                              uint32_t* aGlyphs);
++                              uint32_t aGlyphs[4]);
 +
 +protected:
 +    friend class gfxFontEntry;
@@ -975,12 +980,20 @@ new file mode 100644
 +    // Cached values for the latest (mGlyphID, mVertical) pair that has been
 +    // accessed and the corresponding glyph construction. These are verified
 +    // by SelectGlyphConstruction and updated if necessary.
++    // mGlyphConstruction will be set to nullptr if no construction is defined
++    // for the glyph. If non-null, its mGlyphAssembly and mVariantCount fields
++    // may be safely read, but no further validation will have been done.
 +    const MathGlyphConstruction* mGlyphConstruction;
 +    uint32_t mGlyphID;
 +    bool     mVertical;
 +    void     SelectGlyphConstruction(uint32_t aGlyphID, bool aVertical);
 +
 +    // Access to some structures of the MATH table.
++    // These accessors just return a pointer, but do NOT themselves check the
++    // validity of anything. Until we've checked that HasValidHeaders (which
++    // does validate them) returns true, they might return pointers that cannot
++    // even safely be dereferenced. GetGlyphAssembly may return nullptr if the
++    // given glyph has no assembly defined.
 +    const MATHTableHeader* GetMATHTableHeader();
 +    const MathConstants*   GetMathConstants();
 +    const MathGlyphInfo*   GetMathGlyphInfo();

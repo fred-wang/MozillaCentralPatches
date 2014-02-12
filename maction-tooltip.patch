@@ -1,0 +1,145 @@
+# HG changeset patch
+# Parent 4b33f733cc5f35ea8c7a0392101cf10af19196f6
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 969906 - Implement maction@tooltip using XBL. r=karlt
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -348,8 +348,17 @@ mtable[displaystyle="true"] { -moz-math-
+    The mscarries element sets displaystyle to "false", and increments
+    scriptlevel by 1, so the children are typically displayed in a smaller font.
+    XXXfredw: This element is not implemented yet. See bug 534967.
+ mscarries {
+   -moz-script-level: +1;
+   -moz-math-display: inline;
+ }
+ */
++
++/* Implement the tooltip actiontype using XBL and CSS. The toggle and
++   statusline actiontypes are handled in nsMathMLmactionFrame.cpp. */
++maction[actiontype="tooltip"] {
++  -moz-binding: url("chrome://xbl-maction/content/xbl-maction.xml#tooltipBinding");
++}
++maction[actiontype="tooltip"] > * + * {
++  display: none;
++}
+\ No newline at end of file
+diff --git a/layout/style/moz.build b/layout/style/moz.build
+--- a/layout/style/moz.build
++++ b/layout/style/moz.build
+@@ -1,15 +1,15 @@
+ # -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+ # vim: set filetype=python:
+ # This Source Code Form is subject to the terms of the Mozilla Public
+ # License, v. 2.0. If a copy of the MPL was not distributed with this
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+-DIRS += ['xbl-marquee']
++DIRS += ['xbl-marquee', 'xbl-maction']
+ TEST_TOOL_DIRS += ['test']
+ 
+ EXPORTS += [
+     'AnimationCommon.h',
+     'nsAnimationManager.h',
+     'nsComputedDOMStylePropertyList.h',
+     'nsCSSAnonBoxes.h',
+     'nsCSSAnonBoxList.h',
+diff --git a/layout/style/xbl-maction/jar.mn b/layout/style/xbl-maction/jar.mn
+new file mode 100644
+--- /dev/null
++++ b/layout/style/xbl-maction/jar.mn
+@@ -0,0 +1,8 @@
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++toolkit.jar:
++%   content xbl-maction %content/xbl-maction/
++    content/xbl-maction/xbl-maction.xml
++    content/xbl-maction/xbl-maction.css
+diff --git a/layout/style/xbl-maction/moz.build b/layout/style/xbl-maction/moz.build
+new file mode 100644
+--- /dev/null
++++ b/layout/style/xbl-maction/moz.build
+@@ -0,0 +1,7 @@
++# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
++# vim: set filetype=python:
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++JAR_MANIFESTS += ['jar.mn']
+\ No newline at end of file
+diff --git a/layout/style/xbl-maction/xbl-maction.css b/layout/style/xbl-maction/xbl-maction.css
+new file mode 100644
+--- /dev/null
++++ b/layout/style/xbl-maction/xbl-maction.css
+@@ -0,0 +1,19 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++@namespace url(http://www.w3.org/1998/Math/MathML);
++
++maction[actiontype="tooltip"] > mrow > mpadded > mrow {
++  visibility: hidden;
++  position: relative;
++  z-index: 10000;
++  color: InfoText;
++  background-color: InfoBackground;
++  padding: 0.5ex;
++  border: solid 1px;
++}
++maction[actiontype="tooltip"]:focus > mrow > mpadded > mrow,
++maction[actiontype="tooltip"]:hover > mrow > mpadded > mrow {
++  visibility: visible;
++}
+\ No newline at end of file
+diff --git a/layout/style/xbl-maction/xbl-maction.xml b/layout/style/xbl-maction/xbl-maction.xml
+new file mode 100644
+--- /dev/null
++++ b/layout/style/xbl-maction/xbl-maction.xml
+@@ -0,0 +1,42 @@
++<?xml version="1.0"?>
++<!-- This Source Code Form is subject to the terms of the Mozilla Public
++- License, v. 2.0. If a copy of the MPL was not distributed with this
++- file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
++
++<bindings id="mactionBindings"
++          xmlns="http://www.mozilla.org/xbl"
++          xmlns:m="http://www.w3.org/1998/Math/MathML"
++          xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
++
++  <binding id="tooltipBinding" inheritstyle="true">
++    <resources>
++      <stylesheet src="chrome://xbl-maction/content/xbl-maction.css"/>
++    </resources>
++    <content><m:mrow>
++        <m:mrow><children/></m:mrow>
++        <m:mpadded lspace="-.5em" voffset="-.5em"
++                   width="0" height="0" depth="0">
++          <m:mrow><m:mtext/></m:mrow>
++        </m:mpadded>
++    </m:mrow></content>
++    <implementation>
++      <method name="updateTooltip">
++        <body>
++          <![CDATA[
++            var root = document.getAnonymousNodes(this)[0];
++            var maction = root.parentNode;
++            if (maction.childElementCount >= 2) {
++              var tooltip = root.children[1].firstElementChild;
++              tooltip.replaceChild(maction.children[1].cloneNode(true),
++                                   tooltip.firstElementChild);
++            }
++          ]]>
++        </body>
++      </method>      
++    </implementation>
++    <handlers>
++      <handler event="mouseover" action="this.updateTooltip()"/>
++    </handlers>
++  </binding>
++
++</bindings>

@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 396f2fb0ab002ea30e4ece6a0a772902d519fb6b
+# Parent ff9a4b3723e646f56e1b7595f425da0d9248ab4c
 # User Frédéric Wang <fred.wang@free.fr>
 Part 6 - Reftests. r=karl, b=961365
 
@@ -2219,6 +2219,6 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == multiscripts-1.html multiscripts-1-ref.html
  == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
  == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
- != menclose-1.html menclose-1-ref.html
- == mmultiscript-align.html mmultiscript-align-ref.html
- == subscript-italic-correction.html subscript-italic-correction-ref.html
+ != menclose-1a.html menclose-1-ref.html
+ != menclose-1b.html menclose-1-ref.html
+ != menclose-1c.html menclose-1-ref.html

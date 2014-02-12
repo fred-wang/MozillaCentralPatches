@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 459ce28e36c96d8a3a6335b70cdd95a7c0f7d075
+# Parent 3ac47b60cf21874ffabd3164d5409648d183a4c1
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: Remove the font.mathfont-family* preferences. b=947654, r=karlt
 
@@ -41,14 +41,14 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // of stretchy chars. It acts like a table that stores the variants of bigger
  // sizes (if any) and the partial glyphs needed to build extensible symbols.
  //
- // A char for which nsGlyphTable::Has(aChar) is true means that the table
- // contains some glyphs (bigger and/or partial) that can be used to render
-@@ -673,79 +670,16 @@ nsGlyphTableList::GetGlyphTableFor(gfxFo
+ // Bigger sizes (if any) of the char can then be retrieved with BigOf(...).
+ // Partial glyphs can be retrieved with ElementAt(...).
+@@ -691,79 +688,16 @@ nsGlyphTableList::GetGlyphTableFor(gfxFo
+ 
    // allocate a table
    glyphTable = mOpenTypeTableList.AppendElement(aFont->GetFontEntry());
    return glyphTable;
  }
- 
  
  // -----------------------------------------------------------------------------
  
@@ -123,7 +123,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return true; // don't stop
  }
  
-@@ -789,19 +723,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -807,19 +741,16 @@ InitGlobals(nsPresContext* aPresContext)
    // stretchy characters.
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
@@ -143,7 +143,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsMathMLChar::~nsMathMLChar()
-@@ -891,18 +822,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -907,18 +838,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
         the next stage in the pipeline is given a chance to find
         a largeop variant. If the next stage fails, we fallback
         to the base size.
@@ -163,7 +163,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
         with largeop=true and stretchy=false), we break after finding
         the first starting variant, regardless of whether that
         variant fits the container's size.
-@@ -1025,90 +955,16 @@ ComputeSizeFromParts(nsPresContext* aPre
+@@ -1041,90 +971,16 @@ ComputeSizeFromParts(nsPresContext* aPre
  
    if (minSize > aTargetSize)
      return minSize; // settle with the minimum size
@@ -246,15 +246,15 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -  }
 -}
 -
- // Update the font and rendering context if there is a family change
+ // Update the font if there is a family change and returns the font group.
  bool
- nsMathMLChar::SetFontFamily(nsPresContext*      aPresContext,
-                             const nsGlyphTable* aGlyphTable,
-                             const nsGlyphCode&  aGlyphCode,
-                             const nsAString&    aDefaultFamily,
-                             nsFont&             aFont)
- {
-@@ -1655,30 +1511,16 @@ nsMathMLChar::StretchInternal(nsPresCont
+ nsMathMLChar::SetFontFamily(nsPresContext*          aPresContext,
+                             const nsGlyphTable*     aGlyphTable,
+                             const nsGlyphCode&      aGlyphCode,
+                             const nsAString&        aDefaultFamily,
+                             nsFont&                 aFont,
+                             nsRefPtr<gfxFontGroup>* aFontGroup)
+@@ -1573,40 +1429,32 @@ nsMathMLChar::StretchInternal(nsPresCont
    // So first set our direction back to its instrinsic value
    nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
  
@@ -271,30 +271,22 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -
 -  // Don't modify this nsMathMLChar when doing GetMaxWidth()
 -  bool maxWidth = (NS_STRETCH_MAXWIDTH & aStretchHint) != 0;
--  if (!maxWidth) {
--    // Record the families in case there is no stretch.  But don't bother
--    // storing families when they are just those from the StyleContext.
--    mFamily = families;
--  }
 -
-   aPresContext->DeviceContext()->GetMetricsFor(font,
-                                                mStyleContext->StyleFont()->
-                                                mLanguage,
-                                                mStyleContext->PresContext()->
-                                                GetUserFontSet(),
-                                                mStyleContext->PresContext()->
-                                                GetTextPerfMetrics(),
-                                                *getter_AddRefs(mFontMetrics));
-@@ -1694,17 +1536,17 @@ nsMathMLChar::StretchInternal(nsPresCont
-                          aThebesContext, &provider);
-   aDesiredStretchSize.leftBearing = NSToCoordFloor(metrics.mBoundingBox.X());
-   aDesiredStretchSize.rightBearing = NSToCoordCeil(metrics.
-                                                    mBoundingBox.XMost());
-   aDesiredStretchSize.ascent = NSToCoordCeil(-metrics.mBoundingBox.Y());
-   aDesiredStretchSize.descent = NSToCoordCeil(metrics.mBoundingBox.YMost());
-   aDesiredStretchSize.width = NSToCoordRound(metrics.mAdvanceWidth);
+   nsRefPtr<nsFontMetrics> fm;
+   aPresContext->DeviceContext()->
+     GetMetricsFor(font,
+                   mStyleContext->StyleFont()->mLanguage,
+                   aPresContext->GetUserFontSet(),
+                   aPresContext->GetTextPerfMetrics(),
+                   *getter_AddRefs(fm));
+   uint32_t len = uint32_t(mData.Length());
+   nsAutoPtr<gfxTextRun> textRun;
+   textRun = fm->GetThebesFontGroup()->
+     MakeTextRun(mData.get(), len, aThebesContext,
+                 aPresContext->AppUnitsPerDevPixel(), 0);
+   aDesiredStretchSize = MeasureTextRun(aThebesContext, textRun);
+   mGlyphs[0] = textRun;
  
--
 +  bool maxWidth = (NS_STRETCH_MAXWIDTH & aStretchHint) != 0;
    if (!maxWidth) {
      mUnscaledAscent = aDesiredStretchSize.ascent;
@@ -304,7 +296,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // 1. Check the common situations where stretching is not actually needed
    //////////////////////////////////////////////////////////////////////////////
  
-@@ -1786,57 +1628,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1688,57 +1536,19 @@ nsMathMLChar::StretchInternal(nsPresCont
        done = true;
    }
  
@@ -365,7 +357,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1463,18 +1463,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1457,18 +1457,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -384,7 +376,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("security.directory",              "");
  
  pref("signed.applets.codebase_principal_support", false);
-@@ -2458,19 +2456,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -2448,19 +2446,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
@@ -404,7 +396,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
  
-@@ -2989,19 +2984,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -2984,19 +2979,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
@@ -424,7 +416,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
  
-@@ -3042,18 +3034,16 @@ pref("mousewheel.enable_pixel_scrolling"
+@@ -3037,18 +3029,16 @@ pref("mousewheel.enable_pixel_scrolling"
  #endif
  
  #ifdef XP_OS2

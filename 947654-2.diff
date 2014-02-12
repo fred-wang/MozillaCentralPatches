@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent a7ef6dc71518637ced07d77b8c3eae1ecc2a180e
+# Parent 805c011c55028f332f1159fdd0ce82ca61a4007b
 # User Frédéric Wang <fred.wang@free.fr>
 Part 2: Remove the ::-moz-math-stretchy pseudo-element. b=947654, r=karlt.
 
@@ -61,31 +61,6 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
  /**********************************************************************/
  /* This is used when wrapping non-MathML inline elements inside math. */
  *|*::-moz-mathml-anonymous-block {
-diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
---- a/layout/mathml/nsMathMLChar.cpp
-+++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1216,19 +1216,19 @@ nsMathMLChar::StretchEnumContext::TryVar
- 
-     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font)) {
-       // if largeopOnly is set, break now
-       if (largeopOnly) break;
-       ++size;
-       continue;
-     }
- 
--    NS_ASSERTION(maxWidth || ch != mChar->mGlyphs[0] ||
-+    /*    NS_ASSERTION(maxWidth || ch != mChar->mGlyphs[0] ||
-                  !font.name.Equals(mChar->mFamily),
--                 "glyph table incorrectly set -- duplicate found");
-+                 "glyph table incorrectly set -- duplicate found");*/
- 
-     nsBoundingMetrics bm = mChar->MeasureGlyph(mThebesContext, ch, largeop);
- 
-     nscoord charSize =
-       isVertical ? bm.ascent + bm.descent
-       : bm.rightBearing - bm.leftBearing;
- 
-     if (largeopOnly ||
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp

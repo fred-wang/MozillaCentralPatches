@@ -1,8 +1,9 @@
+663740.diff
+try-r.diff
 ft2-typo-metrics
 gdi-font-metrics
 prefer-typo-metrics
 930504.diff
-663740.diff
 407059-1.diff
 407059-2.diff
 407059-3.diff
@@ -17,11 +18,12 @@ prefer-typo-metrics
 961365-4.diff
 961365-5.diff
 961365-tests.diff
-try.diff
 945183.diff
+try.diff
+try-lm.patch
 try-c.diff
-try-r.diff
 try-w.diff
+maction-tooltip.patch
 bug687807-reftest.diff
 download-fonts-1.diff
 mathml-clipboard-1.diff
