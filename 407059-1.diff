@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 11a3e48b680348fab37e9b64014ca4a2576a5d51
+# Parent 0ee4f1102f9105d24e28c9a8c83b904b912827ed
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -426,7 +426,7 @@ diff --git a/gfx/thebes/gfxMathTable.cpp b/gfx/thebes/gfxMathTable.cpp
 new file mode 100644
 --- /dev/null
 +++ b/gfx/thebes/gfxMathTable.cpp
-@@ -0,0 +1,457 @@
+@@ -0,0 +1,459 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -508,7 +508,9 @@ new file mode 100644
 +  }
 +
 +  if (aConstant <= gfxFontEntry::DisplayOperatorMinHeight) {
-+    return uint16_t(mathconstants->mUint16[aConstant]);
++    return
++      uint16_t(mathconstants->
++               mUint16[aConstant - gfxFontEntry::DelimitedSubFormulaMinHeight]);
 +  }
 +
 +  if (aConstant <= gfxFontEntry::RadicalKernAfterDegree) {
@@ -1032,7 +1034,7 @@ diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
      'gfxPoint3D.h',
      'gfxPointH3D.h',
      'gfxQuad.h',
-@@ -247,16 +248,17 @@ UNIFIED_SOURCES += [
+@@ -232,16 +233,17 @@ UNIFIED_SOURCES += [
      'gfxFontFeatures.cpp',
      'gfxFontInfoLoader.cpp',
      'gfxFontMissingGlyphs.cpp',

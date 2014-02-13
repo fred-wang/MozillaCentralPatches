@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 476839be7b26bdec3c9b4af9bffd94be9d9f8c5e
+# Parent 80e27fcbc5fe1b779704c17119ebce5f7dae3172
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4: reftest. r=karl, b=407059
 
@@ -230,8 +230,8 @@ new file mode 100644
 +f.math.DisplayOperatorMinHeight =  8 * em
 +largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
 +
-+# Draw boxes of size 1, 2, 6, 8, 10em.
-+for i in [1, 2, 6, 8, 10]:
++# Draw boxes of size 1, 2, 7, 8, 9em.
++for i in [1, 2, 7, 8, 9]:
 +    s = em * i
 +    if i == 1 or i == 2:
 +        g = f.createChar(largeop[i-1])
@@ -251,40 +251,41 @@ new file mode 100644
 +saveMathFont(f)
 diff --git a/layout/reftests/fonts/math/stretchy.otf b/layout/reftests/fonts/math/stretchy.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..b019fe3dc4ce5ceaabe4514b867d2520d7bebc97
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9b6152716a49f365ebf69db743cb9958768952fb
 GIT binary patch
-literal 3236
-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
+literal 3248
+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
+G*8c#%%1$Hz
 
 diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests/mathml/opentype-stretchy-ref.html
 new file mode 100644
@@ -353,7 +354,7 @@ new file mode 100644
 +<!--
 +DisplayOperatorMinHeight = 8em
 +largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
-+largeop[0] has variants of size 6, 8, 10em
++largeop[0] has variants of size 7, 8, 9em
 +largeop[1] has one variant of size 8em.
 +-->
 +    <p>
@@ -431,7 +432,7 @@ new file mode 100644
 +<!--
 +DisplayOperatorMinHeight = 8em
 +largeop = [0x2A1B, 0x2A1C] # integral with overbar/underbar
-+largeop[0] has variants of size 6, 8, 10em
++largeop[0] has variants of size 7, 8, 9em
 +largeop[1] has one variant of size 8em.
 +-->
 +    <p>
