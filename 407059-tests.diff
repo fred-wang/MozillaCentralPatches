@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 2b583fdbae0cc1d95237a3bc8f9ecd74541dfca1
+# Parent 476839be7b26bdec3c9b4af9bffd94be9d9f8c5e
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4: reftest. r=karl, b=407059
 
@@ -445,8 +445,8 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -143,16 +143,17 @@ skip-if(B2G) == maction-dynamic-1.html m
- == mo-lspace-rspace.html mo-lspace-rspace-ref.html
+@@ -144,16 +144,17 @@ skip-if(B2G) == maction-dynamic-1.html m
+ == mo-invisibleoperators.html mo-invisibleoperators-ref.html
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
  == whitespace-trim-1.html whitespace-trim-1-ref.html
  == whitespace-trim-2.html whitespace-trim-2-ref.html

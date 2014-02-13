@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 067123df4f779596c2acedcf66579de1dfd5e1ee
+# Parent 879038dcacb75ad174b6323517c71b7b500ac012
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 663740 - migrate nsMathMLChar measuring and drawing from nsRenderingContext to gfx/thebes classes. r=karlt.
 
@@ -595,7 +595,92 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    nscoord computedSize = ComputeSizeFromParts(mPresContext, chdata, sizedata,
                                                mTargetSize);
  
-@@ -1218,19 +1176,21 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1168,69 +1126,81 @@ nsMathMLChar::StretchEnumContext::TryPar
+   printf("    Font %s Current best!\n",
+          NS_LossyConvertUTF16toASCII(fontName).get());
+ #endif
+ 
+   // The computed size is the best we have found so far...
+   // now is the time to compute and cache our bounding metrics
+   if (isVertical) {
+     int32_t i;
+-    nscoord lbearing;
+-    nscoord rbearing;
+-    nscoord width;
++    // Try and find the first existing part and then determine the extremal
++    // horizontal metrics of the parts.
++    for (i = 0; i <= 3 && !textRun[i]; i++);
++    if (i == 4) {
++      NS_ERROR("Cannot stretch - All parts missing");
++      return false;
++    }
++    nscoord lbearing = bmdata[i].leftBearing;
++    nscoord rbearing = bmdata[i].rightBearing;
++    nscoord width = bmdata[i].width;
++    i++;
++    for (; i <= 3; i++) {
++      if (!textRun[i]) continue;
++      lbearing = std::min(lbearing, bmdata[i].leftBearing);
++      rbearing = std::max(rbearing, bmdata[i].rightBearing);
++      width = std::max(width, bmdata[i].width);
++    }
+     if (maxWidth) {
+-      lbearing = mBoundingMetrics.leftBearing;
+-      rbearing = mBoundingMetrics.rightBearing;
+-      width = mBoundingMetrics.width;
+-      i = 0;
+-    }
+-    else {
+-      lbearing = bmdata[0].leftBearing;
+-      rbearing = bmdata[0].rightBearing;
+-      width = bmdata[0].width;
+-      i = 1;
+-    }
+-    for (; i < 4; i++) {
+-      const nsBoundingMetrics& bm = bmdata[i];
+-      if (width < bm.width) width = bm.width;
+-      if (lbearing > bm.leftBearing) lbearing = bm.leftBearing;
+-      if (rbearing < bm.rightBearing) rbearing = bm.rightBearing;
++      lbearing = std::min(lbearing, mBoundingMetrics.leftBearing);
++      rbearing = std::max(rbearing, mBoundingMetrics.rightBearing);
++      width = std::max(width, mBoundingMetrics.width);
+     }
+     mBoundingMetrics.width = width;
+     // When maxWidth, updating ascent and descent indicates that no characters
+     // larger than this character's minimum size need to be checked as they
+     // will not be used.
+     mBoundingMetrics.ascent = bmdata[0].ascent; // not used except with descent
+                                                 // for height
+     mBoundingMetrics.descent = computedSize - mBoundingMetrics.ascent;
+     mBoundingMetrics.leftBearing = lbearing;
+     mBoundingMetrics.rightBearing = rbearing;
+   }
+   else {
+-    nscoord ascent = bmdata[0].ascent;
+-    nscoord descent = bmdata[0].descent;
+-    for (int32_t i = 1; i < 4; i++) {
+-      const nsBoundingMetrics& bm = bmdata[i];
+-      if (ascent < bm.ascent) ascent = bm.ascent;
+-      if (descent < bm.descent) descent = bm.descent;
++    int32_t i;
++    // Try and find the first existing part and then determine the extremal
++    // vertical metrics of the parts.
++    for (i = 0; i <= 3 && !textRun[i]; i++);
++    if (i == 4) {
++      NS_ERROR("Cannot stretch - All parts missing");
++      return false;
++    }
++    nscoord ascent = bmdata[i].ascent;
++    nscoord descent = bmdata[i].descent;
++    i++;
++    for (; i <= 3; i++) {
++      if (!textRun[i]) continue;
++      ascent = std::max(ascent, bmdata[i].ascent);
++      descent = std::max(descent, bmdata[i].descent);
+     }
+     mBoundingMetrics.width = computedSize;
+     mBoundingMetrics.ascent = ascent;
+     mBoundingMetrics.descent = descent;
      mBoundingMetrics.leftBearing = 0;
      mBoundingMetrics.rightBearing = computedSize;
    }
@@ -620,7 +705,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  bool
  nsMathMLChar::StretchEnumContext::EnumCallback(const nsString& aFamily,
                                                 bool aGeneric, void *aData)
-@@ -1245,22 +1205,22 @@ nsMathMLChar::StretchEnumContext::EnumCa
+@@ -1245,22 +1215,22 @@ nsMathMLChar::StretchEnumContext::EnumCa
  
    if (context->mTablesTried.Contains(glyphTable))
      return true; // already tried this one
@@ -647,7 +732,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // If the unicode table is being used, then search all font families.  If a
    // special table is being used then the font in this family should have the
    // specified glyphs.
-@@ -1271,17 +1231,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
+@@ -1271,17 +1241,17 @@ nsMathMLChar::StretchEnumContext::EnumCa
       (context->mTryParts && context->TryParts(glyphTable, family)))
      return false; // no need to continue
  
@@ -666,7 +751,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                // aStretchHint & NS_STRETCH_MAXWIDTH:
                                float                    aMaxSize,
                                bool                     aMaxSizeIsAbsolute)
-@@ -1299,30 +1259,31 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1299,30 +1269,31 @@ nsMathMLChar::StretchInternal(nsPresCont
    // Override with specific fonts if applicable for this character
    nsAutoString families;
    if (GetFontExtensionPref(mData[0], eExtension_base, families)) {
@@ -710,7 +795,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    //////////////////////////////////////////////////////////////////////////////
    // 1. Check the common situations where stretching is not actually needed
    //////////////////////////////////////////////////////////////////////////////
-@@ -1389,19 +1350,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1389,19 +1360,19 @@ nsMathMLChar::StretchInternal(nsPresCont
      }
    }
  
@@ -732,7 +817,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        done = true;
    }
  
-@@ -1416,30 +1377,30 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1416,30 +1387,30 @@ nsMathMLChar::StretchInternal(nsPresCont
      font = mStyleContext->StyleFont()->mFont;
      cssFamilies = font.name;
    }
@@ -765,7 +850,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
  
    if (!done) { // normal case
-@@ -1450,28 +1411,27 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1450,28 +1421,27 @@ nsMathMLChar::StretchInternal(nsPresCont
      if (!fallbackFonts.IsEmpty()) {
        AddFallbackFonts(font.name, fallbackFonts);
      }
@@ -795,7 +880,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      if (isVertical) {
        float scale =
          float(aContainerSize.ascent + aContainerSize.descent) /
-@@ -1552,22 +1512,22 @@ nsMathMLChar::Stretch(nsPresContext*    
+@@ -1552,22 +1522,22 @@ nsMathMLChar::Stretch(nsPresContext*    
                        uint32_t                 aStretchHint,
                        bool                     aRTL)
  {
@@ -820,7 +905,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return rv;
  }
  
-@@ -1588,18 +1548,18 @@ nsMathMLChar::GetMaxWidth(nsPresContext*
+@@ -1588,18 +1558,18 @@ nsMathMLChar::GetMaxWidth(nsPresContext*
                            nsRenderingContext& aRenderingContext,
                            uint32_t aStretchHint,
                            float aMaxSize, bool aMaxSizeIsAbsolute)
@@ -841,7 +926,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  public:
    nsDisplayMathMLSelectionRect(nsDisplayListBuilder* aBuilder,
                                 nsIFrame* aFrame, const nsRect& aRect)
-@@ -1775,17 +1735,17 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -1775,17 +1745,17 @@ nsMathMLChar::Display(nsDisplayListBuild
                        nsIFrame*               aForFrame,
                        const nsDisplayListSet& aLists,
                        uint32_t                aIndex,
@@ -860,7 +945,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    if (!styleContext->StyleVisibility()->IsVisible())
      return;
  
-@@ -1817,25 +1777,33 @@ nsMathMLChar::Display(nsDisplayListBuild
+@@ -1817,25 +1787,33 @@ nsMathMLChar::Display(nsDisplayListBuild
    aLists.Content()->AppendNewToTop(new (aBuilder)
      nsDisplayMathMLCharForeground(aBuilder, aForFrame, this,
                                    aIndex,
@@ -899,7 +984,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    r.height /= mScaleY;
  }
  
-@@ -1843,504 +1811,424 @@ void
+@@ -1843,504 +1821,438 @@ void
  nsMathMLChar::PaintForeground(nsPresContext* aPresContext,
                                nsRenderingContext& aRenderingContext,
                                nsPoint aPt,
@@ -1124,8 +1209,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      // _cairo_scaled_font_glyph_device_extents rounds outwards to the nearest
      // pixel, so the bm values can include 1 row of faint pixels on each edge.
      // Don't rely on this pixel as it can look like a gap.
-     start[i] = dy - bm.ascent + oneDevPixel; // top join
-     end[i] = dy + bm.descent - oneDevPixel; // bottom join
+-    start[i] = dy - bm.ascent + oneDevPixel; // top join
+-    end[i] = dy + bm.descent - oneDevPixel; // bottom join
++    if (bm.ascent + bm.descent >= 2 * oneDevPixel) {
++      start[i] = dy - bm.ascent + oneDevPixel; // top join
++      end[i] = dy + bm.descent - oneDevPixel; // bottom join
++    } else {
++      // To avoid overlaps, we don't add one pixel on each side when the part
++      // is too small.
++      start[i] = dy - bm.ascent; // top join
++      end[i] = dy + bm.descent; // bottom join
++    }
    }
  
    // If there are overlaps, then join at the mid point
@@ -1374,8 +1468,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      // _cairo_scaled_font_glyph_device_extents rounds outwards to the nearest
      // pixel, so the bm values can include 1 row of faint pixels on each edge.
      // Don't rely on this pixel as it can look like a gap.
-     start[i] = dx + bm.leftBearing + oneDevPixel; // left join
-     end[i] = dx + bm.rightBearing - oneDevPixel; // right join
+-    start[i] = dx + bm.leftBearing + oneDevPixel; // left join
+-    end[i] = dx + bm.rightBearing - oneDevPixel; // right join
++    if (bm.rightBearing - bm.leftBearing >= 2 * oneDevPixel) { 
++      start[i] = dx + bm.leftBearing + oneDevPixel; // left join
++      end[i] = dx + bm.rightBearing - oneDevPixel; // right join
++    } else {
++      // To avoid overlaps, we don't add one pixel on each side when the part
++      // is too small.
++      start[i] = dx + bm.leftBearing; // left join
++      end[i] = dx + bm.rightBearing; // right join
++    }
    }
  
    // If there are overlaps, then join at the mid point
@@ -1752,25 +1855,3 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    aDesiredSize.mBoundingMetrics.leftBearing = 0;
    aDesiredSize.mBoundingMetrics.rightBearing = width;
  }
-diff --git a/layout/reftests/mathml/semantics-1-ref.xhtml b/layout/reftests/mathml/semantics-1-ref.xhtml
---- a/layout/reftests/mathml/semantics-1-ref.xhtml
-+++ b/layout/reftests/mathml/semantics-1-ref.xhtml
-@@ -19,17 +19,17 @@
-     </mstyle>
-   </semantics>
- </math></p>
- 
- <!-- embellished operator (bug 21479) -->
- <p><math xmlns="http://www.w3.org/1998/Math/MathML">
-   <mover>
-     <mspace width="300px" height="10px" mathbackground="black"></mspace>
--    <mo>&#xaf;</mo>
-+    <mrow><mo>&#xaf;</mo></mrow>
-   </mover>
- </math></p>
- 
- <!-- unwanted whitespace (bug 512418) -->
- <p>■□■□■□<math xmlns="http://www.w3.org/1998/Math/MathML">
-     <mrow>
-       <mrow>
-         <mo>lcm</mo>

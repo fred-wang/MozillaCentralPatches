@@ -1,5 +1,4 @@
 663740.diff
-try-r.diff
 ft2-typo-metrics
 gdi-font-metrics
 prefer-typo-metrics
@@ -19,6 +18,7 @@ prefer-typo-metrics
 961365-5.diff
 961365-tests.diff
 945183.diff
+try-r.diff
 try.diff
 try-lm.patch
 try-c.diff

@@ -1,40 +1,8 @@
 # HG changeset patch
-# Parent e476a2b9c5e29ef68f52718ce3a493f47852ee58
+# Parent dc1b9a94b7f792e31a5832d1ecb63c7e0c4e6889
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3: Remove old glyph tables and merge the legacy tables for the STIXGeneral set. r=karlt
 
-diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
---- a/layout/mathml/Makefile.in
-+++ b/layout/mathml/Makefile.in
-@@ -3,27 +3,20 @@
- # This Source Code Form is subject to the terms of the Mozilla Public
- # License, v. 2.0. If a copy of the MPL was not distributed with this
- # file, You can obtain one at http://mozilla.org/MPL/2.0/.
- 
- include $(topsrcdir)/config/rules.mk
- 
- font_properties = \
- 	mathfontMathJax_Main.properties \
-+	mathfontSTIXGeneral.properties \
- 	mathfontUnicode.properties \
--	mathfontSTIXNonUnicode.properties \
--	mathfontSTIXSizeOneSym.properties \
--	mathfontStandardSymbolsL.properties \
- 	$(NULL)
- 
--ifeq ($(TARGET_MD_ARCH),win32)
--font_properties += \
--	mathfontSymbol.properties
--endif
--
- libs:: $(font_properties)
- 	$(INSTALL) $^ $(DIST)/bin/res/fonts
- 
- math_properties = mathfont.properties
- 
- $(DIST)/bin/res/fonts/$(math_properties) $(DESTDIR)$(mozappdir)/res/fonts/$(math_properties): $(math_properties) Makefile
- 	test -d $(@D) || $(NSINSTALL) -D $(@D)
- 	rm -f $@
 diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
 --- a/layout/mathml/mathfont.properties
 +++ b/layout/mathml/mathfont.properties
@@ -497,3 +465,28 @@ deleted file mode 100644
 -\u27F5 = \uF0AC\uFFFD\uFFFD\uF0BE # LongLeftArrow
 -\u27F6 = \uFFFD\uFFFD\uF0AE\uF0BE # LongRightArrow
 -\u27F7 = \uF0AC\uFFFD\uF0AE\uF0BE # LongLeftRightArrow
+diff --git a/layout/mathml/moz.build b/layout/mathml/moz.build
+--- a/layout/mathml/moz.build
++++ b/layout/mathml/moz.build
+@@ -51,20 +51,13 @@ if CONFIG['ENABLE_TESTS']:
+         'tests',
+     ]
+ 
+ JAR_MANIFESTS += ['jar.mn']
+ 
+ RESOURCE_FILES.fonts += [
+     'mathfont.properties',
+     'mathfontMathJax_Main.properties',
+-    'mathfontStandardSymbolsL.properties',
+-    'mathfontSTIXNonUnicode.properties',
+-    'mathfontSTIXSizeOneSym.properties',
++    'mathfontSTIXGeneral.properties',
+     'mathfontUnicode.properties',
+ ]
+ 
+ RESOURCE_FILES.fonts['mathfont.properties'].preprocess = True
+-
+-if CONFIG['TARGET_MD_ARCH'] == 'win32':
+-    RESOURCE_FILES.fonts += [
+-        'mathfontSymbol.properties',
+-    ]

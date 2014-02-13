@@ -1,31 +1,8 @@
 # HG changeset patch
-# Parent e64da60f6726cb0df3fec390df1052015d4e2506
+# Parent 144c83d49b654cb3ad6eeef238ad9adef946780e
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3: remove mathfontAsanaMath.properties and STIX 1.0 beta ; add Latin Modern to the default fonts of nsMathMLChar. r=karl, b=407059
 
-diff --git a/layout/mathml/Makefile.in b/layout/mathml/Makefile.in
---- a/layout/mathml/Makefile.in
-+++ b/layout/mathml/Makefile.in
-@@ -5,19 +5,17 @@
- # file, You can obtain one at http://mozilla.org/MPL/2.0/.
- 
- include $(topsrcdir)/config/rules.mk
- 
- font_properties = \
- 	mathfontMathJax_Main.properties \
- 	mathfontUnicode.properties \
- 	mathfontSTIXNonUnicode.properties \
--	mathfontSTIXSize1.properties \
- 	mathfontSTIXSizeOneSym.properties \
--	mathfontAsanaMath.properties \
- 	mathfontStandardSymbolsL.properties \
- 	$(NULL)
- 
- ifeq ($(TARGET_MD_ARCH),win32)
- font_properties += \
- 	mathfontSymbol.properties
- endif
- 
 diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
 --- a/layout/mathml/mathfont.properties
 +++ b/layout/mathml/mathfont.properties
@@ -276,10 +253,35 @@ deleted file mode 100644
 -\u007E = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # ~ tilde, COMBINING TILDE
 -\u02DC = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0303\u0303@2\u0303@3\u0303@4\u0303@5 # small tilde, COMBINING TILDE
 -\u02C7 = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u030C\u030C@2\u030C@3\u030C@4\u030C@5 # caron, COMBINING CARON
+diff --git a/layout/mathml/moz.build b/layout/mathml/moz.build
+--- a/layout/mathml/moz.build
++++ b/layout/mathml/moz.build
+@@ -50,21 +50,19 @@ if CONFIG['ENABLE_TESTS']:
+     PARALLEL_DIRS += [
+         'tests',
+     ]
+ 
+ JAR_MANIFESTS += ['jar.mn']
+ 
+ RESOURCE_FILES.fonts += [
+     'mathfont.properties',
+-    'mathfontAsanaMath.properties',
+     'mathfontMathJax_Main.properties',
+     'mathfontStandardSymbolsL.properties',
+     'mathfontSTIXNonUnicode.properties',
+-    'mathfontSTIXSize1.properties',
+     'mathfontSTIXSizeOneSym.properties',
+     'mathfontUnicode.properties',
+ ]
+ 
+ RESOURCE_FILES.fonts['mathfont.properties'].preprocess = True
+ 
+ if CONFIG['TARGET_MD_ARCH'] == 'win32':
+     RESOURCE_FILES.fonts += [
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1630,17 +1630,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1469,17 +1469,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -298,7 +300,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("images.dither", "auto");
  pref("security.directory",              "");
  
-@@ -2620,17 +2620,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2458,17 +2458,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -317,7 +319,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -3148,17 +3148,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2994,17 +2994,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -336,22 +338,3 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
-@@ -3197,17 +3197,17 @@ pref("mousewheel.enable_pixel_scrolling"
- #endif
- 
- #ifdef XP_OS2
- 
- pref("ui.key.menuAccessKeyFocuses", true);
- 
- pref("font.alias-list", "sans,sans-serif,serif,monospace,Tms Rmn,Helv,Courier,Times New Roman");
- 
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, DejaVu Sans");
-+pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, DejaVu Sans");
- 
- // Languages only need lists if we have a default that might not be available.
- // Tms Rmn and Helv cannot be used by Thebes but the OS/2 version of FontConfig
- // maps them to Times New Roman and Helvetica, respectively. Those fonts and
- // Courier are available on OS/2 by default.
- 
- pref("font.name.serif.ar", "Tms Rmn");
- pref("font.name.sans-serif.ar", "Helv");
