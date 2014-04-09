@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 8c7ada1b76df3079bbe8138260b14f6799e582b1
+# Parent bd568199abf097f1ed08549a6cd7ed028a926ad4
 # User James Kitchener <jkitch.bug@gmail.com>
 Bug 930504 - Use character substitution for all mathvariants
 
@@ -371,7 +371,7 @@ diff --git a/layout/reftests/mathml/mathvariant-1c-ref.html b/layout/reftests/ma
 diff --git a/layout/reftests/mathml/mathvariant-2-ref.html b/layout/reftests/mathml/mathvariant-2-ref.html
 --- a/layout/reftests/mathml/mathvariant-2-ref.html
 +++ b/layout/reftests/mathml/mathvariant-2-ref.html
-@@ -1,16 +1,16 @@
+@@ -1,19 +1,19 @@
  <!doctype html>
  <html>
    <head>
@@ -388,5 +388,8 @@ diff --git a/layout/reftests/mathml/mathvariant-2-ref.html b/layout/reftests/mat
          <mtext>&#x03DC;&#x03DD;</mtext>
        </mrow>
      </math>
-   </body>
- </html>
+     <p>
+     <math>
+       <mrow>
+         <mi mathvariant="italic">&imath;</mi>
+         <mi mathvariant="italic">&jmath;</mi>

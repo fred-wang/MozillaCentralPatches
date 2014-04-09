@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 0ee4f1102f9105d24e28c9a8c83b904b912827ed
+# Parent 43cd629879c28598037145b5924603eaeb4b9cbd
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -144,13 +144,13 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +#include "gfxMathTable.h"
  #include "gfx2DGlue.h"
  
+ #if defined(XP_MACOSX)
+ #include "nsCocoaFeatures.h"
+ #endif
+ 
  #include "cairo.h"
  #include "gfxFontTest.h"
- 
- #include "harfbuzz/hb.h"
- #include "harfbuzz/hb-ot.h"
- #include "graphite2/Font.h"
-@@ -95,16 +96,17 @@ gfxFontEntry::gfxFontEntry() :
+@@ -107,16 +108,17 @@ gfxFontEntry::gfxFontEntry() :
      mIsBadUnderlineFont(false),
      mIsUserFont(false),
      mIsLocalUserFont(false),
@@ -164,11 +164,11 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mHasSpaceFeatures(false),
      mHasSpaceFeaturesKerning(false),
      mHasSpaceFeaturesNonKerning(false),
-     mHasSpaceFeaturesSubDefault(false),
+     mSkipDefaultFeatureSpaceCheck(false),
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -122,16 +124,17 @@ gfxFontEntry::gfxFontEntry(const nsAStri
+@@ -136,16 +138,17 @@ gfxFontEntry::gfxFontEntry(const nsAStri
      mName(aName), mItalic(false), mFixedPitch(false),
      mIsProxy(false), mIsValid(true),
      mIsBadUnderlineFont(false), mIsUserFont(false),
@@ -182,11 +182,11 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      mHasSpaceFeatures(false),
      mHasSpaceFeaturesKerning(false),
      mHasSpaceFeaturesNonKerning(false),
-     mHasSpaceFeaturesSubDefault(false),
+     mSkipDefaultFeatureSpaceCheck(false),
      mCheckedForGraphiteTables(false),
      mHasCmapTable(false),
      mGrFaceInitialized(false),
-@@ -369,16 +372,88 @@ void
+@@ -384,16 +387,88 @@ void
  gfxFontEntry::NotifyGlyphsChanged()
  {
      for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
@@ -296,7 +296,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  #define FONT_MAX_SIZE                  2000.0
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
-@@ -309,16 +310,89 @@ public:
+@@ -306,16 +307,89 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -386,7 +386,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -431,16 +505,17 @@ public:
+@@ -428,16 +502,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -400,11 +400,11 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasSpaceFeatures : 1;
      bool             mHasSpaceFeaturesKerning : 1;
      bool             mHasSpaceFeaturesNonKerning : 1;
-     bool             mHasSpaceFeaturesSubDefault : 1;
+     bool             mSkipDefaultFeatureSpaceCheck : 1;
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -454,16 +529,17 @@ public:
+@@ -453,16 +528,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -1033,8 +1033,8 @@ diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
      'gfxPoint.h',
      'gfxPoint3D.h',
      'gfxPointH3D.h',
-     'gfxQuad.h',
-@@ -232,16 +233,17 @@ UNIFIED_SOURCES += [
+     'gfxPrefs.h',
+@@ -230,16 +231,17 @@ UNIFIED_SOURCES += [
      'gfxFontFeatures.cpp',
      'gfxFontInfoLoader.cpp',
      'gfxFontMissingGlyphs.cpp',

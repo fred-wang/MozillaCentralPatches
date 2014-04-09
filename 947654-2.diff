@@ -7,11 +7,11 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
 @@ -191,52 +191,18 @@ mtable[frame="dashed"] > mtr > mtd:first
-   padding-left: 0.4em; /* framespacing.left */
+   -moz-padding-start: 0.4em; /* framespacing.left (or right in rtl)*/
  }
  mtable[frame="solid"] > mtr > mtd:last-child,
  mtable[frame="dashed"] > mtr > mtd:last-child {
-   padding-right: 0.4em; /* framespacing.right */
+   -moz-padding-end: 0.4em; /* framespacing.right (or left in rtl)*/
  }
  
  /**************************************************************************/
@@ -281,12 +281,12 @@ diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.c
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp
 @@ -128,17 +128,17 @@ nsMathMLmoFrame::ProcessTextData()
+     mFlags |= NS_MATHML_OPERATOR_INVISIBLE;
    }
  
-   // don't bother doing anything special if we don't have a
-   // single child with a visible text content
+   // don't bother doing anything special if we don't have a single child
    nsPresContext* presContext = PresContext();
-   if (NS_MATHML_OPERATOR_IS_INVISIBLE(mFlags) || mFrames.GetLength() != 1) {
+   if (mFrames.GetLength() != 1) {
      data.Truncate(); // empty data to reset the char
      mMathMLChar.SetData(presContext, data);
 -    ResolveMathMLCharStyle(presContext, mContent, mStyleContext, &mMathMLChar, false);

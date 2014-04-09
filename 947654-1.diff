@@ -254,7 +254,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              const nsAString&        aDefaultFamily,
                              nsFont&                 aFont,
                              nsRefPtr<gfxFontGroup>* aFontGroup)
-@@ -1596,40 +1452,32 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1462,40 +1462,32 @@ nsMathMLChar::StretchInternal(nsPresCont
    // So first set our direction back to its instrinsic value
    nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
  
@@ -282,7 +282,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    uint32_t len = uint32_t(mData.Length());
    nsAutoPtr<gfxTextRun> textRun;
    textRun = fm->GetThebesFontGroup()->
-     MakeTextRun(mData.get(), len, aThebesContext,
+     MakeTextRun(static_cast<const char16_t*>(mData.get()), len, aThebesContext,
                  aPresContext->AppUnitsPerDevPixel(), 0);
    aDesiredStretchSize = MeasureTextRun(aThebesContext, textRun);
    mGlyphs[0] = textRun;
@@ -357,7 +357,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1469,18 +1469,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1501,18 +1501,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -372,10 +372,10 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
  pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
  
- pref("images.dither", "auto");
- pref("security.directory",              "");
- 
- pref("signed.applets.codebase_principal_support", false);
+ #ifdef MOZ_WIDGET_GONK
+ // Whitelist of fonts that ship with B2G that do not include space lookups in
+ // default features. This allows us to skip analyzing the GSUB/GPOS tables
+ // unless features are explicitly enabled.
 @@ -2457,19 +2455,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 16);
