@@ -9,10 +9,10 @@ bug 947650 - [FT2 fonts] ensure we prefer OS/2 sTypo* metrics to hhea ascent/des
 diff --git a/gfx/thebes/gfxFT2Utils.cpp b/gfx/thebes/gfxFT2Utils.cpp
 --- a/gfx/thebes/gfxFT2Utils.cpp
 +++ b/gfx/thebes/gfxFT2Utils.cpp
-@@ -109,25 +109,33 @@ gfxFT2LockedFace::GetMetrics(gfxFont::Me
+@@ -116,25 +116,33 @@ gfxFT2LockedFace::GetMetrics(gfxFont::Me
  
      gfxFloat lineHeight;
-     if (os2 && os2->sTypoAscender) {
+     if (os2 && os2->sTypoAscender && yScale > 0.0) {
          aMetrics->emAscent = os2->sTypoAscender * yScale;
          aMetrics->emDescent = -os2->sTypoDescender * yScale;
          FT_Short typoHeight =

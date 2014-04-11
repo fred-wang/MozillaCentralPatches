@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 43cd629879c28598037145b5924603eaeb4b9cbd
+# Parent 6148c7e5202b1bb991490f340b03aa1bc7e681a1
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: add a gfxMathTable class to read the MATH table. r=jfkthame, b=407059
 
@@ -239,12 +239,12 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +}
 +
 +bool
-+gfxFontEntry::GetMathItalicCorrection(uint32_t aGlyphID,
-+                                      gfxFloat* aItalicCorrection)
++gfxFontEntry::GetMathItalicsCorrection(uint32_t aGlyphID,
++                                       gfxFloat* aItalicCorrection)
 +{
 +    NS_ASSERTION(mMathTable, "Math data has not yet been loaded. TryGetMathData() first.");
 +    int16_t italicCorrection;
-+    if (!mMathTable->GetMathItalicCorrection(aGlyphID, &italicCorrection)) {
++    if (!mMathTable->GetMathItalicsCorrection(aGlyphID, &italicCorrection)) {
 +        return false;
 +    }
 +    *aItalicCorrection = gfxFloat(italicCorrection) / mUnitsPerEm;
@@ -296,7 +296,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  #define FONT_MAX_SIZE                  2000.0
  
  #define NO_FONT_LANGUAGE_OVERRIDE      0
-@@ -306,16 +307,89 @@ public:
+@@ -308,16 +309,89 @@ public:
      bool GetSVGGlyphExtents(gfxContext *aContext, uint32_t aGlyphId,
                              gfxRect *aResult);
      bool RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId, int aDrawMode,
@@ -371,8 +371,8 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 +    // functions MUST NOT be called unless TryGetMathTable() has returned true.
 +    bool     TryGetMathTable(gfxFont* aFont);
 +    gfxFloat GetMathConstant(MathConstant aConstant);
-+    bool     GetMathItalicCorrection(uint32_t aGlyphID,
-+                                     gfxFloat* aItalicCorrection);
++    bool     GetMathItalicsCorrection(uint32_t aGlyphID,
++                                      gfxFloat* aItalicCorrection);
 +    uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
 +                                 uint16_t aSize);
 +    bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
@@ -386,7 +386,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
      // Access to raw font table data (needed for Harfbuzz):
-@@ -428,16 +502,17 @@ public:
+@@ -430,16 +504,17 @@ public:
      bool             mIsBadUnderlineFont : 1;
      bool             mIsUserFont  : 1;
      bool             mIsLocalUserFont  : 1;
@@ -404,7 +404,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool             mHasGraphiteTables : 1;
      bool             mCheckedForGraphiteTables : 1;
      bool             mHasCmapTable : 1;
-@@ -453,16 +528,17 @@ public:
+@@ -455,16 +530,17 @@ public:
  
      nsRefPtr<gfxCharacterMap> mCharacterMap;
      uint32_t         mUVSOffset;
@@ -522,8 +522,8 @@ new file mode 100644
 +}
 +
 +bool
-+gfxMathTable::GetMathItalicCorrection(uint32_t aGlyphID,
-+                                      int16_t* aItalicCorrection)
++gfxMathTable::GetMathItalicsCorrection(uint32_t aGlyphID,
++                                       int16_t* aItalicCorrection)
 +{
 +  const MathGlyphInfo* mathglyphinfo = GetMathGlyphInfo();
 +
@@ -939,7 +939,7 @@ new file mode 100644
 +     *  function gets the value and returns true. Otherwise it returns false.
 +     */
 +    bool
-+    GetMathItalicCorrection(uint32_t aGlyphID, int16_t* aItalicCorrection);
++    GetMathItalicsCorrection(uint32_t aGlyphID, int16_t* aItalicCorrection);
 +
 +    /**
 +     * @param aGlyphID  glyph index of the character we want to stretch

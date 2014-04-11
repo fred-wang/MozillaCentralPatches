@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 4e07b174b2f4cd781aaf0dbf3d262b0ea1b2ace3
+# Parent 728257bd413642d8b56c453fe733d7d25ce4fb06
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: Remove the font.mathfont-family* preferences. b=947654, r=karlt
 
@@ -43,11 +43,11 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  //
  // Bigger sizes (if any) of the char can then be retrieved with BigOf(...).
  // Partial glyphs can be retrieved with ElementAt(...).
-@@ -691,79 +688,16 @@ nsGlyphTableList::GetGlyphTableFor(gfxFo
- 
-   // allocate a table
-   glyphTable = mOpenTypeTableList.AppendElement(aFont->GetFontEntry());
-   return glyphTable;
+@@ -674,79 +671,16 @@ nsGlyphTableList::GetGlyphTableFor(const
+     }
+   }
+   // Fall back to default Unicode table
+   return &mUnicodeTable;
  }
  
  // -----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return true; // don't stop
  }
  
-@@ -807,19 +741,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -790,19 +724,16 @@ InitGlobals(nsPresContext* aPresContext)
    // stretchy characters.
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
@@ -143,7 +143,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsMathMLChar::~nsMathMLChar()
-@@ -907,18 +838,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -890,18 +821,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
         the next stage in the pipeline is given a chance to find
         a largeop variant. If the next stage fails, we fallback
         to the base size.
@@ -163,7 +163,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
         with largeop=true and stretchy=false), we break after finding
         the first starting variant, regardless of whether that
         variant fits the container's size.
-@@ -1041,90 +971,16 @@ ComputeSizeFromParts(nsPresContext* aPre
+@@ -1024,90 +954,16 @@ ComputeSizeFromParts(nsPresContext* aPre
  
    if (minSize > aTargetSize)
      return minSize; // settle with the minimum size
@@ -254,7 +254,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              const nsAString&        aDefaultFamily,
                              nsFont&                 aFont,
                              nsRefPtr<gfxFontGroup>* aFontGroup)
-@@ -1462,40 +1462,32 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1601,40 +1457,32 @@ nsMathMLChar::StretchInternal(nsPresCont
    // So first set our direction back to its instrinsic value
    nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
  
@@ -296,7 +296,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // 1. Check the common situations where stretching is not actually needed
    //////////////////////////////////////////////////////////////////////////////
  
-@@ -1711,57 +1559,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1716,57 +1564,19 @@ nsMathMLChar::StretchInternal(nsPresCont
        done = true;
    }
  
@@ -357,7 +357,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1501,18 +1501,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1506,18 +1506,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -376,7 +376,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
  // unless features are explicitly enabled.
-@@ -2457,19 +2455,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -2529,19 +2527,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
@@ -396,7 +396,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
  
-@@ -2993,19 +2988,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -3061,19 +3056,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);

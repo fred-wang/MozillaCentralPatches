@@ -1,0 +1,48 @@
+# HG changeset patch
+# Parent 61a91ddcc81c8c77cfeb145eb6dc062ada417b03
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 960115 - Restrict the cases where a scale transform is applied to operators. r=karl
+
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -1764,16 +1764,20 @@ nsMathMLChar::StretchInternal(nsPresCont
+   }
+ 
+   if (!maxWidth) {
+     // Now, we know how we are going to draw the char. Update the member
+     // variables accordingly.
+     mUnscaledAscent = aDesiredStretchSize.ascent;
+   }
+     
++  if (glyphFound) {
++    return NS_OK;
++  }
++
+   // stretchy character
+   if (stretchy) {
+     if (isVertical) {
+       float scale =
+         float(aContainerSize.ascent + aContainerSize.descent) /
+         (aDesiredStretchSize.ascent + aDesiredStretchSize.descent);
+       if (!largeop || scale > 1.0) {
+         // make the character match the desired height.
+@@ -1796,17 +1800,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+         aDesiredStretchSize.rightBearing *= scale;
+         aDesiredStretchSize.width *= scale;
+       }
+     }
+   }
+ 
+   // We do not have a char variant for this largeop in display mode, so we
+   // apply a scale transform to the base char.
+-  if (!glyphFound && largeop) {
++  if (largeop) {
+     float scale;
+     float largeopFactor = kLargeOpFactor;
+ 
+     // increase the width if it is not largeopFactor times larger
+     // than the initial one.
+     if ((aDesiredStretchSize.rightBearing - aDesiredStretchSize.leftBearing) <
+         largeopFactor * (initialSize.rightBearing - initialSize.leftBearing)) {
+       scale = (largeopFactor *
