@@ -1,6 +1,0 @@
-# HG changeset patch
-# Parent e3efac88497c6291eefcbc4f86fc01e514adcb97
-# User Frédéric Wang <fred.wang@free.fr>
-try: -b o -p win32 -u reftest -t none
-
-

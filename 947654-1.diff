@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 728257bd413642d8b56c453fe733d7d25ce4fb06
+# Parent ba9ab868d21f284f104f08248f2fdf79989e64ba
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: Remove the font.mathfont-family* preferences. b=947654, r=karlt
 
@@ -254,7 +254,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              const nsAString&        aDefaultFamily,
                              nsFont&                 aFont,
                              nsRefPtr<gfxFontGroup>* aFontGroup)
-@@ -1601,40 +1457,32 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1600,40 +1456,32 @@ nsMathMLChar::StretchInternal(nsPresCont
    // So first set our direction back to its instrinsic value
    nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
  
@@ -296,7 +296,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // 1. Check the common situations where stretching is not actually needed
    //////////////////////////////////////////////////////////////////////////////
  
-@@ -1716,57 +1564,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1715,57 +1563,19 @@ nsMathMLChar::StretchInternal(nsPresCont
        done = true;
    }
  
@@ -357,7 +357,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1506,18 +1506,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1512,18 +1512,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -376,7 +376,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
  // unless features are explicitly enabled.
-@@ -2529,19 +2527,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -2540,19 +2538,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
@@ -388,7 +388,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 -// We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
 -
- // cleartype settings - false implies default system settings 
+ // cleartype settings - false implies default system settings
  
  // use cleartype rendering for downloadable fonts (win xp only)
  pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
@@ -396,7 +396,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
  
-@@ -3061,19 +3056,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -3072,19 +3067,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);

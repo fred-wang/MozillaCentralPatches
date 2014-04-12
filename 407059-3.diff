@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 144c83d49b654cb3ad6eeef238ad9adef946780e
+# Parent f221d55028d5a1d8c7fec1df62362e1b30ae979a
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3: remove mathfontAsanaMath.properties and STIX 1.0 beta ; add Latin Modern to the default fonts of nsMathMLChar. r=karl, b=407059
 
@@ -281,7 +281,7 @@ diff --git a/layout/mathml/moz.build b/layout/mathml/moz.build
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1501,17 +1501,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1512,17 +1512,17 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -300,7 +300,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  #ifdef MOZ_WIDGET_GONK
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
-@@ -2458,17 +2458,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -2541,17 +2541,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
  
@@ -312,14 +312,14 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
 +pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
- // cleartype settings - false implies default system settings 
+ // cleartype settings - false implies default system settings
  
  // use cleartype rendering for downloadable fonts (win xp only)
  pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -2994,17 +2994,17 @@ pref("font.default.zh-TW", "sans-serif")
+@@ -3073,17 +3073,17 @@ pref("font.default.zh-TW", "sans-serif")
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
  

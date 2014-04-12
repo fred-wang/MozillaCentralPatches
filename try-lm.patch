@@ -1,6 +1,0 @@
-# HG changeset patch
-# Parent e383b42c650a9ec9dea3bab539e5297c4d9034bf
-# User Frédéric Wang <fred.wang@free.fr>
-try: -b o -p linux,linux64,linux64-st-an,linux64-valgrind,macosx64,linux64-asan -u reftest -t none
-
-
