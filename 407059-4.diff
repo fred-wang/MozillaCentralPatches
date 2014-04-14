@@ -6,23 +6,18 @@ Part 4: Use gfxHarfbuzzShaper::GetGlyphHAdvance(). r=karl, b=407059
 diff --git a/gfx/thebes/gfxFT2FontBase.cpp b/gfx/thebes/gfxFT2FontBase.cpp
 --- a/gfx/thebes/gfxFT2FontBase.cpp
 +++ b/gfx/thebes/gfxFT2FontBase.cpp
-@@ -108,21 +108,24 @@ gfxFT2FontBase::GetGlyphExtents(uint32_t
- }
- 
- const gfxFont::Metrics&
- gfxFT2FontBase::GetMetrics()
+@@ -112,17 +112,19 @@ gfxFT2FontBase::GetMetrics()
  {
      if (mHasMetrics)
          return mMetrics;
  
-+    gfxFT2LockedFace face(this);
-+    mFUnitsConvFactor = face.XScale();
-+
      if (MOZ_UNLIKELY(GetStyle()->size <= 0.0)) {
          new(&mMetrics) gfxFont::Metrics(); // zero initialize
          mSpaceGlyph = 0;
      } else {
 -        gfxFT2LockedFace(this).GetMetrics(&mMetrics, &mSpaceGlyph);
++        gfxFT2LockedFace face(this);
++        mFUnitsConvFactor = face.XScale();
 +        face.GetMetrics(&mMetrics, &mSpaceGlyph);
      }
  
@@ -35,7 +30,8 @@ diff --git a/gfx/thebes/gfxFT2FontBase.cpp b/gfx/thebes/gfxFT2FontBase.cpp
 diff --git a/gfx/thebes/gfxFT2Fonts.cpp b/gfx/thebes/gfxFT2Fonts.cpp
 --- a/gfx/thebes/gfxFT2Fonts.cpp
 +++ b/gfx/thebes/gfxFT2Fonts.cpp
-@@ -422,18 +422,16 @@ gfxFT2Font::ShapeText(gfxContext      *a
+@@ -421,19 +421,16 @@ gfxFT2Font::ShapeText(gfxContext      *a
+             ok = mGraphiteShaper->ShapeText(aContext, aText,
                                              aOffset, aLength,
                                              aScript, aShapedText);
          }
@@ -43,7 +39,7 @@ diff --git a/gfx/thebes/gfxFT2Fonts.cpp b/gfx/thebes/gfxFT2Fonts.cpp
  
      if (!ok && gfxPlatform::GetPlatform()->UseHarfBuzzForScript(aScript)) {
          if (!mHarfBuzzShaper) {
-             gfxFT2LockedFace face(this);
+-            gfxFT2LockedFace face(this);
 -            mFUnitsConvFactor = face.XScale();
 -
              mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
@@ -75,7 +71,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
  #include "nsBidiUtils.h"
  #include "nsUnicodeRange.h"
  #include "nsStyleConsts.h"
-@@ -2022,16 +2023,27 @@ gfxFont::~gfxFont()
+@@ -2022,16 +2023,29 @@ gfxFont::~gfxFont()
  
      mFontEntry->NotifyFontDestroyed(this);
  
@@ -88,7 +84,9 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +{
 +    if (mFUnitsConvFactor == 0.0f)
 +        GetMetrics();
-+    mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
++    if (!mHarfBuzzShaper) {
++        mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
++    }
 +    gfxHarfBuzzShaper* shaper =
 +        static_cast<gfxHarfBuzzShaper*>(mHarfBuzzShaper.get());
 +    shaper->Initialize();
@@ -426,14 +424,16 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.h b/gfx/thebes/gfxHarfBuzzShaper.h
 diff --git a/gfx/thebes/gfxPangoFonts.cpp b/gfx/thebes/gfxPangoFonts.cpp
 --- a/gfx/thebes/gfxPangoFonts.cpp
 +++ b/gfx/thebes/gfxPangoFonts.cpp
-@@ -1621,18 +1621,16 @@ gfxFcFont::ShapeText(gfxContext      *aC
+@@ -1619,20 +1619,17 @@ gfxFcFont::ShapeText(gfxContext      *aC
+             }
+             ok = mGraphiteShaper->ShapeText(aContext, aText, aOffset, aLength,
                                              aScript, aShapedText);
          }
      }
  
      if (!ok) {
          if (!mHarfBuzzShaper) {
-             gfxFT2LockedFace face(this);
+-            gfxFT2LockedFace face(this);
              mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
 -            // Used by gfxHarfBuzzShaper, currently only for kerning
 -            mFUnitsConvFactor = face.XScale();
@@ -487,7 +487,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
  static const float kLargeOpFactor = float(M_SQRT2);
  static const float kIntegralFactor = 2.0;
-@@ -536,19 +537,19 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
+@@ -536,19 +537,20 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
    gfxTextRunFactory::Parameters params = {
      aThebesContext, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevPixel
    };
@@ -499,9 +499,10 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -  // We set the advance width to zero and this will be fixed in MeasureTextRun.
 -  // XXXfredw: We should use gfxHarfbuzzShaper::GetGlyphHAdvance()
 -  detailedGlyph.mAdvance = 0;
-+  detailedGlyph.mAdvance = aAppUnitsPerDevPixel *
-+    aFontGroup->GetFontAt(0)->GetHarfBuzzShaper()->
-+    GetGlyphHAdvance(aThebesContext, aGlyph.glyphID) / 65536.0;
++  detailedGlyph.mAdvance =
++    NSToCoordRound(aAppUnitsPerDevPixel *
++                   aFontGroup->GetFontAt(0)->GetHarfBuzzShaper()->
++                   GetGlyphHAdvance(aThebesContext, aGlyph.glyphID) / 65536.0);
    detailedGlyph.mXOffset = detailedGlyph.mYOffset = 0;
    gfxShapedText::CompressedGlyph g;
    g.SetComplex(true, true, 1);
@@ -510,7 +511,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return textRun;
  }
  
-@@ -1147,21 +1148,16 @@ MeasureTextRun(gfxContext* aThebesContex
+@@ -1147,21 +1149,16 @@ MeasureTextRun(gfxContext* aThebesContex
                            aThebesContext, nullptr);
  
    nsBoundingMetrics bm;
@@ -532,7 +533,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  public:
    StretchEnumContext(nsMathMLChar*        aChar,
                       nsPresContext*       aPresContext,
-@@ -1296,20 +1292,22 @@ StretchEnumContext::TryVariants(nsGlyphT
+@@ -1296,20 +1293,22 @@ StretchEnumContext::TryVariants(nsGlyphT
  
      nsAutoPtr<gfxTextRun> textRun;
      textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
