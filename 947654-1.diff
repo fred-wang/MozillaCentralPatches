@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ba9ab868d21f284f104f08248f2fdf79989e64ba
+# Parent 5c54feb6e55dec933d02137c4841478c02b209d5
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: Remove the font.mathfont-family* preferences. b=947654, r=karlt
 
@@ -43,7 +43,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  //
  // Bigger sizes (if any) of the char can then be retrieved with BigOf(...).
  // Partial glyphs can be retrieved with ElementAt(...).
-@@ -674,79 +671,16 @@ nsGlyphTableList::GetGlyphTableFor(const
+@@ -675,79 +672,16 @@ nsGlyphTableList::GetGlyphTableFor(const
      }
    }
    // Fall back to default Unicode table
@@ -123,7 +123,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return true; // don't stop
  }
  
-@@ -790,19 +724,16 @@ InitGlobals(nsPresContext* aPresContext)
+@@ -791,19 +725,16 @@ InitGlobals(nsPresContext* aPresContext)
    // stretchy characters.
    // We just want to iterate over the font-family list using the
    // callback mechanism that nsFont has...
@@ -143,7 +143,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  // And now the implementation of nsMathMLChar
  
  nsMathMLChar::~nsMathMLChar()
-@@ -890,18 +821,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -891,18 +822,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
         the next stage in the pipeline is given a chance to find
         a largeop variant. If the next stage fails, we fallback
         to the base size.
@@ -163,7 +163,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
         with largeop=true and stretchy=false), we break after finding
         the first starting variant, regardless of whether that
         variant fits the container's size.
-@@ -1024,90 +954,16 @@ ComputeSizeFromParts(nsPresContext* aPre
+@@ -1025,90 +955,16 @@ ComputeSizeFromParts(nsPresContext* aPre
  
    if (minSize > aTargetSize)
      return minSize; // settle with the minimum size
@@ -254,7 +254,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              const nsAString&        aDefaultFamily,
                              nsFont&                 aFont,
                              nsRefPtr<gfxFontGroup>* aFontGroup)
-@@ -1600,40 +1456,32 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1598,40 +1454,32 @@ nsMathMLChar::StretchInternal(nsPresCont
    // So first set our direction back to its instrinsic value
    nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
  
@@ -296,7 +296,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    // 1. Check the common situations where stretching is not actually needed
    //////////////////////////////////////////////////////////////////////////////
  
-@@ -1715,57 +1563,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1713,57 +1561,19 @@ nsMathMLChar::StretchInternal(nsPresCont
        done = true;
    }
  
@@ -366,7 +366,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nb-*", "nb");
  pref("intl.hyphenation-alias.nn-*", "nn");
  
--pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
+-pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
 -
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -386,7 +386,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("font.size.fixed.zh-HK", 16);
  
 -// We have special support for Monotype Symbol on Windows.
--pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+-pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
 -
  // cleartype settings - false implies default system settings
  
@@ -406,7 +406,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("font.size.fixed.zh-HK", 16);
  
 -// Apple's Symbol is Unicode so use it
--pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+-pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
 -
  // individual font faces to be treated as independent families
  // names are Postscript names of each face

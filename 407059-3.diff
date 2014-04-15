@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent f221d55028d5a1d8c7fec1df62362e1b30ae979a
+# Parent 80192680b5d9060b993dc20ba5209e958cb78547
 # User Frédéric Wang <fred.wang@free.fr>
-Part 3: remove mathfontAsanaMath.properties and STIX 1.0 beta ; add Latin Modern to the default fonts of nsMathMLChar. r=karl, b=407059
+Part 3: remove mathfontAsanaMath.properties and STIX 1.0 beta. r=karl, b=407059
 
 diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
 --- a/layout/mathml/mathfont.properties
@@ -291,7 +291,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -310,7 +310,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // cleartype settings - false implies default system settings
  
@@ -329,7 +329,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "Latin Modern Math, MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // individual font faces to be treated as independent families
  // names are Postscript names of each face

@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent d13a7382e1960a54c47fffd53535d297ea650a4b
+# Parent 1d7ccee8b92e41d52c7d7280d5be7aad060ce9d2
 # User Frédéric Wang <fred.wang@free.fr>
-Part 4: Use gfxHarfbuzzShaper::GetGlyphHAdvance(). r=karl, b=407059
+Part 4: Use gfxHarfbuzzShaper::GetGlyphHAdvance() for math operators. r=jfkthame, b=407059
 
 diff --git a/gfx/thebes/gfxFT2FontBase.cpp b/gfx/thebes/gfxFT2FontBase.cpp
 --- a/gfx/thebes/gfxFT2FontBase.cpp
@@ -71,7 +71,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
  #include "nsBidiUtils.h"
  #include "nsUnicodeRange.h"
  #include "nsStyleConsts.h"
-@@ -2022,16 +2023,29 @@ gfxFont::~gfxFont()
+@@ -2022,16 +2023,38 @@ gfxFont::~gfxFont()
  
      mFontEntry->NotifyFontDestroyed(this);
  
@@ -80,17 +80,26 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
      }
  }
  
-+const gfxHarfBuzzShaper* gfxFont::GetHarfBuzzShaper()
++gfxFloat
++gfxFont::GetGlyphHAdvance(gfxContext *aCtx, uint16_t aGID)
 +{
-+    if (mFUnitsConvFactor == 0.0f)
++    if (ProvidesGlyphWidths()) {
++        return GetGlyphWidth(aCtx, aGID) / 65536.0;
++    }
++    if (mFUnitsConvFactor == 0.0f) {
 +        GetMetrics();
++    }
++    NS_ASSERTION(mFUnitsConvFactor > 0.0f,
++                 "missing font unit conversion factor");
 +    if (!mHarfBuzzShaper) {
 +        mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
 +    }
 +    gfxHarfBuzzShaper* shaper =
 +        static_cast<gfxHarfBuzzShaper*>(mHarfBuzzShaper.get());
-+    shaper->Initialize();
-+    return shaper;
++    if (!shaper->Initialize()) {
++        return 0;
++    }
++    return shaper->GetGlyphHAdvance(aCtx, aGID) / 65536.0;
 +}
 +
  /*static*/
@@ -104,7 +113,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 --- a/gfx/thebes/gfxFont.h
 +++ b/gfx/thebes/gfxFont.h
-@@ -38,16 +38,17 @@ typedef struct gr_face            gr_fac
+@@ -38,16 +38,18 @@ typedef struct gr_face            gr_fac
  #include <stdio.h>
  #endif
  
@@ -113,6 +122,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  class gfxFont;
  class gfxFontFamily;
  class gfxFontGroup;
++class gfxGraphiteShaper;
 +class gfxHarfBuzzShaper;
  class gfxUserFontSet;
  class gfxUserFontData;
@@ -122,29 +132,148 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
  class gfxMathTable;
  class gfxTextContextPaint;
  class FontInfoData;
-@@ -1484,16 +1485,18 @@ public:
-     // options to specify the kind of AA to be used when creating a font
-     typedef enum {
-         kAntialiasDefault,
-         kAntialiasNone,
-         kAntialiasGrayscale,
-         kAntialiasSubpixel
-     } AntialiasOption;
+@@ -1452,16 +1454,20 @@ public:
  
-+    const gfxHarfBuzzShaper* GetHarfBuzzShaper();
-+
  protected:
-     nsAutoRefCnt mRefCnt;
-     cairo_scaled_font_t *mScaledFont;
+     // the font this shaper is working with
+     gfxFont * mFont;
+ };
  
-     void NotifyReleased() {
-         gfxFontCache *cache = gfxFontCache::GetCache();
-         if (cache) {
-             // Don't delete just yet; return the object to the cache for
+ /* a SPECIFIC single font family */
+ class gfxFont {
++
++    friend class gfxHarfBuzzShaper;
++    friend class gfxGraphiteShaper;
++
+ public:
+     nsrefcnt AddRef(void) {
+         NS_PRECONDITION(int32_t(mRefCnt) >= 0, "illegal refcnt");
+         if (mExpirationState.IsTracked()) {
+             gfxFontCache::GetCache()->RemoveObject(this);
+         }
+         ++mRefCnt;
+         NS_LOG_ADDREF(this, mRefCnt, "gfxFont", sizeof(*this));
+@@ -1579,29 +1585,18 @@ public:
+     virtual bool ProvidesGetGlyph() const {
+         return false;
+     }
+     // Map unicode character to glyph ID.
+     // Only used if ProvidesGetGlyph() returns true.
+     virtual uint32_t GetGlyph(uint32_t unicode, uint32_t variation_selector) {
+         return 0;
+     }
+-
+-    // subclasses may provide (possibly hinted) glyph widths (in font units);
+-    // if they do not override this, harfbuzz will use unhinted widths
+-    // derived from the font tables
+-    virtual bool ProvidesGlyphWidths() {
+-        return false;
+-    }
+-
+-    // The return value is interpreted as a horizontal advance in 16.16 fixed
+-    // point format.
+-    virtual int32_t GetGlyphWidth(gfxContext *aCtx, uint16_t aGID) {
+-        return -1;
+-    }
++    // Return the horizontal advance of a glyph.
++    gfxFloat GetGlyphHAdvance(gfxContext *aCtx, uint16_t aGID);
+ 
+     // Return Azure GlyphRenderingOptions for drawing this font.
+     virtual mozilla::TemporaryRef<mozilla::gfx::GlyphRenderingOptions>
+       GetGlyphRenderingOptions() { return nullptr; }
+ 
+     gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
+ 
+     // Font metrics
+@@ -1887,16 +1882,29 @@ public:
+     }
+ 
+     static void DestroySingletons() {
+         delete sScriptTagToCode;
+         delete sDefaultFeatures;
+     }
+ 
+ protected:
++    // subclasses may provide (possibly hinted) glyph widths (in font units);
++    // if they do not override this, harfbuzz will use unhinted widths
++    // derived from the font tables
++    virtual bool ProvidesGlyphWidths() {
++        return false;
++    }
++
++    // The return value is interpreted as a horizontal advance in 16.16 fixed
++    // point format.
++    virtual int32_t GetGlyphWidth(gfxContext *aCtx, uint16_t aGID) {
++        return -1;
++    }
++
+     void AddGlyphChangeObserver(GlyphChangeObserver *aObserver);
+     void RemoveGlyphChangeObserver(GlyphChangeObserver *aObserver);
+ 
+     // whether font contains substitution lookups containing spaces
+     bool HasSubstitutionRulesWithSpaceLookups(int32_t aRunScript);
+ 
+     // do spaces participate in shaping rules? if so, can't used word cache
+     bool SpaceMayParticipateInShaping(int32_t aRunScript);
 diff --git a/gfx/thebes/gfxHarfBuzzShaper.cpp b/gfx/thebes/gfxHarfBuzzShaper.cpp
 --- a/gfx/thebes/gfxHarfBuzzShaper.cpp
 +++ b/gfx/thebes/gfxHarfBuzzShaper.cpp
-@@ -813,143 +813,155 @@ AddOpenTypeFeature(const uint32_t& aTag,
+@@ -183,20 +183,16 @@ struct HMetrics {
+ // the variable-length metrics[] array is immediately followed by:
+ //  AutoSwap_PRUint16    leftSideBearing[];
+ };
+ 
+ hb_position_t
+ gfxHarfBuzzShaper::GetGlyphHAdvance(gfxContext *aContext,
+                                     hb_codepoint_t glyph) const
+ {
+-    if (mUseFontGlyphWidths) {
+-        return mFont->GetGlyphWidth(aContext, glyph);
+-    }
+-
+     // font did not implement GetHintedGlyphWidth, so get an unhinted value
+     // directly from the font tables
+ 
+     NS_ASSERTION((mNumLongMetrics > 0) && mHmtxTable != nullptr,
+                  "font is lacking metrics, we shouldn't be here");
+ 
+     if (glyph >= uint32_t(mNumLongMetrics)) {
+         glyph = mNumLongMetrics - 1;
+@@ -206,23 +202,29 @@ gfxHarfBuzzShaper::GetGlyphHAdvance(gfxC
+     // that mNumLongMetrics is > 0, and that the hmtx table is large enough
+     // to contain mNumLongMetrics records
+     const HMetrics* hmtx =
+         reinterpret_cast<const HMetrics*>(hb_blob_get_data(mHmtxTable, nullptr));
+     return FloatToFixed(mFont->FUnitsToDevUnitsFactor() *
+                         uint16_t(hmtx->metrics[glyph].advanceWidth));
+ }
+ 
+-static hb_position_t
+-HBGetGlyphHAdvance(hb_font_t *font, void *font_data,
+-                   hb_codepoint_t glyph, void *user_data)
++/* static */
++hb_position_t
++gfxHarfBuzzShaper::HBGetGlyphHAdvance(hb_font_t *font, void *font_data,
++                                      hb_codepoint_t glyph, void *user_data)
+ {
+     const gfxHarfBuzzShaper::FontCallbackData *fcd =
+         static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
+-    return fcd->mShaper->GetGlyphHAdvance(fcd->mContext, glyph);
++    gfxFont *gfxfont = fcd->mShaper->GetFont();
++    if (gfxfont->ProvidesGlyphWidths()) {
++        return gfxfont->GetGlyphWidth(fcd->mContext, glyph);
++    } else {
++        return fcd->mShaper->GetGlyphHAdvance(fcd->mContext, glyph);
++    }
+ }
+ 
+ static hb_bool_t
+ HBGetContourPoint(hb_font_t *font, void *font_data,
+                   unsigned int point_index, hb_codepoint_t glyph,
+                   hb_position_t *x, hb_position_t *y,
+                   void *user_data)
+ {
+@@ -813,143 +815,155 @@ AddOpenTypeFeature(const uint32_t& aTag,
   */
  
  static hb_font_funcs_t * sHBFontFuncs = nullptr;
@@ -156,7 +285,7 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.cpp b/gfx/thebes/gfxHarfBuzzShaper.cpp
 +gfxHarfBuzzShaper::Initialize()
 +{
 +    if (mInitialized) {
-+        return true;
++        return mHBFont != nullptr;
 +    }
 +    mInitialized = true;
 +    mCallbackData.mShaper = this;
@@ -218,6 +347,9 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.cpp b/gfx/thebes/gfxHarfBuzzShaper.cpp
 +            FindPreferredSubtable(data, len,
 +                                  &mSubtableOffset, &mUVSTableOffset,
 +                                  &symbol);
++        if (mCmapFormat <= 0) {
++            return false;
++        }
 +    }
 +
 +    if (!mUseFontGlyphWidths) {
@@ -249,6 +381,9 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.cpp b/gfx/thebes/gfxHarfBuzzShaper.cpp
 +                    }
 +                }
 +            }
++        }
++        if (!mHmtxTable) {
++            return false;
 +        }
 +    }
 +
@@ -376,13 +511,12 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.cpp b/gfx/thebes/gfxHarfBuzzShaper.cpp
 -        hb_font_set_ppem(mHBFont, mFont->GetAdjustedSize(), mFont->GetAdjustedSize());
 -        uint32_t scale = FloatToFixed(mFont->GetAdjustedSize()); // 16.16 fixed-point
 -        hb_font_set_scale(mHBFont, scale, scale);
+-    }
+-
+-    if ((!mUseFontGetGlyph && mCmapFormat <= 0) ||
+-        (!mUseFontGlyphWidths && !mHmtxTable)) {
+-        // unable to shape with this font
 +    if (!Initialize()) {
-+        return false;
-     }
- 
-     if ((!mUseFontGetGlyph && mCmapFormat <= 0) ||
-         (!mUseFontGlyphWidths && !mHmtxTable)) {
-         // unable to shape with this font
          return false;
      }
  
@@ -421,6 +555,28 @@ diff --git a/gfx/thebes/gfxHarfBuzzShaper.h b/gfx/thebes/gfxHarfBuzzShaper.h
                             gfxShapedText   *aShapedText);
  
      // get a given font table in harfbuzz blob form
+@@ -37,16 +38,21 @@ public:
+     // map unicode character to glyph ID
+     hb_codepoint_t GetGlyph(hb_codepoint_t unicode,
+                             hb_codepoint_t variation_selector) const;
+ 
+     // get harfbuzz glyph advance, in font design units
+     hb_position_t GetGlyphHAdvance(gfxContext *aContext,
+                                    hb_codepoint_t glyph) const;
+ 
++    // get harfbuzz horizontal advance in 16.16 fixed point format.
++    static hb_position_t
++    HBGetGlyphHAdvance(hb_font_t *font, void *font_data,
++                       hb_codepoint_t glyph, void *user_data);
++
+     hb_position_t GetHKerning(uint16_t aFirstGlyph,
+                               uint16_t aSecondGlyph) const;
+ 
+ protected:
+     nsresult SetGlyphsFromRun(gfxContext      *aContext,
+                               gfxShapedText   *aShapedText,
+                               uint32_t         aOffset,
+                               uint32_t         aLength,
 diff --git a/gfx/thebes/gfxPangoFonts.cpp b/gfx/thebes/gfxPangoFonts.cpp
 --- a/gfx/thebes/gfxPangoFonts.cpp
 +++ b/gfx/thebes/gfxPangoFonts.cpp
@@ -445,49 +601,10 @@ diff --git a/gfx/thebes/gfxPangoFonts.cpp b/gfx/thebes/gfxPangoFonts.cpp
      NS_WARN_IF_FALSE(ok, "shaper failed, expect scrambled or missing text");
  
      PostShapingFixup(aContext, aText, aOffset, aLength, aShapedText);
-diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
---- a/gfx/thebes/moz.build
-+++ b/gfx/thebes/moz.build
-@@ -19,16 +19,17 @@ EXPORTS += [
-     'gfxFailure.h',
-     'gfxFont.h',
-     'gfxFontConstants.h',
-     'gfxFontFeatures.h',
-     'gfxFontInfoLoader.h',
-     'gfxFontTest.h',
-     'gfxFontUtils.h',
-     'gfxGradientCache.h',
-+    'gfxHarfBuzzShaper.h',
-     'gfxImageSurface.h',
-     'gfxLineSegment.h',
-     'gfxMathTable.h',
-     'gfxMatrix.h',
-     'gfxPath.h',
-     'gfxPattern.h',
-     'gfxPlatform.h',
-     'gfxPoint.h',
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -23,16 +23,17 @@
- #include "nsCSSRendering.h"
- #include "prprf.h"         // For PR_snprintf()
- 
- #include "nsDisplayList.h"
- 
- #include "nsMathMLOperators.h"
- #include <algorithm>
- 
-+#include "gfxHarfBuzzShaper.h"
- #include "gfxMathTable.h"
- 
- using namespace mozilla;
- 
- //#define NOISY_SEARCH 1
- 
- static const float kLargeOpFactor = float(M_SQRT2);
- static const float kIntegralFactor = 2.0;
-@@ -536,19 +537,20 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
+@@ -536,19 +536,20 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
    gfxTextRunFactory::Parameters params = {
      aThebesContext, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevPixel
    };
@@ -501,8 +618,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -  detailedGlyph.mAdvance = 0;
 +  detailedGlyph.mAdvance =
 +    NSToCoordRound(aAppUnitsPerDevPixel *
-+                   aFontGroup->GetFontAt(0)->GetHarfBuzzShaper()->
-+                   GetGlyphHAdvance(aThebesContext, aGlyph.glyphID) / 65536.0);
++                   aFontGroup->GetFontAt(0)->
++                   GetGlyphHAdvance(aThebesContext, aGlyph.glyphID));
    detailedGlyph.mXOffset = detailedGlyph.mYOffset = 0;
    gfxShapedText::CompressedGlyph g;
    g.SetComplex(true, true, 1);
@@ -511,7 +628,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return textRun;
  }
  
-@@ -1147,21 +1149,16 @@ MeasureTextRun(gfxContext* aThebesContex
+@@ -1147,21 +1148,16 @@ MeasureTextRun(gfxContext* aThebesContex
                            aThebesContext, nullptr);
  
    nsBoundingMetrics bm;
@@ -533,7 +650,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  public:
    StretchEnumContext(nsMathMLChar*        aChar,
                       nsPresContext*       aPresContext,
-@@ -1296,20 +1293,22 @@ StretchEnumContext::TryVariants(nsGlyphT
+@@ -1296,20 +1292,22 @@ StretchEnumContext::TryVariants(nsGlyphT
  
      nsAutoPtr<gfxTextRun> textRun;
      textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
