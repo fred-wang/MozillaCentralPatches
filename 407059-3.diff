@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 80192680b5d9060b993dc20ba5209e958cb78547
+# Parent 7167567854b932b9ca2422cfe2c820ec2c261346
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3: remove mathfontAsanaMath.properties and STIX 1.0 beta. r=karl, b=407059
 
@@ -291,7 +291,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -310,7 +310,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // cleartype settings - false implies default system settings
  
@@ -329,7 +329,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXSize1, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+pref("font.mathfont-family", "MathJax_Main, STIX Math, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
++pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
  
  // individual font faces to be treated as independent families
  // names are Postscript names of each face
@@ -337,4 +337,4 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
- pref("font.preload-names-list", "Hiragino Kaku Gothic Pro,Hiragino Mincho Pro,STSong");
+ pref("font.preload-names-list", "Hiragino Kaku Gothic ProN,Hiragino Mincho ProN,STSong");

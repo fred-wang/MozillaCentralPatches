@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent ff9a4b3723e646f56e1b7595f425da0d9248ab4c
+# Parent e99d30fc9344dd042e3284a2367e11b2c51adaba
 # User Frédéric Wang <fred.wang@free.fr>
 Part 6 - Reftests. r=karl, b=961365
 
@@ -287,13 +287,13 @@ diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math
  # Draw boxes for the size variants and glues
  for i in range(0, nvariants):
      s = em * (i + 1)
-@@ -223,8 +232,267 @@ for i in [1, 2, 6, 8, 10]:
-     p.lineTo(0, s)
+@@ -224,8 +233,267 @@ for i in [1, 2, 7, 8, 9]:
+     p.lineTo(s, 0)
      p.closePath();
      g.width = s
  
- f[largeop[0]].verticalVariants = "L7 L8 L9"
- f[largeop[1]].verticalVariants = "L8"
+ f[largeop[0]].verticalVariants = "uni2A1B L7 L8 L9"
+ f[largeop[1]].verticalVariants = "uni2A1C L8"
  
  saveMathFont(f)
 +
@@ -1167,7 +1167,7 @@ z@d{j~+4guvuZU-~@82I1-a@bYVv<cH%kQUX)mjtvAQmBv#yP9<JnPA$$weVIuV*dG
 KiYER+ME?m$&E6aU
 
 diff --git a/layout/reftests/fonts/math/stretchy.otf b/layout/reftests/fonts/math/stretchy.otf
-index b019fe3dc4ce5ceaabe4514b867d2520d7bebc97..3ce7766433a26e3a2ae361e561431f7f619cb12b
+index f192de346316ee35c7da99356a83361b28ed7b61..3ce7766433a26e3a2ae361e561431f7f619cb12b
 GIT binary patch
 literal 3236
 zc%0o<Yitx%6h3Eny4%OFT?&*ULo+Q%%B$U79)$`<C@g|4#nAAB5MbL5Y)QAfZnxzT
@@ -2199,7 +2199,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -145,16 +145,22 @@ skip-if(B2G) == maction-dynamic-1.html m
+@@ -148,16 +148,22 @@ skip-if(B2G) == maction-dynamic-1.html m
  == mo-invisibleoperators-2.html mo-invisibleoperators-2-ref.html
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
  == whitespace-trim-1.html whitespace-trim-1-ref.html
@@ -2207,7 +2207,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == whitespace-trim-3.html whitespace-trim-3-ref.html
  fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
  == whitespace-trim-5.html whitespace-trim-5-ref.html
- == opentype-stretchy.html opentype-stretchy-ref.html
+ fails-if(winWidget&&!d2d) == opentype-stretchy.html opentype-stretchy-ref.html
 +== opentype-axis-height.html data:text/html,<body>Pass
 +== opentype-radical.html data:text/html,<body>Pass
 +== opentype-fraction.html data:text/html,<body>Pass

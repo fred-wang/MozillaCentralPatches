@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 80e27fcbc5fe1b779704c17119ebce5f7dae3172
+# Parent 9a4bfdebc7063ee4e7645e174adef465046d2637
 # User Frédéric Wang <fred.wang@free.fr>
 Part 5: reftest. r=karl, b=407059
 
@@ -18,7 +18,7 @@ diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/fonts/math/generate.py
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,231 @@
 +#!/usr/bin/python
 +# vim: set shiftwidth=4 tabstop=8 autoindent expandtab:
 +# This Source Code Form is subject to the terms of the Mozilla Public
@@ -39,7 +39,7 @@ new file mode 100644
 +from __future__ import print_function
 +import fontforge
 +
-+em = 1024
++em = 1000
 +
 +def newMathFont(aName):
 +    print("Generating %s.otf..." % aName, end="")
@@ -98,9 +98,9 @@ new file mode 100644
 +    g = f.createChar(-1, "v%d" % i)
 +    p = g.glyphPen()
 +    p.moveTo(0, 0)
-+    p.lineTo(2 * em, 0)
-+    p.lineTo(2 * em, s)
 +    p.lineTo(0, s)
++    p.lineTo(2 * em, s)
++    p.lineTo(2 * em, 0)
 +    p.closePath();
 +    g.width = 2 * em
 +
@@ -139,9 +139,9 @@ new file mode 100644
 +g = f.createChar(-1, "bottom")
 +p = g.glyphPen()
 +p.moveTo(0, 0)
-+p.lineTo(4 * em, 0)
-+p.lineTo(2 * em, s)
 +p.lineTo(0, s)
++p.lineTo(2 * em, s)
++p.lineTo(4 * em, 0)
 +p.closePath();
 +g.width = 4 * em
 +
@@ -195,34 +195,35 @@ new file mode 100644
 +    g = f.createChar(vstretchy[i])
 +    p = g.glyphPen()
 +    p.moveTo(0, 0)
-+    p.lineTo(2 * em/10, 0)
-+    p.lineTo(2 * em/10, s)
 +    p.lineTo(0, s)
++    p.lineTo(2 * em/10, s)
++    p.lineTo(2 * em/10, 0)
 +    p.closePath();
 +    g.width = 2 * em/10
 +
 +# hstretchy[0] and vstretchy[0] have all the variants and the components. The others only have one of them.
 +s = em * nvariants
 +
-+f[hstretchy[0]].horizontalVariants = "h0 h1 h2"
++f[hstretchy[0]].horizontalVariants = "uni219C h0 h1 h2"
 +f[hstretchy[0]].horizontalComponents = (("left", False, 0, 0, s), \
 +("h2", True, 0, 0, s), ("hmid", False, 0, 0, 2 * s), ("h2", True, 0, 0, s), \
 +("right", False, 0, 0, s))
 +
-+f[hstretchy[1]].horizontalVariants = "h0"
-+f[hstretchy[2]].horizontalVariants = "h1"
-+f[hstretchy[3]].horizontalVariants = "h2"
++f[hstretchy[1]].horizontalVariants = "uni219D h0"
++f[hstretchy[2]].horizontalVariants = "uni219E h1"
++f[hstretchy[3]].horizontalVariants = "uni21A0 h2"
++f[hstretchy[4]].horizontalVariants = "uni21A2 h2"
 +f[hstretchy[4]].horizontalComponents = f[hstretchy[0]].horizontalComponents
 +
-+
-+f[vstretchy[0]].verticalVariants = "v0 v1 v2"
++f[vstretchy[0]].verticalVariants = "uni219F v0 v1 v2"
 +f[vstretchy[0]].verticalComponents = (("bottom", False, 0, 0, s), \
 +("v2", True, 0, 0, s), ("vmid", False, 0, 0, 2 * s), ("v2", True, 0, 0, s), \
 +("top", False, 0, 0, s))
 +
-+f[vstretchy[1]].verticalVariants = "v0"
-+f[vstretchy[2]].verticalVariants = "v1"
-+f[vstretchy[3]].verticalVariants = "v2"
++f[vstretchy[1]].verticalVariants = "uni21A1 v0"
++f[vstretchy[2]].verticalVariants = "uni21A5 v1"
++f[vstretchy[3]].verticalVariants = "uni21A7 v2"
++f[vstretchy[4]].verticalVariants = "uni21A8"
 +f[vstretchy[4]].verticalComponents = f[vstretchy[0]].verticalComponents
 +
 +################################################################################
@@ -239,53 +240,53 @@ new file mode 100644
 +        g = f.createChar(-1, "L%d" % i)
 +    p = g.glyphPen()
 +    p.moveTo(0, 0)
-+    p.lineTo(s, 0)
-+    p.lineTo(s, s)
 +    p.lineTo(0, s)
++    p.lineTo(s, s)
++    p.lineTo(s, 0)
 +    p.closePath();
 +    g.width = s
 +
-+f[largeop[0]].verticalVariants = "L7 L8 L9"
-+f[largeop[1]].verticalVariants = "L8"
++f[largeop[0]].verticalVariants = "uni2A1B L7 L8 L9"
++f[largeop[1]].verticalVariants = "uni2A1C L8"
 +
 +saveMathFont(f)
 diff --git a/layout/reftests/fonts/math/stretchy.otf b/layout/reftests/fonts/math/stretchy.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9b6152716a49f365ebf69db743cb9958768952fb
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f192de346316ee35c7da99356a83361b28ed7b61
 GIT binary patch
-literal 3248
-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
-G*8c#%%1$Hz
+literal 3336
+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
 
 diff --git a/layout/reftests/mathml/opentype-stretchy-ref.html b/layout/reftests/mathml/opentype-stretchy-ref.html
 new file mode 100644
@@ -446,7 +447,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -144,16 +144,17 @@ skip-if(B2G) == maction-dynamic-1.html m
+@@ -147,16 +147,17 @@ skip-if(B2G) == maction-dynamic-1.html m
  == mo-invisibleoperators.html mo-invisibleoperators-ref.html
  == mo-invisibleoperators-2.html mo-invisibleoperators-2-ref.html
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
@@ -455,7 +456,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == whitespace-trim-3.html whitespace-trim-3-ref.html
  fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
  == whitespace-trim-5.html whitespace-trim-5-ref.html
-+== opentype-stretchy.html opentype-stretchy-ref.html
++fails-if(winWidget&&!d2d) == opentype-stretchy.html opentype-stretchy-ref.html
  == operator-1.xhtml operator-1-ref.xhtml
  == scriptshift-1.xhtml scriptshift-1-ref.xhtml
  == number-size-1.xhtml number-size-1-ref.xhtml

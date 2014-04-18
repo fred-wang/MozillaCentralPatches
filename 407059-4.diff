@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 1d7ccee8b92e41d52c7d7280d5be7aad060ce9d2
+# Parent 1f8e76285b0293651d00f31ae266cdd61275c572
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4: Use gfxHarfbuzzShaper::GetGlyphHAdvance() for math operators. r=jfkthame, b=407059
 
@@ -96,7 +96,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
 +    }
 +    gfxHarfBuzzShaper* shaper =
 +        static_cast<gfxHarfBuzzShaper*>(mHarfBuzzShaper.get());
-+    if (!shaper->Initialize()) {
++    if (!shaper->Initialize() || !SetupCairoFont(aCtx)) {
 +        return 0;
 +    }
 +    return shaper->GetGlyphHAdvance(aCtx, aGID) / 65536.0;
@@ -604,7 +604,7 @@ diff --git a/gfx/thebes/gfxPangoFonts.cpp b/gfx/thebes/gfxPangoFonts.cpp
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -536,19 +536,20 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
+@@ -537,19 +537,20 @@ nsOpenTypeTable::MakeTextRun(gfxContext*
    gfxTextRunFactory::Parameters params = {
      aThebesContext, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevPixel
    };
@@ -628,7 +628,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    return textRun;
  }
  
-@@ -1147,21 +1148,16 @@ MeasureTextRun(gfxContext* aThebesContex
+@@ -1148,21 +1149,16 @@ MeasureTextRun(gfxContext* aThebesContex
                            aThebesContext, nullptr);
  
    nsBoundingMetrics bm;
@@ -650,7 +650,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  public:
    StretchEnumContext(nsMathMLChar*        aChar,
                       nsPresContext*       aPresContext,
-@@ -1296,20 +1292,22 @@ StretchEnumContext::TryVariants(nsGlyphT
+@@ -1297,20 +1293,22 @@ StretchEnumContext::TryVariants(nsGlyphT
  
      nsAutoPtr<gfxTextRun> textRun;
      textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
