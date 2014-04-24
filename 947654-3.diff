@@ -1,56 +1,8 @@
 # HG changeset patch
-# Parent dc1b9a94b7f792e31a5832d1ecb63c7e0c4e6889
+# Parent 38efd054706a82b8a9485a8f456f56162fc67c09
 # User Frédéric Wang <fred.wang@free.fr>
 Part 3: Remove old glyph tables and merge the legacy tables for the STIXGeneral set. r=karlt
 
-diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
---- a/layout/mathml/mathfont.properties
-+++ b/layout/mathml/mathfont.properties
-@@ -5,43 +5,17 @@
- #  LOCALIZATION NOTE: FILE
- #  Do not translate anything in this file
- 
- # List of fonts that have corresponding properties files containing special
- # glyph tables for stretching MathML characters.  See the documentation at the
- # end of this file for details on the setup of the property file associated to
- # each font.  Do not include the Unicode table in this list.
- 
--%ifdef XP_WIN
--font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L, Symbol
--%else
--font.mathfont-glyph-tables = MathJax_Main, STIXNonUnicode, STIXSizeOneSym, Standard Symbols L
--%endif
--
--# The ordered list of fonts with which to attempt to stretch MathML
--# characters is controlled by setting pref("font.mathfont-family",
--# "CMSY10, CMEX10, ...") for example, or by setting the font-family list in
--# :-moz-math-stretchy in mathml.css.
--#
--# Preferred fonts for particular stretchy characters may be specified in
--# preferences.  Each entry is specified using the Unicode format of the
--# character, and the comma-separated list of fonts like in the font-family
--# property of CSS.  A character can request different fonts for its variants
--# and for its parts.
--# e.g. pref("font.mathfont-family.\\u2264.base", "CMSY10, etc")
--# - A ".base" extension indicates the ordered list fonts to look for the glyph
--#   at its base size.
--# - The ".variants" extension indicates the ordered list of fonts where to
--#   look for glyphs of larger sizes.
--# - The ".parts" extension indicates the ordered list of fonts that should be
--#   used to look for the partial glyphs to be used to build up the character.
--#
--# Note: setting base fonts for non-stretchy characters only works
--# for operators that are ultimately handled by nsMathMLChar.
--# @see how |useMathMLChar| is set in nsMathMLmoFrame::Stretch() & Paint().
-+font.mathfont-glyph-tables = MathJax_Main, STIXGeneral
- 
- # Operator Dictionary indexed on the "form" (i.e., infix, prefix, or suffix).
- # Each entry lists the attributes of the operator, using its Unicode format.
- 
- operator.\u0021.postfix = lspace:1 rspace:0 # !
- operator.\u0021\u0021.postfix = lspace:1 rspace:0 # !!
- operator.\u0021\u003D.infix = lspace:4 rspace:4 # !=
- operator.\u0025.infix = lspace:3 rspace:3 # percent sign
 diff --git a/layout/mathml/mathfontSTIXGeneral.properties b/layout/mathml/mathfontSTIXGeneral.properties
 new file mode 100644
 --- /dev/null
@@ -490,3 +442,31 @@ diff --git a/layout/mathml/moz.build b/layout/mathml/moz.build
 -    RESOURCE_FILES.fonts += [
 -        'mathfontSymbol.properties',
 -    ]
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -695,23 +695,17 @@ InitGlobals(nsPresContext* aPresContext)
+     gGlyphTableList = nullptr;
+     return rv;
+   }
+   // The gGlyphTableList has been successfully registered as a shutdown
+   // observer and will be deleted at shutdown. We now add some private
+   // per font-family tables for stretchy operators, in order of preference.
+   // Do not include the Unicode table in this list.
+   if (!gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("MathJax_Main")) ||
+-      !gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIXNonUnicode")) ||
+-      !gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIXSizeOneSym")) ||
+-      !gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("Standard Symbols L"))
+-#ifdef XP_WIN
+-      || !gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("Symbol"))
+-#endif
+-      ) {
++      !gGlyphTableList->AddGlyphTable(NS_LITERAL_STRING("STIX General"))) {
+     rv = NS_ERROR_OUT_OF_MEMORY;
+   }
+ 
+   return rv;
+ }
+ 
+ // -----------------------------------------------------------------------------
+ // And now the implementation of nsMathMLChar

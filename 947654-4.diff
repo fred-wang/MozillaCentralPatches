@@ -1,14 +1,15 @@
 # HG changeset patch
-# Parent c0057137a898469a00a638043d13f989f4c604de
+# Parent f6fbbab3c6205e02072dccca4d4a453b43f01469
 # User Frédéric Wang <fred.wang@free.fr>
-Part 4: Make the font-family on <math> and <mtext> tags to be -moz-use-math-font (font.name-list.mathml preference) and 'initial' respectively. b=947654, r=karlt, heycam.
+Part 4: Make the font-family on <math> and <mtext> be font.name-list.mathml preference and 'initial' respectively. b=947654, r=karlt, heycam.
 
  <math> tags from a  and
 
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -1484,16 +1484,34 @@ nsPresContext::GetDefaultFont(uint8_t aF
+@@ -1435,16 +1435,33 @@ nsPresContext::GetDefaultFont(uint8_t aF
+     default:
        font = nullptr;
        NS_ERROR("invalid arg");
        break;
@@ -16,13 +17,12 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
    return font;
  }
  
- void
-+nsPresContext::GetDefaultMathFont(nsFont& aFont)
++const nsString&
++nsPresContext::GetDefaultMathFont()
 +{
 +  if (!mMathFontFamilyPref.IsEmpty()) {
 +    // use the cached preference
-+    aFont.name = mMathFontFamilyPref;
-+    return;
++    return mMathFontFamilyPref;
 +  }
 +
 +  nsAdoptingString value = Preferences::GetString("font.name-list.mathml");
@@ -31,10 +31,10 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 +    mMathFontFamilyPref.Append((char16_t)',');
 +  }
 +  mMathFontFamilyPref.AppendLiteral("serif");
-+  aFont.name = mMathFontFamilyPref;
++  return mMathFontFamilyPref;
 +}
 +
-+void
+ void
  nsPresContext::SetFullZoom(float aZoom)
  {
    if (!mShell || mFullZoom == aZoom) {
@@ -42,11 +42,10 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
    }
  
    // Re-fetch the view manager's window dimensions in case there's a deferred
-   // resize which hasn't affected our mVisibleArea yet
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -350,16 +350,18 @@ public:
+@@ -350,16 +350,20 @@ public:
     * For aFontID corresponding to a CSS Generic, the nsFont returned has
     * its name set to that generic font's name, and its size set to
     * the user's preference for font size for that generic and the
@@ -55,7 +54,9 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    NS_HIDDEN_(const nsFont*) GetDefaultFont(uint8_t aFontID,
                                             nsIAtom *aLanguage) const;
  
-+  void GetDefaultMathFont(nsFont& aFont);
++
++  /* Get the default font-family to use for MathML. */
++  const nsString& GetDefaultMathFont();
 +
    /** Get a cached boolean pref, by its type */
    // *  - initially created for bugs 31816, 20760, 22963
@@ -65,7 +66,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
      // this switch statement away.
      switch (aPrefType) {
      case kPresContext_UseDocumentFonts:
-@@ -1100,16 +1102,19 @@ protected:
+@@ -1118,16 +1122,19 @@ protected:
    const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const;
  
    void ResetCachedFontPrefs() {
@@ -85,7 +86,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    void DoChangeCharSet(const nsCString& aCharSet);
  
    /**
-@@ -1231,16 +1236,18 @@ protected:
+@@ -1250,16 +1257,18 @@ protected:
  
    bool mExistThrottledUpdates;
  
@@ -104,10 +105,143 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
  
    // last time animations styles were flushed to their primary frames
    mozilla::TimeStamp    mLastUpdateThrottledAnimationStyle;
+diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
+--- a/layout/base/nsPresShell.cpp
++++ b/layout/base/nsPresShell.cpp
+@@ -1282,16 +1282,19 @@ PresShell::SetPreferenceStyleRules(bool 
+       result = SetPrefFocusRules();
+     }
+     if (NS_SUCCEEDED(result)) {
+       result = SetPrefNoScriptRule();
+     }
+     if (NS_SUCCEEDED(result)) {
+       result = SetPrefNoFramesRule();
+     }
++    if (NS_SUCCEEDED(result)) {
++      result = SetPrefMathFontFamilyRule();
++    }
+ #ifdef DEBUG_attinasi
+     printf( "Preference Style Rules set: error=%ld\n", (long)result);
+ #endif
+ 
+     // Note that this method never needs to force any calculation; the caller
+     // will recalculate style if needed
+ 
+     return result;
+@@ -1337,16 +1340,23 @@ PresShell::CreatePreferenceStyleSheet()
+     mPrefStyleSheet = nullptr;
+     return rv;
+   }
+   NS_ASSERTION(uri, "null but no error");
+   mPrefStyleSheet->SetURIs(uri, uri, uri);
+   mPrefStyleSheet->SetComplete();
+   uint32_t index;
+   rv =
++    mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace m url(http://www.w3.org/1998/Math/MathML);"),
++                                        0, &index);
++  if (NS_FAILED(rv)) {
++    mPrefStyleSheet = nullptr;
++    return rv;
++  }
++  rv =
+     mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace svg url(http://www.w3.org/2000/svg);"),
+                                         0, &index);
+   if (NS_FAILED(rv)) {
+     mPrefStyleSheet = nullptr;
+     return rv;
+   }
+   rv =
+     mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace url(http://www.w3.org/1999/xhtml);"),
+@@ -1358,17 +1368,17 @@ PresShell::CreatePreferenceStyleSheet()
+ 
+   mStyleSet->AppendStyleSheet(nsStyleSet::eUserSheet, mPrefStyleSheet);
+   return NS_OK;
+ }
+ 
+ // XXX We want these after the @namespace rules.  Does order matter
+ // for these rules, or can we call StyleRule::StyleRuleCount()
+ // and just "append"?
+-static uint32_t sInsertPrefSheetRulesAt = 2;
++static uint32_t sInsertPrefSheetRulesAt = 3;
+ 
+ nsresult
+ PresShell::SetPrefNoScriptRule()
+ {
+   nsresult rv = NS_OK;
+ 
+   // also handle the case where print is done from print preview
+   // see bug #342439 for more details
+@@ -1576,16 +1586,45 @@ nsresult PresShell::SetPrefFocusRules(vo
+         result = mPrefStyleSheet->
+           InsertRuleInternal(strRule, sInsertPrefSheetRulesAt, &index);
+       }
+     }
+   }
+   return result;
+ }
+ 
++nsresult
++PresShell::SetPrefMathFontFamilyRule()
++{
++  NS_ASSERTION(mPresContext, "null prescontext not allowed");
++  if (!mPresContext) {
++    return NS_ERROR_FAILURE;
++  }
++
++  nsresult rv = NS_OK;
++
++  if (!mPrefStyleSheet) {
++    rv = CreatePreferenceStyleSheet();
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
++  NS_ASSERTION(mPrefStyleSheet, "prefstylesheet should not be null");
++
++  nsAutoString mathFontFamilyRule;
++  mathFontFamilyRule.AppendLiteral("m|math { font-family: ");
++  mathFontFamilyRule.Append(mPresContext->GetDefaultMathFont());
++  mathFontFamilyRule.AppendLiteral("; }");
++
++  uint32_t index = 0;
++  rv = mPrefStyleSheet->
++    InsertRuleInternal(mathFontFamilyRule, sInsertPrefSheetRulesAt, &index);
++
++  return rv;
++}
++
+ void
+ PresShell::AddUserSheet(nsISupports* aSheet)
+ {
+   // Make sure this does what nsDocumentViewer::CreateStyleSet does wrt
+   // ordering. We want this new sheet to come after all the existing stylesheet
+   // service sheets, but before other user sheets; see nsIStyleSheetService.idl
+   // for the ordering.  Just remove and readd all the nsStyleSheetService
+   // sheets.
+diff --git a/layout/base/nsPresShell.h b/layout/base/nsPresShell.h
+--- a/layout/base/nsPresShell.h
++++ b/layout/base/nsPresShell.h
+@@ -474,16 +474,17 @@ protected:
+     *  - initially created for bugs 31816, 20760, 22963
+     */
+   nsresult ClearPreferenceStyleRules(void);
+   nsresult CreatePreferenceStyleSheet(void);
+   nsresult SetPrefLinkRules(void);
+   nsresult SetPrefFocusRules(void);
+   nsresult SetPrefNoScriptRule();
+   nsresult SetPrefNoFramesRule(void);
++  nsresult SetPrefMathFontFamilyRule();
+ 
+   // methods for painting a range to an offscreen buffer
+ 
+   // given a display list, clip the items within the list to
+   // the range
+   nsRect ClipListToRange(nsDisplayListBuilder *aBuilder,
+                          nsDisplayList* aList,
+                          nsRange* aRange);
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -6,27 +6,28 @@
+@@ -6,27 +6,29 @@
  /**************************************************************************/
  /* namespace for MathML elements                                          */
  /**************************************************************************/
@@ -130,7 +264,8 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    font-size: inherit;
    font-style: normal;
 -  font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
-+  font-family: -moz-use-math-font; /* see font.name-list.mathml */
++  /* The default font-family is given by the font.name-list.mathml preference,
++     see PresShell::SetPrefMathFontFamilyRule. */
    text-rendering: optimizeLegibility;
    -moz-float-edge: margin-box;
    -moz-math-display: inline;
@@ -139,7 +274,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    display: block;
    text-align: -moz-center;
    -moz-math-display: block;
-@@ -52,17 +53,23 @@ ms {
+@@ -52,17 +54,24 @@ ms {
  ms:before, ms:after {
    content: "\0022"
  }
@@ -151,8 +286,9 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 - }
 +}
 +/* <mtext> elements are likely to use characters that are specific to the
-+   language of the document and that one may not find in math fonts, so we reset
-+   font-family to use the default preference and get consistent glyphs. */
++   language of the document and these characters may not be found in math fonts,
++   so we reset font-family to use the default preference and get consistent
++   glyphs. */
 +mtext {
 +  font-family: initial;
 +}
@@ -164,223 +300,10 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    text-decoration: none !important;
  }
  
-diff --git a/layout/style/nsCSSKeywordList.h b/layout/style/nsCSSKeywordList.h
---- a/layout/style/nsCSSKeywordList.h
-+++ b/layout/style/nsCSSKeywordList.h
-@@ -139,16 +139,17 @@ CSS_KEY(-moz-simp-chinese-formal, _moz_s
- CSS_KEY(-moz-simp-chinese-informal, _moz_simp_chinese_informal)
- CSS_KEY(-moz-stack, _moz_stack)
- CSS_KEY(-moz-tamil, _moz_tamil)
- CSS_KEY(-moz-telugu, _moz_telugu)
- CSS_KEY(-moz-thai, _moz_thai)
- CSS_KEY(-moz-trad-chinese-formal, _moz_trad_chinese_formal)
- CSS_KEY(-moz-trad-chinese-informal, _moz_trad_chinese_informal)
- CSS_KEY(-moz-urdu, _moz_urdu)
-+CSS_KEY(-moz-use-math-font, _moz_use_math_font)
- CSS_KEY(-moz-use-system-font, _moz_use_system_font)
- CSS_KEY(-moz-use-text-color, _moz_use_text_color)
- CSS_KEY(-moz-visitedhyperlinktext, _moz_visitedhyperlinktext)
- CSS_KEY(-moz-window, _moz_window)
- CSS_KEY(-moz-workspace, _moz_workspace)
- CSS_KEY(-moz-zoom-in, _moz_zoom_in)
- CSS_KEY(-moz-zoom-out, _moz_zoom_out)
- CSS_KEY(absolute, absolute)
-diff --git a/layout/style/nsCSSParser.cpp b/layout/style/nsCSSParser.cpp
---- a/layout/style/nsCSSParser.cpp
-+++ b/layout/style/nsCSSParser.cpp
-@@ -10376,16 +10376,21 @@ CSSParserImpl::ParseFamily(nsCSSValue& a
-       aValue.SetUnsetValue();
-       return true;
-     }
-     if (keyword == eCSSKeyword__moz_use_system_font &&
-         !IsParsingCompoundProperty()) {
-       aValue.SetSystemFontValue();
-       return true;
-     }
-+    if (keyword == eCSSKeyword__moz_use_math_font &&
-+        !IsParsingCompoundProperty()) {
-+      aValue.SetMathFontValue();
-+      return true;
-+    }
-   }
- 
-   for (;;) {
-     if (!ExpectSymbol(',', true))
-       break;
- 
-     family.Append(char16_t(','));
- 
-@@ -10397,16 +10402,17 @@ CSSParserImpl::ParseFamily(nsCSSValue& a
-     // as font family names but can appear within names
-     if (single) {
-       nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(nextFamily);
-       switch (keyword) {
-         case eCSSKeyword_inherit:
-         case eCSSKeyword_initial:
-         case eCSSKeyword_default:
-         case eCSSKeyword__moz_use_system_font:
-+        case eCSSKeyword__moz_use_math_font:
-           return false;
-         case eCSSKeyword_unset:
-           if (nsLayoutUtils::UnsetValueEnabled()) {
-             return false;
-           }
-           // fall through
-         default:
-           break;
-diff --git a/layout/style/nsCSSValue.cpp b/layout/style/nsCSSValue.cpp
---- a/layout/style/nsCSSValue.cpp
-+++ b/layout/style/nsCSSValue.cpp
-@@ -630,16 +630,22 @@ void nsCSSValue::SetNormalValue()
- }
- 
- void nsCSSValue::SetSystemFontValue()
- {
-   Reset();
-   mUnit = eCSSUnit_System_Font;
- }
- 
-+void nsCSSValue::SetMathFontValue()
-+{
-+  Reset();
-+  mUnit = eCSSUnit_Math_Font;
-+}
-+
- void nsCSSValue::SetDummyValue()
- {
-   Reset();
-   mUnit = eCSSUnit_Dummy;
- }
- 
- void nsCSSValue::SetDummyInheritValue()
- {
-@@ -1312,16 +1318,17 @@ nsCSSValue::AppendToString(nsCSSProperty
-     case eCSSUnit_Null:         break;
-     case eCSSUnit_Auto:         aResult.AppendLiteral("auto");     break;
-     case eCSSUnit_Inherit:      aResult.AppendLiteral("inherit");  break;
-     case eCSSUnit_Initial:      aResult.AppendLiteral("initial");  break;
-     case eCSSUnit_Unset:        aResult.AppendLiteral("unset");    break;
-     case eCSSUnit_None:         aResult.AppendLiteral("none");     break;
-     case eCSSUnit_Normal:       aResult.AppendLiteral("normal");   break;
-     case eCSSUnit_System_Font:  aResult.AppendLiteral("-moz-use-system-font"); break;
-+    case eCSSUnit_Math_Font:    aResult.AppendLiteral("-moz-use-math-font"); break;
-     case eCSSUnit_All:          aResult.AppendLiteral("all"); break;
-     case eCSSUnit_Dummy:
-     case eCSSUnit_DummyInherit:
-       NS_ABORT_IF_FALSE(false, "should never serialize");
-       break;
- 
-     case eCSSUnit_String:       break;
-     case eCSSUnit_Ident:        break;
-@@ -1410,16 +1417,17 @@ nsCSSValue::SizeOfExcludingThis(mozilla:
-     case eCSSUnit_Null:
-     case eCSSUnit_Auto:
-     case eCSSUnit_Inherit:
-     case eCSSUnit_Initial:
-     case eCSSUnit_Unset:
-     case eCSSUnit_None:
-     case eCSSUnit_Normal:
-     case eCSSUnit_System_Font:
-+    case eCSSUnit_Math_Font:
-     case eCSSUnit_All:
-     case eCSSUnit_Dummy:
-     case eCSSUnit_DummyInherit:
-       break;
- 
-     // String
-     case eCSSUnit_String:
-     case eCSSUnit_Ident:
-diff --git a/layout/style/nsCSSValue.h b/layout/style/nsCSSValue.h
---- a/layout/style/nsCSSValue.h
-+++ b/layout/style/nsCSSValue.h
-@@ -143,29 +143,30 @@ enum nsCSSUnit {
-   eCSSUnit_Null         = 0,      // (n/a) null unit, value is not specified
-   eCSSUnit_Auto         = 1,      // (n/a) value is algorithmic
-   eCSSUnit_Inherit      = 2,      // (n/a) value is inherited
-   eCSSUnit_Initial      = 3,      // (n/a) value is default UA value
-   eCSSUnit_Unset        = 4,      // (n/a) value equivalent to 'initial' if on a reset property, 'inherit' otherwise
-   eCSSUnit_None         = 5,      // (n/a) value is none
-   eCSSUnit_Normal       = 6,      // (n/a) value is normal (algorithmic, different than auto)
-   eCSSUnit_System_Font  = 7,      // (n/a) value is -moz-use-system-font
--  eCSSUnit_All          = 8,      // (n/a) value is all
--  eCSSUnit_Dummy        = 9,      // (n/a) a fake but specified value, used
-+  eCSSUnit_Math_Font    = 8,     // (n/a) value is -moz-use-math-font
-+  eCSSUnit_All          = 9,      // (n/a) value is all
-+  eCSSUnit_Dummy        = 10,      // (n/a) a fake but specified value, used
-                                   //       only in temporary values
--  eCSSUnit_DummyInherit = 10,     // (n/a) a fake but specified value, used
-+  eCSSUnit_DummyInherit = 11,     // (n/a) a fake but specified value, used
-                                   //       only in temporary values
- 
--  eCSSUnit_String       = 11,     // (char16_t*) a string value
--  eCSSUnit_Ident        = 12,     // (char16_t*) a string value
--  eCSSUnit_Families     = 13,     // (char16_t*) a string value
--  eCSSUnit_Attr         = 14,     // (char16_t*) a attr(string) value
--  eCSSUnit_Local_Font   = 15,     // (char16_t*) a local font name
--  eCSSUnit_Font_Format  = 16,     // (char16_t*) a font format name
--  eCSSUnit_Element      = 17,     // (char16_t*) an element id
-+  eCSSUnit_String       = 12,     // (char16_t*) a string value
-+  eCSSUnit_Ident        = 13,     // (char16_t*) a string value
-+  eCSSUnit_Families     = 14,     // (char16_t*) a string value
-+  eCSSUnit_Attr         = 15,     // (char16_t*) a attr(string) value
-+  eCSSUnit_Local_Font   = 16,     // (char16_t*) a local font name
-+  eCSSUnit_Font_Format  = 17,     // (char16_t*) a font format name
-+  eCSSUnit_Element      = 18,     // (char16_t*) an element id
- 
-   eCSSUnit_Array        = 20,     // (nsCSSValue::Array*) a list of values
-   eCSSUnit_Counter      = 21,     // (nsCSSValue::Array*) a counter(string,[string]) value
-   eCSSUnit_Counters     = 22,     // (nsCSSValue::Array*) a counters(string,string[,string]) value
-   eCSSUnit_Cubic_Bezier = 23,     // (nsCSSValue::Array*) a list of float values
-   eCSSUnit_Steps        = 24,     // (nsCSSValue::Array*) a list of (integer, enumerated)
-   eCSSUnit_Function     = 25,     // (nsCSSValue::Array*) a function with
-                                   //  parameters.  First elem of array is name,
-@@ -559,16 +560,17 @@ public:
-   void SetAutoValue();
-   void SetInheritValue();
-   void SetInitialValue();
-   void SetUnsetValue();
-   void SetNoneValue();
-   void SetAllValue();
-   void SetNormalValue();
-   void SetSystemFontValue();
-+  void SetMathFontValue();
-   void SetDummyValue();
-   void SetDummyInheritValue();
- 
-   // These are a little different - they allocate storage for you and
-   // return a handle.
-   nsCSSRect& SetRectValue();
-   nsCSSValueList* SetListValue();
-   nsCSSValuePairList* SetPairListValue();
-diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
---- a/layout/style/nsRuleNode.cpp
-+++ b/layout/style/nsRuleNode.cpp
-@@ -3307,16 +3307,21 @@ nsRuleNode::SetFont(nsPresContext* aPres
-     // SetGenericFont (bug 380915).
-     aFont->mGenericID = aGenericFontID;
-   }
-   else if (eCSSUnit_System_Font == familyValue->GetUnit()) {
-     aFont->mFont.name = systemFont.name;
-     aFont->mFont.systemFont = true;
-     aFont->mGenericID = kGenericFont_NONE;
-   }
-+  else if (eCSSUnit_Math_Font == familyValue->GetUnit()) {
-+    aPresContext->GetDefaultMathFont(aFont->mFont);
-+    aFont->mFont.systemFont = false;
-+    aFont->mGenericID = kGenericFont_NONE;
-+  }
-   else if (eCSSUnit_Inherit == familyValue->GetUnit() ||
-            eCSSUnit_Unset == familyValue->GetUnit()) {
-     aCanStoreInRuleTree = false;
-     aFont->mFont.name = aParentFont->mFont.name;
-     aFont->mFont.systemFont = aParentFont->mFont.systemFont;
-     aFont->mGenericID = aParentFont->mGenericID;
-   }
-   else if (eCSSUnit_Initial == familyValue->GetUnit()) {
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -2130,16 +2130,19 @@ pref("ui.mouse.radius.topmm", 12);
+@@ -2213,16 +2213,19 @@ pref("ui.mouse.radius.topmm", 12);
  pref("ui.mouse.radius.rightmm", 8);
  pref("ui.mouse.radius.bottommm", 4);
  pref("ui.mouse.radius.visitedWeight", 120);
