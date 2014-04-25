@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 469ca18d4018d91014428b45b6f88ffdda3f7d50
+# Parent c6b2b9942bd3891a14d0b3df3e7b94d3fd59fce6
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1: Remove the font.mathfont-family preference. b=947654, r=karlt
 
@@ -189,7 +189,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1521,18 +1521,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1520,18 +1520,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -198,7 +198,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("intl.hyphenation-alias.nb-*", "nb");
  pref("intl.hyphenation-alias.nn-*", "nn");
  
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Standard Symbols L, DejaVu Sans, Cambria Math");
+-pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Sans");
 -
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
  // These fonts are ignored the underline offset, instead of it, the underline is lowered to bottom of its em descent.
@@ -208,7 +208,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
  // unless features are explicitly enabled.
-@@ -2550,19 +2548,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -2545,19 +2543,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 16);
  pref("font.size.fixed.zh-TW", 16);
@@ -228,7 +228,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
  
-@@ -3082,19 +3077,16 @@ pref("font.size.fixed.zh-CN", 16);
+@@ -3077,19 +3072,16 @@ pref("font.size.fixed.zh-CN", 16);
  pref("font.default.zh-TW", "sans-serif");
  pref("font.size.variable.zh-TW", 15);
  pref("font.size.fixed.zh-TW", 16);
@@ -238,7 +238,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  pref("font.size.fixed.zh-HK", 16);
  
 -// Apple's Symbol is Unicode so use it
--pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
+-pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Sans");
 -
  // individual font faces to be treated as independent families
  // names are Postscript names of each face
