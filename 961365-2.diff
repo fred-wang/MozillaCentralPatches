@@ -48,7 +48,7 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -175,16 +175,23 @@ public:
+@@ -181,16 +181,23 @@ public:
    {
      if (TryGetMathTable(aFontMetrics)) {
        aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
@@ -75,7 +75,7 @@ diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
-@@ -202,17 +202,17 @@ nsMathMLmencloseFrame::BuildDisplayList(
+@@ -207,17 +207,17 @@ nsMathMLmencloseFrame::BuildDisplayList(
    mencloseRect.x = mencloseRect.y = 0;
  
    if (IsToDraw(NOTATION_RADICAL)) {
@@ -89,12 +89,12 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
      DisplayBar(aBuilder, this, rect, aLists);
    }
  
-   if (IsToDraw(NOTATION_LONGDIV)) {
-     mMathMLChar[mLongDivCharIndex].Display(aBuilder, this, aLists, 1);
+   if (IsToDraw(NOTATION_PHASORANGLE)) {
+     DisplayNotation(aBuilder, this, mencloseRect, aLists,
+                 mRuleThickness, NOTATION_PHASORANGLE);
+   }
  
-     nsRect rect;
-     mMathMLChar[mLongDivCharIndex].GetRect(rect);
-@@ -314,59 +314,60 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -324,59 +324,60 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
      }
  
    nsBoundingMetrics bmBase = baseSize.mBoundingMetrics;
@@ -170,7 +170,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
        IsToDraw(NOTATION_CIRCLE))
      dx_left = padding;
  
-@@ -497,32 +498,32 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -516,32 +517,32 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
          GetMaxWidth(PresContext(), aRenderingContext);
        
        // Update horizontal parameters
@@ -206,7 +206,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
                                         radicalAscent);
        mBoundingMetrics.descent = std::max(mBoundingMetrics.descent,
                                          radicalDescent);
-@@ -548,35 +549,31 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
+@@ -567,35 +568,31 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
    
    aDesiredSize.Width() = mBoundingMetrics.width;
  
@@ -246,7 +246,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 diff --git a/layout/mathml/nsMathMLmencloseFrame.h b/layout/mathml/nsMathMLmencloseFrame.h
 --- a/layout/mathml/nsMathMLmencloseFrame.h
 +++ b/layout/mathml/nsMathMLmencloseFrame.h
-@@ -97,16 +97,17 @@ protected:
+@@ -104,16 +104,17 @@ protected:
    // Description of the notations to draw
    uint32_t mNotationsToDraw;
    bool IsToDraw(nsMencloseNotation mask)
