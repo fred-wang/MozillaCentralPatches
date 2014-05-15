@@ -1,12 +1,270 @@
 # HG changeset patch
-# Parent 89b5f6dce9d7f78cbd39f37a05889b2892bce6aa
+# Parent 428ce70674d8c677daa2b673d0ede891ace13c12
 # User Frédéric Wang <fred.wang@free.fr>
-Part 1 - Add helper functions to access MATH constants and use them to get the AxisHeight. r=karl, b=961365
+Part 1 - Add helper functions to access MATH constants and use them to get the AxisHeight. r=jfkthame, b=961365
 
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -406,17 +406,17 @@ gfxFontEntry::NotifyGlyphsChanged()
+ {
+     for (uint32_t i = 0, count = mFontsUsingSVGGlyphs.Length(); i < count; ++i) {
+         gfxFont* font = mFontsUsingSVGGlyphs[i];
+         font->NotifyGlyphsChanged();
+     }
+ }
+ 
+ bool
+-gfxFontEntry::TryGetMathTable(gfxFont* aFont)
++gfxFontEntry::TryGetMathTable()
+ {
+     if (!mMathInitialized) {
+         mMathInitialized = true;
+ 
+         // If UnitsPerEm is not known/valid, we can't use MATH table
+         if (UnitsPerEm() == kInvalidUPEM) {
+             return false;
+         }
+@@ -3527,16 +3527,38 @@ gfxFont::NotifyGlyphsChanged()
+         mGlyphExtentsArray[i]->NotifyGlyphsChanged();
+     }
+ 
+     if (mGlyphChangeObservers) {
+         mGlyphChangeObservers->EnumerateEntries(NotifyGlyphChangeObservers, nullptr);
+     }
+ }
+ 
++bool
++gfxFont::GetMathConstant(gfxFontEntry::MathConstant aConstant,
++                         uint32_t aAppUnitsPerDevPixel, nscoord& aValue)
++{
++    if (!mFontEntry->TryGetMathTable()) {
++        return false;
++    }
++    aValue = NSToCoordRound(mFontEntry->GetMathConstant(aConstant) *
++                            GetAdjustedSize() * aAppUnitsPerDevPixel);
++    return true;
++}
++
++bool
++gfxFont::GetMathConstant(gfxFontEntry::MathConstant aConstant, float& aValue)
++{
++    if (!mFontEntry->TryGetMathTable()) {
++        return false;
++    }
++    aValue = mFontEntry->GetMathConstant(aConstant);
++    return true;
++}
++
+ static bool
+ IsBoundarySpace(char16_t aChar, char16_t aNextChar)
+ {
+     return (aChar == ' ' || aChar == 0x00A0) && !IsClusterExtender(aNextChar);
+ }
+ 
+ static inline uint32_t
+ HashMix(uint32_t aHash, char16_t aCh)
+@@ -4711,16 +4733,29 @@ gfxFontGroup::HasFont(const gfxFontEntry
+     return false;
+ }
+ 
+ gfxFontGroup::~gfxFontGroup()
+ {
+     mFonts.Clear();
+ }
+ 
++gfxFont *
++gfxFontGroup::GetFirstMathFont()
++{
++    uint32_t count = mFonts.Length();
++    for (uint32_t i = 0; i < count; ++i) {
++        gfxFont* font = GetFontAt(i);
++        if (font->GetFontEntry()->TryGetMathTable()) {
++            return font;
++        }
++    }
++    return nullptr;
++}
++
+ gfxFontGroup *
+ gfxFontGroup::Copy(const gfxFontStyle *aStyle)
+ {
+     gfxFontGroup *fg = new gfxFontGroup(mFamilies, aStyle, mUserFontSet);
+     fg->SetTextPerfMetrics(mTextPerf);
+     return fg;
+ }
+ 
+diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
+--- a/gfx/thebes/gfxFont.h
++++ b/gfx/thebes/gfxFont.h
+@@ -375,17 +375,17 @@ public:
+         RadicalKernBeforeDegree,
+         RadicalKernAfterDegree,
+         RadicalDegreeBottomRaisePercent
+     };
+ 
+     // Call TryGetMathTable to try to load the Open Type MATH table. The other
+     // functions forward the call to the gfxMathTable class. The GetMath...()
+     // functions MUST NOT be called unless TryGetMathTable() has returned true.
+-    bool     TryGetMathTable(gfxFont* aFont);
++    bool     TryGetMathTable();
+     gfxFloat GetMathConstant(MathConstant aConstant);
+     bool     GetMathItalicsCorrection(uint32_t aGlyphID,
+                                       gfxFloat* aItalicCorrection);
+     uint32_t GetMathVariantsSize(uint32_t aGlyphID, bool aVertical,
+                                  uint16_t aSize);
+     bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
+                                   uint32_t aGlyphs[4]);
+ 
+@@ -1893,16 +1893,25 @@ public:
+         return mFontEntry->TryGetSVGData(this);
+     }
+ 
+     static void DestroySingletons() {
+         delete sScriptTagToCode;
+         delete sDefaultFeatures;
+     }
+ 
++    // Get a font dimension from the MATH table, scaled to appUnits;
++    // returns true if it succeeds, false if no MATH table is available.
++    bool GetMathConstant(gfxFontEntry::MathConstant aConstant,
++                         uint32_t aAppUnitsPerDevPixel,
++                         nscoord& aValue);
++    // Get a dimensionless math constant (e.g. a percentage);
++    // returns true if it succeeds, false if no MATH table is available.
++    bool GetMathConstant(gfxFontEntry::MathConstant aConstant, float& aValue);
++
+ protected:
+     // subclasses may provide (possibly hinted) glyph widths (in font units);
+     // if they do not override this, harfbuzz will use unhinted widths
+     // derived from the font tables
+     virtual bool ProvidesGlyphWidths() {
+         return false;
+     }
+ 
+@@ -3480,16 +3489,20 @@ public:
+                      "Whoever was caching this font group should have "
+                      "called UpdateFontList on it");
+         NS_ASSERTION(mFonts.Length() > uint32_t(i) && mFonts[i].Font(), 
+                      "Requesting a font index that doesn't exist");
+ 
+         return mFonts[i].Font();
+     }
+ 
++    // Returns the first font in the font-group that has an OpenType MATH table,
++    // or null if no such font is available.
++    gfxFont *GetFirstMathFont();
++
+     uint32_t FontListLength() const {
+         return mFonts.Length();
+     }
+ 
+     const gfxFontStyle *GetStyle() const { return &mStyle; }
+ 
+     virtual gfxFontGroup *Copy(const gfxFontStyle *aStyle);
+ 
+diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
+--- a/layout/mathml/nsMathMLChar.cpp
++++ b/layout/mathml/nsMathMLChar.cpp
+@@ -411,17 +411,17 @@ public:
+                                   gfxFontGroup*      aFontGroup,
+                                   const nsGlyphCode& aGlyph) MOZ_OVERRIDE;
+ 
+   // This returns a new OpenTypeTable instance to give access to OpenType MATH
+   // table or nullptr if the font does not have such table. Ownership is passed
+   // to the caller.
+   static nsOpenTypeTable* Create(gfxFont* aFont)
+   {
+-    if (!aFont->GetFontEntry()->TryGetMathTable(aFont)) {
++    if (!aFont->GetFontEntry()->TryGetMathTable()) {
+       return nullptr;
+     }
+     return new nsOpenTypeTable(aFont->GetFontEntry());
+   }
+ 
+ private:
+   nsRefPtr<gfxFontEntry> mFontEntry;
+   uint32_t mGlyphID;
+@@ -1155,36 +1155,37 @@ StretchEnumContext::TryVariants(nsGlyphT
+   int32_t size = 1;
+   nsGlyphCode ch;
+   nscoord displayOperatorMinHeight = 0;
+   if (largeopOnly) {
+     NS_ASSERTION(isVertical, "Stretching should be in the vertical direction");
+     ch = aGlyphTable->BigOf(mThebesContext, oneDevPixel, *aFontGroup, uchar,
+                             isVertical, 0);
+     if (ch.IsGlyphID()) {
+-      gfxFont* mathFont = aFontGroup->get()->GetFontAt(0);
++      gfxFont* mathFont = aFontGroup->get()->GetFirstMathFont();
+       // For OpenType MATH fonts, we will rely on the DisplayOperatorMinHeight
+       // to select the right size variant. Note that the value is sometimes too
+       // small so we use kLargeOpFactor/kIntegralFactor as a minimum value.
+-      displayOperatorMinHeight =
+-        NSToCoordRound(mathFont->GetFontEntry()->
+-                       GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight) *
+-                       mathFont->GetAdjustedSize() * oneDevPixel);
+-      nsAutoPtr<gfxTextRun> textRun;
+-      textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
+-                                         *aFontGroup, ch);
+-      nsBoundingMetrics bm = MeasureTextRun(mThebesContext, textRun);
+-      float largeopFactor = kLargeOpFactor;
+-      if (NS_STRETCH_INTEGRAL & mStretchHint) {
+-        // integrals are drawn taller
+-        largeopFactor = kIntegralFactor;
+-      }
+-      nscoord minHeight = largeopFactor * (bm.ascent + bm.descent);
+-      if (displayOperatorMinHeight < minHeight) {
+-        displayOperatorMinHeight = minHeight;
++      if (mathFont &&
++          mathFont->GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight,
++                                    oneDevPixel,
++                                    displayOperatorMinHeight)) {
++        nsAutoPtr<gfxTextRun> textRun;
++        textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
++                                           *aFontGroup, ch);
++        nsBoundingMetrics bm = MeasureTextRun(mThebesContext, textRun);
++        float largeopFactor = kLargeOpFactor;
++        if (NS_STRETCH_INTEGRAL & mStretchHint) {
++          // integrals are drawn taller
++          largeopFactor = kIntegralFactor;
++        }
++        nscoord minHeight = largeopFactor * (bm.ascent + bm.descent);
++        if (displayOperatorMinHeight < minHeight) {
++          displayOperatorMinHeight = minHeight;
++        }
+       }
+     }
+   }
+ #ifdef NOISY_SEARCH
+   printf("  searching in %s ...\n",
+            NS_LossyConvertUTF16toASCII(aFamily).get());
+ #endif
+   while ((ch = aGlyphTable->BigOf(mThebesContext, oneDevPixel, *aFontGroup,
+@@ -1198,18 +1199,18 @@ StretchEnumContext::TryVariants(nsGlyphT
+       continue;
+     }
+ 
+     nsAutoPtr<gfxTextRun> textRun;
+     textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
+                                        *aFontGroup, ch);
+     nsBoundingMetrics bm = MeasureTextRun(mThebesContext, textRun);
+     if (ch.IsGlyphID()) {
+-      gfxFont* mathFont = aFontGroup->get()->GetFontAt(0);
+-      if (mathFont->GetFontEntry()->TryGetMathTable(mathFont)) {
++      gfxFont* mathFont = aFontGroup->get()->GetFirstMathFont();
++      if (mathFont) {
+         // MeasureTextRun should have set the advance width to the right
+         // bearing for OpenType MATH fonts. We now subtract the italic
+         // correction, so that nsMathMLmmultiscripts will place the scripts
+         // correctly.
+         // Note that STIX-Word does not provide italic corrections but its
+         // advance widths do not match right bearings.
+         // (http://sourceforge.net/p/stixfonts/tracking/50/)
+         gfxFloat italicCorrection;
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -171,16 +171,22 @@ nsMathMLFrame::GetRuleThickness(nsRender
+@@ -171,16 +171,23 @@ nsMathMLFrame::GetRuleThickness(nsRender
    }
  }
  
@@ -15,9 +273,10 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
                               nsFontMetrics*      aFontMetrics,
                               nscoord&             aAxisHeight)
  {
-+  if (TryGetMathTable(aFontMetrics)) {
-+    // The font has a MATH table so we just used the specified axis height.
-+    GetMathConstantEm(aFontMetrics, gfxFontEntry::AxisHeight, aAxisHeight);
++  gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
++  if (mathFont && mathFont->GetMathConstant(gfxFontEntry::AxisHeight,
++                                            aFontMetrics->AppUnitsPerDevPixel(),
++                                            aAxisHeight)) {
 +    return;
 +  }
 +
@@ -29,74 +288,3 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
  
    nscoord xHeight = aFontMetrics->XHeight();
    char16_t minus = 0x2212; // not '-', but official Unicode minus sign
-diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
---- a/layout/mathml/nsMathMLFrame.h
-+++ b/layout/mathml/nsMathMLFrame.h
-@@ -9,16 +9,18 @@
- #include "mozilla/Attributes.h"
- #include "nsFontMetrics.h"
- #include "nsMathMLOperators.h"
- #include "nsIMathMLFrame.h"
- #include "nsLayoutUtils.h"
- #include "nsBoundingMetrics.h"
- #include "nsIFrame.h"
- 
-+#include "gfxMathTable.h"
-+
- class nsMathMLChar;
- class nsCSSValue;
- class nsDisplayListSet;
- 
- // Concrete base class with default methods that derived MathML frames can override
- class nsMathMLFrame : public nsIMathMLFrame {
- public:
- 
-@@ -154,16 +156,48 @@ public:
-     if (aFrame->IsFrameOfType(nsIFrame::eMathML)) {
-       nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
-       if (mathMLFrame)
-         return mathMLFrame->GetMathMLFrameType();
-     }
-     return eMathMLFrameType_UNKNOWN;
-   }
- 
-+  static bool
-+  TryGetMathTable(nsFontMetrics* aFontMetrics)
-+  {
-+    gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
-+    return mathFont->GetFontEntry()->TryGetMathTable(mathFont);
-+  }
-+
-+  static void
-+  GetMathConstant(nsFontMetrics*             aFontMetrics,
-+                 gfxFontEntry::MathConstant aConstant,
-+                  float&                     aValue)
-+  {
-+    if (TryGetMathTable(aFontMetrics)) {
-+      aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
-+        GetFontEntry()->GetMathConstant(aConstant);
-+    }
-+  }
-+
-+  static void
-+  GetMathConstantEm(nsFontMetrics*             aFontMetrics,
-+                    gfxFontEntry::MathConstant aConstant,
-+                    nscoord&                   aValue)
-+  {
-+    if (TryGetMathTable(aFontMetrics)) {
-+      gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
-+      aValue = NSToCoordRound(mathFont->GetFontEntry()->
-+                              GetMathConstant(aConstant) *
-+                              mathFont->GetAdjustedSize() * 
-+                              aFontMetrics->AppUnitsPerDevPixel());
-+    }
-+  }
-+
-   // estimate of the italic correction
-   static void
-   GetItalicCorrection(nsBoundingMetrics& aBoundingMetrics,
-                       nscoord&           aItalicCorrection)
-   {
-     aItalicCorrection = aBoundingMetrics.rightBearing - aBoundingMetrics.width;
-     if (0 > aItalicCorrection) {
-       aItalicCorrection = 0;

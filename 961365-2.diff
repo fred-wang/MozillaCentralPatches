@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 7a74ea76955fa6a25168c3d481382abdef9d73ab
+# Parent 8f552f79f1a58eb9ab2793809c7833fd5c27ab91
 # User Frédéric Wang <fred.wang@free.fr>
-Part 2 - Use MATH constants for radicals. r=karl, b=961365
+Part 2 - Use MATH constants for radicals. r=jfkthame, b=961365
 
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -352,8 +352,38 @@ nsMathMLFrame::DisplayBar(nsDisplayListB
+@@ -353,8 +353,51 @@ nsMathMLFrame::DisplayBar(nsDisplayListB
                            nsIFrame* aFrame, const nsRect& aRect,
                            const nsDisplayListSet& aLists) {
    if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty())
@@ -23,55 +23,68 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 +                                    nscoord& aRadicalExtraAscender,
 +                                    nscoord& aRadicalVerticalGap)
 +{
-+  // get the radical rulethickness
-+  GetRuleThickness(aFontMetrics, aRadicalRuleThickness);
-+  GetMathConstantEm(aFontMetrics, gfxFontEntry::RadicalRuleThickness,
-+                    aRadicalRuleThickness);
++  nscoord oneDevPixel = aFontMetrics->AppUnitsPerDevPixel();
++  gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
 +
++  // get the radical rulethickness
++  if (mathFont) {
++    mathFont->GetMathConstant(gfxFontEntry::RadicalRuleThickness,
++                              oneDevPixel, aRadicalRuleThickness);
++  } else {
++    GetRuleThickness(aFontMetrics, aRadicalRuleThickness);
++  }
++  
 +  // get the leading to be left at the top of the resulting frame
-+  // This seems more reliable than using aFontMetrics->GetLeading() on
-+  // suspicious fonts.
-+  nscoord em;
-+  GetEmHeight(aFontMetrics, em);
-+  aRadicalExtraAscender = nscoord(0.2f * em);
-+  GetMathConstantEm(aFontMetrics, gfxFontEntry::RadicalExtraAscender,
-+                    aRadicalExtraAscender);
++  if (mathFont) {
++      mathFont->GetMathConstant(gfxFontEntry::RadicalExtraAscender,
++                                oneDevPixel, aRadicalExtraAscender);
++  } else {
++    // This seems more reliable than using aFontMetrics->GetLeading() on
++    // suspicious fonts.
++    nscoord em;
++    GetEmHeight(aFontMetrics, em);
++    aRadicalExtraAscender = nscoord(0.2f * em);
++  }
 +
 +  // get the clearance between rule and content
-+  // Rule 11, App. G, TeXbook
-+  aRadicalVerticalGap = aRadicalRuleThickness +
-+    (aDisplayStyle ? aFontMetrics->XHeight() : aRadicalRuleThickness) / 4;
-+  GetMathConstantEm(aFontMetrics, aDisplayStyle ?
-+                    gfxFontEntry::RadicalDisplayStyleVerticalGap :
-+                    gfxFontEntry::RadicalVerticalGap, aRadicalVerticalGap);
++  if (mathFont) {
++    mathFont->GetMathConstant(aDisplayStyle ?
++                              gfxFontEntry::RadicalDisplayStyleVerticalGap :
++                              gfxFontEntry::RadicalVerticalGap,
++                              oneDevPixel, aRadicalVerticalGap);
++  } else {
++    // Rule 11, App. G, TeXbook
++    aRadicalVerticalGap = aRadicalRuleThickness +
++      (aDisplayStyle ? aFontMetrics->XHeight() : aRadicalRuleThickness) / 4;
++  }
 +}
 diff --git a/layout/mathml/nsMathMLFrame.h b/layout/mathml/nsMathMLFrame.h
 --- a/layout/mathml/nsMathMLFrame.h
 +++ b/layout/mathml/nsMathMLFrame.h
-@@ -181,16 +181,23 @@ public:
-   {
-     if (TryGetMathTable(aFontMetrics)) {
-       aValue = aFontMetrics->GetThebesFontGroup()->GetFontAt(0)->
-         GetFontEntry()->GetMathConstant(aConstant);
-     }
-   }
+@@ -334,16 +334,23 @@ public:
+                    nsFontMetrics*      aFontMetrics,
+                    nscoord&             aRuleThickness);
  
    static void
+   GetAxisHeight(nsRenderingContext& aRenderingContext, 
+                 nsFontMetrics*      aFontMetrics,
+                 nscoord&             aAxisHeight);
+ 
++  static void
 +  GetRadicalParameters(nsFontMetrics* aFontMetrics,
 +                       bool aDisplayStyle,
 +                       nscoord& aRadicalRuleThickness,
 +                       nscoord& aRadicalExtraAscender,
 +                       nscoord& aRadicalVerticalGap);
 +
-+  static void
-   GetMathConstantEm(nsFontMetrics*             aFontMetrics,
-                     gfxFontEntry::MathConstant aConstant,
-                     nscoord&                   aValue)
-   {
-     if (TryGetMathTable(aFontMetrics)) {
-       gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFontAt(0);
-       aValue = NSToCoordRound(mathFont->GetFontEntry()->
-                               GetMathConstant(aConstant) *
+ protected:
+ #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
+   nsresult DisplayBoundingMetrics(nsDisplayListBuilder* aBuilder,
+                                   nsIFrame* aFrame, const nsPoint& aPt,
+                                   const nsBoundingMetrics& aMetrics,
+                                   const nsDisplayListSet& aLists);
+ #endif
+ 
 diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmencloseFrame.cpp
 --- a/layout/mathml/nsMathMLmencloseFrame.cpp
 +++ b/layout/mathml/nsMathMLmencloseFrame.cpp
@@ -297,7 +310,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
  nsIFrame*
  NS_NewMathMLmrootFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
  {
-@@ -103,45 +94,62 @@ nsMathMLmrootFrame::BuildDisplayList(nsD
+@@ -103,45 +94,63 @@ nsMathMLmrootFrame::BuildDisplayList(nsD
      mSqrChar.GetRect(rect);
      nsBoundingMetrics bm;
      mSqrChar.GetBoundingMetrics(bm);
@@ -321,10 +334,11 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    nscoord dxIndex, dxSqr;
    nscoord xHeight = aFontMetrics->XHeight();
    nscoord indexRadicalKern = NSToCoordRound(1.35f * xHeight);
-+  bool hasMATHTable = TryGetMathTable(aFontMetrics);
-+  if (hasMATHTable) {
-+    GetMathConstantEm(aFontMetrics, gfxFontEntry::RadicalKernAfterDegree,
-+                      indexRadicalKern);
++  nscoord oneDevPixel = aFontMetrics->AppUnitsPerDevPixel();
++  gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
++  if (mathFont) {
++    mathFont->GetMathConstant(gfxFontEntry::RadicalKernAfterDegree, oneDevPixel,
++                              indexRadicalKern);
 +    indexRadicalKern = -indexRadicalKern;
 +  }
    if (indexRadicalKern > aIndexWidth) {
@@ -342,7 +356,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
 -      dxIndex = aSqrWidth - (aIndexWidth + minimumClearance);
 -      dxSqr = 0;
 +
-+  if (!hasMATHTable) {
++  if (!mathFont) {
 +    // avoid collision by leaving a minimum space between index and radical
 +    nscoord minimumClearance = aSqrWidth/2;
 +    if (dxIndex + aIndexWidth + minimumClearance > dxSqr + aSqrWidth) {
@@ -362,8 +376,8 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
 +  } else {
 +    // add some kern before the radical index
 +    nscoord indexRadicalKernBefore = 0;
-+    GetMathConstantEm(aFontMetrics, gfxFontEntry::RadicalKernBeforeDegree,
-+                      indexRadicalKernBefore);
++    mathFont->GetMathConstant(gfxFontEntry::RadicalKernBeforeDegree,
++                              oneDevPixel, indexRadicalKernBefore);
 +    dxIndex += indexRadicalKernBefore;
 +    dxSqr += indexRadicalKernBefore;
    }
@@ -374,7 +388,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
      *aSqrOffset = dxSqr;
  }
  
-@@ -213,41 +221,24 @@ nsMathMLmrootFrame::Reflow(nsPresContext
+@@ -207,41 +216,24 @@ nsMathMLmrootFrame::Reflow(nsPresContext
  
    ////////////
    // Prepare the radical symbol and the overline bar
@@ -421,7 +435,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    if (ruleThickness < onePixel) {
      ruleThickness = onePixel;
    }
-@@ -291,17 +282,21 @@ nsMathMLmrootFrame::Reflow(nsPresContext
+@@ -285,17 +277,24 @@ nsMathMLmrootFrame::Reflow(nsPresContext
             mBoundingMetrics.descent + ruleThickness);
    aDesiredSize.Width() = mBoundingMetrics.width;
  
@@ -432,8 +446,11 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    // of the radical, see \mroot macro in App. B, TexBook
 -  nscoord raiseIndexDelta = NSToCoordRound(0.6f * (bmSqr.ascent + bmSqr.descent));
 +  float raiseIndexPercent = 0.6f;
-+  GetMathConstant(fm, gfxFontEntry::RadicalDegreeBottomRaisePercent,
-+                  raiseIndexPercent);
++  gfxFont* mathFont = fm->GetThebesFontGroup()->GetFirstMathFont();
++  if (mathFont) {
++    mathFont->GetMathConstant(gfxFontEntry::RadicalDegreeBottomRaisePercent,
++                              raiseIndexPercent);
++  }
 +  nscoord raiseIndexDelta = NSToCoordRound(raiseIndexPercent *
 +                                           (bmSqr.ascent + bmSqr.descent));
    nscoord indexRaisedAscent = mBoundingMetrics.ascent // top of radical 
@@ -450,7 +467,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.h b/layout/mathml/nsMathMLmrootFra
 @@ -35,16 +35,22 @@ public:
    TransmitAutomaticData() MOZ_OVERRIDE;
  
-   virtual nsresult
+   virtual void
    Reflow(nsPresContext*          aPresContext,
           nsHTMLReflowMetrics&     aDesiredSize,
           const nsHTMLReflowState& aReflowState,

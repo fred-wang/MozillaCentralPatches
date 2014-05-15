@@ -1,88 +1,52 @@
 # HG changeset patch
-# Parent bd568199abf097f1ed08549a6cd7ed028a926ad4
-# User James Kitchener <jkitch.bug@gmail.com>
-Bug 930504 - Use character substitution for all mathvariants
+# Parent 2f8af55d6e9ae67b0e317e403c58adec42c21fd4
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 930504 - When possible, use character substitution for basic mathvariants. r=karl
 
 diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLTextRunFactory.cpp
 --- a/layout/generic/MathMLTextRunFactory.cpp
 +++ b/layout/generic/MathMLTextRunFactory.cpp
-@@ -583,17 +583,16 @@ MathMLTextRunFactory::RebuildTextRun(nsT
-         settingSSTY.mTag = TRUETYPE_TAG('s','s','t','y');
-         settingSSTY.mValue = sstyLevel;
-         fontStyle.featureSettings.AppendElement(settingSSTY);
-       }
-     }
-   }
- 
-   uint8_t mathVar;
--  bool doMathvariantStyling = true;
- 
-   for (uint32_t i = 0; i < length; ++i) {
-     int extraChars = 0;
-     nsStyleContext* styleContext = styles[i];
-     mathVar = styleContext->StyleFont()->mMathVariant;
- 
-     if (singleCharMI && mathVar == NS_MATHML_MATHVARIANT_NONE) {
-       mathVar = NS_MATHML_MATHVARIANT_ITALIC;
-@@ -601,29 +600,16 @@ MathMLTextRunFactory::RebuildTextRun(nsT
- 
-     uint32_t ch = str[i];
-     if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
-         NS_IS_LOW_SURROGATE(str[i + 1])) {
+@@ -605,23 +605,37 @@ MathMLTextRunFactory::RebuildTextRun(nsT
        ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
      }
      uint32_t ch2 = MathVariant(ch, mathVar);
  
--    if (mathVar == NS_MATHML_MATHVARIANT_BOLD ||
--        mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC ||
--        mathVar == NS_MATHML_MATHVARIANT_ITALIC) {
--      if (ch == ch2  && ch != 0x20 && ch != 0xA0) {
+     if (mathVar == NS_MATHML_MATHVARIANT_BOLD ||
+         mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC ||
+         mathVar == NS_MATHML_MATHVARIANT_ITALIC) {
+       if (ch == ch2  && ch != 0x20 && ch != 0xA0) {
 -        // Don't perform the transformation if a character cannot be
--        // transformed. There is an exception for whitespace as it is both
--        // common and innocuous.
--        doMathvariantStyling = false;
--      }
++        // Don't apply the CSS style if a character cannot be
+         // transformed. There is an exception for whitespace as it is both
+         // common and innocuous.
+         doMathvariantStyling = false;
+       }
 -      // Undo the change as it will be handled as a font styling.
 -      ch2 = ch;
--    }
--
++      if (ch2 != ch) {
++        // Bug 930504. Some platforms do not have fonts for Mathematical
++        // Alphanumeric Symbols. Hence we check whether the transformed
++        // character is actually available.
++        uint8_t matchType;
++        nsRefPtr<gfxFont> mathFont = fontGroup->
++          FindFontForChar(ch2, 0, HB_SCRIPT_COMMON, nullptr, &matchType);
++        if (mathFont) {
++          // Don't apply the CSS style if there is a math font for at least one
++          // of the transformed character in this text run.
++          doMathvariantStyling = false;
++        } else {
++          // We fallback to the original character.
++          ch2 = ch;
++        }
++      }
+     }
+ 
      deletedCharsArray.AppendElement(false);
      charsToMergeArray.AppendElement(false);
      styleArray.AppendElement(styleContext);
      canBreakBeforeArray.AppendElement(aTextRun->CanBreakLineBefore(i));
  
      if (IS_IN_BMP(ch2)) {
-       convertedString.Append(ch2);
-     } else {
-@@ -648,27 +634,17 @@ MathMLTextRunFactory::RebuildTextRun(nsT
-   uint32_t flags;
-   gfxTextRunFactory::Parameters innerParams =
-       GetParametersForInner(aTextRun, &flags, aRefContext);
- 
-   nsAutoPtr<nsTransformedTextRun> transformedChild;
-   nsAutoPtr<gfxTextRun> cachedChild;
-   gfxTextRun* child;
- 
--  if (mathVar == NS_MATHML_MATHVARIANT_BOLD && doMathvariantStyling) {
--    fontStyle.style = NS_FONT_STYLE_NORMAL;
--    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
--  } else if (mathVar == NS_MATHML_MATHVARIANT_ITALIC && doMathvariantStyling) {
--    fontStyle.style = NS_FONT_STYLE_ITALIC;
--    fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
--  } else if (mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC &&
--             doMathvariantStyling) {
--    fontStyle.style = NS_FONT_STYLE_ITALIC;
--    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
--  } else if (mathVar != NS_MATHML_MATHVARIANT_NONE) {
-+  if (mathVar != NS_MATHML_MATHVARIANT_NONE) {
-     // Mathvariant overrides fontstyle and fontweight
-     // Need to check to see if mathvariant is actually applied as this function
-     // is used for other purposes.
-     fontStyle.style = NS_FONT_STYLE_NORMAL;
-     fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
-   }
-   nsRefPtr<gfxFontGroup> newFontGroup = fontGroup->Copy(&fontStyle);
- 
 diff --git a/layout/reftests/mathml/mathvariant-1a-ref.html b/layout/reftests/mathml/mathvariant-1a-ref.html
 --- a/layout/reftests/mathml/mathvariant-1a-ref.html
 +++ b/layout/reftests/mathml/mathvariant-1a-ref.html
@@ -393,3 +357,196 @@ diff --git a/layout/reftests/mathml/mathvariant-2-ref.html b/layout/reftests/mat
        <mrow>
          <mi mathvariant="italic">&imath;</mi>
          <mi mathvariant="italic">&jmath;</mi>
+diff --git a/layout/reftests/mathml/mi-mathvariant-3-ref.html b/layout/reftests/mathml/mi-mathvariant-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mi-mathvariant-3-ref.html
+@@ -0,0 +1,12 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Mathematica Alphanumeric Italic</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++
++    <math><mstyle mathbackground="red"><mphantom><mi>X</mi></mphantom></mstyle></math>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/mi-mathvariant-3.html b/layout/reftests/mathml/mi-mathvariant-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/mi-mathvariant-3.html
+@@ -0,0 +1,14 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Mathematica Alphanumeric Italic</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++
++    <!-- The lowercase italic o should be smaller than the uppercase italic X
++         (this will fail if missing char boxes are used) -->
++    <math><mstyle mathbackground="red"><mphantom><mi>o</mi></mphantom></mstyle></math>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -33,16 +33,17 @@ skip-if(B2G) fails-if(smallScreen&&Andro
+ == mfenced-5d.xhtml mfenced-5-ref.xhtml
+ == mfenced-6.html mfenced-6-ref.html
+ == mfenced-7.html mfenced-7-ref.html
+ != mfenced-8.html mfenced-8-ref.html
+ == mfenced-9.html mfenced-9-ref.html
+ fails-if(/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfenced-10.html mfenced-10-ref.html # Windows versions without Cambria Math, see bug 670592
+ == mi-mathvariant-1.xhtml mi-mathvariant-1-ref.xhtml
+ == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
++!= mi-mathvariant-3.html mi-mathvariant-3-ref.html
+ != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
+ == overbar-width-1.xhtml overbar-width-1-ref.xhtml
+ skip-if(B2G) == quotes-1.xhtml quotes-1-ref.xhtml
+ != stretchy-underbar-1.xhtml stretchy-underbar-1-ref.xhtml 
+ == table-width-1.xhtml table-width-1-ref.xhtml
+ == table-width-2.html table-width-2-ref.html
+ == table-width-3.html table-width-3-ref.html
+ == table-width-4.html table-width-4-ref.html
+@@ -189,17 +190,17 @@ fails-if(B2G) == menclose-2-roundedbox.h
+ fails-if(B2G) == menclose-2-top.html menclose-2-top-ref.html # B2G slight thickness variation
+ fails-if(B2G) == menclose-2-updiagonalarrow.html menclose-2-updiagonalarrow-ref.html # B2G slight thickness variation
+ == menclose-2-updiagonalstrike.html menclose-2-updiagonalstrike-ref.html
+ == menclose-2-verticalstrike.html menclose-2-verticalstrike-ref.html
+ fails-if(B2G) == menclose-2-roundedbox.html menclose-2-roundedbox-ref.html # B2G slight thickness variation
+ == menclose-2-phasorangle.html menclose-2-phasorangle-ref.html
+ == menclose-3-box.html menclose-3-box-ref.html
+ == menclose-3-madruwb.html menclose-3-madruwb-ref.html
+-fails random-if(winWidget) == menclose-3-radical.html menclose-3-radical-ref.html # Bug 973917
++fails-if(B2G||Android||OSX==10.6) == menclose-3-radical.html menclose-3-radical-ref.html # Bug 973917
+ == menclose-3-default.html menclose-3-default-ref.html
+ == menclose-3-invalid.html menclose-3-invalid-ref.html
+ == menclose-3-multiple.html menclose-3-multiple-ref.html
+ == menclose-3-unknown.html menclose-3-unknown.html
+ == menclose-4.html data:text/html,<body>Pass
+ == menclose-5-actuarial.html menclose-5-actuarial-ref.html
+ == menclose-5-bottom.html menclose-5-bottom-ref.html
+ == menclose-5-box.html menclose-5-box-ref.html
+@@ -230,22 +231,22 @@ fuzzy-if(OSX,1,100) == menclose-5-circle
+ == menclose-6-right.html menclose-6-ref.html
+ == menclose-6-roundedbox.html menclose-6-ref.html
+ == menclose-6-top.html menclose-6-ref.html
+ == menclose-6-updiagonalarrow.html menclose-6-ref.html
+ == menclose-6-updiagonalstrike.html menclose-6-ref.html
+ == menclose-6-verticalstrike.html menclose-6-ref.html
+ == menclose-6-phasorangle.html menclose-6-ref.html
+ == mmultiscript-align.html mmultiscript-align-ref.html
+-== subscript-italic-correction.html subscript-italic-correction-ref.html
+-== mathvariant-1a.html mathvariant-1a-ref.html
+-== mathvariant-1b.html mathvariant-1b-ref.html
+-== mathvariant-1c.html mathvariant-1c-ref.html
++fails-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == subscript-italic-correction.html subscript-italic-correction-ref.html # Windows versions with Cambria Math, bug 961482
++fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX==10.6) == mathvariant-1a.html mathvariant-1a-ref.html # Bug 1010679
++fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX==10.6) == mathvariant-1b.html mathvariant-1b-ref.html # Bug 1010679
++fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX==10.6) == mathvariant-1c.html mathvariant-1c-ref.html # Bug 1010679
+ == mathvariant-1d.html mathvariant-1d-ref.html
+-== mathvariant-2.html mathvariant-2-ref.html
++fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX) == mathvariant-2.html mathvariant-2-ref.html # Bugs 1010678, 1010679
+ == mathvariant-3.html mathvariant-3-ref.html
+ == mathvariant-4.html mathvariant-4-ref.html
+ == mathvariant-5.html mathvariant-5-ref.html
+ == ssty-1.html ssty-1-ref.html
+ == ssty-2.html ssty-2-ref.html
+ == ssty-3.html ssty-3-ref.html
+ == ssty-4.html ssty-4-ref.html
+ == mathscript-1.html mathscript-1-ref.html
+diff --git a/layout/reftests/mathml/subscript-italic-correction-ref.html b/layout/reftests/mathml/subscript-italic-correction-ref.html
+--- a/layout/reftests/mathml/subscript-italic-correction-ref.html
++++ b/layout/reftests/mathml/subscript-italic-correction-ref.html
+@@ -4,29 +4,29 @@
+     <title>subscript</title>
+     <meta charset="utf-8"/>
+   </head>
+   <body style="background: #5f5; font-size: 50px;">
+ 
+     <div>
+       <math>
+         <msubsup>
+-          <mi>f</mi>
++          <mi mathbackground="#5f5">f</mi>
+           <mspace id="s0" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s1" width="50px" height="50px" mathbackground="blue"/>
+         </msubsup>
+       </math>
+     </div>
+ 
+     <br/>
+ 
+     <div>
+       <math>
+         <mmultiscripts>
+-          <mi>f</mi>
++          <mi mathbackground="#5f5">f</mi>
+           <mspace id="s2" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s3" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s4" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s5" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s6" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s7" width="50px" height="50px" mathbackground="blue"/>
+         </mmultiscripts>
+       </math>
+diff --git a/layout/reftests/mathml/subscript-italic-correction.html b/layout/reftests/mathml/subscript-italic-correction.html
+--- a/layout/reftests/mathml/subscript-italic-correction.html
++++ b/layout/reftests/mathml/subscript-italic-correction.html
+@@ -1,17 +1,17 @@
+ <!doctype html>
+ <html class="reftest-wait">
+   <head>
+     <title>subscript</title>
+     <meta charset="utf-8"/>
+     <script type="text/javascript">
+       function verifyItalicCorrections()
+       {
+-        var epsilon = 5;
++        var epsilon = 2;
+         for (var i = 0; i < 8; i += 2) {
+           var sub = document.getElementById("s" + i);
+           var sup = document.getElementById("s" + (i+1));
+           var italicCorrection =
+            sup.getBoundingClientRect().left - sub.getBoundingClientRect().left;
+            if (italicCorrection < epsilon) {
+              return false;
+            }
+@@ -29,29 +29,29 @@
+       window.addEventListener("MozReftestInvalidate", doTest, false);
+     </script>
+   </head>
+   <body style="background: #f00; font-size: 50px;">
+ 
+     <div>
+       <math>
+         <msubsup>
+-          <mi>f</mi>
++          <mi mathbackground="#5f5">f</mi>
+           <mspace id="s0" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s1" width="50px" height="50px" mathbackground="blue"/>
+         </msubsup>
+       </math>
+     </div>
+ 
+     <br/>
+ 
+     <div>
+       <math>
+         <mmultiscripts>
+-          <mi>f</mi>
++          <mi mathbackground="#5f5">f</mi>
+           <mspace id="s2" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s3" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s4" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s5" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s6" width="50px" height="50px" mathbackground="blue"/>
+           <mspace id="s7" width="50px" height="50px" mathbackground="blue"/>
+         </mmultiscripts>
+       </math>

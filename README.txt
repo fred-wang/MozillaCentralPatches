@@ -1,4 +1,3 @@
 A set of work-in-progress patches for mozilla-central.
 
-See http://www.wg9s.com/mozilla/firefox/
-
+Windows and Linux builds are available at http://www.wg9s.com/mozilla/firefox/
