@@ -450,7 +450,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.h b/layout/mathml/nsMathMLmrootFra
 @@ -35,16 +35,22 @@ public:
    TransmitAutomaticData() MOZ_OVERRIDE;
  
-   virtual nsresult
+   virtual void
    Reflow(nsPresContext*          aPresContext,
           nsHTMLReflowMetrics&     aDesiredSize,
           const nsHTMLReflowState& aReflowState,
