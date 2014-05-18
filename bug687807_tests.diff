@@ -1,0 +1,1110 @@
+# HG changeset patch
+# Parent d46f464382565fbe75c9ca84caac5f55ad66c25e
+# User James Kitchener <jkitch.bug@gmail.com>
+Bug 687807 - Tests for stretchy MathML r=fredw
+
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -38,16 +38,47 @@ skip-if(B2G) fails-if(smallScreen&&Andro
+ fails-if(/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfenced-10.html mfenced-10-ref.html # Windows versions without Cambria Math, see bug 670592
+ == mi-mathvariant-1.xhtml mi-mathvariant-1-ref.xhtml
+ == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
+ != mi-mathvariant-3.html mi-mathvariant-3-ref.html
+ != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
+ == overbar-width-1.xhtml overbar-width-1-ref.xhtml
+ skip-if(B2G) == quotes-1.xhtml quotes-1-ref.xhtml
+ != stretchy-underbar-1.xhtml stretchy-underbar-1-ref.xhtml 
++!= stretchy-munderover-1a.html stretchy-munderover-1-ref.html
++== stretchy-munderover-1b.html stretchy-munderover-1-ref.html
++== stretchy-munderover-1c.html stretchy-munderover-1-ref.html
++== stretchy-munderover-1d.html stretchy-munderover-1-ref.html
++== stretchy-munderover-1e.html stretchy-munderover-1-ref.html
++!= stretchy-munderover-2a.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2b.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2c.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2d.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2e.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2f.html stretchy-munderover-2-ref.html
++== stretchy-munderover-2g.html stretchy-munderover-2-ref.html
++!= stretchy-munderover-3a.html stretchy-munderover-3-ref.html
++== stretchy-munderover-3b.html stretchy-munderover-3-ref.html
++== stretchy-munderover-3c.html stretchy-munderover-3-ref.html
++== stretchy-msup-1a.html stretchy-msup-1-ref.html
++== stretchy-msup-1b.html stretchy-msup-1-ref.html
++== stretchy-msup-1c.html stretchy-msup-1-ref.html
++== stretchy-msup-1d.html stretchy-msup-1-ref.html
++!= stretchy-mfenced-1a.html stretchy-mfenced-1-ref.html
++!= stretchy-mfenced-1b.html stretchy-mfenced-1-ref.html
++== stretchy-mfenced-2a.html stretchy-mfenced-2-ref.html
++!= stretchy-mfenced-2b.html stretchy-mfenced-2-ref.html
++!= stretchy-mfenced-3a.html stretchy-mfenced-3-ref.html
++!= stretchy-mfenced-3b.html stretchy-mfenced-3-ref.html
++== stretchy-mfenced-4a.html stretchy-mfenced-4-ref.html
++== stretchy-mfenced-4b.html stretchy-mfenced-4-ref.html
++== stretchy-mover-1a.html stretchy-mover-1-ref.html
++== stretchy-mover-1b.html stretchy-mover-1-ref.html
++== stretchy-mover-2a.html stretchy-mover-2-ref.html
++!= stretchy-mover-2b.html stretchy-mover-2-ref.html
+ == table-width-1.xhtml table-width-1-ref.xhtml
+ == table-width-2.html table-width-2-ref.html
+ == table-width-3.html table-width-3-ref.html
+ == table-width-4.html table-width-4-ref.html
+ == underbar-width-1.xhtml underbar-width-1-ref.xhtml
+ == mathml-type-supported.xhtml mathml-type-supported-ref.xml
+ == mtable-align-negative-rownumber.html mtable-align-negative-rownumber-ref.html
+ != embellished-op-1-1.html embellished-op-1-1-ref.html
+diff --git a/layout/reftests/mathml/stretchy-mfenced-1-ref.html b/layout/reftests/mathml/stretchy-mfenced-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-1-ref.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mfenced>
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++      </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-1a.html b/layout/reftests/mathml/stretchy-mfenced-1a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-1a.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mfenced>
++        <munderover>
++          <mo stretchy="false">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++     </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-1b.html b/layout/reftests/mathml/stretchy-mfenced-1b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-1b.html
+@@ -0,0 +1,21 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <mo stretchy="false">(</mo>
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++        <mo stretchy="false">)</mo>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-2-ref.html b/layout/reftests/mathml/stretchy-mfenced-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-2-ref.html
+@@ -0,0 +1,18 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mfenced>
++        <msup>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++        </msup>
++      </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-2a.html b/layout/reftests/mathml/stretchy-mfenced-2a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-2a.html
+@@ -0,0 +1,18 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mfenced>
++        <msup>
++          <mo stretchy="false">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++        </msup>
++      </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-2b.html b/layout/reftests/mathml/stretchy-mfenced-2b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-2b.html
+@@ -0,0 +1,20 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <mo stretchy="false">(</mo>
++        <msup>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++        </msup>
++        <mo stretchy="false">)</mo>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-3-ref.html b/layout/reftests/mathml/stretchy-mfenced-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-3-ref.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mfenced>
++        <msup>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++     </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-3a.html b/layout/reftests/mathml/stretchy-mfenced-3a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-3a.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mfenced>
++        <msup>
++          <munderover>
++            <mo stretchy="false">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++     </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-3b.html b/layout/reftests/mathml/stretchy-mfenced-3b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-3b.html
+@@ -0,0 +1,24 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <mo stretchy="false">(</mo>
++        <msup>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++        <mo stretchy="false">)</mo>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-4-ref.html b/layout/reftests/mathml/stretchy-mfenced-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-4-ref.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mfenced open="&#x2192;" close="&#x2192;">
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++      </mfenced>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-4a.html b/layout/reftests/mathml/stretchy-mfenced-4a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-4a.html
+@@ -0,0 +1,21 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <mo stretchy="false">&#x2192;</mo>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++        <mo stretchy="false">&#x2192;</mo>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mfenced-4b.html b/layout/reftests/mathml/stretchy-mfenced-4b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mfenced-4b.html
+@@ -0,0 +1,21 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy mfenced</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <mo stretchy="true">&#x2192;</mo>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++        <mo stretchy="true">&#x2192;</mo>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-1-ref.html b/layout/reftests/mathml/stretchy-mover-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-1-ref.html
+@@ -0,0 +1,23 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++      <mrow>
++        <mover>
++          <mo stretchy="false">&#x2192;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-1a.html b/layout/reftests/mathml/stretchy-mover-1a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-1a.html
+@@ -0,0 +1,25 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++     <mspace width="10em"/>
++      <mrow>
++        <mover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++      <mspace width="10em"/>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-1b.html b/layout/reftests/mathml/stretchy-mover-1b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-1b.html
+@@ -0,0 +1,25 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++     <mspace depth="5em"/>
++      <mrow>
++        <mover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++      <mspace depth="5em"/>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-2-ref.html b/layout/reftests/mathml/stretchy-mover-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-2-ref.html
+@@ -0,0 +1,23 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++      <mrow>
++        <mover>
++          <mo stretchy="false">&#x2191;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-2a.html b/layout/reftests/mathml/stretchy-mover-2a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-2a.html
+@@ -0,0 +1,25 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++     <mspace width="10em"/>
++      <mrow>
++        <mover>
++          <mo stretchy="true">&#x2191;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++      <mspace width="10em"/>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-mover-2b.html b/layout/reftests/mathml/stretchy-mover-2b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-mover-2b.html
+@@ -0,0 +1,25 @@
++?<!doctype>
++<html>
++  <head>
++    <title>Stretchy mover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++    <style type="text/css">
++    mtext { color:white}
++    </style>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math display=block>
++     <mrow>
++     <mspace depth="5em"/>
++      <mrow>
++        <mover>
++          <mo stretchy="true">&#x2191;</mo>
++          <mn>B</mn>
++        </munderover>
++      </mrow>
++      <mspace depth="5em"/>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-msup-1-ref.html b/layout/reftests/mathml/stretchy-msup-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-msup-1-ref.html
+@@ -0,0 +1,16 @@
++<!doctype>
++<html>
++  <head>
++    <title>Non-stretchy msup</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <msup>
++        <mo stretchy="false">&#x2192;</mo>
++        <mtext>AAAAAA</mtext>
++      </msup>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-msup-1a.html b/layout/reftests/mathml/stretchy-msup-1a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-msup-1a.html
+@@ -0,0 +1,16 @@
++<!doctype>
++<html>
++  <head>
++    <title>Non-stretchy msup</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <msup>
++        <mo stretchy="true">&#x2192;</mo>
++        <mtext>AAAAAA</mtext>
++      </msup>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-msup-1b.html b/layout/reftests/mathml/stretchy-msup-1b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-msup-1b.html
+@@ -0,0 +1,18 @@
++<!doctype>
++<html>
++  <head>
++    <title>Non-stretchy msup</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <msup>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++        </msup>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-msup-1c.html b/layout/reftests/mathml/stretchy-msup-1c.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-msup-1c.html
+@@ -0,0 +1,20 @@
++<!doctype>
++<html>
++  <head>
++    <title>Non-stretchy msup</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <mrow>
++          <msup>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++          </msup>
++        </mrow>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-msup-1d.html b/layout/reftests/mathml/stretchy-msup-1d.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-msup-1d.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Non-stretchy msup</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <msup>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++        </msup>
++        <mspace width="5em" />
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1-ref.html b/layout/reftests/mathml/stretchy-munderover-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1-ref.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1a.html b/layout/reftests/mathml/stretchy-munderover-1a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1a.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <munderover>
++          <mo stretchy="false">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1b.html b/layout/reftests/mathml/stretchy-munderover-1b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1b.html
+@@ -0,0 +1,21 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <mrow>
++         <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++        </mrow>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1c.html b/layout/reftests/mathml/stretchy-munderover-1c.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1c.html
+@@ -0,0 +1,17 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <munderover>
++        <mo stretchy="true">&#x2192;</mo>
++        <mtext>AAAAAA</mtext>
++        <mtext>BBBBBB</mtext>
++        </munderover>
++      </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1d.html b/layout/reftests/mathml/stretchy-munderover-1d.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1d.html
+@@ -0,0 +1,20 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++          </munderover>
++        <mspace width="5em" />
++        </mrow>
++      </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-1e.html b/layout/reftests/mathml/stretchy-munderover-1e.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-1e.html
+@@ -0,0 +1,20 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <munderover>
++          <mo stretchy="true" lspace="0em" rspace="0em">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++          </munderover>
++        <mn></mn>
++        </mrow>
++      </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2-ref.html b/layout/reftests/mathml/stretchy-munderover-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2-ref.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <msup>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2a.html b/layout/reftests/mathml/stretchy-munderover-2a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2a.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <msup>
++          <munderover>
++            <mo stretchy="false">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2b.html b/layout/reftests/mathml/stretchy-munderover-2b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2b.html
+@@ -0,0 +1,24 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <mrow>
++          <msup>
++            <munderover>
++              <mo stretchy="true">&#x2192;</mo>
++              <mtext>AAAAAA</mtext>
++              <mtext>BBBBBB</mtext>
++            </munderover>
++            <mtext>CCCCCC</mtext>
++          </msup>
++        </mrow>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2c.html b/layout/reftests/mathml/stretchy-munderover-2c.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2c.html
+@@ -0,0 +1,20 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <msup>
++        <munderover>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>AAAAAA</mtext>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++        <mtext>CCCCCC</mtext>
++      </msup>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2d.html b/layout/reftests/mathml/stretchy-munderover-2d.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2d.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <msup>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2e.html b/layout/reftests/mathml/stretchy-munderover-2e.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2e.html
+@@ -0,0 +1,22 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <msup>
++        <mrow>
++          <munderover>
++            <mo stretchy="true">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++        </mrow>
++        <mtext>CCCCCC</mtext>
++      </msup>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2f.html b/layout/reftests/mathml/stretchy-munderover-2f.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2f.html
+@@ -0,0 +1,24 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <msup>
++        <mrow>
++          <mrow>
++            <munderover>
++              <mo stretchy="true">&#x2192;</mo>
++              <mtext>AAAAAA</mtext>
++              <mtext>BBBBBB</mtext>
++            </munderover>
++          </mrow>
++        </mrow>
++        <mtext>CCCCCC</mtext>
++      </msup>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-2g.html b/layout/reftests/mathml/stretchy-munderover-2g.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-2g.html
+@@ -0,0 +1,23 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <msup>
++          <munderover>
++            <mo stretchy="true" lspace="0em" rspace="0em">&#x2192;</mo>
++            <mtext>AAAAAA</mtext>
++            <mtext>BBBBBB</mtext>
++          </munderover>
++          <mtext>CCCCCC</mtext>
++        </msup>
++        <mn></mn>
++        </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-3-ref.html b/layout/reftests/mathml/stretchy-munderover-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-3-ref.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math >
++      <mrow>
++        <munderover>
++          <mtext>AAAAAA</mtext>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++      </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-3a.html b/layout/reftests/mathml/stretchy-munderover-3a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-3a.html
+@@ -0,0 +1,19 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <munderover>
++          <mtext>AAAAAA</mtext>
++          <mo stretchy="false">&#x2192;</mo>
++          <mtext>BBBBBB</mtext>
++        </munderover>
++     </mrow>
++    </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-3b.html b/layout/reftests/mathml/stretchy-munderover-3b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-3b.html
+@@ -0,0 +1,17 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <munderover>
++        <mtext>AAAAAA</mtext>
++        <mo stretchy="true">&#x2192;</mo>
++        <mtext>BBBBBB</mtext>
++        </munderover>
++      </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-munderover-3c.html b/layout/reftests/mathml/stretchy-munderover-3c.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-munderover-3c.html
+@@ -0,0 +1,20 @@
++﻿<!doctype>
++<html>
++  <head>
++    <title>Stretchy munderover</title>
++    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
++  </head>
++  <body>
++    <!-- See bug 687807 -->
++    <math>
++      <mrow>
++        <munderover>
++          <mtext>AAAAAA</mtext>
++          <mo stretchy="true">&#x2192;</mo>
++          <mtext>BBBBBB</mtext>
++          </munderover>
++        <mspace width="5em" />
++        </mrow>
++      </math>
++  </body>
++</html>
