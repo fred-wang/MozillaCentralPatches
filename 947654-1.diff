@@ -52,7 +52,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  #include "mozilla/LookAndFeel.h"
  #include "nsCSSRendering.h"
  #include "prprf.h"         // For PR_snprintf()
-@@ -801,19 +800,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
+@@ -804,19 +803,17 @@ nsMathMLChar::SetData(nsPresContext* aPr
         we will skip the base size even if it fits, so that
         the next stage in the pipeline is given a chance to find
         a largeop variant. If the next stage fails, we fallback
@@ -73,7 +73,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
         with largeop=true and stretchy=false), we break after finding
         the first starting variant, regardless of whether that
         variant fits the container's size.
-@@ -936,90 +933,16 @@ ComputeSizeFromParts(nsPresContext* aPre
+@@ -939,91 +936,16 @@ ComputeSizeFromParts(nsPresContext* aPre
  
    if (minSize > aTargetSize)
      return minSize; // settle with the minimum size
@@ -143,7 +143,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -    ++p; // may advance past p_end
 -  }
 -
--  aFontName.Append(NS_LITERAL_STRING(",") + aFallbackFamilies);
+-  aFontName.Append(',');
+-  aFontName.Append(aFallbackFamilies);
 -  return;
 -
 -insert:
@@ -164,7 +165,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              const nsAString&        aDefaultFamily,
                              nsFont&                 aFont,
                              nsRefPtr<gfxFontGroup>* aFontGroup)
-@@ -1605,21 +1528,16 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1631,21 +1553,16 @@ nsMathMLChar::StretchInternal(nsPresCont
    // 2/3. Search for a glyph or set of part glyphs of appropriate size
    //////////////////////////////////////////////////////////////////////////////
  
@@ -189,7 +190,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -1523,18 +1523,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1534,18 +1534,16 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -208,7 +209,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
  // unless features are explicitly enabled.
-@@ -2551,18 +2549,16 @@ pref("font.name.sans-serif.x-tibt", "Tib
+@@ -2586,18 +2584,16 @@ pref("font.name.sans-serif.x-tibt", "Tib
  pref("font.name.monospace.x-tibt", "Tibetan Machine Uni");
  pref("font.name-list.serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.sans-serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
@@ -227,7 +228,7 @@ diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -2964,19 +2960,16 @@ pref("font.name-list.sans-serif.zh-HK", 
+@@ -2999,19 +2995,16 @@ pref("font.name-list.sans-serif.zh-HK", 
  pref("font.name-list.monospace.zh-HK", "Courier,Heiti TC,LiHei Pro");
  
  // XP_MACOSX changes to default font sizes
