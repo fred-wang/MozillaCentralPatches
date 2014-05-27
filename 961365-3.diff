@@ -22,7 +22,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
    bool outermostEmbellished = false;
    if (mEmbellishData.coreFrame) {
      nsEmbellishData parentData;
-     GetEmbellishDataFrom(mParent, parentData);
+     GetEmbellishDataFrom(GetParent(), parentData);
      outermostEmbellished = parentData.coreFrame != mEmbellishData.coreFrame;
    }
 @@ -234,16 +236,18 @@ nsMathMLmfracFrame::PlaceInternal(nsRend

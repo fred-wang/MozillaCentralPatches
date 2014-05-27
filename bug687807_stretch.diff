@@ -389,7 +389,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
    bool parentWillFireStretch = false;
 +  // Don't go without checking to see if our parent will later fire a Stretch() command
 +  // targeted at us. The Stretch() will cause the rect.x and rect.y to clear...
-+  nsIMathMLFrame* mathMLFrame = do_QueryFrame(mParent);
++  nsIMathMLFrame* mathMLFrame = do_QueryFrame(GetParent());
 +  if (mathMLFrame) {
 +    nsEmbellishData embellishData;
 +    nsPresentationData presentationData;
@@ -407,7 +407,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
      // This means the rect.x and rect.y of our children were not set!!
 -    // Don't go without checking to see if our parent will later fire a Stretch() command
 -    // targeted at us. The Stretch() will cause the rect.x and rect.y to clear...
--    nsIMathMLFrame* mathMLFrame = do_QueryFrame(mParent);
+-    nsIMathMLFrame* mathMLFrame = do_QueryFrame(GetParent());
 -    if (mathMLFrame) {
 -      nsEmbellishData embellishData;
 -      nsPresentationData presentationData;

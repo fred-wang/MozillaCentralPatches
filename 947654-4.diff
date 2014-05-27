@@ -8,7 +8,7 @@ Part 4: Make the font-family on <math> and <mtext> be font.name-list.mathml pref
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -1435,16 +1435,33 @@ nsPresContext::GetDefaultFont(uint8_t aF
+@@ -1430,16 +1430,33 @@ nsPresContext::GetDefaultFont(uint8_t aF
      default:
        font = nullptr;
        NS_ERROR("invalid arg");
@@ -45,7 +45,7 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -350,16 +350,20 @@ public:
+@@ -347,16 +347,20 @@ public:
     * For aFontID corresponding to a CSS Generic, the nsFont returned has
     * its name set to that generic font's name, and its size set to
     * the user's preference for font size for that generic and the
@@ -66,7 +66,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
      // this switch statement away.
      switch (aPrefType) {
      case kPresContext_UseDocumentFonts:
-@@ -1118,16 +1122,19 @@ protected:
+@@ -1113,16 +1117,19 @@ protected:
    const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const;
  
    void ResetCachedFontPrefs() {
@@ -86,7 +86,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    void DoChangeCharSet(const nsCString& aCharSet);
  
    /**
-@@ -1250,16 +1257,18 @@ protected:
+@@ -1245,16 +1252,18 @@ protected:
  
    bool mExistThrottledUpdates;
  
@@ -108,7 +108,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 --- a/layout/base/nsPresShell.cpp
 +++ b/layout/base/nsPresShell.cpp
-@@ -1282,16 +1282,19 @@ PresShell::SetPreferenceStyleRules(bool 
+@@ -1287,16 +1287,19 @@ PresShell::SetPreferenceStyleRules(bool 
        result = SetPrefFocusRules();
      }
      if (NS_SUCCEEDED(result)) {
@@ -128,7 +128,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
      // will recalculate style if needed
  
      return result;
-@@ -1337,16 +1340,23 @@ PresShell::CreatePreferenceStyleSheet()
+@@ -1342,16 +1345,23 @@ PresShell::CreatePreferenceStyleSheet()
      mPrefStyleSheet = nullptr;
      return rv;
    }
@@ -152,7 +152,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
    }
    rv =
      mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace url(http://www.w3.org/1999/xhtml);"),
-@@ -1358,17 +1368,17 @@ PresShell::CreatePreferenceStyleSheet()
+@@ -1363,17 +1373,17 @@ PresShell::CreatePreferenceStyleSheet()
  
    mStyleSet->AppendStyleSheet(nsStyleSet::eUserSheet, mPrefStyleSheet);
    return NS_OK;
@@ -171,7 +171,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
  
    // also handle the case where print is done from print preview
    // see bug #342439 for more details
-@@ -1576,16 +1586,45 @@ nsresult PresShell::SetPrefFocusRules(vo
+@@ -1581,16 +1591,45 @@ nsresult PresShell::SetPrefFocusRules(vo
          result = mPrefStyleSheet->
            InsertRuleInternal(strRule, sInsertPrefSheetRulesAt, &index);
        }
@@ -263,7 +263,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 +  font-stretch: normal;
    font-size: inherit;
    font-style: normal;
--  font-family: MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Cambria, Cambria Math, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+-  font-family: MathJax_Main, STIXGeneral, Cambria, Cambria Math, XITS, Latin Modern Math, DejaVu Serif, DejaVu Sans, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
 +  /* The default font-family is given by the font.name-list.mathml preference,
 +     see PresShell::SetPrefMathFontFamilyRule. */
    text-rendering: optimizeLegibility;
@@ -303,7 +303,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
 --- a/modules/libpref/src/init/all.js
 +++ b/modules/libpref/src/init/all.js
-@@ -2213,16 +2213,19 @@ pref("ui.mouse.radius.topmm", 12);
+@@ -2384,16 +2384,19 @@ pref("ui.mouse.radius.topmm", 12);
  pref("ui.mouse.radius.rightmm", 8);
  pref("ui.mouse.radius.bottommm", 4);
  pref("ui.mouse.radius.visitedWeight", 120);
