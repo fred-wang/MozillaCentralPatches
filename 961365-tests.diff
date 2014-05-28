@@ -2182,7 +2182,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == operator-1.xhtml operator-1-ref.xhtml
  == scriptshift-1.xhtml scriptshift-1-ref.xhtml
  == number-size-1.xhtml number-size-1-ref.xhtml
- random-if(B2G) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics
+ random-if(B2G&&browserIsRemote) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics
  == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
  == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
  != menclose-1a.html menclose-1-ref.html
