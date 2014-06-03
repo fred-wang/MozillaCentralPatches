@@ -51,7 +51,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
     * the user's preference for font size for that generic and the
     * given language.
     */
-   NS_HIDDEN_(const nsFont*) GetDefaultFont(uint8_t aFontID,
+   const nsFont* GetDefaultFont(uint8_t aFontID,
                                             nsIAtom *aLanguage) const;
  
 +
@@ -80,7 +80,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 +    mMathFontFamilyPref.Truncate();
    }
  
-   NS_HIDDEN_(void) UpdateCharSet(const nsCString& aCharSet);
+   void UpdateCharSet(const nsCString& aCharSet);
  
  public:
    void DoChangeCharSet(const nsCString& aCharSet);
