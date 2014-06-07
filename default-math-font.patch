@@ -1,0 +1,305 @@
+# HG changeset patch
+# Parent 334c35063bde09494857898c9d69b746d1958e7f
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 947654 - Add a font.name-list.mathml preference to configure the default font-family on the <math> element.
+
+diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
+--- a/layout/base/nsPresContext.cpp
++++ b/layout/base/nsPresContext.cpp
+@@ -1440,16 +1440,39 @@ nsPresContext::GetDefaultFont(uint8_t aF
+     default:
+       font = nullptr;
+       NS_ERROR("invalid arg");
+       break;
+   }
+   return font;
+ }
+ 
++const nsString&
++nsPresContext::GetDefaultMathFont()
++{
++  if (!mMathFontFamilyPref.IsEmpty()) {
++    // use the cached preference
++    return mMathFontFamilyPref;
++  }
++
++  // Parse the font.name-list.mathml preference and generate a font-family
++  // string with quoted names and a generic "serif" fallback.
++  FontFamilyList mathFontlist;
++  nsAutoTArray<nsString, 10> mathFontArray;
++  gfxFontUtils::GetPrefsFontList("font.name-list.mathml", mathFontArray);
++  uint32_t len = mathFontArray.Length();
++  for (uint32_t i = 0; i < len; i++) {
++    mathFontlist.Append(FontFamilyName(mathFontArray[i], eQuotedName));
++  }
++  mathFontlist.SetDefaultFontType(eFamily_serif);
++  mathFontlist.ToString(mMathFontFamilyPref, true, true);
++
++  return mMathFontFamilyPref;
++}
++
+ void
+ nsPresContext::SetFullZoom(float aZoom)
+ {
+   if (!mShell || mFullZoom == aZoom) {
+     return;
+   }
+ 
+   // Re-fetch the view manager's window dimensions in case there's a deferred
+diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
+--- a/layout/base/nsPresContext.h
++++ b/layout/base/nsPresContext.h
+@@ -348,16 +348,21 @@ public:
+    * For aFontID corresponding to a CSS Generic, the nsFont returned has
+    * its name set to that generic font's name, and its size set to
+    * the user's preference for font size for that generic and the
+    * given language.
+    */
+   const nsFont* GetDefaultFont(uint8_t aFontID,
+                                            nsIAtom *aLanguage) const;
+ 
++  /**
++   * Get the default font-family to use for MathML.
++   */
++  const nsString& GetDefaultMathFont();
++
+   /** Get a cached boolean pref, by its type */
+   // *  - initially created for bugs 31816, 20760, 22963
+   bool GetCachedBoolPref(nsPresContext_CachedBoolPrefType aPrefType) const
+   {
+     // If called with a constant parameter, the compiler should optimize
+     // this switch statement away.
+     switch (aPrefType) {
+     case kPresContext_UseDocumentFonts:
+@@ -1125,16 +1130,19 @@ protected:
+   const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const;
+ 
+   void ResetCachedFontPrefs() {
+     // Throw away any other LangGroupFontPrefs objects:
+     mLangGroupFontPrefs.mNext = nullptr;
+ 
+     // Make GetFontPreferences reinitialize mLangGroupFontPrefs:
+     mLangGroupFontPrefs.mLangGroup = nullptr;
++
++    // Make GetFontPreferences reinitialize mMathFontFamilyPref:
++    mMathFontFamilyPref.Truncate();
+   }
+ 
+   void UpdateCharSet(const nsCString& aCharSet);
+ 
+ public:
+   void DoChangeCharSet(const nsCString& aCharSet);
+ 
+   /**
+@@ -1257,16 +1265,18 @@ protected:
+ 
+   bool mExistThrottledUpdates;
+ 
+   uint16_t              mImageAnimationMode;
+   uint16_t              mImageAnimationModePref;
+ 
+   LangGroupFontPrefs    mLangGroupFontPrefs;
+ 
++  nsString              mMathFontFamilyPref;
++
+   nscoord               mBorderWidthTable[3];
+ 
+   uint32_t              mInterruptChecksToSkip;
+ 
+   mozilla::TimeStamp    mReflowStartTime;
+ 
+   // last time animations styles were flushed to their primary frames
+   mozilla::TimeStamp    mLastUpdateThrottledAnimationStyle;
+diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
+--- a/layout/base/nsPresShell.cpp
++++ b/layout/base/nsPresShell.cpp
+@@ -1311,16 +1311,19 @@ PresShell::SetPreferenceStyleRules(bool 
+       result = SetPrefFocusRules();
+     }
+     if (NS_SUCCEEDED(result)) {
+       result = SetPrefNoScriptRule();
+     }
+     if (NS_SUCCEEDED(result)) {
+       result = SetPrefNoFramesRule();
+     }
++    if (NS_SUCCEEDED(result)) {
++      result = SetPrefMathFontFamilyRule();
++    }
+ #ifdef DEBUG_attinasi
+     printf( "Preference Style Rules set: error=%ld\n", (long)result);
+ #endif
+ 
+     // Note that this method never needs to force any calculation; the caller
+     // will recalculate style if needed
+ 
+     return result;
+@@ -1366,16 +1369,23 @@ PresShell::CreatePreferenceStyleSheet()
+     mPrefStyleSheet = nullptr;
+     return rv;
+   }
+   NS_ASSERTION(uri, "null but no error");
+   mPrefStyleSheet->SetURIs(uri, uri, uri);
+   mPrefStyleSheet->SetComplete();
+   uint32_t index;
+   rv =
++    mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace m url(http://www.w3.org/1998/Math/MathML);"),
++                                        0, &index);
++  if (NS_FAILED(rv)) {
++    mPrefStyleSheet = nullptr;
++    return rv;
++  }
++  rv =
+     mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace svg url(http://www.w3.org/2000/svg);"),
+                                         0, &index);
+   if (NS_FAILED(rv)) {
+     mPrefStyleSheet = nullptr;
+     return rv;
+   }
+   rv =
+     mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace url(http://www.w3.org/1999/xhtml);"),
+@@ -1387,17 +1397,17 @@ PresShell::CreatePreferenceStyleSheet()
+ 
+   mStyleSet->AppendStyleSheet(nsStyleSet::eUserSheet, mPrefStyleSheet);
+   return NS_OK;
+ }
+ 
+ // XXX We want these after the @namespace rules.  Does order matter
+ // for these rules, or can we call StyleRule::StyleRuleCount()
+ // and just "append"?
+-static uint32_t sInsertPrefSheetRulesAt = 2;
++static uint32_t sInsertPrefSheetRulesAt = 3;
+ 
+ nsresult
+ PresShell::SetPrefNoScriptRule()
+ {
+   nsresult rv = NS_OK;
+ 
+   // also handle the case where print is done from print preview
+   // see bug #342439 for more details
+@@ -1605,16 +1615,45 @@ nsresult PresShell::SetPrefFocusRules(vo
+         result = mPrefStyleSheet->
+           InsertRuleInternal(strRule, sInsertPrefSheetRulesAt, &index);
+       }
+     }
+   }
+   return result;
+ }
+ 
++nsresult
++PresShell::SetPrefMathFontFamilyRule()
++{
++  NS_ASSERTION(mPresContext, "null prescontext not allowed");
++  if (!mPresContext) {
++    return NS_ERROR_FAILURE;
++  }
++
++  nsresult rv = NS_OK;
++
++  if (!mPrefStyleSheet) {
++    rv = CreatePreferenceStyleSheet();
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
++  NS_ASSERTION(mPrefStyleSheet, "prefstylesheet should not be null");
++
++  nsAutoString mathFontFamilyRule;
++  mathFontFamilyRule.AppendLiteral("m|math { font-family: ");
++  mathFontFamilyRule.Append(mPresContext->GetDefaultMathFont());
++  mathFontFamilyRule.AppendLiteral("; }");
++
++  uint32_t index = 0;
++  rv = mPrefStyleSheet->
++    InsertRuleInternal(mathFontFamilyRule, sInsertPrefSheetRulesAt, &index);
++
++  return rv;
++}
++
+ void
+ PresShell::AddUserSheet(nsISupports* aSheet)
+ {
+   // Make sure this does what nsDocumentViewer::CreateStyleSet does wrt
+   // ordering. We want this new sheet to come after all the existing stylesheet
+   // service sheets, but before other user sheets; see nsIStyleSheetService.idl
+   // for the ordering.  Just remove and readd all the nsStyleSheetService
+   // sheets.
+diff --git a/layout/base/nsPresShell.h b/layout/base/nsPresShell.h
+--- a/layout/base/nsPresShell.h
++++ b/layout/base/nsPresShell.h
+@@ -483,16 +483,17 @@ protected:
+     *  - initially created for bugs 31816, 20760, 22963
+     */
+   nsresult ClearPreferenceStyleRules(void);
+   nsresult CreatePreferenceStyleSheet(void);
+   nsresult SetPrefLinkRules(void);
+   nsresult SetPrefFocusRules(void);
+   nsresult SetPrefNoScriptRule();
+   nsresult SetPrefNoFramesRule(void);
++  nsresult SetPrefMathFontFamilyRule();
+ 
+   // methods for painting a range to an offscreen buffer
+ 
+   // given a display list, clip the items within the list to
+   // the range
+   nsRect ClipListToRange(nsDisplayListBuilder *aBuilder,
+                          nsDisplayList* aList,
+                          nsRange* aRange);
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -6,27 +6,29 @@
+ /**************************************************************************/
+ /* namespace for MathML elements                                          */
+ /**************************************************************************/
+ 
+ @namespace url(http://www.w3.org/1998/Math/MathML);
+ 
+ /**************************************************************************/
+ /* <math> - outermost math element                                        */
+-/* Put Cambria before Cambria Math as Cambria Math has neither bold nor   */
+-/* italic.                                                                */
+ /**************************************************************************/
+ 
+ math {
+   direction: ltr;
+   unicode-bidi: embed;
+   display: inline;
++  font-variant: normal;
++  font-weight: normal;
++  font-stretch: normal;
+   font-size: inherit;
+   font-style: normal;
+-  font-family: MathJax_Main, STIXGeneral, Cambria, Cambria Math, XITS, Latin Modern Math, DejaVu Serif, DejaVu Sans, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
++  /* The default font-family is given by the font.name-list.mathml preference,
++     see PresShell::SetPrefMathFontFamilyRule. */
+   text-rendering: optimizeLegibility;
+   -moz-float-edge: margin-box;
+   -moz-math-display: inline;
+ }
+ math[mode="display"], math[display="block"] {
+   display: block;
+   text-align: -moz-center;
+   -moz-math-display: block;
+diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
+--- a/modules/libpref/src/init/all.js
++++ b/modules/libpref/src/init/all.js
+@@ -2375,16 +2375,20 @@ pref("ui.mouse.radius.topmm", 12);
+ pref("ui.mouse.radius.rightmm", 8);
+ pref("ui.mouse.radius.bottommm", 4);
+ pref("ui.mouse.radius.visitedWeight", 120);
+ 
+ // When true, the ui.mouse.radius.* prefs will only affect simulated mouse events generated by touch input.
+ // When false, the prefs will be used for all mouse events.
+ pref("ui.mouse.radius.inputSource.touchOnly", true);
+ 
++// Default font-family to use for MathML formulas.
++// Putting Cambria before Cambria Math seems to avoid bug 1014498.
++pref("font.name-list.mathml", "MathJax_Main, STIXGeneral, Cambria, Cambria Math, XITS, Latin Modern Math, DejaVu Serif, DejaVu Sans, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L");
++
+ #ifdef XP_WIN
+ 
+ pref("font.name.serif.ar", "Times New Roman");
+ pref("font.name.sans-serif.ar", "Arial");
+ pref("font.name.monospace.ar", "Courier New");
+ pref("font.name.cursive.ar", "Comic Sans MS");
+ 
+ pref("font.name.serif.el", "Times New Roman");
