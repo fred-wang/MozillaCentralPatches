@@ -206,21 +206,22 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
                                         radicalAscent);
        mBoundingMetrics.descent = std::max(mBoundingMetrics.descent,
                                          radicalDescent);
-@@ -567,35 +568,31 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
-   
-   aDesiredSize.Width() = mBoundingMetrics.width;
+@@ -569,36 +570,32 @@ nsMathMLmencloseFrame::PlaceInternal(nsR
  
-   aDesiredSize.SetTopAscent(std::max(mBoundingMetrics.ascent, baseSize.TopAscent()));
-   aDesiredSize.Height() = aDesiredSize.TopAscent() +
-     std::max(mBoundingMetrics.descent, baseSize.Height() - baseSize.TopAscent());
+   aDesiredSize.SetBlockStartAscent(std::max(mBoundingMetrics.ascent,
+                                             baseSize.BlockStartAscent()));
+   aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
+     std::max(mBoundingMetrics.descent,
+              baseSize.Height() - baseSize.BlockStartAscent());
  
    if (IsToDraw(NOTATION_LONGDIV) || IsToDraw(NOTATION_RADICAL)) {
 -    // get the leading to be left at the top of the resulting frame
 -    // this seems more reliable than using fm->GetLeading() on suspicious
 -    // fonts
 -    nscoord leading = nscoord(0.2f * mEmHeight);
-     nscoord desiredSizeAscent = aDesiredSize.TopAscent();
-     nscoord desiredSizeDescent = aDesiredSize.Height() - aDesiredSize.TopAscent();
+     nscoord desiredSizeAscent = aDesiredSize.BlockStartAscent();
+     nscoord desiredSizeDescent = aDesiredSize.Height() -
+                                  aDesiredSize.BlockStartAscent();
      
      if (IsToDraw(NOTATION_LONGDIV)) {
        desiredSizeAscent = std::max(desiredSizeAscent,
@@ -237,7 +238,7 @@ diff --git a/layout/mathml/nsMathMLmencloseFrame.cpp b/layout/mathml/nsMathMLmen
 +                                  radicalDescent + mRadicalRuleThickness);
      }
  
-     aDesiredSize.SetTopAscent(desiredSizeAscent);
+     aDesiredSize.SetBlockStartAscent(desiredSizeAscent);
      aDesiredSize.Height() = desiredSizeAscent + desiredSizeDescent;
    }
      
@@ -374,7 +375,7 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
      *aSqrOffset = dxSqr;
  }
  
-@@ -213,41 +221,24 @@ nsMathMLmrootFrame::Reflow(nsPresContext
+@@ -207,41 +215,24 @@ nsMathMLmrootFrame::Reflow(nsPresContext
  
    ////////////
    // Prepare the radical symbol and the overline bar
@@ -421,8 +422,8 @@ diff --git a/layout/mathml/nsMathMLmrootFrame.cpp b/layout/mathml/nsMathMLmrootF
    if (ruleThickness < onePixel) {
      ruleThickness = onePixel;
    }
-@@ -291,17 +282,21 @@ nsMathMLmrootFrame::Reflow(nsPresContext
-            mBoundingMetrics.descent + ruleThickness);
+@@ -285,17 +276,21 @@ nsMathMLmrootFrame::Reflow(nsPresContext
+              mBoundingMetrics.descent + ruleThickness);
    aDesiredSize.Width() = mBoundingMetrics.width;
  
    /////////////

@@ -77,7 +77,7 @@ diff --git a/layout/mathml/nsIMathMLFrame.h b/layout/mathml/nsIMathMLFrame.h
 diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
 --- a/layout/mathml/nsMathMLContainerFrame.cpp
 +++ b/layout/mathml/nsMathMLContainerFrame.cpp
-@@ -176,128 +176,180 @@ nsMathMLContainerFrame::ClearSavedChildM
+@@ -177,128 +177,180 @@ nsMathMLContainerFrame::ClearSavedChildM
    nsIFrame* childFrame = mFrames.FirstChild();
    FramePropertyTable* props = PresContext()->PropertyTable();
    while (childFrame) {
@@ -286,7 +286,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
  
      // Pass the stretch to the base child ...
  
-@@ -309,81 +361,69 @@ nsMathMLContainerFrame::Stretch(nsRender
+@@ -310,81 +362,69 @@ nsMathMLContainerFrame::Stretch(nsRender
          bool stretchAll =
            NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) ||
            NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags);
@@ -378,7 +378,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
          }
  
          // If our parent is not embellished, it means we are the outermost embellished
-@@ -470,53 +510,47 @@ nsMathMLContainerFrame::FinalizeReflow(n
+@@ -471,53 +511,47 @@ nsMathMLContainerFrame::FinalizeReflow(n
    // If placeOrigin is false we should reach Place() with aPlaceOrigin == true
    // through Stretch() eventually.
    if (NS_MATHML_HAS_ERROR(mPresentationData.flags) || NS_FAILED(rv)) {
@@ -457,7 +457,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
          nsIFrame* childFrame = GetFirstPrincipalChild();
          for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
            NS_ASSERTION(!(childFrame->GetStateBits() & NS_FRAME_IN_REFLOW),
-@@ -923,32 +957,55 @@ nsMathMLContainerFrame::Reflow(nsPresCon
+@@ -916,32 +950,55 @@ nsMathMLContainerFrame::Reflow(nsPresCon
        NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) 
        ? NS_STRETCH_DIRECTION_VERTICAL 
        : NS_STRETCH_DIRECTION_HORIZONTAL;
@@ -546,7 +546,7 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
 --- a/layout/mathml/nsMathMLmfencedFrame.cpp
 +++ b/layout/mathml/nsMathMLmfencedFrame.cpp
 @@ -248,33 +248,43 @@ nsMathMLmfencedFrame::Reflow(nsPresConte
-       ascent = childDesiredSize.TopAscent();
+       ascent = childDesiredSize.BlockStartAscent();
  
      childFrame = childFrame->GetNextSibling();
    }
@@ -590,10 +590,10 @@ diff --git a/layout/mathml/nsMathMLmfencedFrame.cpp b/layout/mathml/nsMathMLmfen
        SaveReflowAndBoundingMetricsFor(childFrame, childDesiredSize,
                                        childDesiredSize.mBoundingMetrics);
        
-       nscoord childDescent = childDesiredSize.Height() - childDesiredSize.TopAscent();
+       nscoord childDescent = childDesiredSize.Height() - childDesiredSize.BlockStartAscent();
        if (descent < childDescent)
          descent = childDescent;
-       if (ascent < childDesiredSize.TopAscent())
+       if (ascent < childDesiredSize.BlockStartAscent())
 diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
 --- a/layout/mathml/nsMathMLmoFrame.cpp
 +++ b/layout/mathml/nsMathMLmoFrame.cpp

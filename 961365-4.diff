@@ -127,14 +127,14 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
    ////////////////////////////////////
    // Get the children's sizes
    ////////////////////////////////////
-@@ -378,57 +384,60 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
-         multiSubSize.SetTopAscent(std::max(multiSubSize.TopAscent(),
-                                        subScriptSize.TopAscent()));
+@@ -379,58 +385,61 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+            std::max(multiSubSize.BlockStartAscent(),
+                     subScriptSize.BlockStartAscent()));
          bmMultiSub.ascent = std::max(bmMultiSub.ascent, bmSubScript.ascent);
          bmMultiSub.descent = std::max(bmMultiSub.descent, bmSubScript.descent);
          multiSubSize.Height() = 
            std::max(multiSubSize.Height(),
-                    subScriptSize.Height() - subScriptSize.TopAscent());
+                    subScriptSize.Height() - subScriptSize.BlockStartAscent());
          if (bmSubScript.width)
 -          width = bmSubScript.width + aScriptSpace;
 +          width = bmSubScript.width + scriptSpace;
@@ -175,13 +175,14 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
          trySupScriptShift = std::max(minSupScriptShift,
                                       std::max(minShiftFromXHeight,
                                                supScriptShift));
-         multiSupSize.SetTopAscent(std::max(multiSupSize.TopAscent(),
-                                        supScriptSize.TopAscent()));
+         multiSupSize.SetBlockStartAscent(
+           std::max(multiSupSize.BlockStartAscent(),
+                    supScriptSize.BlockStartAscent()));
          bmMultiSup.ascent = std::max(bmMultiSup.ascent, bmSupScript.ascent);
          bmMultiSup.descent = std::max(bmMultiSup.descent, bmSupScript.descent);
-         multiSupSize.Height() = 
+         multiSupSize.Height() =
            std::max(multiSupSize.Height(),
-                    supScriptSize.Height() - supScriptSize.TopAscent());
+                    supScriptSize.Height() - supScriptSize.BlockStartAscent());
  
          if (bmSupScript.width)
 -          width = std::max(width, bmSupScript.width + aScriptSpace);
@@ -194,7 +195,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
            boundingMetrics.width += width;
          } else {
            prescriptsWidth += width;
-@@ -440,28 +449,37 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -442,28 +451,37 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
          }
          width = rightBearing = 0;
  
@@ -237,7 +238,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
  
          maxSubScriptShift = std::max(maxSubScriptShift, trySubScriptShift);
          maxSupScriptShift = std::max(maxSupScriptShift, trySupScriptShift);
-@@ -618,17 +636,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -623,17 +641,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
                maxSupScriptShift;
              FinishReflowChild (supScriptFrame, aPresContext, supScriptSize,
                                 nullptr,
