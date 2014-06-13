@@ -1,251 +1,1349 @@
 # HG changeset patch
-# Parent e1619e49f0ee0342ea432bc0c44e503367b8f5fa
+# Parent 56a33659b318fb8b0b61b49bbe212b9f5d4a8447
 # User Frédéric Wang <fred.wang@free.fr>
-Part 6 - Reftests. r=jfkthame, b=961365
+Part 6 - Add tests for OpenType MATH constants. r=jfkthame, b=961365
 
+diff --git a/layout/mathml/tests/mochitest.ini b/layout/mathml/tests/mochitest.ini
+--- a/layout/mathml/tests/mochitest.ini
++++ b/layout/mathml/tests/mochitest.ini
+@@ -1,7 +1,15 @@
+ [DEFAULT]
+ 
+ [test_bug553917.html]
+ [test_bug706406.html]
+ [test_bug827713-2.html]
+ [test_bug827713.html]
+ [test_bug975681.html]
++[test_opentype-axis-height.html]
++[test_opentype-fraction.html]
++[test_opentype-limits.html]
++skip-if = os == "win" # Fails on WinXP
++[test_opentype-radical.html]
++skip-if = os == "win" # Fails on WinXP
++[test_opentype-scripts.html]
++[test_opentype-stack.html]
+diff --git a/layout/mathml/tests/test_opentype-axis-height.html b/layout/mathml/tests/test_opentype-axis-height.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-axis-height.html
+@@ -0,0 +1,60 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - axis-height</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: axis-height-1;
++        src: url(/tests/fonts/math/axis-height-1.otf);
++      }
++      @font-face {
++        font-family: axis-height-2;
++        src: url(/tests/fonts/math/axis-height-2.otf);
++      }
++    </style>
++    <script type="application/javascript">
++      SimpleTest.waitForExplicitFinish();
++
++      var epsilon = 5;
++      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++
++      function getBox(aId) {
++        return document.getElementById(aId).getBoundingClientRect();
++      }
++
++      function doTest() {
++        ok(almostEqual(getBox("plus1").top - getBox("plus2").top, 10 * 20),
++           "Bad AxisHeight");
++
++        SimpleTest.finish();
++      }
++    </script>
++  </head>
++  <body onload="doTest()">
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++    <p>
++      <math style="font-family: axis-height-1;">
++        <mo id="plus1">+</mo>
++      </math>
++      <math style="font-family: axis-height-2;">
++        <mo id="plus2">+</mo>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/mathml/tests/test_opentype-fraction.html b/layout/mathml/tests/test_opentype-fraction.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-fraction.html
+@@ -0,0 +1,187 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - fraction</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: fraction-1;
++        src: url(/tests/fonts/math/fraction-1.otf);
++      }
++      @font-face {
++        font-family: fraction-2;
++        src: url(/tests/fonts/math/fraction-2.otf);
++      }
++      @font-face {
++        font-family: fraction-3;
++        src: url(/tests/fonts/math/fraction-3.otf);
++      }
++      @font-face {
++        font-family: fraction-4;
++        src: url(/tests/fonts/math/fraction-4.otf);
++      }
++      @font-face {
++        font-family: fraction-5;
++        src: url(/tests/fonts/math/fraction-5.otf);
++      }
++      @font-face {
++        font-family: fraction-6;
++        src: url(/tests/fonts/math/fraction-6.otf);
++      }
++      @font-face {
++        font-family: fraction-7;
++        src: url(/tests/fonts/math/fraction-7.otf);
++      }
++      @font-face {
++        font-family: fraction-8;
++        src: url(/tests/fonts/math/fraction-8.otf);
++      }
++      @font-face {
++        font-family: fraction-9;
++        src: url(/tests/fonts/math/fraction-9.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      var epsilon = 5;
++      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++    
++      function getBox(aId) {
++        return document.getElementById(aId).getBoundingClientRect();
++      }
++      
++      function doTest() {
++        /* inline style */
++        var ref = getBox("ref").height;
++
++        ok(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
++           "Bad FractionRuleThickness");
++                                                            
++        ok(almostEqual(getBox("n1").top, getBox("n2").top) &&
++           almostEqual(getBox("d2").top - getBox("n2").bottom, ref * 10.5),
++           "Bad FractionNumeratorGapMin");
++
++        ok(almostEqual(getBox("d1").bottom, getBox("d3").bottom) &&
++           almostEqual(getBox("d3").top - getBox("n3").bottom, ref * 10.5),
++           "Bad FractionDenominatorGapMin");
++
++        ok(almostEqual(getBox("ref").top - getBox("n4").top, ref*3),
++           "Bad FractionNumeratorShiftUp");
++
++        ok(almostEqual(getBox("d5").bottom - getBox("ref").bottom, ref*3),
++           "Bad FractionDenominatorShiftDown");
++
++        /* display style */
++        ref = getBox("dref").height;
++
++        ok(almostEqual(getBox("dd1").top - getBox("dn1").bottom, ref * 20),
++           "Bad FractionRuleThickness");
++
++        ok(almostEqual(getBox("dn1").top, getBox("n6").top) &&
++           almostEqual(getBox("d6").top - getBox("n6").bottom, ref * 10.5),
++           "Bad FractionNumeratorDisplayStyleGapMin");
++
++        ok(almostEqual(getBox("dd1").bottom, getBox("d7").bottom) &&
++           almostEqual(getBox("d7").top - getBox("n7").bottom, ref * 10.5),
++           "Bad FractionDenominatorDisplayStyleGapMin");
++
++        ok(almostEqual(getBox("dref").top - getBox("n8").top, ref*3),
++           "Bad FractionNumeratorDisplayStyleShiftUp");
++
++        ok(almostEqual(getBox("d9").bottom - getBox("dref").bottom, ref*3),
++           "Bad FractionDenominatorDisplayStyleShiftDown");
++
++        SimpleTest.finish();
++      }
++    </script>
++  </head>
++  <body onload="doTest()">
++
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++    <p>
++      <math>
++        <mspace id="ref" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: fraction-1;">
++        <mfrac>
++          <mspace id="n1" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d1" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: fraction-2;">
++        <mfrac>
++          <mspace id="n2" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d2" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: fraction-3;">
++        <mfrac>
++          <mspace id="n3" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d3" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: fraction-4;">
++        <mfrac>
++          <mspace id="n4" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d4" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: fraction-5;">
++        <mfrac>
++          <mspace id="n5" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d5" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++    </p>
++
++    <p>
++      <math displaystyle="true">
++        <mspace id="dref" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math displaystyle="true" style="font-family: fraction-1;">
++        <mfrac>
++          <mspace id="dn1" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="dd1" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: fraction-6;">
++        <mfrac>
++          <mspace id="n6" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d6" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: fraction-7;">
++        <mfrac>
++          <mspace id="n7" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d7" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: fraction-8;">
++        <mfrac>
++          <mspace id="n8" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d8" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: fraction-9;">
++        <mfrac>
++          <mspace id="n9" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d9" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/mathml/tests/test_opentype-limits.html b/layout/mathml/tests/test_opentype-limits.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-limits.html
+@@ -0,0 +1,172 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - limits</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: limits-1;
++        src: url(/tests/fonts/math/limits-1.otf);
++      }
++      @font-face {
++        font-family: limits-2;
++        src: url(/tests/fonts/math/limits-2.otf);
++      }
++      @font-face {
++        font-family: limits-3;
++        src: url(/tests/fonts/math/limits-3.otf);
++      }
++      @font-face {
++        font-family: limits-4;
++        src: url(/tests/fonts/math/limits-4.otf);
++      }
++      @font-face {
++        font-family: limits-5;
++        src: url(/tests/fonts/math/limits-5.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      SimpleTest.waitForExplicitFinish();
++
++      var epsilon = 5;
++      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++    
++      function getBox(aId) {
++        return document.getElementById(aId).getBoundingClientRect();
++      }
++      
++      function doTest() {
++        ok(almostEqual(getBox("base1").top - getBox("over1").bottom, 7 * 10) &&
++           almostEqual(getBox("base2").top - getBox("over2").bottom, 7 * 10),
++           "Bad UpperLimitGapMin");
++
++        ok(almostEqual(getBox("under3").top - getBox("base3").bottom, 5 * 10) &&
++           almostEqual(getBox("under4").top - getBox("base4").bottom, 5 * 10),
++           "Bad LowerLimitGapMin");
++
++        ok(almostEqual(getBox("ref3").top - getBox("over5").bottom, 9 * 10) &&
++           almostEqual(getBox("ref3").top - getBox("over6").bottom, 9 * 10),
++           "UpperLimitBaselineRiseMin");
++
++        ok(almostEqual(getBox("under7").top - getBox("ref4").bottom, 2 * 10) &&
++           almostEqual(getBox("under8").top - getBox("ref4").bottom, 2 * 10),
++           "LowerLimitBaselineDropMin");
++
++        ok(almostEqual(getBox("base9").top - getBox("over9").bottom,
++                       (6 - 2) * 10) &&
++           almostEqual(getBox("base10").top - getBox("over10").bottom,
++                       (6 - 2) * 10),
++           "Bad AccentBaseHeight");
++
++        SimpleTest.finish();
++      }
++    </script>
++  </head>
++  <body onload="doTest()">
++
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++    <p>
++      <math style="font-family: limits-1;" displaystyle="true">
++        <mover>
++          <mo id="base1">∑</mo>
++          <mspace id="over1" height="1em" width="1em" mathbackground="red"/>
++        </mover>
++      </math>
++      <math style="font-family: limits-1;" displaystyle="true">
++        <munderover>
++          <mo id="base2">∑</mo>
++          <mspace id="under2" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="over2" height="1em" width="1em" mathbackground="red"/>
++        </munderover>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: limits-2;" displaystyle="true">
++        <munder>
++          <mo id="base3">∑</mo>
++          <mspace id="under3" height="1em" width="1em" mathbackground="red"/>
++        </munder>
++      </math>
++      <math style="font-family: limits-2;" displaystyle="true">
++        <munderover>
++          <mo id="base4">∑</mo>
++          <mspace id="under4" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="over4" height="1em" width="1em" mathbackground="red"/>
++        </munderover>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: limits-3;" displaystyle="true">
++        <mspace id="ref3" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: limits-3;" displaystyle="true">
++        <mover>
++          <mo id="base5">∑</mo>
++          <mspace id="over5" height="1em" width="1em" mathbackground="red"/>
++        </mover>
++      </math>
++      <math style="font-family: limits-3;" displaystyle="true">
++        <munderover>
++          <mo id="base6">∑</mo>
++          <mspace id="under6" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="over6" height="1em" width="1em" mathbackground="red"/>
++        </munderover>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: limits-4;" displaystyle="true">
++        <mspace id="ref4" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: limits-4;" displaystyle="true">
++        <munder>
++          <mo id="base7">∑</mo>
++          <mspace id="under7" height="1em" width="1em" mathbackground="red"/>
++        </munder>
++      </math>
++      <math style="font-family: limits-4;" displaystyle="true">
++        <munderover>
++          <mo id="base8">∑</mo>
++          <mspace id="under8" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="over8" height="1em" width="1em" mathbackground="red"/>
++        </munderover>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: limits-5;" displaystyle="true">
++        <mspace id="ref5" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: limits-5;" displaystyle="true">
++        <mover>
++          <mspace id="base9" height="2em" width="2em" mathbackground="blue"/>
++          <mo id="over9" stretchy="false">~</mo>
++        </mover>
++      </math>
++      <math style="font-family: limits-5;" displaystyle="true">
++        <munderover>
++          <mspace id="base10" height="2em" width="2em" mathbackground="blue"/>
++          <mspace id="under10" height="1em" width="1em" mathbackground="red"/>
++          <mo id="over10" stretchy="false">~</mo>
++        </munderover>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/mathml/tests/test_opentype-radical.html b/layout/mathml/tests/test_opentype-radical.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-radical.html
+@@ -0,0 +1,196 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - radical</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: radical-1;
++        src: url(/tests/fonts/math/radical-1.otf);
++      }
++      @font-face {
++        font-family: radical-2;
++        src: url(/tests/fonts/math/radical-2.otf);
++      }
++      @font-face {
++        font-family: radical-3;
++        src: url(/tests/fonts/math/radical-3.otf);
++      }
++      @font-face {
++        font-family: radical-4;
++        src: url(/tests/fonts/math/radical-4.otf);
++      }
++      @font-face {
++        font-family: radical-5;
++        src: url(/tests/fonts/math/radical-5.otf);
++      }
++      @font-face {
++        font-family: radical-6;
++        src: url(/tests/fonts/math/radical-6.otf);
++      }
++      @font-face {
++        font-family: radical-7;
++        src: url(/tests/fonts/math/radical-7.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      SimpleTest.waitForExplicitFinish();
++
++      var epsilon = 5;
++      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++    
++      function getBox(aId) {
++        return document.getElementById(aId).getBoundingClientRect();
++      }
++
++      function doTest() {
++        ok(almostEqual(getBox("inner1").top -
++                       getBox("outer1").top, 5*10) &&
++           almostEqual(getBox("inner2").top -
++                       getBox("outer2").top, 5*10) &&
++           almostEqual(getBox("inner3").top -
++                       getBox("outer3").top, 5*10),
++           "Bad RadicalRuleThickness");
++
++        ok(almostEqual(getBox("inner4").top -
++                       getBox("outer4").top, (7+1)*10) &&
++           almostEqual(getBox("inner5").top -
++                       getBox("outer5").top, (7+1)*10) &&
++           almostEqual(getBox("inner6").top -
++                       getBox("outer6").top, (7+1)*10),
++           "Bad RadicalExtraAscender");
++
++        ok(almostEqual(getBox("inner7").top -
++                       getBox("outer7").top, (3+1)*10) &&
++           almostEqual(getBox("inner7").top -
++                       getBox("outer8").top, (3+1)*10) &&
++           almostEqual(getBox("inner8").top -
++                       getBox("outer9").top, (3+1)*10),
++           "Bad RadicalVerticalGap");
++
++        ok(almostEqual(getBox("inner10").top -
++                       getBox("outer10").top, (9+1)*10) &&
++           almostEqual(getBox("inner11").top -
++                       getBox("outer11").top, (9+1)*10) &&
++           almostEqual(getBox("inner12").top -
++                       getBox("outer12").top, (9+1)*10),
++           "Bad RadicalDisplayStyleVerticalGap");
++
++        ok(almostEqual(getBox("base5").bottom - getBox("index5").bottom,
++                       (getBox("base5").bottom - getBox("root5").top) * .25),
++           "Bad RadicalDegreeBottomRaisePercent")
++
++        ok(almostEqual(getBox("index6").left - getBox("root6").left, 10 * 5),
++           "Bad RadicalKernBeforeDegree")
++
++        ok(almostEqual(getBox("base7").left -
++                       getBox("index7").right, 10 * (7+1)),
++           "Bad RadicalKernAfterDegree")
++
++        SimpleTest.finish();
++      }
++    </script>
++  </head>
++  <body onload="doTest()">
++
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++    <p>
++      <math style="font-family: radical-1;">
++        <msqrt id="outer1" mathbackground="green">
++          <mspace id="inner1" width="1em" height="1em" mathbackground="red"/>
++        </msqrt>
++        <menclose id="outer2" notation="radical" mathbackground="green">
++          <mspace id="inner2" width="1em" height="1em" mathbackground="red"/>
++        </menclose>
++        <mroot id="outer3" mathbackground="green">
++          <mspace id="inner3" width="1em" height="1em" mathbackground="red"/>
++          <mspace/>
++        </mroot>
++      </math>
++    </p>
++    <p>
++      <math style="font-family: radical-2;">
++        <msqrt id="outer4" mathbackground="green">
++          <mspace id="inner4" width="1em" height="1em" mathbackground="red"/>
++        </msqrt>
++        <menclose id="outer5" notation="radical" mathbackground="green">
++          <mspace id="inner5" width="1em" height="1em" mathbackground="red"/>
++        </menclose>
++        <mroot id="outer6" mathbackground="green">
++          <mspace id="inner6" width="1em" height="1em" mathbackground="red"/>
++          <mspace/>
++        </mroot>
++      </math>
++    </p>
++    <p>
++      <math style="font-family: radical-3;">
++        <msqrt id="outer7" mathbackground="green">
++          <mspace id="inner7" width="1em" height="1em" mathbackground="red"/>
++        </msqrt>
++        <menclose id="outer8" notation="radical" mathbackground="green">
++          <mspace id="inner8" width="1em" height="1em" mathbackground="red"/>
++        </menclose>
++        <mroot id="outer9" mathbackground="green">
++          <mspace id="inner9" width="1em" height="1em" mathbackground="red"/>
++          <mspace/>
++        </mroot>
++      </math>
++    </p>
++    <p>
++      <math style="font-family: radical-4;" displaystyle="true">
++        <msqrt id="outer10" mathbackground="green">
++          <mspace id="inner10" width="1em" height="1em" mathbackground="red"/>
++        </msqrt>
++        <menclose id="outer11" notation="radical" mathbackground="green">
++          <mspace id="inner11" width="1em" height="1em" mathbackground="red"/>
++        </menclose>
++        <mroot id="outer12" mathbackground="green">
++          <mspace id="inner12" width="1em" height="1em" mathbackground="red"/>
++          <mspace/>
++        </mroot>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: radical-5;">
++        <mroot id="root5" mathbackground="green">
++          <mspace id="base5" width="1em" height="10em" mathbackground="red"/>
++          <mspace id="index5" width="1em" height="1em" mathbackground="blue"/>
++        </mroot>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: radical-6;">
++        <mroot id="root6" mathbackground="green">
++          <mspace id="base6" width="1em" height="10em" mathbackground="red"/>
++          <mspace id="index6" width="1em" height="1em" mathbackground="blue"/>
++        </mroot>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: radical-7;">
++        <mroot id="root7" mathbackground="green">
++          <mspace id="base7" width="1em" height="10em" mathbackground="red"/>
++          <mspace id="index7" width="1em" height="1em" mathbackground="blue"/>
++        </mroot>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/mathml/tests/test_opentype-scripts.html b/layout/mathml/tests/test_opentype-scripts.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-scripts.html
+@@ -0,0 +1,269 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - scripts</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: scripts-1;
++        src: url(/tests/fonts/math/scripts-1.otf);
++      }
++      @font-face {
++        font-family: scripts-2;
++        src: url(/tests/fonts/math/scripts-2.otf);
++      }
++      @font-face {
++        font-family: scripts-3;
++        src: url(/tests/fonts/math/scripts-3.otf);
++      }
++      @font-face {
++        font-family: scripts-4;
++        src: url(/tests/fonts/math/scripts-4.otf);
++      }
++      @font-face {
++        font-family: scripts-5;
++        src: url(/tests/fonts/math/scripts-5.otf);
++      }
++      @font-face {
++        font-family: scripts-6;
++        src: url(/tests/fonts/math/scripts-6.otf);
++      }
++      @font-face {
++        font-family: scripts-7;
++        src: url(/tests/fonts/math/scripts-7.otf);
++      }
++      @font-face {
++        font-family: scripts-8;
++        src: url(/tests/fonts/math/scripts-8.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      SimpleTest.waitForExplicitFinish();
++
++      function doTest() {
++        var epsilon = 5;
++        function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++      
++        function getBox(aId) {
++          return document.getElementById(aId).getBoundingClientRect();
++        }
++      
++        ok(almostEqual(getBox("ref1").left - getBox("sub1").right, 3*10) &&
++           almostEqual(getBox("ref2").left - getBox("sup2").right, 3*10) &&
++           almostEqual(getBox("sup32").left - getBox("sup31").right, 3*10) &&
++           almostEqual(getBox("ref3").left - getBox("sup32").right, 3*10),
++           "SpaceAfterScript");
++
++        ok(almostEqual(getBox("ref4").bottom -
++                       getBox("sup41").bottom, 7 * 10) &&
++           almostEqual(getBox("ref4").bottom -
++                       getBox("sup42").bottom, 7 * 10) &&
++           almostEqual(getBox("ref4").bottom -
++                       getBox("sup43").bottom, 7 * 10) &&
++           almostEqual(getBox("ref4").bottom -
++                     getBox("sup44").bottom, 7 * 10),
++                     "Bad SuperscriptShiftUp")
++        ok(almostEqual(getBox("ref5").bottom -
++                       getBox("sup51").bottom, 5 * 10) &&
++           almostEqual(getBox("ref5").bottom -
++                       getBox("sup52").bottom, 5 * 10) &&
++           almostEqual(getBox("ref5").bottom -
++                       getBox("sup53").bottom, 5 * 10) &&
++           almostEqual(getBox("ref5").bottom -
++                       getBox("sup54").bottom, 5 * 10),
++           "Bad SuperscriptShiftUpCramped")
++
++        ok(almostEqual(getBox("ref6").bottom -
++                       getBox("sub61").bottom, -6 * 10) &&
++           almostEqual(getBox("ref6").bottom -
++                       getBox("sub62").bottom, -6 * 10) &&
++           almostEqual(getBox("ref6").bottom -
++                       getBox("sub63").bottom, -6 * 10) &&
++           almostEqual(getBox("ref6").bottom -
++                       getBox("sub64").bottom, -6 * 10),
++           "Bad SubscriptShiftDown")
++
++        ok(almostEqual(getBox("sub7").top -
++                       getBox("sup7").bottom, 11 * 10), 
++                      "Bad SubSuperscriptGapMin");
++
++        ok(almostEqual(getBox("sub8").top -
++                       getBox("sup8").bottom, 11 * 10) &&
++           almostEqual(getBox("ref8").bottom -
++                       getBox("sup8").bottom, 3 * 10),
++           "Bad SuperscriptBottomMaxWithSubscript");
++
++        ok(almostEqual(getBox("ref9").top, getBox("sub9").top),
++           "Bad SubscriptTopMax");
++
++        ok(almostEqual(getBox("ref10").bottom - getBox("sup10").bottom, 9 * 10),
++           "Bad SuperscriptBottomMin");
++
++        SimpleTest.finish();
++      }
++    </script>
++  </head>
++  <body onload="doTest()">
++
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++
++    <p>
++      <math style="font-family: scripts-1;">
++        <msub>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub1" height="1em" width="1em" mathbackground="red"/>
++        </msub>
++        <mspace id="ref1" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: scripts-1;">
++        <msup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sup2" height="1em" width="1em" mathbackground="red"/>
++        </msup>
++        <mspace id="ref2" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: scripts-1;">
++        <mmultiscripts>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <none/>
++          <mspace id="sup31" height="1em" width="1em" mathbackground="red"/>
++          <none/>
++          <mspace id="sup32" height="1em" width="1em" mathbackground="red"/>
++        </mmultiscripts>
++        <mspace id="ref3" height="1em" width="1em" mathbackground="green"/>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-2;">
++        <mspace id="ref4" height="1em" width="1em" mathbackground="green"/>
++        <msup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sup41" height="1em" width="1em" mathbackground="red"/>
++        </msup>
++        <msubsup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace height="1em" width="1em" mathbackground="red"/>
++          <mspace id="sup42" height="1em" width="1em" mathbackground="red"/>
++        </msubsup>
++        <mmultiscripts>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <none/>
++          <mspace id="sup43" height="1em" width="1em" mathbackground="red"/>
++          <none/>
++          <mspace id="sup44" height="1em" width="1em" mathbackground="red"/>
++        </mmultiscripts>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-3;">
++        <msqrt>
++          <mspace id="ref5" height="1em" width="1em" mathbackground="green"/>
++          <msup>
++            <mspace height="2em" width="2em" mathbackground="blue"/> 
++            <mspace id="sup51" height="1em" width="1em" mathbackground="red"/>
++          </msup>
++          <msubsup>
++            <mspace height="2em" width="2em" mathbackground="blue"/> 
++            <mspace height="1em" width="1em" mathbackground="red"/>
++            <mspace id="sup52" height="1em" width="1em" mathbackground="red"/>
++          </msubsup>
++          <mmultiscripts>
++            <mspace height="2em" width="2em" mathbackground="blue"/> 
++            <mspace height="1em" width="1em" mathbackground="red"/>
++            <mspace id="sup53" height="1em" width="1em" mathbackground="red"/>
++            <mspace height="1em" width="1em" mathbackground="red"/>
++            <mspace id="sup54" height="1em" width="1em" mathbackground="red"/>
++          </mmultiscripts>
++        </msqrt>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-4;">
++        <mspace id="ref6" height="1em" width="1em" mathbackground="green"/>
++        <msub>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub61" height="1em" width="1em" mathbackground="red"/>
++        </msub>
++        <msubsup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub62" height="1em" width="1em" mathbackground="red"/>
++          <mspace height="1em" width="1em" mathbackground="red"/>
++        </msubsup>
++        <mmultiscripts>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub63" height="1em" width="1em" mathbackground="red"/>
++          <mspace height="1em" width="1em" mathbackground="red"/>
++          <mspace id="sub64" height="1em" width="1em" mathbackground="red"/>
++          <mspace height="1em" width="1em" mathbackground="red"/>
++        </mmultiscripts>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-5;">
++        <msubsup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub7" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="sup7" height="1em" width="1em" mathbackground="red"/>
++        </msubsup>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-6;">
++        <mspace id="ref8" height="1em" width="1em" mathbackground="green"/>
++        <msubsup>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub8" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="sup8" height="1em" width="1em" mathbackground="red"/>
++        </msubsup>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-7;">
++        <msub>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="ref9" height="5em"
++                  width="1em" mathbackground="green"/>
++        </msub>
++        <msub>
++          <mspace height="2em" width="2em" mathbackground="blue"/> 
++          <mspace id="sub9" height="9em"
++                  width="1em" mathbackground="red"/>
++        </msub>
++      </math>
++    </p>
++
++    <p>
++      <math style="font-family: scripts-8;">
++        <mspace id="ref10" height="1em"
++                width="1em" mathbackground="green"/>
++        <msup>
++          <mspace id="base10" height="2em"
++                  width="2em" mathbackground="blue"/>
++          <mspace id="sup10" height="1em"
++                  width="1em" mathbackground="red"/>
++        </msup>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/mathml/tests/test_opentype-stack.html b/layout/mathml/tests/test_opentype-stack.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_opentype-stack.html
+@@ -0,0 +1,137 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Open Type MATH - stack</title>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/SimpleTest.js"></script>
++    <script type="application/javascript"
++            src="/tests/SimpleTest/EventUtils.js"></script>
++    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++    <meta charset="utf-8"/>
++    <style type="text/css">
++      math {
++        font-size: 10px;
++      }
++      @font-face {
++        font-family: stack-1;
++        src: url(/tests/fonts/math/stack-1.otf);
++      }
++      @font-face {
++        font-family: stack-2;
++        src: url(/tests/fonts/math/stack-2.otf);
++      }
++      @font-face {
++        font-family: stack-3;
++        src: url(/tests/fonts/math/stack-3.otf);
++      }
++      @font-face {
++        font-family: stack-4;
++        src: url(/tests/fonts/math/stack-4.otf);
++      }
++      @font-face {
++        font-family: stack-5;
++        src: url(/tests/fonts/math/stack-5.otf);
++      }
++      @font-face {
++        font-family: stack-6;
++        src: url(/tests/fonts/math/stack-6.otf);
++      }
++    </style>
++    <script type="text/javascript">
++      SimpleTest.waitForExplicitFinish();
++
++      function doTest() {
++        var epsilon = 5;
++        function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
++
++        function getBox(aId) {
++          return document.getElementById(aId).getBoundingClientRect();
++        }
++
++        /* inline style */
++        var ref = getBox("ref").height;
++
++        ok(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
++           "Bad StackGapMin");
++
++        ok(almostEqual(getBox("ref").top - getBox("n2").top, ref*3),
++           "Bad StackTopShiftMin");
++
++        ok(almostEqual(getBox("d3").bottom - getBox("ref").bottom, ref*3),
++           "Bad StackBottomShiftDown");
++
++        /* display style */
++        ref = getBox("ref").height;
++
++        ok(almostEqual(getBox("d4").top - getBox("n4").bottom, ref * 20),
++           "Bad StackGapDisplayStyleMin");
++
++        ok(almostEqual(getBox("dref").top - getBox("n5").top, ref*3),
++           "Bad StackTopDisplayStyleShiftMin");
++
++        ok(almostEqual(getBox("d6").bottom - getBox("dref").bottom, ref*3),
++           "Bad StackDisplayStyleBottomShiftDown");
++
++        SimpleTest.finish();
++      }
++    </script>    
++  </head>
++  <body onload="doTest()">
++
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=961365">
++      Mozilla Bug 961365
++    </a>
++
++    <p id="display"></p>
++    
++    <p>
++      <math>
++        <mspace id="ref" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math style="font-family: stack-1;">
++        <mfrac linethickness="0">
++          <mspace id="n1" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d1" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: stack-2;">
++        <mfrac linethickness="0">
++          <mspace id="n2" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d2" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math style="font-family: stack-3;">
++        <mfrac linethickness="0">
++          <mspace id="n3" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d3" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++    </p>
++
++    <p>
++      <math displaystyle="true">
++        <mspace id="dref" height="1em" width="1em" mathbackground="green"/>
++      </math>
++      <math displaystyle="true" style="font-family: stack-4;">
++        <mfrac linethickness="0">
++          <mspace id="n4" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d4" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: stack-5;">
++        <mfrac linethickness="0">
++          <mspace id="n5" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d5" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++      <math displaystyle="true" style="font-family: stack-6;">
++        <mfrac linethickness="0">
++          <mspace id="n6" height="1em" width="1em" mathbackground="red"/>
++          <mspace id="d6" height="1em" width="1em" mathbackground="red"/>
++        </mfrac>
++      </math>
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/moz.build b/layout/moz.build
+--- a/layout/moz.build
++++ b/layout/moz.build
+@@ -26,11 +26,12 @@ TEST_TOOL_DIRS += [
+ ]
+ 
+ DIRS += ['build', 'media']
+ 
+ if CONFIG['MOZ_DEBUG']:
+     TEST_DIRS += ['tools/layout-debug']
+ 
+ MOCHITEST_MANIFESTS += [
++    'reftests/fonts/math/mochitest.ini',
+     'reftests/fonts/mochitest.ini',
+-    'reftests/fonts/mplus/mochitest.ini',
++    'reftests/fonts/mplus/mochitest.ini'
+ ]
+diff --git a/layout/reftests/fonts/math/README b/layout/reftests/fonts/math/README
+--- a/layout/reftests/fonts/math/README
++++ b/layout/reftests/fonts/math/README
+@@ -1,6 +1,6 @@
+ The fonts in this directory are autogenerated with FontForge using the Python
+ script generate.py. See the comments in that file for more information on how
+ to run the script.
+ 
+ These fonts are intended to test the The MATH table and OpenType Features used
+-in MathML. See layout/reftests/mathml/
++in MathML. See layout/reftests/mathml/ and layout/mathml/tests.
 diff --git a/layout/reftests/fonts/math/axis-height-1.otf b/layout/reftests/fonts/math/axis-height-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..291d70c69e7cda0bea14d90de575447ac9833fb8
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..2d6cc2fa0ab8768d8221bdc1f7e3b1a8b24b2af9
 GIT binary patch
-literal 1972
-zc%0Q$PizcP82`PQ*(ud-OIjM1OlZ)^uG!W4TL&r|K~>l^B7#wy?nbw>nXaU06A2-)
-zE)E<xNSvHV!%1x7=-}T47ol!FI+U&o>-T1+wTmY0(M;a^e&6@~zW06a&9`s65{WJ>
-zzy+u<JK}NU;pd&pfWT1zZ{zVq=V@mo1?a8RL!CPkyA{2*MEw9D4tE_|A6s~`VLh=y
-z|B0TAmBn851)zSWZBHs`ol>?PO49d)V`GX2eN*5g@i<3wDw7+mdQF6?dz`8>)?gMY
-zmxgHKr1x8y<cH@CTc}?EluXth$dxW*1M6$2-++)*pzdq>{PDW>FIb?C$<<!ny0Wia
-zs$;Hw9u#;FW5l=^#}SXuS)lSElXa*>nmR^ifTpX8+{HCdicv&`B8mF^>8L+f0iLqT
-zbzUxaF6S8j4uZHpZC#E1J{G9ObssCNeZ<EqT13#t8frzt#{txfOFq_VA0bm{vbKG0
-zl*9r{amL3A>T$=%Dh}eYk2Ne6n|&OBAx`>Or~L*xU?YpOaF9kXQpj-+Yte%i${0*U
-z(Mr@w);Tiz_*&Ful*2eVTZ~B)^#dJt_N<fcP34TWJuODejJ6t`_PKOlpJjB|PS$p;
-zT-qkj!XQHi5N5*UbmB0R!5T~tgi}emNSNwh{@<>+n=|K1hm@pSafCG+*vc_;63-t+
-z8#Otm_KCRNpNrd0Z_<cGOk=B2Q4IBHTevMOw>6h7bkpyU>79|mTryk4m9kcJC!GNv
-zi(#74h-sR}To(5`$QvQQTXxAW?CKi7rR*M!x*|KbRC4>2vh=C+?sxAB{a?*q`IPyU
-znOXn!qk5urkv;K`0};@8l0pP4zXGoffpD=7#bu%xQi{vf;u7szjmYOGhbD&tA>6DB
-z0rer=UKql>5MC~VDnr(==XT8QH&c=DuO1MnfhxqxRpESLVz?j*g>R1vYGLtY)5NEr
-zO?u(`gT{&BZ;!qYR|SK4O&0ZYs46%))R1q?*Hrsk<MVv`-B(gp+_%zGjZqQd1==2X
-zKgSb&=F65@aBs4VW3%AJJgzIJaM>Ca_E^~{ix-W+k2l2ayonc6Hd9XB)AFs<n%yH_
-fgeI(*u_}+*Kt{8Rg6_JWbxM}K@}J84w*r0v+aV1D
+literal 1968
+zc%0Q$O=uHA6#iy+v(?(BRaz|?WznK7lDLhwiqwNvf~d8Mr4$e9T0;|UyI~ulN(vRh
+zgAqgzUOWim#fu^q4`RTh2el&ja}a-S6+C#TG*&czv%9T{T4;~%GV{Lo-uLFcnSGgb
+zbar-N5k{cGY>UN=dtY{}00P|rUd3Xa?I&-&y8-AX^-%lv&RvRLS)jfb5ZxUIH$)d7
+ztJy$o(0{b2-%4SR`V>$<)3!Siw~i~$$aVT2a<n99&^HI(6Hjo|C;HPvWzUIFc9T<i
+zzcrMCx}Q+ganc8@{`jiVH!rA<0LqD!J(w<>$41t-g?<A<Qh`gm)@P1XwSL7SbzH7C
+zc7NrkVyTY1_61PjJ&X|(VgiReK4*c_hfLO?5^3r<nE{$EC~_AUJt;n*Nhp%2FPw?`
+za~0qbt6cBpa_3@>;qM@b+cVa+*ym$`N?i7_!rJfpSVe=V@UezUalpp`REx7d)@i>@
+zrqE<<d)+9B1(xHKj}=tox{p<E_JNNzEEml_4!{sce5})c1#PgA!f7~2q8ACIxrYYy
+zpph~P6HVAe)K1nJGWz&h)Mb>zI5}I4NfHeJZFcIklk82TjfS2^BWgBnGTQAk$-X|z
+zXtSM^?O5rgO`e4zh72Oigz=fgVJ3q$lpG8v;&PEN)xZ3|T`@Oj+LaC|akt_KYc{Zz
+zWA-GTznQp&V|tf}*#qgA?exZtXv8$O8YQJrZw|MF<(}qKe;54@nce{zOeK>=Tqz4h
+zSKJxonHZ+o6fsTHn9t%~_jn`ZcgjxrbzNQKca)u@QCDQw77A{UQWicIUjOb}q5rGV
+zOP?aYGCS+PepF8s&aor@aUcR3Pg00r=||v|ArQ`2A-_W8LrQ+7nqQ_}tPt7kRAwp@
+z2;pi~2&fL>+Tsuvgz#($R2j049k+dMzn7APf3<)>1ymtcuL);!lfyZY%Y7Toskx<7
+zb(0@|*6F$LcWNhxzm0w$E(->;nk?#PrYty>sma!6E6V+?@p-cC#+Z~Pcdhi4<AaFs
+zK4}fSo#%-@_GRN7xK~-m;W_Z49@mxAxM+<Md$ed2#fw_t$4lZ?-oi^M>nW%2X!(|E
+j_3jZbK^<1jT9wDFA*0?!L3drxIxUM{`7h=DQvtsKyP^*R
 
 diff --git a/layout/reftests/fonts/math/axis-height-2.otf b/layout/reftests/fonts/math/axis-height-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..343f5aa88f8f49e3a84b878a02d707c45704c324
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..fdb7c97ce00941025516f0cb50faf562e1cb7ac0
 GIT binary patch
-literal 1972
-zc%0Q$PiPcZ82`PQ*@=yD6D5fuZreu<twDC3T@x!Y9%Rc>+We8ah={0TT(XPV%re<R
-zlmvu|g6qYD9`qo1>Zv6(r_zPq^iZ2#S}#JQryLbhvPSCqdoz=`YYZeu-|*h|`@Z-4
-z-uJyX-@F-4r-!i>m!ZQ-rc&~k7s&_^ItAdLR4P4q!JWwhW)Jnq;F0v#ntAF|>PG=_
-zV))p;#P)No`-mmy&yM8n0>0HB0s3>=zR70n^V*?f8P5I2ejrPO`DN%|;zjnZY`!?z
-z@D~vpe&o=Yw<inGximxv2XoxcXP!N3@27ql(DDUmqFB9({mhRxNC-ux_lpPn&ouY{
-zhpqa8T5aymwSiixFL?GX(BL=vh()o8lRlrLKz$>VdFVujzCdP(rt6y8#SLGIdBlaL
-zh~`JDUhl2~{LU=*`mwyRmLr25gz?j=^>YjbSYR7&23TY6GXd7oEy4jduuY@`972n@
-z5@3_|88U^TavSix6c*^j_W{<>f_nkh@g05*uz^l-Fu);5aW23n?YEGGg90wXMGm9L
-zqR2h$!3er36R;3R578i5m&h37V^ddNF8$PK(<etX4kVqzMK?E^Ey_J3-7;atd*q;V
-zDK|D|%cSEL9M>-99P(^T(q#fs2F$Dmjxr$Z$=pOVn^B8IsjiuSJC*Wc7Cq^blJPQ*
-zF=vTB_Vt7K^KtZ2>-8-DK9O?9iz&w)&B#Q|l6|r+8S3%gXm3<)YcpFo&Uu$i|BNJK
-zsc11zs$6kA<4*8cq-DipmSxG!EFM&l-y=b_e5Ky7ryG2is(K9SnyTDt)vHs=>eK4u
-zx3w$G_Z546tC`o<XMNC3_eJ#wb<}GQM8M!l3K6b<3%oW2qLpS;c8N+vt9-0ib{aRD
-zM5(kqwLBGy;C3^w;FbvPZjWF~1b^;;u3Wxg%^lg;H&YjIO$`V%K^Nk)-O*BcX}T=R
-z<(IQ%z1+UsvGnwHhgp90bKBDN%h^}c4dHOfP)WU>Y6ve+wU*jSO^w0U*#0<te@@A|
-z`&P{~VqU~}f%b=<_$M(WH+Z5C1KGU+?ro-VdIP+K&-LUAu34kbo~Y?H{-O=||8L@c
-u-o)*cU6d>Lw0i2bF7JqUpaY+*o0ZROC8NtjVQ*dEx*}^H^{4XxR=^wi6Ac3Z
+literal 1968
+zc%0Q$O=uKJ6#lBar=u}W5=k`ZsD&FeL1yfXCW>SaVPp_B#>F5(L~Y}c8BNkdXM`vT
+zWLZ#jyzCyl>_HGOUKCM0hyxz?u>KtO2Soh2McB(iBx6L!uev*N#u$i4tLb{*d+&So
+zURA%T>FMq5!7@xhhm}Ys<(>Z%5g^nD;Gbl&xBK*s7uNvOq8{n)>fNoGN7hr{2Z+9&
+zgInVDCmOa8OZt!Z57}Al)gJ-+f3)pMr|grOJ8_l12YfryG??2%FNvr4Hm8Sjqg79d
+zP<5SC^^iT9g?@lgG;uPA?V;3$d(Zx&J^^T_vd&1ZbRJt--wygEgrWi$x-NDctL=P?
+zW%{IA?a95hZ_1@U>DiY+gFhG}ro<Eu`+Uv<m4i&yp%WSUB$*+aE@^5PmwhQ-p-pIt
+zXfB<L`f?TEA*<Z%=kn%qjtq7X#?3kFM(hu;z;gT=V2!ok4zP|EQ4?ST%f(Lt4xvu`
+z9AK07n`8<@)wa)zQdnR$&IDLP9j*pg=VtE**uZMh9^eq9I2K@&_TP|zgDlR%MFs;%
+zBgZ|opdYQ2aad@>Hll8_&XF<5$EL2LT*j%{W=w`?7)UtTvu<V}os%v7tuk)4ZIj*3
+zxy<08EfbELbzD1_amceV%8(I6nJ_h%ILd^uM>8YQbV@A}r8>|5*_HHi<~-?=lJY8!
+zv1W;#d>2mQ``d{-Jl)?VlFo20>9_+a8IM_Vr>rQ2dV91Zs`m6P^&g_&CDT73$y6#?
+z%#*5697?$(JQHbIZ86KT<hLyDcaQ%@f==0`zOJVm{En(~4C<Qd+EU5uQOeTm(!Zbk
+zR+wLF^vY4@*A`}d*F*P3=@)g<^AAM8;7JM*uKWnRG6bT<S`^oaVni#h)r+f)%QYgO
+zpBbAO3q^3Hme+4x1i#luuq1-VE1;{8P3*X?#r<9?63%M@fg0#SZ1^FXFHDaYM4|BR
+zZb2`soN1bV{jtd`yuZ~rJ^t?Q`|+x9IB%$;K8{s|XT}=xjrp4DU~3$I{&?+)k`;HY
+z@>JuMi19w@3_bTxV!vGEiT)AD)<tlyu#BUN;KhBeCuecl8Wr|<*;^Jb8i5ag6L<0!
+tUP;+ZIeSN|r&4S7j(7!{ux`Psd}ad~%^nJS>-yGNS@x)ZDgU1e_ypTz4+8)I
 
 diff --git a/layout/reftests/fonts/math/fraction-1.otf b/layout/reftests/fonts/math/fraction-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..b9c4c4b534ad0f88b3e670a4494bcd2d856bc287
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..24e7d5155be95b413bf2881ddce7b0c7bd862f06
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-2.otf b/layout/reftests/fonts/math/fraction-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6571de3367825d36002f09e8a06e729556ca1886
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..d404810257674162a9e25c327ce5b980a97d7f14
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-3.otf b/layout/reftests/fonts/math/fraction-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..ae651a758fa2b1b4747b4aeadf0b04841f5482fb
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..2698e8c7c22b29b11f7599c79dc2418cf0f43985
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-4.otf b/layout/reftests/fonts/math/fraction-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9a07b0a8153a9595fb1e5dba2be2d5159a1dca21
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..140793337177715805d35945d229e51ed7e736eb
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-5.otf b/layout/reftests/fonts/math/fraction-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..707bde52b15c71664dfb51561535ed05db165c8e
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9903b4b00ad9fc33b2feb382eaaa83eb1094aee3
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-6.otf b/layout/reftests/fonts/math/fraction-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..fb71d013afab152a01ab2035437eaab462944668
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..01b139cfba5fd6a8ba3c2b55f7d195d2ec71429f
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-7.otf b/layout/reftests/fonts/math/fraction-7.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..7703f7964b81311715bd46fd72b0bd79ad0cede7
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6c628a823e8a215c6988437f335afef1a6ed18d4
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-8.otf b/layout/reftests/fonts/math/fraction-8.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..c521577a0c1d901a2db75e2a1aa0c5099a7feb80
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..32376dff9e3916df3f5803825cdd8f09c6e1a6db
 GIT binary patch
 literal 1876
-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
+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
 
 diff --git a/layout/reftests/fonts/math/fraction-9.otf b/layout/reftests/fonts/math/fraction-9.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..515726e32bf55fe394e307d1ca35a267af168ad6
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9c194bf3d708585cf41af5d80d984df3a63587e6
 GIT binary patch
 literal 1876
-zc%0o-&1(}u6#vccCap>B7ilfH%AmovNaAK~1+^Zu5InS|&>-SLU1My5O*d>K)Q^H6
-zpkTyf55+_A4^V_6Js9yM9t6Dz9t8DPyjp3h*!X65S`)2Wug>hu`@Q#m@6DT?-AN>q
-z2?TKkDvbVkoDc7vxeE9?06dAulY{4+hZ)k}kgg9NOdeMJ`a#kc0Cp@fyvuAk9SRfX
-z<Uf_lS$S+!p8@JD*$!pW)|utu#3cD1)7X<CgOc#QBTVrKXL5y!x>tlyH$YQ;&YH+W
-z86wEU`u;I1m;N*~(@pvnK<UZb<Aur%>;|+l`8k-N0&^4BoRdv`pAl5&MYfmIHwUVv
-zZ1qqiq8PTo7I56-dzP9;%prG%rp^=7N6IZl?Bcd3*?Yv8A}Ib1t5H8^0iIHo+*`|?
-zt2tcmpb__1tvhf;Vuk>U5-TL9C02>^QDO}N)+w<M%`7RgpX`^2$uv>hfEy(+LkQ<3
-zR;W)&tP<z0#2P}ZMPeV-Zc6MYdm8<)k;er%$YKN;6lf1!NTHjg2?H_o5E>-bMPiIn
-zw@4RJ4#kPtqL?h9F`(bhUvRP`nF8-hb#v2*_3%OaVs>=Y;{CRhw;ijHwTXAu4NI*C
-zMzEKRj+GMb2x0GuyUv0u9jY$v))b|xIQG$4D~;!gp_eo<R`!6nJywX@&PbY@QG@T}
-zKb9jU)*I=Kh<evi+fk~+!MJpD$}d)kx>8hzqiJWHxZE&eQNu9!I&zBh^oA}^yic5x
-zt7{@B&6=z8O2wNiA6C9G=3nbWt!;nv{|8O=MCCf2`5GH$(C7^^7OZ;jO#FvC%S|Y6
-zW@TL|Z&AyewA&4=NX@6C*rWr^I_|XSsMqnR6{-m6q~qSdzEAzfTD7OmpfI*=d$F`Q
-zSz@Kq(rigBwSVbY{IJ~NFMWN`wm7*o`*pIevGL30P_eDp5RhA-_Ts?3mqOOuiNX`W
-zdlscjuFv=OAK%<_DZAIfouV>M{FxG*qsjEJdmo#>=5TH1Pq>;#n6&}lUPJr~^=Ky<
-nCb@E#ie9UQX*8e}9oYKY(mZB}7-1JRx_Le8imd9QdNIBO4W01`
+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
 
 diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math/generate.py
 --- a/layout/reftests/fonts/math/generate.py
@@ -546,692 +1644,642 @@ diff --git a/layout/reftests/fonts/math/generate.py b/layout/reftests/fonts/math
 +saveMathFont(f)
 diff --git a/layout/reftests/fonts/math/limits-1.otf b/layout/reftests/fonts/math/limits-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..00d3548d6deb6eb090e38cc40e8176a7c4a84e49
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..ad657db6aa0d245a1bf7d8de6ffe41eabac5b882
 GIT binary patch
 literal 1884
-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
+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
 
 diff --git a/layout/reftests/fonts/math/limits-2.otf b/layout/reftests/fonts/math/limits-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..88a9673eecbc740402bcb7e9575d647ebf4b3c2d
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..d5fa8018b7666d852cfc223aa9f97a8da95556bf
 GIT binary patch
 literal 1884
-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
+zc$~#mO=weD6#njeFKMkMZS9X0QoW-^>>}xF)GAULrA`o;TEQaXVl-1j6HNNT%M*WS
+zp&(c>E@Tkh2x50`oK10Mz~wLqir_-<uPZyd5jr$hZ05V~y|k&Kc2;v=&OP5b_ndRj
+zdFST7!J(l+ti=R$nEmm%Y@U964hYl&covTj4V=06dW!N(%He_iLkG3s50jKjfH*#Q
+zv^&-`)!RxexqfOmo5&q#n|TN5x2ZdnN+wQg_QV~oJtXy}s0i)~ydj<=b*8e;`I@Ih
+zs5!!^E}J-?gRY=x=M)@GWRsizzWajm1fXrmS$U^?8QTG4mg^EinF2p`pL}<+q3<88
+z)s-Gk9(4Rw&GlJVUkeT1ppTdnb2#DIa~4=RXvsWuB1500Wq_)ynyTWO$HiOp2u&FV
+z*DQIdDEn5#c?7w+$=l1FQMHrwD+uBKl6ET&`&cmFNgr$EH+-yP3ts!!K&@!;aR80t
+zM;`~N|CN@)P`Ul=dMPZ>h_gP{_+0m~jyP`m*kByZ#{o#u;o~6nN6-%oIb48^G)9nu
+z!y2|>7+vHsnCQU{q5)c6q(z2Lg0k|m>8IudebPjuK);o{V5dh?j@&lfC1YmK4mn_5
+zOlL9)*>Bl7%T73Hi*^}0WJwP4h;SQZ(%H0=j}UpkxEs%Lxy`(iZZ=WoBe93{c>qtl
+zlepKFy}S{(MxD52k0fO*YRWybvJK(RNN+?X_|0UFabufmuRO`HDsa^0Dis_{+Idza
+zO|vIznx_0_G{4&(h5gPRP~C84gYR8++MukdQ&ujkGo^TW=GFV<b0&iL;&^{PzPJ8A
+z4ek3Ts~)<?%9qqz{<2^JgKtuZHA@W;>R%TrHJ}t0r4FsMQ7^4GuGNb|VPR}xED*+T
+z4Pl@$j9X1%)Q0irIvC2Oj=kQEefhK5tb2Y}cgic<R`*|sN$5gs-V!Mk=f{hpSo|<u
+z)QfEk?ejB>?ZM*5-&^O$KTLlduL*?;hRSMjtR}QD)>3FK)YtiCaXj8T^+fR%_o7;<
+z!&?#MMc3!v@Bd}|;q$I#Rr8gv*xqCszpNr=%(HcQ1y{vbp^sHjmA~M(=+krJKHi>f
+t<elV|`&77hYPHl!s>eFCW8+t|@+@0u(dnX)8`slTc-5o6DBf2E_!qQN`~3g_
 
 diff --git a/layout/reftests/fonts/math/limits-3.otf b/layout/reftests/fonts/math/limits-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..b39c16147f1beeec7da478276b31187ab278c023
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a667b520751c768487f183fd61d6a9b2ae2d1ee3
 GIT binary patch
 literal 1884
-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
+zc$~#mQD_rc6g_WdlGa+%R@!cbR35ghEs{9NYFDJ9QVGjqZNVb4A8M?j2_~H|8No^m
+zg#`uUhlnVGAk;5^+@G>v8`#f91V!*qtNq&g=~8K|XgqIbQd3=P{qjxjyXW3_?|t{q
+zeR(r9GBSjXn1&8>Ad!%*vkxYKKs|uRiNwg@nY(i{l%G-#4;~o#MGMBZQ7!}G*wB$3
+z@s^psHe$*3lcTw0{$Tt3zkq&=x?j_&<Y~>GzRk72NPTH4f<FhI6EBjw(>do{-6JB@
+z4RdP9CC}xdD=0cR1;>-Ql>G0`9OY?1+nl!wPUQlA0*nQ&O9*8O9N6A}^F&ksYi!h&
+z9uNQQd|Au&1y^4W4c?%SSQLx+&9mn$uzJvvdFVujzCg<WRhKkX#bu9+7l;W>83s43
+zc&RA+SH<}oa%+pXmph|oC+SxZ!o3ykk2vgO!F(_JSR=pYV;x<X^Ra<?(dy#>n#DdJ
+z2dO_rOJS(o4!K?m3pC@bk2OA5e5@mZ>pnIZNAqz2Qgr$_Nc}JdU?GnQ*vMcEX*jH*
+z2czgEkHbU^JBbEqb)FVkK1s^T%ch^2lk~|DjRON#e!|X-r5)Kb+AHH`Y^NNw&S$dO
+zq#Us9yk#eyj77UF9daZG1w>T)vzc7RDMX08U&4*&xZGx5DL0!a^O4v?`ZR#2-9_9-
+zs^*P^HSQ!Vdn_g6QB&@b)oloOMfxHt!8MaP%8hNRz49c(s=!f~t5k3_WfxeHG|gDl
+zG)=i?G{4&(h5gPRRNZi8gYR8++MukdQ&y>{Go^TC{@JUK=S&3g+425#d~N+Z4ejeD
+z>mIttD!;Se|5LDl!8a+yhLr{g^{<PRn@|pma;H|_qL+U#E;ou|ad~oiG7!eqrZCVP
+z#*LOR>chCd35IfMV6S&$f8lH{=bqp7o$~6owfz_3B6K0Pc14P%rKyrAmEO#j^iunB
+z$I|@!j$rBSA8kuhZ)V?4)rCSuLuK`TvM#hd*;;HXHa7TWaXi>N^HA|s_o7;9zzY%O
+zMc41%@82^1@p-Sux_Z{Iz0Nd_uOnvMvvqkD*Th(*kJnI*zu>p%-4o(|-k$B`-Q?B#
+oRJeC)t<+6w#3poL%NMiqEL&;O?V^wy*V9&c&7;03-d6?q0FZ6^{r~^~
 
 diff --git a/layout/reftests/fonts/math/limits-4.otf b/layout/reftests/fonts/math/limits-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..350f04ee3a9552c55abad90d7561050fd7e4732d
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..3dd80a3f98913f8577527bf6b62ff88d826a102f
 GIT binary patch
 literal 1884
-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
+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
 
 diff --git a/layout/reftests/fonts/math/limits-5.otf b/layout/reftests/fonts/math/limits-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..d5e5ed2be1892ed6b7b103b998e39caeb7b96034
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..fb8e9ec4fcb972c5229db675589c125be9205255
 GIT binary patch
 literal 1872
-zc$~FWO=uHA6#iy+lh(GRwe$~MWznGakhqCfLF+*)LBv|2MZ|*|YiNQ^H*8nX+KQ-H
-zFg<t>58}zYiqL}xgWmKY=*630D+oOZUMh_(Hh#0asi|mN5NGn{eecbCZ{C}k%=Yy4
-z^`I8lpu+4*B#hmUH@*Y{)c{^45`Enl?5AnU?<nit2l@^x!Pqv+UjT8kr*}tu{kf*=
-z#0KZj_Ggnh<*PaZs1K++l1?ShEBks=oO@2%ou(qVC-9MYmK08Bol8|RGO7-7sL3WT
-z<)9uX6m1-WL&<FFQ)u!E<!gYV=d59;bPGEHZHDs(gfs;fA4NW&sqg%TT2<=t_Wt<M
-zO0Leh`f4cf8hym9n8hj2o}<9>MoZ?Q5^3rTEdx~DR%8_u9v4%H2}K$P*DZPd9tC*G
-zEU$WNxnre`;a3pC<0b7@9P_bYzT-Yt$nW}CMHo{))=({4eH=i8IOyXb^(k5kP3Csg
-z^^#bi0T+F&u;1~qio>|)V~ueFJ`TX($$B_QeJ{FTA&1Mbk--4ca9G23^rM|T4iho#
-zBI>5q2rUNLla!^GO+Ps%>60NE0=lf+WjiyFc8u-)?MB>;?J~Npk<8#=(&)16oMk7S
-zj77UaI%G)>h7myr6`5?t8IBNnzl0mlak<UBQf@X;=3`(l>GuGhHbxY2shl|y){v91
-z?17XKkDA6_qr4DdtRvD9kvXoI&k3$=Q|(n~Fs_Uob-Bz2CsOt>i!w|z7Bx-NSTUM+
-z110JH$sUrY;mR8KU7oZ?S&_G_RC4bWd1<<I^VdBS!9QKh<!!b3e{0I>CjY;w9xL78
-zY5$>M0gXE;#JZ*37xG^hDb}O7K@@eRxKS;(Y7=!LpPwI{9}Vajuh)SF9TV$yRO@)r
-z2vxdl!w&3O+tn_wRe9n9XP^qPc}pZ;m>VmILgD*lK`pe*x6Ms2wgn3dPnze(zE3WU
-zRfR%%O{TIqS{0ffZOS+2>uON0?als&ZzW&$7Rs3#Oo=ETx6Z(aU)8tffZAuP?BHvk
-zx36Kh?=g+jYp{!Zwk|K@iWtlE@d~Q&7tO$r_r#riF<Z#P<mES1xbJAC6eiW75pCG?
-a*Q`9tCR&7D6msKw+A^=`@+;zfNr0bHX!ZjD
+zc$~FWO=uHA6#iy+lh(GRKeSpgl|_rShr~^^6{I3k2_n`C77-8Dw1y_wbi;N9EvXb0
+z1=E9wcoKwO#7n&t@nEnwJqUX7CjQ(i2wtj<6&t_V-PBan7Q~sndEa~U-kbMkCbPYL
+zeZ8p01XLK^v6$XD-7*XKDgiu=#rk^A-hVSi`6cCG&;GuHia*ju`6D1s^d8$0tsiK-
+zM67fE^k6!kQ9h|-fO?0zL&-$^jABjP<=kUZXOas4Zr@wtc~WaKZJ)1@kx_AgLsdF{
+zJ_GeAp=jpdABm?ETfW?zqdWm98#CspUA&5&fJPm32x$sradTULZP#a1t5S~_4_iKz
+zb9K(qS3-f?=p*LEJWjgy90gW3S~3rnNK@x%>7(kpBCD8mxp;?&P^6)M-LluOQGi)y
+zdC^_V8Ov>SuYv%km$ln)#KVI5Uh}X*e#^ruw&IP4HB^d55BpFj_IcP({Qxb6CUZON
+zcu6c!hjSiQ*l&1PMGUt+tTB$_VIOqS;$c7aN6`%v8C-yc6o!z5%^J325bfkq7>HmO
+zQ4g)gXfezlr!2iJ`pGd)pA^vu&~0WeSgE0;t#2P}*P}*cm)>KJrG|&&dbeq1Oe=1u
+zOxg|8Ax*L|iV!-eNTpNuXo$%D#hiGy!!72OaIy(AA02y0zXou%9mJiaQr?J}BX-QR
+zh7x)-Z0LLR(lUe{q0W#@@UO`n=fW1%Zh1Px%D`cV%T#bYVU4mP-7q3y!!Y!}M)OYF
+zrJ#4R2jpouvc`RvC#_Ld<Si=}ojXNdd|$ls^PUO+?=I%bw%Yu^HDz^^|KC)X6)*F=
+ze^ao4#+?*m-SPnl`L7EVYEjrE3PGjNq82u2lQkljTg)zIeL-BS4FYvROx6cc8N`zY
+zsM4hkJFt6gSG%-U`JoH+Llt7n)=)0LFrF9r{MVVhnqR-zyzqXh*`NRRplM<J>&&<D
+zia;Qz$yAoI6@kTUW3DMzQ-xA(&-YHfkbK2kC}*nhPK5cmb@^WZtbRiVsD8A{4nFgE
+z`x<upHq$t@2D_+h>+ljTi?Ko<Eu%7j(FA;dMcl;~b3J)0dFc%m&O2HzwUTPkfM#s|
+aV^*$ZBQ07T6ma6Y+7d78@+;zgNq`@cANK$N
 
+diff --git a/layout/reftests/fonts/math/mochitest.ini b/layout/reftests/fonts/math/mochitest.ini
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/fonts/math/mochitest.ini
+@@ -0,0 +1,39 @@
++[DEFAULT]
++support-files =
++  /tests/fonts/math/axis-height-1.otf 
++  /tests/fonts/math/axis-height-2.otf
++  /tests/fonts/math/fraction-1.otf
++  /tests/fonts/math/fraction-2.otf
++  /tests/fonts/math/fraction-3.otf
++  /tests/fonts/math/fraction-4.otf
++  /tests/fonts/math/fraction-5.otf
++  /tests/fonts/math/fraction-6.otf
++  /tests/fonts/math/fraction-7.otf
++  /tests/fonts/math/fraction-8.otf
++  /tests/fonts/math/fraction-9.otf
++  /tests/fonts/math/limits-1.otf
++  /tests/fonts/math/limits-2.otf
++  /tests/fonts/math/limits-3.otf
++  /tests/fonts/math/limits-4.otf
++  /tests/fonts/math/limits-5.otf
++  /tests/fonts/math/radical-1.otf
++  /tests/fonts/math/radical-2.otf
++  /tests/fonts/math/radical-3.otf
++  /tests/fonts/math/radical-4.otf
++  /tests/fonts/math/radical-5.otf
++  /tests/fonts/math/radical-6.otf
++  /tests/fonts/math/radical-7.otf
++  /tests/fonts/math/scripts-1.otf
++  /tests/fonts/math/scripts-2.otf
++  /tests/fonts/math/scripts-3.otf
++  /tests/fonts/math/scripts-4.otf
++  /tests/fonts/math/scripts-5.otf
++  /tests/fonts/math/scripts-6.otf
++  /tests/fonts/math/scripts-7.otf
++  /tests/fonts/math/scripts-8.otf
++  /tests/fonts/math/stack-1.otf
++  /tests/fonts/math/stack-2.otf
++  /tests/fonts/math/stack-3.otf
++  /tests/fonts/math/stack-4.otf
++  /tests/fonts/math/stack-5.otf
++  /tests/fonts/math/stack-6.otf
 diff --git a/layout/reftests/fonts/math/radical-1.otf b/layout/reftests/fonts/math/radical-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..5cac52e73b53d4b386d54aa1a40b42fbd151612a
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..974cc958d322419672b0d7ae7e9e94e354466489
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/radical-2.otf b/layout/reftests/fonts/math/radical-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..e61b9376d4e964ee5ddbc9440287d994302c05b6
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..7f7ba0ef1e8926316618f657f18ab7616d512c03
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/radical-3.otf b/layout/reftests/fonts/math/radical-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..048f50fee1fc02b13fb46c3566ba97b485435e41
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..850eee0d1e199446581b96376b0efcb7360ce443
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/radical-4.otf b/layout/reftests/fonts/math/radical-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a56b340b1aa7c0498979b59d6af990138165887c
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..e199f73ae9ead4e3e9bb0d6552f11c9e4a808566
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/radical-5.otf b/layout/reftests/fonts/math/radical-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..01bc8c0a9996d140a1729e0231bfdf8e6ed7abcb
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..bd3351bb4c741bb4cd22153494ff1a97e48dcbd3
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/radical-6.otf b/layout/reftests/fonts/math/radical-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..d54c317c2ec6ff873160d46be16d9bd0e03bc467
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..b28a85d700acf6577e4c48e1de2708adf8f65d00
 GIT binary patch
 literal 1896
-zc%02uO=uHA6#iy+lm3$aSZk43hgu~$ByM6`MJrS)L27FSOA!%uNkbD%x?vlkl@<iS
-zzjzb;123LDDS}4>o<vYk@aj){5PG-LG=;`DyOWyu*Lrg{GvD{#y!ZCayvgkF$jC72
-za0x2({z!zczFbiOR||mmk;ur<dFyGM<OPzwLx)C=D6WnNfLjCD$>9^b!%Yu++KF?T
-zKNn3I>BGMHPk{P}bOZ62F{T_i5u>^1)O+HjaPM_}Cca3$GoH#!RlOsIs?#*ori`gH
-z)Z;{18x8IWBNgl0_jQ@%OMv1_o0FO173={t;m^T@DX_b{@$1=!-fyT=MV@$j|LR~l
-zstdNh8Va07K5UUK;*?`gBSU2)OUi?G0-Cx&mM&7=P{b;3I>_b_Vu~<y*Q|MoD18-i
-zUVwLOb>3x<D0>r^EAZg)nsyhCNzPD%>yj&kcO+M_6JI3PP{X!M?m{CwD!H5Vw3A?(
-z$ZgQ}5}ctK7bI8cxh1)Z0o;>ZLo=(B+y&13lDkQN8vQVl#xyJ>FpfAfv<4rd@Dqli
-zBZMwuLu7T4ERysXBnvN#{KROGPlDJ4&~K)vt;Bdd!+lXd59^^WK4e}@B$Ed3H?6d3
-z8JUDhcEV|loT7wD1kgh&V=NIhk^!R5FJgzx*l1B|F*~6krNptH`mZq@eF)toiC#({
-z5pyCFF|F|!4+nL=pRc`(c&Izj9T1tWm(?g`U|~`&l~ZgHJ!qrI38OJ<l2*rcJrvY+
-zov#<rIgO%wWt9($%Gk0-H4s(TNLIv&D;CB15?Gx7Sa!OZ8^0X&pWAx#|3OpMH~DK*
-z9VlL=qW@;W3>xhuW3@lFpNYR<Am4zzm*ux9`F1tGMY~zgvf08+VaDaftp+d9=*8V8
-zFRHzG-3(2*R8z_KqE80e*nwYrYen@Ly9$-Djvaw)ZfQ2ha=GPaIW^Z>Xj__JZFA>V
-zo@`#4U4FJQTjlX&HIdcoOqHiF(~{kst*=FCoo^04d@HcxjubPsm}5b@^m<(%{&6>7
-zN%U{P_BN$)W&?I%$JWLYFN;y350~{a|4r8<@1-iV5_S@n?p9{krd;ZzUQhR98`}Sv
-Zm1EgL7M(Wp*l`_g3CkYwb#cBhz;`95`Ue02
+zc%02uO=uHA6#iy+lm3!wt+hy6h8jzINZdwkrBqN_LJ?~Pi>QdYq@f8W-LQ?&mKF+v
+zfAJs`{5gowQ@!X#JQ?sLf`Woqtrjo!UP)}B@y+feCjPbFoXyPl&71e$yti*MJ2X5z
+zgc{63h29qm@%0yLD&T4W@GcY@9=!N)ah~SOH1`f39v)C!t@i=92C!2@C-wxl&UdvC
+z=d^wyoG_C8?MsV*x<Ilc(TFjkShEjk?HTp1C<)x%u8+i5sQaRc)I`NwVyHMvLv_NK
+zNJ2eMlr_=d9y1b=g)eOfXg&)lyOZX4Dt`rg0ZrI*Frf;Z&1P?%uj~Da8db!JH&2_t
+zl%l$9%PXP4X=KAz*b2@#`ZO|>H`1gy=uJRVmr2t_q8p0H;--V_6FQk96x~%tE8*o(
+znV;w2tvj8)>=7k9ahZV!kBZVZ9Fv@(3fCo92=7R)!iUe2Yp7yg$z9mO1|)ZrJVBaF
+z6R{n&tpsPN$0f-XdgdfoF@SrLYp7?HlDoiJo8)eipGF@{BrypKF^nRL6y?y4Fggf>
+z(9wx~#0E)giZtT%7&I4F7TJl>Ae$JmF`&;(PFk_iXo|OoJ9tp<+{XvasaQO2@IKQ@
+znwF7@nWQI-M#v~k7>6HSBr--~VI%G*>ij~s%an~4g%+^`3Q$NKJ=A~o;mG&f++PeH
+zA#*GhGOf`F4+eDJ!;3o+-|z48i!e6|=_GA$VO-|P$+d7Euu%krlM!p2QscVb8PIi|
+zZ{$!`-sy#k_lwHdbB$^ss;<#o5hpI67w1c0e(6KW>1J;Ha@2or8?FBbP1#uGuT6Cz
+zf0@eun}iuOdXtP*|EK^He?fn)4mmH&H7mImHMc{%S<BMt)#=q~mltz&USNwCcei>`
+z>BXyhXu_nDs@{!5($VG)d~w&Z1Hjl-sEoDl@~1P|nGDNhzCFpPna0(o?9zIZJG1t9
+zdv@mAleL)&k0-5(sMe<|Jgd_U>Fw#-Y83K(eQ^Gbz_L41tW@I@3(%$4>w5o>Z}X+Z
+zj!o#^rZCQJLNDm(+F0NvKFZ|5l3rrJ?V9AhRE0)DA7SBcWp-^!XFlq+bU!ws<&RN0
+Ynhm7kvzf>C>qrY&@`$gC^MwJv1C$N@0{{R3
 
 diff --git a/layout/reftests/fonts/math/radical-7.otf b/layout/reftests/fonts/math/radical-7.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..048dfa3611b6c63abb65216e966b708621ace7cb
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..4a4fc99c870fdda2252e5ba5a40c59c38570859b
 GIT binary patch
 literal 1896
-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
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-1.otf b/layout/reftests/fonts/math/scripts-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a0ff5f994eca92694eace3a3ca3fa5a571d13a0e
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..1d70be6130ea7791e28ff2979bb3bf8ebb2e7eda
 GIT binary patch
 literal 1860
-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
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-2.otf b/layout/reftests/fonts/math/scripts-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..90c91de021968c8e9514a944f5a70d4275caa0d3
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..13f7afcb5011fdb18ec9a7beeae3dc046007759f
 GIT binary patch
 literal 1860
-zc%0o;T}V_x6#nMkyX$Z34{Cy24Yid^xZd3~NbDhnB~n{KF^Q;FTihk}UhZz7k|7B8
-zv%UpIJ@(X75&2dNJw*?J5%d<MP$1N!;i}|z=H9!utCc=CvuDnC&YW}RoSC_^q2AsQ
-zN-zZ(YI`uq8<lU<fTI+^%V4m#>zeUAO7dHh-Cd`9&qz-1d6K^XtUuJ#7^oPi@(|`U
-ze`RnatYeS-29TeSt}Pk~U)|^lP14*eq7zY4NFm2(!plUS=tyF$;5{J}w9-&G5+2hb
-zbrWQ@G&o1YBasg``};_q0;GCfizhNOI1VV^X`X`#Q=n~TpyP5`>kpL3OCs9*qg$Q1
-z+-`-CY(ze6nJwdjWp8Qn8d-LmBNTawEFC1=l|&V@7H13aGf9{@i#ENsMgd+^mfTv)
-z9CK~BU4aWvH?>D_&c+NyxMO39_yZfuIE=40R#3za*w}$`)?s5O>2<PXipZ_g^b(k%
-z64z}kQNL$n8E5g(#tJG~iH#kUyVu4}(qBY7H0T(Iff$AmMS^Om#~{4K15n{d6QM4$
-znjni|>S2<FmqC7F43kfc&?wNZ>ElLhD4O8)gI*p`{Y|_}n}`h$hk3hZ=$a8u#5A&t
-z(*j~aom}H+poI`0G-7%p-ayd$1<jBNlN*#;#7xLXDRHzAZI5B;{b(ks+0<C+BdCog
-zf|@ZD;Q^n@TlnT$g#FD8%?%>cowDkq3=Gm+rE-cbqWerPazbCkh*Nc3RsB9yRryW<
-z#Ti=UwokcLoQx?eA|Q>5Df3Lm8Z(R8d&Qi8x}5oKr}_V&$rj5@i@n`mFoQxn$XN03
-zZD-=sJC-g(x{jsYQhJ}9-mA=(vLrQ!8@J2cK)D;q3O5Sfcu@&iI2@%TKDoQwy}4B0
-zQ8P%49XymwtxTp^Dz!S7l2bKnwJVDowa(P~v+9+})w%V_0+(y;Mpd#pSz3&2J?~CE
-zo)<jt4HPrQSYSSS)LI>%{=G?c{aX}oZSLL04&SFVF73iDVA+~Hi*sV+=>s{G<Ik#r
-xpC2K<gF@60_Ylv%oucPU9->lu|7x-SuUT1^Rb=5Yk;{y0X|p`1i+>M6zW~Mm>=6I}
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-3.otf b/layout/reftests/fonts/math/scripts-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..7646b3c6ed8b502afbaabdd8731970e30588d79c
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..4326ead245fc46044c0ab9d42c67ebf1487aca5f
 GIT binary patch
 literal 1896
-zc%02uO-vI(6#iy+yZojIf)Z0<R4{O8-B!`4m}nr4K@k%P@h|G8G_(=eW?K_5kdT;&
-zT5l%)9X)x{m~ga-Cu5=sChE-}IGAwsfT4g|-|TL2D{479)0y|ZH}Ac9Z{Bpar?<BU
-z6_|hwts@-f4d0r#0iId_Z^Gf;?u+J=81Zw&`??SH9+uQClYpuK>}1c09ii$6yBi2|
-zTE7q((i5F6vmXKZA<4R8QN3T<e<Dh2PigFqkwD$!`9yf0MpJAkHB$1L5K7L{R6eAS
-zBp@Fr$m(fQhxMW8+le!$h@SwYmV}W^<*s5Upa^>oCRBmvd%rZEuWJ8_3R%R7>HCvM
-z-Bg~l<fV{cH?m>#Y#yg=eVQ2x8);G;G9g8tBTWy9Zb%}Fn>J-L2r@}1s%0xy!pp$|
-zKhMCoZnF2XX1I3ZP6l2)T9IzYF$Xi0;ktt*qIVoDqZywate}iFI@p7C?1+O^lG90o
-zDI&I`mX*K^HMrzpiTW)E%jm*A2P>#y6%O`*vsMSIBtMG|7)W3gCgK=C3@OT?1rf9o
-z4M9T?y9jlY)@9Ndq^=V$tW2^KvraZ~Lc>6Zkr*}O1F;luiL~;N7Tm?Vjmz=DL7jIP
-zX2LM_RNNrFByAuzOps|3esKYk5i_1hCH(~LU)XY)vZzU+MXi7W6cWci8moQS@*vuX
-z6C)o!!p3kaY?uR49tvoDA79yvaInqa<`<C`i>i+zFiCEw%E`Cz9<Zp034KvBN!f8t
-z3kEbz<Ha1>w^0nAQ{_%k8H-n_2BPW;@shZ4xtzFPg63vFxNbL7vFfV--iodN2Tdxj
-z^3NvQBzJ|1{)dDa6go-9%6}a{6MsQ}whCDv%Wjsk4RUs)a<h`9(@SGZV;&!FRr!E*
-zKHRPLq11<$HBf{}DV2N=4w`y@JfaV-?ZU6@T2Ot)CLuGnb(=q(Ss2f-OlEN^BWE@&
-z)i2Ecs8=(~kLwo37pIoTOT6B+BBJ^+R^nY6t4-IXE6b73^VNX|(}EVfkz%DBGb})l
-zUc2Xg@dI3c&BeTMXzLnI{x*eiZVh@NTi2p_?DA0{54ncRp49>0-w|%7Dr_LyL^S`l
-nGOIRju8Bq^y^r;1_-j<QW-VznS;%YowWWFL>f-BSe_?>1=G^@S
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-4.otf b/layout/reftests/fonts/math/scripts-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..448c1cdaf902917d4776e2153686404e1063966b
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f807eba4d8d01b05b6396fc65a6dd1ee688d0428
 GIT binary patch
 literal 1860
-zc%0o;O=uHA6#iy+lcqnmT3Rg_b<k8>q;V6ipwxpFf~YluMMR_;YiNRPciBWyu^<Zm
-z#hak$(UT`d^rit%;z7`ho&*&X3VN(GDjL7p-PFXt_UugFyzjkv@6CHNvy<fDU=ocu
-z4IO5GA|Yd;4`+cu6MzSa#NfaY=Wd4b6UyO%&4XLDV5dd-9U%55cdv;rIMfy)mYhF0
-zJeIOCPk#*Px2W5aNv95f-<_P`+(Xj(3>8{3@S1pv6v>R`kJmjXLR}w+&{*oY4Q&^p
-z=-?0>PmQHto*CLt`81$)*;X!JK8Lk{@saZqLYXq~v7wd&Eq$NRs86bB&u*OGQO*4p
-zg61Roh$%6JeV)CiscE#_<&H4)Nm>RdT+&n(mpv}tASN_r60D!``ZWshh*?T+EqAQ8
-zk$wfuxILp?iJd+csK-SgYvk8_tfLd}eQcm!Ec0;y^Tl=_2dTGdDGZg{4%bUzfmR&#
-zvBrMI$2zv*x{nRCibfv?n0vR6gVgUwKP=cd0S8%(AcH(>=)y3%$>T5)!#bh?TAifD
-zD0_;s@^a{>#uR<BMB_leWuI`eBbmJH8t#^HGqz3+SSPciqbb>MIkx4b@>z>^IWC|U
-zwCS2d50^l0*vZ=YTo0l5OSmEPE_aw(+D$0Rlq5EievjelW9X%%sFFSs)_6W)IU{Kq
-zkD79$oLP%F*4xwDqcWW>t3AxXq24Q1GPa5yb-Bt3d(uvh)k)KgMNQL`vjtRV=uy}|
-z<vw*Xu574)91T~N<+3-H-&XFG2>$7E*0$N^|AVG`tbCS-{fB}D4DO&14L`SCs84To
-zsRgCQq7>FjOZ3tr<8qTIum!@n&=Lmbhf!D%MktJXt<aUjDjxBMx!vxWrD~2^Koes5
-zib8REq9}^R&-aUZap9Ma>9^lIg2k_Q+NUQz-~T#M*WCQ&R9m6F(A0oRJx@2?e5QEK
-z8>nU)@J2-WsPzS2{k}1a?0@Xq6Q6g_VTZ3WjiEW%#XVb>S8!E~8hyNqs{BPe@a+ZE
-tcM!rt@(6k5?Nq&1ijbQ4{&isKU$gQo+h`GSQL`J@(^hy@SN|T0egG<?>=6I}
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-5.otf b/layout/reftests/fonts/math/scripts-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..36495efdc185b6357396f6cb4da5bfbb5df2e827
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..018d270f1c4f9aebf404f7b496152db183f9a812
 GIT binary patch
 literal 1860
-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
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-6.otf b/layout/reftests/fonts/math/scripts-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a64111a9e372e5da55345b91f3339adfeb9204d1
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..963f26179c7d5fdbb14ac50eea6c3bc94aba917b
 GIT binary patch
 literal 1860
-zc%0o;O=uHa6#nkaB>ju6)>aEf-$moIRT?MJ3Qy`n13{kF2$mx9P-Bfvu<Z<!2r3o?
-zL7&E*py<+-D@Al6XyC0LE(G1U5kUpTf-WnKipKBGOlsl}ty}NSx#v6Qe&^hC=g!=u
-z1_x7U!Aa;a6Un4p7kYCF2!sIKO(q8i4m&rqwC~dn4{RRXss$6TX}<)-?$oZe@dXDu
-zBE*vO`-jKUHs<O71Nt@kwq!HugP(V$COCJGvLQ={mI^#0o}xsuV}+v)kBHFF&!KTF
-zebk1wlTdVV2#%-6GEYt)JV5&-pmp0;zEC-hb%61f^AbW)fz^jP7w&88e}@)*Qe}I1
-z<;?b4?YBl~K4OfR5>wdY@jXvnBXg%a!q6wl4A3~Isa>4+w0Mq~&=e)uG!yl07T`Zt
-zDZRDav6dtK9kk;5jQ3CM@UcJ>&iYuRzT{&aEAh(52AaelJ`P~M*yiIP{Wh7xP_=D$
-zqZAfs#}OZE>=%5j<8NH{v4M8c;^P2o@9}Yv{(q2w1sliUAcqlTQQ#iBF^nGSI84N_
-zo@juq<7AAor)jGwhjD65GbTqg4kRr5n3EgH7G(EukBpnK^>V;Eo*Nxa%Y^0FmXj{z
-zEb{VPKrLu9G>=|vpljI4*@b*Bq4!I=DGRQ4SX#y{D9Vx~Hd4ON;rV0eqot%;K9bgW
-zA!#`y85xh7a-*DCi#XQT+t;fqovo@NR^ZU@ZB;V2${uyKstH3GC(qqU(~Lz;)0DF%
-zRA=Z(*gxfdbuzAPsDvC1*OrxvH&$L$-zyRP(aTxiW}E*Fn(nE}DIWF@HY{N92@28t
-z^|1@}>8&ZZp}a(t!&-T%US4dR4~ZgMAdG+8!od76iVMPM4C7WibQQ3QNBq~^-tL*D
-z>W*4K6Jq&_VrhD!Bub_Cw@Z3y(TA?-7oWR=rH?l{rzhUu{y5Rl+WO%{N3pXQYDRTG
-z4>nzWsC3;OsAih+Tts=P^#`8*+Cy7i23qbA^vr>Lk!9?i1267zU0uaBIqLlJ8mWmF
-yoxrEZP~Sl#7Ewp2t9PgB^;U!u;{Df!Wk0RTV|I`caZ#(A*Yj3&O;`UOO1=Pp0__k0
+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
 
 diff --git a/layout/reftests/fonts/math/scripts-7.otf b/layout/reftests/fonts/math/scripts-7.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..0830be28f2a14ffcf24014ce31de9a8e386d8200
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..98f6634187e7721d4fe56e735be23fcd80b3f6c5
 GIT binary patch
 literal 1860
-zc%0o;UuaWT82_DnZ_>X@wQF6$sK*(#Wi-3V+KrX^;0i(1E`<geL)5GbO<2==xyeAw
-z3WdVjEqxOdee}sEhpcZJ@Jafxp)Y$AR$&7{A1jR&8-M5Cn=aWZ?eosbcfQ~Eo$ve3
-z_nmX@Nivm6q78G<VU8pcav=149tgApxR*$zM!$3JW+|^w4v(HpozjAb7byP)h_904
-zAIJB8(-k3>oWC@YPuqA;e+cNesrw?ENq@UJo}A^}ebT2{Dzs$aPvSLFB%3c@ZhB0F
-zreO}v`SfKQ+8Cke;Siio=QB?hCo`1i0Ik=y3dQP=_yjOsa9%<vQwF*){`<v_;g@LB
-zpQ&h%ZZ4dy=YDI3<|F!uHL-@TJ$p~n&}cd4jxh9Rv<y)ASyNRkd0ea_CNyOdY}xYq
-zcNE|Ovy|Ri?pSXl{R%?3v!y+TFMTY~f}eb>kze<*j-&Y7#|B!&As+{@N1X9-kb0Yz
-z!ce)Lb-ff8=*0Iv*4VH5SjTDH@UekT(dOd-bMNzUkoxl&fdv~^;2?)dWKm=dy_i5B
-zc^oEU7$6#@)eJ4B*wd7imqR}_rs<O-ng&KJ`-+pB%ob(uM4ybCu>m=1&E%%0(sIOd
-zY|BX(a~ACiTtF>o)3tzpd`8uTle3G3enRh;a6=Yd?l85Cn^2S~Neq$x8^hDbFi1&J
-zEqx@c>0-iiCNnY~HRX`pT8lU~*gx2>GTkYwbIib@-YZoywu&BgxylLWGERZjNz;r)
-zP1BS+1ypC~QP@A_VRbUDY^Z=74Of=csy9}j*6x)EZg)8w+fMWUgQk0|I?u!2reFbs
-zJ19i!Kie+Ur}t5%1C{-v64ojQ^vVauQoAUz1;SYD2m^b<DD4fSIgDRBp(}^uJmSxH
-zce}TiYB*{EO^6SVl*;R~Wl=7_S}yD5eH%UNPd9sl<=4M-ug|_(em&b13T^z*Rq8Ia
-zx1v_hZzpa&QoP{}R5Ptu6;VEF!+|H;Z_fLR@7T2!pZD!zhp#b>3%jt3d$umG;kp<N
-z`gk4H`HODg%^y(TK{NJ|N62e$r|OMTgw)RWuLlR;nU!bRMT>}wLT+47TjO<I{d*{S
-E3*4OT5C8xG
+zc%0o;O=uHA6#iy+lcu$%T3am`Wz_gnq;VT-{h=PT5PGmyFo=3kV+~ET>4r@N6$^sk
+zPvcEcyov|C=t0qg20Td*f?m9dKj=ZxW2I5i_|5L7CR%CF&g9Me-kbN{yf-sD8HmRR
+zFb8L#!|aX4WLNOhS-{r_;9)El?>~0y)pg3_ltca7;(eNb*?G$E0kL;r_qyo(!!2QA
+z$@xQrnM4+I^(TOSle+DxWa7xrvC|JY_lVS;qCy++y(XR@g;SaQiMr=RsO#Yn$Rti=
+zq3t3RZ5;d~iA*xSY3v5&Gk~@-YvuCgb65`;pE)lflqt})Z12&7O+8;QNB^LrJ-ff;
+zV>S0$0GfyBBPPTI_Ph43rl!$ymovi9KhV-gVN6q1TynX1gHE9-6My}b*Pl^<$IMc?
+zYdK@Jjr1xA;`Wqw6?S@9pdJ@JtdU>!u#Pa^dDuX`2zl6td7{t5e(E!{6o$%ehvTKN
+zKr@beSYyBJVI6(A=3xWPBH&>kb6@3QKlS_23kzACgpD+YkV2j{tid4K$)hmQi7ujk
+zTAiZBFnfZs^0Mit#sq!RL?b}2l|5;vhf;aDX0TmG&CV{_Z=FgH4<}@=WoIorkxyH+
+z%W(m<V3w{qbYLS@gLXQb&vg*GznBv;?{J%`C7pyKOi5x3>F*e>egkngsggWm)<`~P
+z*+WSgjhJ$aoLY%^Lq~UqN^_=^_HcQddbdu=&?<Pu;VL2QN!mG<CQY+5Vw$F$DWG@q
+zE>%vvN1co#8!9G8!;xjV?2hHPm3t-p(_PNmHq-on&~%rT&+@pZDOkYZ4hqrmd*_Av
+z^wyS|P+BZXA+5ATFD)`IHHre8FN6zCAz)qzh4~=_Lb%%uT{*1gDQ}+L?Vehy=ClPg
+zA(pQw6emZEqFDTTuc#Lnerub2`?Jko{C=l(a`fxH@1u3W;J4E)h1No211j}A-Fp3*
+z;x%uenrXlr5#giO<9j*%<}A4Ik6j!0c>64N_zKfFFblh=YwPd|u8L8kk5*BYzi0)1
+vyny-+0$4~MCa=7ms@F<kQX}8LHZ1*TR<30WEy4~8I&ocXg;#a;@1f`y`t9xw
 
 diff --git a/layout/reftests/fonts/math/scripts-8.otf b/layout/reftests/fonts/math/scripts-8.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..abee21799ec4ab8ca408cac84e0ccb8ee5f7e1da
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..eca5ee75caf010968c8238de01e9b9cce1d53433
 GIT binary patch
 literal 1860
-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
+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
 
 diff --git a/layout/reftests/fonts/math/stack-1.otf b/layout/reftests/fonts/math/stack-1.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..15ebf7fdca21ae69001613f5ce3b7994bf5bb211
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..80721864f9a904b909bec259613d1f699dcc8441
 GIT binary patch
 literal 1832
-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
+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
 
 diff --git a/layout/reftests/fonts/math/stack-2.otf b/layout/reftests/fonts/math/stack-2.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..1fd4065a342283922071b4135316a8fde8d36e35
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..90814048b082e83af44891680f703f1b20443f34
 GIT binary patch
 literal 1832
-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
+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
 
 diff --git a/layout/reftests/fonts/math/stack-3.otf b/layout/reftests/fonts/math/stack-3.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..425f875f9eda9b40333ee1ec4bccefb4987d1c0e
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..bcd71b827a69d25f0fa34662b1cd19a013063377
 GIT binary patch
 literal 1832
-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
+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
 
 diff --git a/layout/reftests/fonts/math/stack-4.otf b/layout/reftests/fonts/math/stack-4.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..9190817c249e200e62c461e580850fd871d0dd48
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..51bb28a56e0caaff90e1ab153a6bd1792f502b00
 GIT binary patch
 literal 1832
-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
+zc%0o;&1(}u6#vcc=EEA(4_XZvWze84lDJK64y7J65<M6r7*u-EHHId%>4t3tEe6D|
+zgHccf{{U~|*TpZyfL^2rp$d8s#E+ZaD~+G=&F-WmVzFMG$(#3kZ+`F1o0;8BDxFSY
+zDNaCz9#16r^&ReqfHn)@ZX%IRj$M0u6>!}kJDA*(-l4cho{&8au>Gk$8>5|vx<iCH
+z%^%DZj3Sn)PXYBJ`L^b=#^Immj^C%bM<lTvIh2&^9bu6_lq-~udY%)4N5p#z#?c~_
+z-2_>H2KR(f$UYdDQpr96D9eiGWT}1@161Ejn&)7G3X~tbIDMdf_%oKOA4RsAd#gS*
+zYuUU|B%&BL%Vsg+@EuP}Bj#><gr<HZri+YoirB?@N3-|nXNsV>m&`}~o&|VJRdQ!7
+zdu--#xdT6L&3o5jm&6PnoRL@|eMw>!Yw%iP4Ibu`*o6)jlh{rEeZ*v%sBNbmB`~A4
+zj!3LfzaX)SZMZD4Mx5^wyQubViQVwC?TEuf5yxO5k5S}MqCNB?gFezx=;+5LLP=sx
+z5o4UXLAHppC{Bz9#pDT10CBT;%*v1EO1wAI$D?}xCZ05>^5f$MkDFG}w2V^TB;F*2
+z7_`V3!jvA9B_lHyCgA)McCwPKEh;K&mlC03IEF}CqaEKM;TTDyWF*XqQo^)GvpgEn
+z`4E?D5E=}}!lJZ=%h*dxS~TnIic?CFG-7K}1omdFN!ke4_5O&i>wMu<@`fD=%G(?k
+zH(=YE$VQ`P+q_<P#`=fG^TXVKdI($F-{${=raG#AiZ1vM8)nex1R3)-&Yg)DY(uRb
+zwUw+ERBEf#+6wKwk5#C-f;ib81UiB^(;0*}h?`wdMZkKx<H5x}!*ZdfduC7=TeG%O
+zohw&awff~wRjn@n8kqa=GvKa%yWKNa{&MGA+2i+rJ>FgEsrcF&rBi#h`Ra_&E#EmY
+z(}wpfLLaVS*PDMlv1zIM7Qwv&?Ba{yMIElK8@MS)i$B^VP4TP;`0)zj9q?i~=@9A0
+k_fhm#D@5W$7XnzlU{wyYn;0P*`R%-px1pQ5_=gbk3$G^S6#xJL
 
 diff --git a/layout/reftests/fonts/math/stack-5.otf b/layout/reftests/fonts/math/stack-5.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..33bf2a73806aa3ae28b8ef5879239971515ae23c
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..12ea7bcbfc173ebbb851c73fd4b42db798dab3a1
 GIT binary patch
 literal 1832
-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
+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
 
 diff --git a/layout/reftests/fonts/math/stack-6.otf b/layout/reftests/fonts/math/stack-6.otf
 new file mode 100644
-index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..6df7382b4aa4ca2b3dac89f5ddf3e9c11beb26c4
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..a640cd553f18ac755e5d5d7fbad5621acae313ab
 GIT binary patch
 literal 1832
-zc%0o;-Afcv6#w0s*^kuLP5fABi%Tw*gxl<<LSj$}i-fj<BGpSxwz!KQvy2<4B}idG
-z8YDpvJ@%YMV9-MwJ%vPI5A{@0z4Zqeu0?L=&fJw<(X!X>-E+_HoclZHo_p`iY`nKO
-zj&e*vh29>E@%aw-3qV^2@H7_d?HaV6Bmvh$vV&bGdOH+%;4ImT06P=!IUL<}u{uPU
-z)BJ`0VIz&5>MKCKL%x&AgmG!DCq7AY&q-R6<WS<S&xA$(P;xjk=6Op99ue;yHpbFW
-zx(TuX4ek+RIN?7&=O=p#Q2c3gG?Tx9BUIlzn&)7G3cSAZsqTDb+jo?!-$b^h`!_p_
-zwQOD}5>X6WX3IF|@EuP{BWAZfLQ}sH(?!NDMeJhM(d-K%Oc50Kj`gUGS%8;RC3n`c
-z$6^kbJMiJrx_3WLOU&TGw8RSOIf+%&<AcN+Jgib;7yRs~#BTDRBPP>CZJl<Mz>L<q
-zEU`lUw!|u8xGS+noV>&?s=ZEPH+<|A+F>G%aac%U07+zM4+qhY2GUXJh@gp37qKRY
-zF+|-UTSQqDCq{!}QiMi;b~8P0r3R82ez3oRNA*Y(?=mM+Lqi5{H?6d38JUzxyip1<
-zXpuoQqJ_+i(LdNo!1=}OWEopqR8+z)B}~O|w33uYJH7~-$r4g18ZmPu6Em%W1doPw
-z-pb`Fgd)w2&5feEtt;uHRV|uzHpVHZ$Qrh_r~`coYn1lFbv+W+b)9dWO5BwrL3x{P
-z;s$J66RBv_Y@6rv&Y1sNcz&3Bvxl&>{cZj~XsV;~*XepU*)W4fC&-w$aOh0DV25&*
-z$n9pippx68=IXTB3N}N{6~wj5Am9&TdRGwMAm*!}ihu)j!Oh!yhUG#<m&~9rwy%CB
-zyE2(&+3e~<R?XJ_2&{Zv3%IjCAJ?o*t}gtX^!R)~u2#>~%v6*WN~iYb*n=gZOTKer
-zrVL+Lm_A%>u8;qCVvABY{Fzq%jD~yL%o&y3Xb~>7js9qn6veX|;MaSIcfgBU(jn4?
-k@1y9YR*0kmRS013mQ^{-YGQ<J<g@cS-hwXb;vYiDZ(?oY8UO$Q
+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
 
-diff --git a/layout/reftests/fonts/math/stretchy.otf b/layout/reftests/fonts/math/stretchy.otf
-index f192de346316ee35c7da99356a83361b28ed7b61..7e5b3be5c2f49942b653ef9640a9fd2e4504233f
-GIT binary patch
-literal 3336
-zc%0o=ZERCz6h5cD?LIo%jg1Z69lMhO8@SOnjPWrNV7l;Q6Oe^W(jeVd=#;Is>&8cl
-zAxdC!Q3gy@L_`vlM556Ug@lnse~82c_(7tP5J-q%B3X=smI9m4d+%-cK|~Dyyu0sv
-z&UxPFob%rItM8W9*Doa-Z6z}~t7~eMvOD|DL>4EJw4kP@zV6k~SAL?jAQ8!Ri|UvB
-z*3&j0_AVlG>e3Z6-C5sNO(kLl?Q5D^y}|0vrI*om99W~@=WQ;Eti6S{(<rn30H$m#
-zdJ*~nO0mB+ypb<Jql_L@;a2a)AQdcw$`esp+q|tlN6)_Nu(uMKW&{K6;i2v1M*lL=
-zt`G|<QS6V;&%ErYx=l9oO%d(<fgQEOa$w2ilF217Q^`d710NpX0a_*S`x8+!jeZJ<
-zmT5If8q<ROJ5Ay%cIlF@l8X_~L{@XsOGH^SDo!6M(`7xER?~<~itz<@`XY%=r56mH
-z(cc}0jwE!*(9Kj#{e~`4Do-_Z3uW?hL$?ACgUM1FtXj=W=uDZ^Vdy5xpl(Aq(-Jyr
-z=n~@O7`lZNo@wY-;EhyG0SeM43Q-HKBR_@l4JFh>rI2oNl8a_Rs{?B@80+!pg)O{7
-z@DsHcJ}uDNh^hm@O`(=`{;*QgRI0e0u31W5U~|j*^<Jeq5DErD-f&9*ymq*R$cMTK
-zDK`NKhkW5CKeRf)&4|}QtuTDeEgg_GTKKRgL+GYY>s&dyr_el<vGH`&MHN)0mBfco
-zO`t7Y69}#IDeiKoGEYh5h3cv(t0)s)eq{Gn0uF(of3SkMB67JVMQ>=OFVv22RGdy%
-zxzp)X9vMxWN4?0#Onb!aXtqQP#YWOrxkO6Qk)oqT$EM3eLt>>B9fbAS^!%Zrp=(#x
-zUTMD4bm`BrYo4w2&^8$R{9F6~;4yad(3|3%dH7+HBx2^Y<h0-vU@DI}C^nm8m8RGn
-zb1Y9%<$)#g<Py9VnX4T#QKrn1ESa8>CEIwKWYYGxgK}}k6w?gknv40Xr4_UabGjO*
-zNF&zuT6zTwryZ*xf)n};+D6;yIGv!=9c?Xc*W7AdJg1B2by1^<MNVC~bm7)Tg)S<+
-zp-^B$N3glAvE3)2MXtrVsP;QMoqkuR%kS=VulKDDYunS`+S1$@2!{i$;XtqxMr~#7
-zoZ7jMw|x`iG;$d;@8B+ei+8fhyZCK>hj()~@8P|?k9+uC-p}vx`}_eP;1BsAf5eCQ
-zV?NBEP=Oe>DL8QEVW_<H8iu3?2iLcBmVTjI^ne|#u$vci1Gn)u1USVP`KHNiDlk==
-zmdo+oYHxH)FZcFF`+Cj2xv}Etwfn`^-g{q8h;E7Y-P@94AI!4Lv7u>E53Bv=X;OdG
-zGtFw(%%}%;)D!jG^H}Zj-5+$YPk?;@`>b}gUt_6Y^=qW~3_+SEA&&=n?5Yt*9gY*<
-zZBV*E=@OK_VM?E%9PUg4vEs2nmjDK{)OdtZfW;&6$Y8{3zoW`27g$sPm2{nB9*lqh
-zOlJru2^OH36To03=>sC1#s-Ps&?#t@Z6~2&k;6}PNaqL$4I*0n285u+BdX4fM=V+d
-z0S*Fm90oWDP|ma^(9!%vd+L0VLV|~ipn3*X!_^G}$5u<ZkfJ9SIUpqYX7@0td%+|7
-zFICQOU{Q(g<~NA<`Y}vI-mj`$xR6C9S_&76_bO&p&i`J;HfB+Y7Hw0@mw&d}qn;c&
-z#Wz9CNRLO-`}_OvF3ZS>M{K$_4qH82926O%3wSXow!{&F=cffn&I>u}t|D5}=_;4w
-z@=;~ET)6N*om^)PS^5~<{piN($Kbhjt|k-uh!~@A_lPpWpC=GKxCFflCtfaOF=XP7
-z!`eAG(ke#Dpz$=3CjDctbY>2J!{^{_#jUBF7USl$N;@%Mr=7HyKBcee44q4|kKtF*
-zg5On#`FF}nxk%ZzQzULyDfFX;2|bO=v^Jrq^B#?JOv@-y1~^aWzeM?ki%6bas&U4F
-zE9^v$6X2PU!wzmH+Qu6>%*bIka!AOLY2>gXhv1xmp31ikzPQWf31K^lD%;SQo)TJK
-za1=H%$$K)toTNQI$;nOn4Pz6Y*iWBt3&uSSYu$#q9tYcsBF0J5?yk5eYd863(pEJ;
-nYshXx4(Kvb1UKcvuuK$@FCj${eR3Sui?H(>h{PTf{{{RFrLuwT
-
-diff --git a/layout/reftests/mathml/opentype-axis-height.html b/layout/reftests/mathml/opentype-axis-height.html
+diff --git a/layout/reftests/mathml/opentype-fraction-dynamic-linethickness-ref.html b/layout/reftests/mathml/opentype-fraction-dynamic-linethickness-ref.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/opentype-axis-height.html
-@@ -0,0 +1,50 @@
-+<!doctype html>
-+<html class="reftest-wait">
++++ b/layout/reftests/mathml/opentype-fraction-dynamic-linethickness-ref.html
+@@ -0,0 +1,29 @@
++<!DOCTYPE html>
++<html>
 +  <head>
-+    <title>Open Type MATH - axis-height</title>
-+    <meta charset="utf-8"/>
-+    <style type="text/css">
-+      math {
-+        font-size: 10px;
-+      }
-+      @font-face {
-+        font-family: axis-height-1;
-+        src: url(../fonts/math/axis-height-1.otf);
-+      }
-+      @font-face {
-+        font-family: axis-height-2;
-+        src: url(../fonts/math/axis-height-2.otf);
-+      }
-+    </style>
-+    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
-+      function doTest() {
-+        assert(almostEqual(getBox("plus1").top - getBox("plus2").top, 10 * 20),
-+              "Bad AxisHeight");
-+
-+        document.body.innerHTML = "Pass";
-+        document.documentElement.removeAttribute("class");
-+      }
-+      window.addEventListener("MozReftestInvalidate", doTest, false);
-+    </script>
-+  </head>
-+  <body>
-+    <p>
-+      <math style="font-family: axis-height-1;">
-+        <mo id="plus1">+</mo>
-+      </math>
-+      <math style="font-family: axis-height-2;">
-+        <mo id="plus2">+</mo>
-+      </math>
-+    </p>
-+
-+  </body>
-+</html>
-diff --git a/layout/reftests/mathml/opentype-fraction.html b/layout/reftests/mathml/opentype-fraction.html
-new file mode 100644
---- /dev/null
-+++ b/layout/reftests/mathml/opentype-fraction.html
-@@ -0,0 +1,179 @@
-+<!doctype html>
-+<html class="reftest-wait">
-+  <head>
-+    <title>Open Type MATH - fraction</title>
-+    <meta charset="utf-8"/>
++    <title>mfrac linethickness</title>
 +    <style type="text/css">
 +      math {
 +        font-size: 10px;
@@ -1240,931 +2288,70 @@ new file mode 100644
 +        font-family: fraction-1;
 +        src: url(../fonts/math/fraction-1.otf);
 +      }
-+      @font-face {
-+        font-family: fraction-2;
-+        src: url(../fonts/math/fraction-2.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-3;
-+        src: url(../fonts/math/fraction-3.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-4;
-+        src: url(../fonts/math/fraction-4.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-5;
-+        src: url(../fonts/math/fraction-5.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-6;
-+        src: url(../fonts/math/fraction-6.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-7;
-+        src: url(../fonts/math/fraction-7.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-8;
-+        src: url(../fonts/math/fraction-8.otf);
-+      }
-+      @font-face {
-+        font-family: fraction-9;
-+        src: url(../fonts/math/fraction-9.otf);
-+      }
 +    </style>
-+    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
-+      function doTest() {
-+
-+        /* inline style */
-+        var ref = getBox("ref").height;
-+
-+        assert(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
-+               "Bad FractionRuleThickness");
-+                                                            
-+        assert(almostEqual(getBox("n1").top, getBox("n2").top) &&
-+               almostEqual(getBox("d2").top - getBox("n2").bottom, ref * 10.5),
-+               "Bad FractionNumeratorGapMin");
-+
-+        assert(almostEqual(getBox("d1").bottom, getBox("d3").bottom) &&
-+               almostEqual(getBox("d3").top - getBox("n3").bottom, ref * 10.5),
-+               "Bad FractionDenominatorGapMin");
-+
-+        assert(almostEqual(getBox("ref").top - getBox("n4").top, ref*3),
-+               "Bad FractionNumeratorShiftUp");
-+
-+        assert(almostEqual(getBox("d5").bottom - getBox("ref").bottom, ref*3),
-+               "Bad FractionDenominatorShiftDown");
-+
-+        /* display style */
-+        ref = getBox("dref").height;
-+
-+        assert(almostEqual(getBox("dd1").top - getBox("dn1").bottom, ref * 20),
-+               "Bad FractionRuleThickness");
-+
-+        assert(almostEqual(getBox("dn1").top, getBox("n6").top) &&
-+               almostEqual(getBox("d6").top - getBox("n6").bottom, ref * 10.5),
-+               "Bad FractionNumeratorDisplayStyleGapMin");
-+
-+        assert(almostEqual(getBox("dd1").bottom, getBox("d7").bottom) &&
-+               almostEqual(getBox("d7").top - getBox("n7").bottom, ref * 10.5),
-+               "Bad FractionDenominatorDisplayStyleGapMin");
-+
-+        assert(almostEqual(getBox("dref").top - getBox("n8").top, ref*3),
-+               "Bad FractionNumeratorDisplayStyleShiftUp");
-+
-+        assert(almostEqual(getBox("d9").bottom - getBox("dref").bottom, ref*3),
-+               "Bad FractionDenominatorDisplayStyleShiftDown");
-+
-+        document.body.innerHTML = "Pass";
-+        document.documentElement.removeAttribute("class");
-+      }
-+      window.addEventListener("MozReftestInvalidate", doTest, false);
-+    </script>
 +  </head>
 +  <body>
-+    <p>
-+      <math>
-+        <mspace id="ref" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: fraction-1;">
-+        <mfrac>
-+          <mspace id="n1" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d1" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math style="font-family: fraction-2;">
-+        <mfrac>
-+          <mspace id="n2" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d2" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math style="font-family: fraction-3;">
-+        <mfrac>
-+          <mspace id="n3" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d3" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math style="font-family: fraction-4;">
-+        <mfrac>
-+          <mspace id="n4" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d4" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math style="font-family: fraction-5;">
-+        <mfrac>
-+          <mspace id="n5" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d5" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math displaystyle="true">
-+        <mspace id="dref" height="1em" width="1em" mathbackground="green"/>
-+      </math>
++    <math style="font-family: fraction-1;">
++      <mfrac>
++        <mspace height="1em" width="1em" mathbackground="red"/>
++        <mspace height="1em" width="1em" mathbackground="red"/>
++      </mfrac>
++    </math>
 +      <math displaystyle="true" style="font-family: fraction-1;">
 +        <mfrac>
-+          <mspace id="dn1" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="dd1" height="1em" width="1em" mathbackground="red"/>
++          <mspace height="1em" width="1em" mathbackground="red"/>
++          <mspace height="1em" width="1em" mathbackground="red"/>
 +        </mfrac>
 +      </math>
-+      <math displaystyle="true" style="font-family: fraction-6;">
-+        <mfrac>
-+          <mspace id="n6" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d6" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math displaystyle="true" style="font-family: fraction-7;">
-+        <mfrac>
-+          <mspace id="n7" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d7" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math displaystyle="true" style="font-family: fraction-8;">
-+        <mfrac>
-+          <mspace id="n8" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d8" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math displaystyle="true" style="font-family: fraction-9;">
-+        <mfrac>
-+          <mspace id="n9" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d9" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+    </p>
-+
 +  </body>
 +</html>
-diff --git a/layout/reftests/mathml/opentype-limits.html b/layout/reftests/mathml/opentype-limits.html
+diff --git a/layout/reftests/mathml/opentype-fraction-dynamic-linethickness.html b/layout/reftests/mathml/opentype-fraction-dynamic-linethickness.html
 new file mode 100644
 --- /dev/null
-+++ b/layout/reftests/mathml/opentype-limits.html
-@@ -0,0 +1,165 @@
-+<!doctype html>
++++ b/layout/reftests/mathml/opentype-fraction-dynamic-linethickness.html
+@@ -0,0 +1,38 @@
++<!DOCTYPE html>
 +<html class="reftest-wait">
 +  <head>
-+    <title>Open Type MATH - limits</title>
-+    <meta charset="utf-8"/>
++    <title>mfrac linethickness</title>
 +    <style type="text/css">
 +      math {
 +        font-size: 10px;
 +      }
 +      @font-face {
-+        font-family: limits-1;
-+        src: url(../fonts/math/limits-1.otf);
-+      }
-+      @font-face {
-+        font-family: limits-2;
-+        src: url(../fonts/math/limits-2.otf);
-+      }
-+      @font-face {
-+        font-family: limits-3;
-+        src: url(../fonts/math/limits-3.otf);
-+      }
-+      @font-face {
-+        font-family: limits-4;
-+        src: url(../fonts/math/limits-4.otf);
-+      }
-+      @font-face {
-+        font-family: limits-5;
-+        src: url(../fonts/math/limits-5.otf);
++        font-family: fraction-1;
++        src: url(../fonts/math/fraction-1.otf);
 +      }
 +    </style>
 +    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
 +      function doTest() {
-+
-+        assert(almostEqual(getBox("base1").top - getBox("over1").bottom,
-+                           7 * 10) &&
-+               almostEqual(getBox("base2").top - getBox("over2").bottom,
-+                           7 * 10), "Bad UpperLimitGapMin");
-+
-+        assert(almostEqual(getBox("under3").top - getBox("base3").bottom,
-+                           5 * 10) &&
-+               almostEqual(getBox("under4").top - getBox("base4").bottom,
-+                           5 * 10), "Bad LowerLimitGapMin");
-+
-+        assert(almostEqual(getBox("ref3").top - getBox("over5").bottom,
-+                           9 * 10) &&
-+               almostEqual(getBox("ref3").top - getBox("over6").bottom,
-+                           9 * 10), "UpperLimitBaselineRiseMin");
-+
-+        assert(almostEqual(getBox("under7").top - getBox("ref4").bottom,
-+                           2 * 10) &&
-+               almostEqual(getBox("under8").top - getBox("ref4").bottom,
-+                           2 * 10), "LowerLimitBaselineDropMin");
-+
-+        assert(almostEqual(getBox("base9").top - getBox("over9").bottom,
-+                           (6 - 2) * 10) &&
-+               almostEqual(getBox("base10").top - getBox("over10").bottom,
-+                           (6 - 2) * 10), "Bad AccentBaseHeight");
-+
-+        document.body.innerHTML = "Pass";
++        var mfracs = document.getElementsByTagName("mfrac");
++        mfracs[0].removeAttribute("linethickness");
++        mfracs[1].removeAttribute("linethickness");
 +        document.documentElement.removeAttribute("class");
 +      }
 +      window.addEventListener("MozReftestInvalidate", doTest, false);
 +    </script>
 +  </head>
 +  <body>
-+    <p>
-+      <math style="font-family: limits-1;" displaystyle="true">
-+        <mover>
-+          <mo id="base1">∑</mo>
-+          <mspace id="over1" height="1em" width="1em" mathbackground="red"/>
-+        </mover>
-+      </math>
-+      <math style="font-family: limits-1;" displaystyle="true">
-+        <munderover>
-+          <mo id="base2">∑</mo>
-+          <mspace id="under2" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="over2" height="1em" width="1em" mathbackground="red"/>
-+        </munderover>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: limits-2;" displaystyle="true">
-+        <munder>
-+          <mo id="base3">∑</mo>
-+          <mspace id="under3" height="1em" width="1em" mathbackground="red"/>
-+        </munder>
-+      </math>
-+      <math style="font-family: limits-2;" displaystyle="true">
-+        <munderover>
-+          <mo id="base4">∑</mo>
-+          <mspace id="under4" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="over4" height="1em" width="1em" mathbackground="red"/>
-+        </munderover>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: limits-3;" displaystyle="true">
-+        <mspace id="ref3" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: limits-3;" displaystyle="true">
-+        <mover>
-+          <mo id="base5">∑</mo>
-+          <mspace id="over5" height="1em" width="1em" mathbackground="red"/>
-+        </mover>
-+      </math>
-+      <math style="font-family: limits-3;" displaystyle="true">
-+        <munderover>
-+          <mo id="base6">∑</mo>
-+          <mspace id="under6" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="over6" height="1em" width="1em" mathbackground="red"/>
-+        </munderover>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: limits-4;" displaystyle="true">
-+        <mspace id="ref4" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: limits-4;" displaystyle="true">
-+        <munder>
-+          <mo id="base7">∑</mo>
-+          <mspace id="under7" height="1em" width="1em" mathbackground="red"/>
-+        </munder>
-+      </math>
-+      <math style="font-family: limits-4;" displaystyle="true">
-+        <munderover>
-+          <mo id="base8">∑</mo>
-+          <mspace id="under8" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="over8" height="1em" width="1em" mathbackground="red"/>
-+        </munderover>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: limits-5;" displaystyle="true">
-+        <mspace id="ref5" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: limits-5;" displaystyle="true">
-+        <mover>
-+          <mspace id="base9" height="2em" width="2em" mathbackground="blue"/>
-+          <mo id="over9" stretchy="false">~</mo>
-+        </mover>
-+      </math>
-+      <math style="font-family: limits-5;" displaystyle="true">
-+        <munderover>
-+          <mspace id="base10" height="2em" width="2em" mathbackground="blue"/>
-+          <mspace id="under10" height="1em" width="1em" mathbackground="red"/>
-+          <mo id="over10" stretchy="false">~</mo>
-+        </munderover>
-+      </math>
-+    </p>
-+
-+  </body>
-+</html>
-diff --git a/layout/reftests/mathml/opentype-radical.html b/layout/reftests/mathml/opentype-radical.html
-new file mode 100644
---- /dev/null
-+++ b/layout/reftests/mathml/opentype-radical.html
-@@ -0,0 +1,183 @@
-+<!doctype html>
-+<html class="reftest-wait">
-+  <head>
-+    <title>Open Type MATH - radical</title>
-+    <meta charset="utf-8"/>
-+    <style type="text/css">
-+      math {
-+        font-size: 10px;
-+      }
-+      @font-face {
-+        font-family: radical-1;
-+        src: url(../fonts/math/radical-1.otf);
-+      }
-+      @font-face {
-+        font-family: radical-2;
-+        src: url(../fonts/math/radical-2.otf);
-+      }
-+      @font-face {
-+        font-family: radical-3;
-+        src: url(../fonts/math/radical-3.otf);
-+      }
-+      @font-face {
-+        font-family: radical-4;
-+        src: url(../fonts/math/radical-4.otf);
-+      }
-+      @font-face {
-+        font-family: radical-5;
-+        src: url(../fonts/math/radical-5.otf);
-+      }
-+      @font-face {
-+        font-family: radical-6;
-+        src: url(../fonts/math/radical-6.otf);
-+      }
-+      @font-face {
-+        font-family: radical-7;
-+        src: url(../fonts/math/radical-7.otf);
-+      }
-+    </style>
-+    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
-+      function doTest() {
-+          assert(almostEqual(getBox("inner1").top -
-+                 getBox("outer1").top, 5*10) &&
-+                 almostEqual(getBox("inner2").top -
-+                 getBox("outer2").top, 5*10) &&
-+                 almostEqual(getBox("inner3").top -
-+                 getBox("outer3").top, 5*10),
-+                 "Bad RadicalRuleThickness");
-+
-+        assert(almostEqual(getBox("inner4").top -
-+                 getBox("outer4").top, (7+1)*10) &&
-+                 almostEqual(getBox("inner5").top -
-+                 getBox("outer5").top, (7+1)*10) &&
-+                 almostEqual(getBox("inner6").top -
-+                 getBox("outer6").top, (7+1)*10),
-+               "Bad RadicalExtraAscender");
-+
-+        assert(almostEqual(getBox("inner7").top -
-+                 getBox("outer7").top, (3+1)*10) &&
-+                 almostEqual(getBox("inner7").top -
-+                 getBox("outer8").top, (3+1)*10) &&
-+                 almostEqual(getBox("inner8").top -
-+                 getBox("outer9").top, (3+1)*10),
-+               "Bad RadicalVerticalGap");
-+
-+        assert(almostEqual(getBox("inner10").top -
-+                 getBox("outer10").top, (9+1)*10) &&
-+                 almostEqual(getBox("inner11").top -
-+                 getBox("outer11").top, (9+1)*10) &&
-+                 almostEqual(getBox("inner12").top -
-+                 getBox("outer12").top, (9+1)*10),
-+              "Bad RadicalDisplayStyleVerticalGap");
-+
-+        assert(almostEqual(getBox("base5").bottom - getBox("index5").bottom,
-+               (getBox("base5").bottom - getBox("root5").top) * .25),
-+               "Bad RadicalDegreeBottomRaisePercent")
-+
-+        assert(almostEqual(getBox("index6").left - getBox("root6").left,
-+               10 * 5), "Bad RadicalKernBeforeDegree")
-+
-+        assert(almostEqual(getBox("base7").left - getBox("index7").right,
-+               10 * (7+1)), "Bad RadicalKernAfterDegree")
-+        document.body.innerHTML = "Pass";
-+        document.documentElement.removeAttribute("class");
-+      }
-+      window.addEventListener("MozReftestInvalidate", doTest, false);
-+    </script>
-+  </head>
-+  <body>
-+    <p>
-+      <math style="font-family: radical-1;">
-+        <msqrt id="outer1" mathbackground="green">
-+          <mspace id="inner1" width="1em" height="1em" mathbackground="red"/>
-+        </msqrt>
-+        <menclose id="outer2" notation="radical" mathbackground="green">
-+          <mspace id="inner2" width="1em" height="1em" mathbackground="red"/>
-+        </menclose>
-+        <mroot id="outer3" mathbackground="green">
-+          <mspace id="inner3" width="1em" height="1em" mathbackground="red"/>
-+          <mspace/>
-+        </mroot>
-+      </math>
-+    </p>
-+    <p>
-+      <math style="font-family: radical-2;">
-+        <msqrt id="outer4" mathbackground="green">
-+          <mspace id="inner4" width="1em" height="1em" mathbackground="red"/>
-+        </msqrt>
-+        <menclose id="outer5" notation="radical" mathbackground="green">
-+          <mspace id="inner5" width="1em" height="1em" mathbackground="red"/>
-+        </menclose>
-+        <mroot id="outer6" mathbackground="green">
-+          <mspace id="inner6" width="1em" height="1em" mathbackground="red"/>
-+          <mspace/>
-+        </mroot>
-+      </math>
-+    </p>
-+    <p>
-+      <math style="font-family: radical-3;">
-+        <msqrt id="outer7" mathbackground="green">
-+          <mspace id="inner7" width="1em" height="1em" mathbackground="red"/>
-+        </msqrt>
-+        <menclose id="outer8" notation="radical" mathbackground="green">
-+          <mspace id="inner8" width="1em" height="1em" mathbackground="red"/>
-+        </menclose>
-+        <mroot id="outer9" mathbackground="green">
-+          <mspace id="inner9" width="1em" height="1em" mathbackground="red"/>
-+          <mspace/>
-+        </mroot>
-+      </math>
-+    </p>
-+    <p>
-+      <math style="font-family: radical-4;" displaystyle="true">
-+        <msqrt id="outer10" mathbackground="green">
-+          <mspace id="inner10" width="1em" height="1em" mathbackground="red"/>
-+        </msqrt>
-+        <menclose id="outer11" notation="radical" mathbackground="green">
-+          <mspace id="inner11" width="1em" height="1em" mathbackground="red"/>
-+        </menclose>
-+        <mroot id="outer12" mathbackground="green">
-+          <mspace id="inner12" width="1em" height="1em" mathbackground="red"/>
-+          <mspace/>
-+        </mroot>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: radical-5;">
-+        <mroot id="root5" mathbackground="green">
-+          <mspace id="base5" width="1em" height="10em" mathbackground="red"/>
-+          <mspace id="index5" width="1em" height="1em" mathbackground="blue"/>
-+        </mroot>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: radical-6;">
-+        <mroot id="root6" mathbackground="green">
-+          <mspace id="base6" width="1em" height="10em" mathbackground="red"/>
-+          <mspace id="index6" width="1em" height="1em" mathbackground="blue"/>
-+        </mroot>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: radical-7;">
-+        <mroot id="root7" mathbackground="green">
-+          <mspace id="base7" width="1em" height="10em" mathbackground="red"/>
-+          <mspace id="index7" width="1em" height="1em" mathbackground="blue"/>
-+        </mroot>
-+      </math>
-+    </p>
-+
-+  </body>
-+</html>
-diff --git a/layout/reftests/mathml/opentype-scripts.html b/layout/reftests/mathml/opentype-scripts.html
-new file mode 100644
---- /dev/null
-+++ b/layout/reftests/mathml/opentype-scripts.html
-@@ -0,0 +1,260 @@
-+<!doctype html>
-+<html class="reftest-wait">
-+  <head>
-+    <title>Open Type MATH - scripts</title>
-+    <meta charset="utf-8"/>
-+    <style type="text/css">
-+      math {
-+        font-size: 10px;
-+      }
-+      @font-face {
-+        font-family: scripts-1;
-+        src: url(../fonts/math/scripts-1.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-2;
-+        src: url(../fonts/math/scripts-2.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-3;
-+        src: url(../fonts/math/scripts-3.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-4;
-+        src: url(../fonts/math/scripts-4.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-5;
-+        src: url(../fonts/math/scripts-5.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-6;
-+        src: url(../fonts/math/scripts-6.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-7;
-+        src: url(../fonts/math/scripts-7.otf);
-+      }
-+      @font-face {
-+        font-family: scripts-8;
-+        src: url(../fonts/math/scripts-8.otf);
-+      }
-+    </style>
-+    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
-+      function doTest() {
-+        assert(almostEqual(getBox("ref1").left - getBox("sub1").right, 3*10) &&
-+              almostEqual(getBox("ref2").left - getBox("sup2").right, 3*10) &&
-+              almostEqual(getBox("sup32").left - getBox("sup31").right, 3*10) &&
-+              almostEqual(getBox("ref3").left - getBox("sup32").right, 3*10),
-+              "SpaceAfterScript");
-+
-+
-+        assert(almostEqual(getBox("ref4").bottom -
-+                           getBox("sup41").bottom, 7 * 10) &&
-+               almostEqual(getBox("ref4").bottom -
-+                           getBox("sup42").bottom, 7 * 10) &&
-+               almostEqual(getBox("ref4").bottom -
-+                           getBox("sup43").bottom, 7 * 10) &&
-+               almostEqual(getBox("ref4").bottom -
-+                           getBox("sup44").bottom, 7 * 10),
-+               "Bad SuperscriptShiftUp")
-+
-+        assert(almostEqual(getBox("ref5").bottom -
-+                           getBox("sup51").bottom, 5 * 10) &&
-+               almostEqual(getBox("ref5").bottom -
-+                           getBox("sup52").bottom, 5 * 10) &&
-+               almostEqual(getBox("ref5").bottom -
-+                           getBox("sup53").bottom, 5 * 10) &&
-+               almostEqual(getBox("ref5").bottom -
-+                           getBox("sup54").bottom, 5 * 10),
-+               "Bad SuperscriptShiftUpCramped")
-+
-+        assert(almostEqual(getBox("ref6").bottom -
-+                           getBox("sub61").bottom, -6 * 10) &&
-+               almostEqual(getBox("ref6").bottom -
-+                           getBox("sub62").bottom, -6 * 10) &&
-+               almostEqual(getBox("ref6").bottom -
-+                           getBox("sub63").bottom, -6 * 10) &&
-+               almostEqual(getBox("ref6").bottom -
-+                           getBox("sub64").bottom, -6 * 10),
-+               "Bad SubscriptShiftDown")
-+
-+        assert(almostEqual(getBox("sub7").top -
-+                           getBox("sup7").bottom, 11 * 10),
-+               "Bad SubSuperscriptGapMin");
-+
-+      assert(almostEqual(getBox("sub8").top -
-+                         getBox("sup8").bottom, 11 * 10) &&
-+             almostEqual(getBox("ref8").bottom -
-+                         getBox("sup8").bottom, 3 * 10),
-+               "Bad SuperscriptBottomMaxWithSubscript");
-+
-+      assert(almostEqual(getBox("ref9").top, getBox("sub9").top),
-+            "Bad SubscriptTopMax");
-+
-+      assert(almostEqual(getBox("ref10").bottom - getBox("sup10").bottom,
-+             9 * 10), "Bad SuperscriptBottomMin");
-+
-+        document.body.innerHTML = "Pass";
-+        document.documentElement.removeAttribute("class");
-+      }
-+      window.addEventListener("MozReftestInvalidate", doTest, false);
-+    </script>
-+  </head>
-+  <body>
-+
-+    <p>
-+      <math style="font-family: scripts-1;">
-+        <msub>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub1" height="1em" width="1em" mathbackground="red"/>
-+        </msub>
-+        <mspace id="ref1" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: scripts-1;">
-+        <msup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sup2" height="1em" width="1em" mathbackground="red"/>
-+        </msup>
-+        <mspace id="ref2" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: scripts-1;">
-+        <mmultiscripts>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <none/>
-+          <mspace id="sup31" height="1em" width="1em" mathbackground="red"/>
-+          <none/>
-+          <mspace id="sup32" height="1em" width="1em" mathbackground="red"/>
-+        </mmultiscripts>
-+        <mspace id="ref3" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-2;">
-+        <mspace id="ref4" height="1em" width="1em" mathbackground="green"/>
-+        <msup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sup41" height="1em" width="1em" mathbackground="red"/>
-+        </msup>
-+        <msubsup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
++    <math style="font-family: fraction-1;">
++      <mfrac linethickness="200%">
++        <mspace height="1em" width="1em" mathbackground="red"/>
++        <mspace height="1em" width="1em" mathbackground="red"/>
++      </mfrac>
++    </math>
++      <math displaystyle="true" style="font-family: fraction-1;">
++        <mfrac linethickness="200%">
 +          <mspace height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="sup42" height="1em" width="1em" mathbackground="red"/>
-+        </msubsup>
-+        <mmultiscripts>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <none/>
-+          <mspace id="sup43" height="1em" width="1em" mathbackground="red"/>
-+          <none/>
-+          <mspace id="sup44" height="1em" width="1em" mathbackground="red"/>
-+        </mmultiscripts>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-3;">
-+        <msqrt>
-+          <mspace id="ref5" height="1em" width="1em" mathbackground="green"/>
-+          <msup>
-+            <mspace height="2em" width="2em" mathbackground="blue"/> 
-+            <mspace id="sup51" height="1em" width="1em" mathbackground="red"/>
-+          </msup>
-+          <msubsup>
-+            <mspace height="2em" width="2em" mathbackground="blue"/> 
-+            <mspace height="1em" width="1em" mathbackground="red"/>
-+            <mspace id="sup52" height="1em" width="1em" mathbackground="red"/>
-+          </msubsup>
-+          <mmultiscripts>
-+            <mspace height="2em" width="2em" mathbackground="blue"/> 
-+            <mspace height="1em" width="1em" mathbackground="red"/>
-+            <mspace id="sup53" height="1em" width="1em" mathbackground="red"/>
-+            <mspace height="1em" width="1em" mathbackground="red"/>
-+            <mspace id="sup54" height="1em" width="1em" mathbackground="red"/>
-+          </mmultiscripts>
-+        </msqrt>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-4;">
-+        <mspace id="ref6" height="1em" width="1em" mathbackground="green"/>
-+        <msub>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub61" height="1em" width="1em" mathbackground="red"/>
-+        </msub>
-+        <msubsup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub62" height="1em" width="1em" mathbackground="red"/>
 +          <mspace height="1em" width="1em" mathbackground="red"/>
-+        </msubsup>
-+        <mmultiscripts>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub63" height="1em" width="1em" mathbackground="red"/>
-+          <mspace height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="sub64" height="1em" width="1em" mathbackground="red"/>
-+          <mspace height="1em" width="1em" mathbackground="red"/>
-+        </mmultiscripts>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-5;">
-+        <msubsup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub7" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="sup7" height="1em" width="1em" mathbackground="red"/>
-+        </msubsup>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-6;">
-+        <mspace id="ref8" height="1em" width="1em" mathbackground="green"/>
-+        <msubsup>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub8" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="sup8" height="1em" width="1em" mathbackground="red"/>
-+        </msubsup>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-7;">
-+        <msub>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="ref9" height="5em"
-+                  width="1em" mathbackground="green"/>
-+        </msub>
-+        <msub>
-+          <mspace height="2em" width="2em" mathbackground="blue"/> 
-+          <mspace id="sub9" height="9em"
-+                  width="1em" mathbackground="red"/>
-+        </msub>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math style="font-family: scripts-8;">
-+        <mspace id="ref10" height="1em"
-+                width="1em" mathbackground="green"/>
-+        <msup>
-+          <mspace id="base10" height="2em"
-+                  width="2em" mathbackground="blue"/>
-+          <mspace id="sup10" height="1em"
-+                  width="1em" mathbackground="red"/>
-+        </msup>
-+      </math>
-+    </p>
-+
-+  </body>
-+</html>
-diff --git a/layout/reftests/mathml/opentype-stack.html b/layout/reftests/mathml/opentype-stack.html
-new file mode 100644
---- /dev/null
-+++ b/layout/reftests/mathml/opentype-stack.html
-@@ -0,0 +1,127 @@
-+<!doctype html>
-+<html class="reftest-wait">
-+  <head>
-+    <title>Open Type MATH - stack</title>
-+    <meta charset="utf-8"/>
-+    <style type="text/css">
-+      math {
-+        font-size: 10px;
-+      }
-+      @font-face {
-+        font-family: stack-1;
-+        src: url(../fonts/math/stack-1.otf);
-+      }
-+      @font-face {
-+        font-family: stack-2;
-+        src: url(../fonts/math/stack-2.otf);
-+      }
-+      @font-face {
-+        font-family: stack-3;
-+        src: url(../fonts/math/stack-3.otf);
-+      }
-+      @font-face {
-+        font-family: stack-4;
-+        src: url(../fonts/math/stack-4.otf);
-+      }
-+      @font-face {
-+        font-family: stack-5;
-+        src: url(../fonts/math/stack-5.otf);
-+      }
-+      @font-face {
-+        font-family: stack-6;
-+        src: url(../fonts/math/stack-6.otf);
-+      }
-+    </style>
-+    <script type="text/javascript">
-+      function assert(cond, msg) { if (!cond) { throw msg; } }
-+
-+      var epsilon = 5;
-+      function almostEqual(x, y) { return Math.abs(x - y) < epsilon; }
-+    
-+      function getBox(aId) {
-+        return document.getElementById(aId).getBoundingClientRect();
-+      }
-+      
-+      function doTest() {
-+
-+        /* inline style */
-+        var ref = getBox("ref").height;
-+
-+        assert(almostEqual(getBox("d1").top - getBox("n1").bottom, ref * 20),
-+               "Bad StackGapMin");
-+                                                            
-+        assert(almostEqual(getBox("ref").top - getBox("n2").top, ref*3),
-+               "Bad StackTopShiftMin");
-+
-+        assert(almostEqual(getBox("d3").bottom - getBox("ref").bottom, ref*3),
-+               "Bad StackBottomShiftDown");
-+
-+        /* display style */
-+        ref = getBox("ref").height;
-+
-+        assert(almostEqual(getBox("d4").top - getBox("n4").bottom, ref * 20),
-+               "Bad StackGapDisplayStyleMin");
-+                                                            
-+        assert(almostEqual(getBox("dref").top - getBox("n5").top, ref*3),
-+               "Bad StackTopDisplayStyleShiftMin");
-+
-+        assert(almostEqual(getBox("d6").bottom - getBox("dref").bottom, ref*3),
-+               "Bad StackDisplayStyleBottomShiftDown");
-+
-+        document.body.innerHTML = "Pass";
-+        document.documentElement.removeAttribute("class");
-+      }
-+      window.addEventListener("MozReftestInvalidate", doTest, false);
-+    </script>
-+  </head>
-+  <body>
-+    <p>
-+      <math>
-+        <mspace id="ref" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math style="font-family: stack-1;">
-+        <mfrac linethickness="0">
-+          <mspace id="n1" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d1" height="1em" width="1em" mathbackground="red"/>
 +        </mfrac>
 +      </math>
-+      <math style="font-family: stack-2;">
-+        <mfrac linethickness="0">
-+          <mspace id="n2" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d2" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math style="font-family: stack-3;">
-+        <mfrac linethickness="0">
-+          <mspace id="n3" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d3" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+    </p>
-+
-+    <p>
-+      <math displaystyle="true">
-+        <mspace id="dref" height="1em" width="1em" mathbackground="green"/>
-+      </math>
-+      <math displaystyle="true" style="font-family: stack-4;">
-+        <mfrac linethickness="0">
-+          <mspace id="n4" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d4" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math displaystyle="true" style="font-family: stack-5;">
-+        <mfrac linethickness="0">
-+          <mspace id="n5" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d5" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+      <math displaystyle="true" style="font-family: stack-6;">
-+        <mfrac linethickness="0">
-+          <mspace id="n6" height="1em" width="1em" mathbackground="red"/>
-+          <mspace id="d6" height="1em" width="1em" mathbackground="red"/>
-+        </mfrac>
-+      </math>
-+    </p>
-+
 +  </body>
 +</html>
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -149,16 +149,22 @@ skip-if(B2G) == maction-dynamic-1.html m
+@@ -149,16 +149,17 @@ skip-if(B2G) == maction-dynamic-1.html m
  == mo-invisibleoperators-2.html mo-invisibleoperators-2-ref.html
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
  == whitespace-trim-1.html whitespace-trim-1-ref.html
@@ -2173,12 +2360,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
  == whitespace-trim-5.html whitespace-trim-5-ref.html
  random-if(winWidget&&!d2d) == opentype-stretchy.html opentype-stretchy-ref.html
-+== opentype-axis-height.html data:text/html,<body>Pass
-+== opentype-radical.html data:text/html,<body>Pass
-+== opentype-fraction.html data:text/html,<body>Pass
-+== opentype-stack.html data:text/html,<body>Pass
-+== opentype-scripts.html data:text/html,<body>Pass
-+== opentype-limits.html data:text/html,<body>Pass
++random-if(B2G&&browserIsRemote) == opentype-fraction-dynamic-linethickness.html opentype-fraction-dynamic-linethickness-ref.html
  == operator-1.xhtml operator-1-ref.xhtml
  == scriptshift-1.xhtml scriptshift-1-ref.xhtml
  == number-size-1.xhtml number-size-1-ref.xhtml
@@ -2187,3 +2369,31 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
  != menclose-1a.html menclose-1-ref.html
  != menclose-1b.html menclose-1-ref.html
+@@ -286,23 +287,23 @@ random-if(B2G&&browserIsRemote) == munde
+ == mfrac-A-2.html mfrac-A-2-ref.html
+ == mfrac-A-3.html mfrac-A-3-ref.html
+ == mfrac-A-4.html mfrac-A-4-ref.html
+ == mfrac-A-5.html mfrac-A-5-ref.html
+ == mfrac-A-6.html mfrac-A-6-ref.html
+ == mfrac-A-7.html mfrac-A-7-ref.html
+ == mfrac-A-8.html mfrac-A-8-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-B-1.html mfrac-B-1-ref.html
+-random-if(B2G&&browserIsRemote) == mfrac-B-2.html mfrac-B-2-3-ref.html
+-random-if(B2G&&browserIsRemote) == mfrac-B-3.html mfrac-B-2-3-ref.html
++random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-B-2.html mfrac-B-2-3-ref.html
++random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-B-3.html mfrac-B-2-3-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-B-4.html mfrac-B-4-5-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-B-5.html mfrac-B-4-5-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-B-6.html mfrac-B-6-7-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-B-7.html mfrac-B-6-7-ref.html
+ fuzzy-if(OSX,1,100) random-if(B2G&&browserIsRemote) == mfrac-C-1.html mfrac-C-1-ref.html
+-random-if(B2G&&browserIsRemote) == mfrac-C-2.html mfrac-C-2-ref.html
++random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-C-2.html mfrac-C-2-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-C-3.html mfrac-C-3-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-C-4.html mfrac-C-4-ref.html
+ fuzzy-if(OSX,1,100) random-if(B2G&&browserIsRemote) == mfrac-D-1.html mfrac-D-1-ref.html
+-random-if(B2G&&browserIsRemote) == mfrac-D-2.html mfrac-D-2-ref.html
++random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-D-2.html mfrac-D-2-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-D-3.html mfrac-D-3-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-D-4.html mfrac-D-4-ref.html
+ random-if(B2G&&browserIsRemote) == mfrac-E-1.html mfrac-E-1-ref.html

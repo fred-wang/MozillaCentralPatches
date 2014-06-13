@@ -1,12 +1,13 @@
 # HG changeset patch
-# Parent 965d117abeb443ee5d01242e5adc4b020ce641ee
+# Parent f3b40a6a736a56c3e56afd537e520ad75bd2da92
 # User Frédéric Wang <fred.wang@free.fr>
-Part 3 - Use MATH constants for fractions and stacks. r=karl, b=961365
+Part 3 - Use MATH constants for fractions and stacks. r=jfkthame, b=961365
 
 diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracFrame.cpp
 --- a/layout/mathml/nsMathMLmfracFrame.cpp
 +++ b/layout/mathml/nsMathMLmfracFrame.cpp
-@@ -215,16 +215,18 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -214,17 +214,25 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+   nsPresContext* presContext = PresContext();
    nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
  
    nsRefPtr<nsFontMetrics> fm;
@@ -14,9 +15,16 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
    aRenderingContext.SetFont(fm);
  
    nscoord defaultRuleThickness, axisHeight;
-   GetRuleThickness(aRenderingContext, fm, defaultRuleThickness);
-+  GetMathConstantEm(fm, gfxFontEntry::FractionRuleThickness,
-+                    defaultRuleThickness);
+-  GetRuleThickness(aRenderingContext, fm, defaultRuleThickness);
++  nscoord oneDevPixel = fm->AppUnitsPerDevPixel();
++  gfxFont* mathFont = fm->GetThebesFontGroup()->GetFirstMathFont();
++  if (mathFont) {
++      mathFont->GetMathConstant(gfxFontEntry::FractionRuleThickness,
++                                oneDevPixel,
++                                defaultRuleThickness);
++  } else {
++    GetRuleThickness(aRenderingContext, fm, defaultRuleThickness);
++  }
    GetAxisHeight(aRenderingContext, fm, axisHeight);
  
    bool outermostEmbellished = false;
@@ -25,7 +33,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      GetEmbellishDataFrom(GetParent(), parentData);
      outermostEmbellished = parentData.coreFrame != mEmbellishData.coreFrame;
    }
-@@ -234,16 +236,18 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -234,16 +242,18 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
    mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_, value);
    mLineThickness = CalcLineThickness(presContext, mStyleContext, value,
                                       onePixel, defaultRuleThickness);
@@ -44,7 +52,7 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
      // embellished container (we fetch values from the core since they may use
      // units that depend on style data, and style changes could have occurred
      // in the core since our last visit there)
-@@ -253,85 +257,104 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
+@@ -253,85 +263,122 @@ nsMathMLmfracFrame::PlaceInternal(nsRend
        nsEmbellishData coreData;
        GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
        leftSpace += StyleVisibility()->mDirection ?
@@ -74,21 +82,32 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 +    if (0 == actualRuleThickness) {
 +      numShift = displayStyle ? numShift1 : numShift3;
 +      denShift = displayStyle ? numShift1 : numShift2;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackTopDisplayStyleShiftUp :
-+                        gfxFontEntry::StackTopShiftUp, numShift);
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackBottomDisplayStyleShiftDown :
-+                        gfxFontEntry::StackBottomShiftDown, denShift);
++      if (mathFont) {
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::StackTopDisplayStyleShiftUp :
++                                  gfxFontEntry::StackTopShiftUp,
++                                  oneDevPixel, numShift);
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::
++                                  StackBottomDisplayStyleShiftDown :
++                                  gfxFontEntry::StackBottomShiftDown,
++                                  oneDevPixel, denShift);
++      }
 +    } else {
 +      numShift = displayStyle ? denShift1 : denShift2;
 +      denShift = displayStyle ? denShift1 : denShift2;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionNumeratorDisplayStyleShiftUp :
-+                        gfxFontEntry::FractionNumeratorShiftUp, numShift);
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionDenominatorDisplayStyleShiftDown :
-+                        gfxFontEntry::FractionDenominatorShiftDown, denShift);
++      if (mathFont) {
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::
++                                  FractionNumeratorDisplayStyleShiftUp :
++                                  gfxFontEntry::FractionNumeratorShiftUp,
++                                  oneDevPixel, numShift);
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::
++                                  FractionDenominatorDisplayStyleShiftDown :
++                                  gfxFontEntry::FractionDenominatorShiftDown,
++                                  oneDevPixel, denShift);
++      }
      }
 -    else {
 -      numShift = (0 < mLineRect.height) ? numShift2 : numShift3;
@@ -108,9 +127,12 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 +      nscoord minClearance = displayStyle ?
          7 * defaultRuleThickness : 3 * defaultRuleThickness;
 -      actualClearance =
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::StackDisplayStyleGapMin :
-+                        gfxFontEntry::StackGapMin, minClearance);
++      if (mathFont) {
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::StackDisplayStyleGapMin :
++                                  gfxFontEntry::StackGapMin,
++                                  oneDevPixel, minClearance);
++      }
 +      nscoord actualClearance =
          (numShift - bmNum.descent) - (bmDen.ascent - denShift);
        // actualClearance should be >= minClearance
@@ -140,14 +162,18 @@ diff --git a/layout/mathml/nsMathMLmfracFrame.cpp b/layout/mathml/nsMathMLmfracF
 -      3 * defaultRuleThickness : defaultRuleThickness + onePixel;
 +      nscoord minClearanceNum = displayStyle ?
 +        3 * defaultRuleThickness : defaultRuleThickness + onePixel;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionNumDisplayStyleGapMin :
-+                        gfxFontEntry::FractionNumeratorGapMin, minClearanceNum);
 +      nscoord minClearanceDen = minClearanceNum;
-+      GetMathConstantEm(fm, displayStyle ?
-+                        gfxFontEntry::FractionDenomDisplayStyleGapMin :
-+                        gfxFontEntry::FractionDenominatorGapMin,
-+                        minClearanceDen);
++      if (mathFont) {
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::FractionNumDisplayStyleGapMin :
++                                  gfxFontEntry::FractionNumeratorGapMin,
++                                  oneDevPixel, minClearanceNum);
++        mathFont->GetMathConstant(displayStyle ?
++                                  gfxFontEntry::
++                                  FractionDenomDisplayStyleGapMin :
++                                  gfxFontEntry::FractionDenominatorGapMin,
++                                  oneDevPixel, minClearanceDen);
++      }
  
 -      // adjust numShift to maintain minClearance if needed
 -      actualClearance =
