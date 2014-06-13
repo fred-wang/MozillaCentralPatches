@@ -1,0 +1,2890 @@
+# HG changeset patch
+# Parent e8b28c35e795d3a09ba0b5b333fc3a45f8f3d8ec
+# User James Kitchener <jkitch.bug@gmail.com>
+Bug 330964 - tests for mtable row/column/framespacing r=fredw
+
+diff --git a/layout/mathml/tests/mochitest.ini b/layout/mathml/tests/mochitest.ini
+--- a/layout/mathml/tests/mochitest.ini
++++ b/layout/mathml/tests/mochitest.ini
+@@ -1,6 +1,7 @@
+ [DEFAULT]
+ 
++[test_bug330964.html]
+ [test_bug553917.html]
+ [test_bug706406.html]
+ [test_bug827713-2.html]
+ [test_bug827713.html]
+diff --git a/layout/mathml/tests/test_bug330964.html b/layout/mathml/tests/test_bug330964.html
+new file mode 100644
+--- /dev/null
++++ b/layout/mathml/tests/test_bug330964.html
+@@ -0,0 +1,95 @@
++<!DOCTYPE HTML>
++<html>
++<!--
++https://bugzilla.mozilla.org/show_bug.cgi?id=330964
++-->
++<head>
++  <title>Test for Bug 706406</title>
++  <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
++  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
++</head>
++<body>
++<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=330964">Mozilla Bug 330964</a>
++<p id="display"></p>
++
++<math>
++  <mtable framespacing="7px 20px" frame="solid" rowspacing="11px 27px" columnspacing="5px 16px"
++          style="border-width: 2px;" id="mtable0">
++    <mtr>
++      <mtd id="mtd0">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd1">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd2">
++        <mn>X</mn>
++      </mtd>
++    </mtr>
++    <mtr>
++      <mtd id="mtd3">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd4">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd5">
++        <mn>X</mn>
++      </mtd>
++    </mtr>
++    <mtr>
++      <mtd id="mtd6">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd7">
++        <mn>X</mn>
++      </mtd>
++      <mtd id="mtd8">
++        <mn>X</mn>
++      </mtd>
++    </mtr>
++  </mtable>
++</math>
++
++<pre id="test">
++<script type="application/javascript">
++
++  rectTable = $("mtable0").getBoundingClientRect();
++  rect0 = $("mtd0").getBoundingClientRect();
++  rect1 = $("mtd1").getBoundingClientRect();
++  rect2 = $("mtd2").getBoundingClientRect();
++  rect3 = $("mtd3").getBoundingClientRect();
++  rect4 = $("mtd4").getBoundingClientRect();
++  rect5 = $("mtd5").getBoundingClientRect();
++  rect6 = $("mtd6").getBoundingClientRect();
++  rect7 = $("mtd7").getBoundingClientRect();
++  rect8 = $("mtd8").getBoundingClientRect();
++  is(rect1.left - rect0.right, 5, "columnspacing wonky");
++  is(rect2.left - rect1.right, 16, "columnspacing wonky");
++  is(rect4.left - rect3.right, 5, "columnspacing wonky");
++  is(rect5.left - rect4.right, 16, "columnspacing wonky");
++  is(rect7.left - rect6.right, 5, "columnspacing wonky");
++  is(rect8.left - rect7.right, 16, "columnspacing wonky");
++  is(rect3.top - rect0.bottom, 11, "rowspacing wonky");
++  is(rect4.top - rect1.bottom, 11, "rowspacing wonky");
++  is(rect5.top - rect2.bottom, 11, "rowspacing wonky");
++  is(rect6.top - rect3.bottom, 27, "rowspacing wonky");
++  is(rect7.top - rect4.bottom, 27, "rowspacing wonky");
++  is(rect8.top - rect5.bottom, 27, "rowspacing wonky");
++  // Remember to subtract border
++  is(rect0.left - rectTable.left - 2, 7, "framespacing left wonky");
++  is(rect3.left - rectTable.left - 2, 7, "framespacing left wonky");
++  is(rect6.left - rectTable.left - 2, 7, "framespacing left wonky");
++  is(rect0.top - rectTable.top - 2, 20, "framespacing top wonky");
++  is(rect1.top - rectTable.top - 2, 20, "framespacing top wonky");
++  is(rect2.top - rectTable.top - 2, 20, "framespacing top wonky");
++  is(rectTable.bottom - rect6.bottom - 2, 20, "framespacing bottom wonky");
++  is(rectTable.bottom - rect7.bottom - 2, 20, "framespacing bottom wonky");
++  is(rectTable.bottom - rect8.bottom - 2, 20, "framespacing bottom wonky");
++  is(rectTable.right - rect2.right - 2, 7, "framespacing right wonky");
++  is(rectTable.right - rect5.right - 2, 7, "framespacing right wonky");
++  is(rectTable.right - rect8.right - 2, 7, "framespacing right wonky");
++</script>
++</pre>
++</body>
++</html>
+diff --git a/layout/reftests/mathml/dir-6-ref.html b/layout/reftests/mathml/dir-6a-ref.html
+copy from layout/reftests/mathml/dir-6-ref.html
+copy to layout/reftests/mathml/dir-6a-ref.html
+--- a/layout/reftests/mathml/dir-6-ref.html
++++ b/layout/reftests/mathml/dir-6a-ref.html
+@@ -1,17 +1,17 @@
+ <!DOCTYPE html>
+ <html>
+   <head><title>Test dir=rtl</title></head>
+   <body>
+ 
+     <p>
+       mtable:
+       <math>
+-        <mtable>
++        <mtable rowspacing="">
+           <mtr>
+             <mtd>
+               <mtext>c</mtext>
+             </mtd>
+             <mtd>
+               <mtext>b</mtext>
+             </mtd>
+             <mtd>
+diff --git a/layout/reftests/mathml/dir-6.html b/layout/reftests/mathml/dir-6a.html
+copy from layout/reftests/mathml/dir-6.html
+copy to layout/reftests/mathml/dir-6a.html
+--- a/layout/reftests/mathml/dir-6.html
++++ b/layout/reftests/mathml/dir-6a.html
+@@ -1,17 +1,17 @@
+ <!DOCTYPE html>
+ <html>
+   <head><title>Test dir=rtl</title></head>
+   <body>
+ 
+     <p>
+       mtable:
+       <math dir="rtl">
+-        <mtable>
++        <mtable rowspacing="">
+           <mtr>
+             <mtd>
+               <mtext>a</mtext>
+             </mtd>
+             <mtd>
+               <mtext>b</mtext>
+             </mtd>
+             <mtd>
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -1,14 +1,15 @@
+ == dir-1.html dir-1-ref.html
+ == dir-2.html dir-2-ref.html
+ == dir-3.html dir-3-ref.html
+ == dir-4.html dir-4-ref.html
+ == dir-5.html dir-5-ref.html
+ == dir-6.html dir-6-ref.html
++== dir-6a.html dir-6a-ref.html
+ == dir-7.html dir-7-ref.html
+ fails == dir-8.html dir-8-ref.html
+ fails == dir-9.html dir-9-ref.html # Bug 787215
+ == dir-10.html dir-10-ref.html
+ random-if(B2G&&browserIsRemote) == dir-11.html dir-11-ref.html
+ == displaystyle-1.html displaystyle-1-ref.html
+ == displaystyle-2.html displaystyle-2-ref.html
+ == displaystyle-3.html displaystyle-3-ref.html
+@@ -254,8 +255,18 @@ fuzzy-if(OSX,1,100) == menclose-5-circle
+ == columnlines-3-2.html columnlines-3-2-ref.html
+ == rowlines-1a.html rowlines-1-ref.html
+ != rowlines-1b.html rowlines-1-ref.html
+ != rowlines-1c.html rowlines-1-ref.html
+ == rowlines-2a.html rowlines-2-ref.html
+ == rowlines-2b.html rowlines-2-ref.html
+ != rowlines-3-1.html rowlines-3-1-ref.html
+ == rowlines-3-2.html rowlines-3-2-ref.html
++== tablespacing-1.html tablespacing-1-ref.html
++== tablespacing-2.html tablespacing-2-ref.html
++== tablespacing-3.html tablespacing-3-ref.html
++== tablespacing-4.html tablespacing-4-ref.html
++== tablespacing-5.html tablespacing-5-ref.html
++== tablespacing-5a.html tablespacing-5a-ref.html
++== tablespacing-6.html tablespacing-6-ref.html
++== tablespacing-7.html tablespacing-7-ref.html
++!= tablespacing-8a.html tablespacing-8-ref.html
++!= tablespacing-8b.html tablespacing-8-ref.html
+diff --git a/layout/reftests/mathml/tablespacing-1-ref.html b/layout/reftests/mathml/tablespacing-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-1-ref.html
+@@ -0,0 +1,66 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Table spacing default values</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable rowspacing="1.0ex" columnspacing="0.8em" framespacing="0em 0ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math >
++        <mtable frame="solid" rowspacing="1.0ex" columnspacing="0.8em" framespacing="0.4em 0.5ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-1.html b/layout/reftests/mathml/tablespacing-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-1.html
+@@ -0,0 +1,66 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Table spacing default values</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable rowspacing="">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mtable frame="solid" rowspacing="">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-2-ref.html b/layout/reftests/mathml/tablespacing-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-2-ref.html
+@@ -0,0 +1,134 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Additional values ignored and insufficient ones expanded</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable rowspacing="1.0ex 3.0ex 7.0ex" columnspacing="0.8em 2em 3em" framespacing="0em 0ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mtable rowspacing="1.0ex 3.0ex 3.0ex" columnspacing="0.8em 2em 2em">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-2.html b/layout/reftests/mathml/tablespacing-2.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-2.html
+@@ -0,0 +1,134 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Additional values ignored and insufficient ones expanded</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable rowspacing="1.0ex 3.0ex 7.0ex 10ex 12ex" columnspacing="0.8em 2em 3em 5em 7em" framespacing="6em 9ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mtable  rowspacing="1.0ex 3.0ex" columnspacing="0.8em 2em">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-3-ref.html b/layout/reftests/mathml/tablespacing-3-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-3-ref.html
+@@ -0,0 +1,133 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Single value for rowspacing/columnspacing accepted</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable columnspacing="4em 4em 4em">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mtable rowspacing="4.0ex 4.0ex 4.0ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-3.html b/layout/reftests/mathml/tablespacing-3.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-3.html
+@@ -0,0 +1,133 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Single value for rowspacing/columnspacing accepted</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable  columnspacing="4em">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mtable rowspacing="4.0ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++            <mtd>
++              <mtext>g</mtext>
++            </mtd>
++            <mtd>
++              <mtext>h</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>i</mtext>
++            </mtd>
++            <mtd>
++              <mtext>j</mtext>
++            </mtd>
++            <mtd>
++              <mtext>k</mtext>
++            </mtd>
++            <mtd>
++              <mtext>l</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>m</mtext>
++            </mtd>
++            <mtd>
++              <mtext>n</mtext>
++            </mtd>
++            <mtd>
++              <mtext>o</mtext>
++            </mtd>
++            <mtd>
++              <mtext>p</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-4-ref.html b/layout/reftests/mathml/tablespacing-4-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-4-ref.html
+@@ -0,0 +1,95 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Dynamic tests involving adding and removing elements</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable columnspacing="5em 7em">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  columnspacing="5em">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable rowspacing="2ex 4ex">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  rowspacing="2ex">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  rowspacing="2ex 4ex" columnspacing="4em">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++        <mtd>
++          <mn>w</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-4.html b/layout/reftests/mathml/tablespacing-4.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-4.html
+@@ -0,0 +1,123 @@
++<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>Dynamic tests involving adding and removing elements</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable columnspacing="5em 7em" id="mtable0a">
++      <mtr id="mtr0">
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  columnspacing="5em 7em">
++      <mtr id="mtr0a">
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++        <mtd id="mtd0">
++          <mn>y</mn>
++        </mtd>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable rowspacing="2ex 4ex" id="mtable0">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  rowspacing="2ex 4ex" id="mtable1">
++      <mtr>
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++      </mtr>
++      <mtr id="mtr1">
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable  rowspacing="2ex 4ex" columnspacing="4em">
++      <mtr id="mtr2">
++        <mtd>
++          <mn>x</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>y</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>z</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <script>
++    function doTest() {
++      // Add a table cell
++      var mn0 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mn");
++      mn0.innerHTML = 'z';
++      var mtd0 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mtd");
++      mtd0.appendChild(mn0);
++      document.getElementById("mtr0").appendChild(mtd0);
++      // Remove a table cell
++      document.getElementById("mtr0a").removeChild(document.getElementById("mtd0"));
++      // Add a table row
++      var mn1 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mn");
++      mn1.innerHTML = 'z';
++      var mtd1 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mtd");
++      mtd1.appendChild(mn1);
++      var mtr1 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mtr");
++      mtr1.appendChild(mtd1);
++      document.getElementById("mtable0").appendChild(mtr1);
++      // Remove a table row
++      document.getElementById("mtable1").removeChild(document.getElementById("mtr1"));
++      // Add a table cell to a table containing several rows
++      var mn2 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mn");
++      mn2.innerHTML = 'w';
++      var mtd2 = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mtd");
++      mtd2.appendChild(mn2);
++      document.getElementById("mtr2").appendChild(mtd2);
++
++      document.documentElement.removeAttribute("class");
++    }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++  </script>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-5-ref.html b/layout/reftests/mathml/tablespacing-5-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-5-ref.html
+@@ -0,0 +1,274 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable id="mtable0" >
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable3" rowspacing="2ex 4ex">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable4"  columnspacing="2em 3em" >
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable5"  framespacing="2em 2ex" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable6">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-5.html b/layout/reftests/mathml/tablespacing-5.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-5.html
+@@ -0,0 +1,295 @@
++<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable id="mtable0" rowspacing="2ex 3ex">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1" columnspacing="2em 3em">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" framespacing="2em 2ex" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable3" >
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable4" >
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable5" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable6" frame="none">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <script>
++    function doTest() {
++      // remove spacing attributes
++      document.getElementById("mtable0").removeAttribute("rowspacing");
++      document.getElementById("mtable1").removeAttribute("columnspacing");
++      document.getElementById("mtable2").removeAttribute("framespacing");
++
++      // add spacing attributes
++      document.getElementById("mtable3").setAttribute("rowspacing", "2ex 4ex");
++      document.getElementById("mtable4").setAttribute("columnspacing", "2em 3em");
++      document.getElementById("mtable5").setAttribute("framespacing", "2em 2ex");
++
++      // framespacing doesn't apply with frame="none"
++      document.getElementById("mtable6").setAttribute("framespacing", "2em 2ex");
++
++      document.documentElement.removeAttribute("class");
++    }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++
++  </script>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-5a-ref.html b/layout/reftests/mathml/tablespacing-5a-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-5a-ref.html
+@@ -0,0 +1,278 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <!--  There are at present two implementations of mtable spacing behaviour,
++        one based on CSS and the other on rowspacing/columnspacing/framespacing
++        attributes which the user can select.  This reftest tests that dynamic
++        transitions from one system to the other work appropriately. -->
++  <math>
++    <mtable id="mtable0" columnspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" frame="solid" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable3" rowspacing="2ex 4ex" columspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable4"  columnspacing="2em 3em" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable5"  framespacing="2em 2ex" frame="solid" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable6" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-5a.html b/layout/reftests/mathml/tablespacing-5a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-5a.html
+@@ -0,0 +1,295 @@
++<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable id="mtable0" rowspacing="2ex 3ex" columnspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1" columnspacing="2em 3em" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" framespacing="2em 2ex" frame="solid" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable3" columspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable4" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable5" frame="solid" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable6" frame="none" rowspacing="">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <script>
++    function doTest() {
++      // remove spacing attributes
++      document.getElementById("mtable0").removeAttribute("rowspacing");
++      document.getElementById("mtable1").removeAttribute("columnspacing");
++      document.getElementById("mtable2").removeAttribute("framespacing");
++
++      // add spacing attributes
++      document.getElementById("mtable3").setAttribute("rowspacing", "2ex 4ex");
++      document.getElementById("mtable4").setAttribute("columnspacing", "2em 3em");
++      document.getElementById("mtable5").setAttribute("framespacing", "2em 2ex");
++
++      // framespacing doesn't apply with frame="none"
++      document.getElementById("mtable6").setAttribute("framespacing", "2em 2ex");
++
++      document.documentElement.removeAttribute("class");
++    }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++
++  </script>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-6-ref.html b/layout/reftests/mathml/tablespacing-6-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-6-ref.html
+@@ -0,0 +1,123 @@
++<!doctype html>
++<html>
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable id="mtable0" rowspacing="3ex 7ex">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1" columnspacing="3em 7em">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" framespacing="3em 7ex" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-6.html b/layout/reftests/mathml/tablespacing-6.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-6.html
+@@ -0,0 +1,135 @@
++<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>Dynamic tests involving changes to row/column/framespacing</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++  <math>
++    <mtable id="mtable0" rowspacing="2ex 3ex">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable1" columnspacing="2em 3em">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <math>
++    <mtable id="mtable2" framespacing="2em 2ex" frame="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++  <p>
++  <script>
++    function doTest() {
++
++      // modify existing spacing attributes
++      document.getElementById("mtable0").setAttribute("rowspacing", "3ex 7ex");
++      document.getElementById("mtable1").setAttribute("columnspacing", "3em 7em");
++      document.getElementById("mtable2").setAttribute("framespacing", "3em 7ex");
++
++      document.documentElement.removeAttribute("class");
++    }
++    window.addEventListener("MozReftestInvalidate", doTest, false);
++  </script>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-7-ref.html b/layout/reftests/mathml/tablespacing-7-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-7-ref.html
+@@ -0,0 +1,97 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Table spacing error handling</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable frame="solid" rowspacing="5.0ex 1.0ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math >
++        <mtable frame="solid" columnspacing="5em 0.8em">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++    <p>
++      <math >
++        <mtable frame="solid" framespacing="0.4em 0.5ex">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-7.html b/layout/reftests/mathml/tablespacing-7.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-7.html
+@@ -0,0 +1,97 @@
++<!DOCTYPE html>
++<html>
++  <head><title>Table spacing error handling</title></head>
++  <body>
++
++    <p>
++      <math>
++        <mtable frame="solid" rowspacing="5.0ex cat">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++    </p>
++    <p>
++      <math >
++        <mtable frame="solid" columnspacing="5em cat">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++    <p>
++      <math >
++        <mtable frame="solid" framespacing="0.4em cat">
++          <mtr>
++            <mtd>
++              <mtext>a</mtext>
++            </mtd>
++            <mtd>
++              <mtext>b</mtext>
++            </mtd>
++            <mtd>
++              <mtext>c</mtext>
++            </mtd>
++          </mtr>
++          <mtr>
++            <mtd>
++              <mtext>d</mtext>
++            </mtd>
++            <mtd>
++              <mtext>e</mtext>
++            </mtd>
++            <mtd>
++              <mtext>f</mtext>
++            </mtd>
++          </mtr>
++        </mtable>
++      </math>
++
++
++    </p>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-8-ref.html b/layout/reftests/mathml/tablespacing-8-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-8-ref.html
+@@ -0,0 +1,38 @@
++<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
++<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
++<!DOCTYPE html>
++<html>
++  <body>
++
++  <math>
++    <mtable  rowspacing="30px" columnspacing="30px">
++      <mtr>
++        <mtd>
++          <mspace width="50px" height="30px"></mspace>
++        </mtd>
++        <mtd>
++          <mspace width="50px" height="30px"></mspace>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mspace width="50px" height="30px"></mspace>
++        </mtd>
++        <mtd>
++          <mspace width="50px" height="30px"></mspace>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++
++  <div style="position: absolute; top: 0; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 70px; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 0px;
++              width: 60px; height: 100px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 90px;
++              width: 60px; height: 100px; background: black;"></div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-8a.html b/layout/reftests/mathml/tablespacing-8a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-8a.html
+@@ -0,0 +1,39 @@
++﻿<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
++<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
++<!DOCTYPE html>
++<html>
++  <body>
++
++  <math>
++    <mtable  rowspacing="30px" columnspacing="60px"
++           rowlines="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++
++  <div style="position: absolute; top: 0; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 70px; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 0px;
++              width: 60px; height: 100px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 90px;
++              width: 60px; height: 100px; background: black;"></div>
++
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/tablespacing-8b.html b/layout/reftests/mathml/tablespacing-8b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/tablespacing-8b.html
+@@ -0,0 +1,38 @@
++﻿<!-- -*- mode: HTML; tab-width: 2; indent-tabs-mode: nil; -*- -->
++<!-- vim: set tabstop=2 expandtab shiftwidth=2 textwidth=80:  -->
++<!DOCTYPE html>
++<html>
++  <body>
++
++  <math>
++    <mtable  rowspacing="20px" columnspacing="100px"
++           columnlines="solid">
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++        <mtd>
++          <mn>X</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++
++  <div style="position: absolute; top: 0; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 70px; left: 0px;
++              width: 150px; height: 40px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 0px;
++              width: 60px; height: 100px; background: black;"></div>
++  <div style="position: absolute; top: 0px; left: 90px;
++              width: 60px; height: 100px; background: black;"></div>
++  </body>
++</html>
