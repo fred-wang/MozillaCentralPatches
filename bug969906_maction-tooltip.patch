@@ -41,10 +41,10 @@ diff --git a/layout/style/moz.build b/layout/style/moz.build
  
  EXPORTS += [
      'AnimationCommon.h',
+     'CounterStyleManager.h',
      'nsAnimationManager.h',
      'nsComputedDOMStylePropertyList.h',
      'nsCSSAnonBoxes.h',
-     'nsCSSAnonBoxList.h',
 diff --git a/layout/style/xbl-maction/jar.mn b/layout/style/xbl-maction/jar.mn
 new file mode 100644
 --- /dev/null
