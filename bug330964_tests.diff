@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent e8b28c35e795d3a09ba0b5b333fc3a45f8f3d8ec
+# Parent 2abb00e1b302d4ac6782d9e0e3d4759a0cbae0bc
 # User James Kitchener <jkitch.bug@gmail.com>
 Bug 330964 - tests for mtable row/column/framespacing r=fredw
 
 diff --git a/layout/mathml/tests/mochitest.ini b/layout/mathml/tests/mochitest.ini
 --- a/layout/mathml/tests/mochitest.ini
 +++ b/layout/mathml/tests/mochitest.ini
-@@ -1,6 +1,7 @@
+@@ -1,7 +1,8 @@
  [DEFAULT]
  
 +[test_bug330964.html]
@@ -14,6 +14,7 @@ diff --git a/layout/mathml/tests/mochitest.ini b/layout/mathml/tests/mochitest.i
  [test_bug706406.html]
  [test_bug827713-2.html]
  [test_bug827713.html]
+ [test_bug975681.html]
 diff --git a/layout/mathml/tests/test_bug330964.html b/layout/mathml/tests/test_bug330964.html
 new file mode 100644
 --- /dev/null
@@ -165,23 +166,7 @@ copy to layout/reftests/mathml/dir-6a.html
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -1,14 +1,15 @@
- == dir-1.html dir-1-ref.html
- == dir-2.html dir-2-ref.html
- == dir-3.html dir-3-ref.html
- == dir-4.html dir-4-ref.html
- == dir-5.html dir-5-ref.html
- == dir-6.html dir-6-ref.html
-+== dir-6a.html dir-6a-ref.html
- == dir-7.html dir-7-ref.html
- fails == dir-8.html dir-8-ref.html
- fails == dir-9.html dir-9-ref.html # Bug 787215
- == dir-10.html dir-10-ref.html
- random-if(B2G&&browserIsRemote) == dir-11.html dir-11-ref.html
- == displaystyle-1.html displaystyle-1-ref.html
- == displaystyle-2.html displaystyle-2-ref.html
- == displaystyle-3.html displaystyle-3-ref.html
-@@ -254,8 +255,18 @@ fuzzy-if(OSX,1,100) == menclose-5-circle
+@@ -264,16 +264,26 @@ random-if(B2G&&browserIsRemote) == munde
  == columnlines-3-2.html columnlines-3-2-ref.html
  == rowlines-1a.html rowlines-1-ref.html
  != rowlines-1b.html rowlines-1-ref.html
@@ -200,6 +185,14 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
 +== tablespacing-7.html tablespacing-7-ref.html
 +!= tablespacing-8a.html tablespacing-8-ref.html
 +!= tablespacing-8b.html tablespacing-8-ref.html
+ != op-dict-1.html op-dict-1-ref.html
+ == op-dict-2.html op-dict-2-ref.html
+ != op-dict-3.html op-dict-3-ref.html
+ == op-dict-4.html op-dict-4-ref.html
+ != op-dict-5.html op-dict-5-ref.html
+ == op-dict-6.html op-dict-6-ref.html
+ != op-dict-7.html op-dict-7-ref.html
+ == op-dict-8.html op-dict-8-ref.html
 diff --git a/layout/reftests/mathml/tablespacing-1-ref.html b/layout/reftests/mathml/tablespacing-1-ref.html
 new file mode 100644
 --- /dev/null

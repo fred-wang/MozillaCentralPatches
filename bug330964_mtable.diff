@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 4f3dffde8ad0ee6103e23d1ae50a7aef25b38825
+# Parent 28f220ed13239c97e3bb6c434641d9d3f260fe8d
 # User James Kitchener <jkitch.bug@gmail.com>
 Bug 330964 - Add rowspacing/columnspacing/framespacing to MathML mtable
 
@@ -482,7 +482,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  }
  
  nsIFrame*
-@@ -680,16 +924,123 @@ nsMathMLmtableFrame::RestyleTable()
+@@ -674,16 +918,123 @@ nsMathMLmtableFrame::RestyleTable()
    MapAllAttributesIntoCSS(this);
  
    // Explicitly request a re-resolve and reflow in our subtree to pick up any changes
@@ -606,7 +606,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  {
    return new (aPresShell) nsMathMLmtrFrame(aContext);
  }
-@@ -856,16 +1207,25 @@ nsMargin*
+@@ -850,16 +1201,25 @@ nsMargin*
  nsMathMLmtdFrame::GetBorderWidth(nsMargin& aBorder) const
  {
    nsStyleBorder styleBorder = *StyleBorder();
@@ -631,11 +631,11 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
    NS_QUERYFRAME_ENTRY(nsIMathMLFrame)
  NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
  
- nsIFrame*
+ nsContainerFrame*
 diff --git a/layout/mathml/nsMathMLmtableFrame.h b/layout/mathml/nsMathMLmtableFrame.h
 --- a/layout/mathml/nsMathMLmtableFrame.h
 +++ b/layout/mathml/nsMathMLmtableFrame.h
-@@ -56,16 +56,18 @@ protected:
+@@ -57,16 +57,18 @@ protected:
                  int32_t         aRowIndex);
  }; // class nsMathMLmtableOuterFrame
  
@@ -654,8 +654,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.h b/layout/mathml/nsMathMLmtableF
    // Overloaded nsTableFrame methods
  
    virtual void
-   SetInitialChildList(ChildListID  aListID,
-@@ -104,19 +106,72 @@ public:
+@@ -103,19 +105,72 @@ public:
      return nsTableFrame::IsFrameOfType(aFlags & ~(nsIFrame::eMathML));
    }
  
@@ -728,7 +727,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.h b/layout/mathml/nsMathMLmtableF
  {
  public:
    NS_DECL_FRAMEARENA_HELPERS
-@@ -203,16 +258,18 @@ public:
+@@ -201,16 +256,18 @@ public:
    virtual int32_t GetColSpan() MOZ_OVERRIDE;
    virtual bool IsFrameOfType(uint32_t aFlags) const MOZ_OVERRIDE
    {

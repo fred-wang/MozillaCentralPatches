@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent cc69af7ebea6e8bc5b5fa43369b3ccc0389c5147
+# Parent 211d8452b0b3b66a5e7b8e5957e98d0981081814
 # User James Kitchener <jkitch.bug@gmail.com>
 Bug 330964 - Make nsTableFrame::GetCellSpacing[XY] take an argument
 
@@ -164,7 +164,7 @@ diff --git a/layout/tables/FixedTableLayoutStrategy.cpp b/layout/tables/FixedTab
 diff --git a/layout/tables/nsTableCellFrame.cpp b/layout/tables/nsTableCellFrame.cpp
 --- a/layout/tables/nsTableCellFrame.cpp
 +++ b/layout/tables/nsTableCellFrame.cpp
-@@ -810,19 +810,20 @@ CalcUnpaginagedHeight(nsPresContext*    
+@@ -823,19 +823,20 @@ CalcUnpaginagedHeight(nsPresContext*    
    nsTableRowFrame* row =
      static_cast<nsTableRowFrame*>(firstCellInFlow->GetParent());
    nsTableRowGroupFrame* firstRGInFlow =
@@ -174,11 +174,11 @@ diff --git a/layout/tables/nsTableCellFrame.cpp b/layout/tables/nsTableCellFrame
    firstCellInFlow->GetRowIndex(rowIndex);
    int32_t rowSpan = aTableFrame.GetEffectiveRowSpan(*firstCellInFlow);
 -  nscoord cellSpacing = firstTableInFlow->GetCellSpacingY();
-+  nscoord cellSpacing = firstTableInFlow->GetCellSpacingY(rowIndex,
-+                                                          rowIndex + rowSpan - 1);
  
 -  nscoord computedHeight = ((rowSpan - 1) * cellSpacing) - aVerticalBorderPadding;
-+  nscoord computedHeight = cellSpacing - aVerticalBorderPadding;
++  nscoord computedHeight = firstTableInFlow->GetCellSpacingY(rowIndex,
++                                                             rowIndex + rowSpan - 1);
++  computedHeight -= aVerticalBorderPadding;
    int32_t rowX;
    for (row = firstRGInFlow->GetFirstRow(), rowX = 0; row; row = row->GetNextRow(), rowX++) {
      if (rowX > rowIndex + rowSpan - 1) {
@@ -190,7 +190,7 @@ diff --git a/layout/tables/nsTableCellFrame.cpp b/layout/tables/nsTableCellFrame
 diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 --- a/layout/tables/nsTableFrame.cpp
 +++ b/layout/tables/nsTableFrame.cpp
-@@ -76,32 +76,34 @@ struct nsTableReflowState {
+@@ -79,32 +79,34 @@ struct nsTableReflowState {
  
    void Init(nsPresContext&  aPresContext,
              nsTableFrame&   aTableFrame,
@@ -230,7 +230,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
                       const nsHTMLReflowState& aReflowState,
                       nsTableFrame&            aTableFrame)
      : reflowState(aReflowState)
-@@ -1342,41 +1344,42 @@ nsTableFrame::GetSkipSides(const nsHTMLR
+@@ -1414,41 +1416,42 @@ nsTableFrame::GetLogicalSkipSides(const 
    }
    return skip;
  }
@@ -278,7 +278,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      }
      if (colGroupWidth) {
        colGroupWidth -= cellSpacingX;
-@@ -1778,17 +1781,17 @@ nsresult nsTableFrame::Reflow(nsPresCont
+@@ -1850,17 +1853,17 @@ nsTableFrame::Reflow(nsPresContext*     
        mutable_rs.mFlags.mSpecialHeightReflow = true;
  
        ReflowTable(aDesiredSize, aReflowState, aReflowState.AvailableHeight(),
@@ -297,7 +297,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      }
    }
    else {
-@@ -1973,17 +1976,18 @@ nsTableFrame::AdjustForCollapsingRowsCol
+@@ -2104,17 +2107,18 @@ nsTableFrame::AdjustForCollapsingRowsCol
  
    // collapse the rows and/or row groups as necessary
    // Get the ordered children
@@ -317,7 +317,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      yTotalOffset += rgFrame->CollapseRowGroupIfNecessary(yTotalOffset, rgWidth);
      ConsiderChildOverflow(overflow, rgFrame);
    }
-@@ -1995,18 +1999,17 @@ nsTableFrame::AdjustForCollapsingRowsCol
+@@ -2126,18 +2130,17 @@ nsTableFrame::AdjustForCollapsingRowsCol
                           nsSize(aDesiredSize.Width(), aDesiredSize.Height()));
  }
  
@@ -337,7 +337,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      nsTableColGroupFrame* cgFrame = (nsTableColGroupFrame*)groupFrame;
      for (nsTableColFrame* colFrame = cgFrame->GetFirstColumn(); colFrame;
           colFrame = colFrame->GetNextCol()) {
-@@ -2014,17 +2017,17 @@ nsTableFrame::GetCollapsedWidth(nsMargin
+@@ -2145,17 +2148,17 @@ nsTableFrame::GetCollapsedWidth(nsMargin
        int32_t colX = colFrame->GetColIndex();
        if (NS_STYLE_DISPLAY_TABLE_COLUMN == colDisplay->mDisplay) {
          const nsStyleVisibility* colVis = colFrame->StyleVisibility();
@@ -356,7 +356,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      }
    }
    return width;
-@@ -2706,17 +2709,17 @@ nsTableFrame::PlaceRepeatedFooter(nsTabl
+@@ -2833,17 +2836,17 @@ nsTableFrame::PlaceRepeatedFooter(nsTabl
    nsSize kidAvailSize(aReflowState.availSize);
    kidAvailSize.height = aFooterHeight;
    nsHTMLReflowState footerReflowState(presContext,
@@ -375,7 +375,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
    nsHTMLReflowMetrics desiredSize(aReflowState.reflowState);
    desiredSize.Width() = desiredSize.Height() = 0;
    ReflowChild(aTfoot, presContext, desiredSize, footerReflowState,
-@@ -2733,17 +2736,16 @@ nsTableFrame::ReflowChildren(nsTableRefl
+@@ -2859,17 +2862,16 @@ nsTableFrame::ReflowChildren(nsTableRefl
                               nsReflowStatus&     aStatus,
                               nsIFrame*&          aLastChildReflowed,
                               nsOverflowAreas&    aOverflowAreas)
@@ -393,7 +393,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
    // column set
    bool isPaginated = presContext->IsPaginated() &&
                         NS_UNCONSTRAINEDSIZE != aReflowState.availSize.height &&
-@@ -2781,16 +2783,19 @@ nsTableFrame::ReflowChildren(nsTableRefl
+@@ -2907,16 +2909,19 @@ nsTableFrame::ReflowChildren(nsTableRefl
        if (NS_FAILED(rv))
          return;
      }
@@ -413,7 +413,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
           (isPaginated || (kidFrame->GetStateBits() &
                            NS_FRAME_CONTAINS_RELATIVE_HEIGHT)))) {
        if (pageBreak) {
-@@ -3038,17 +3043,16 @@ void
+@@ -3162,17 +3167,16 @@ void
  nsTableFrame::CalcDesiredHeight(const nsHTMLReflowState& aReflowState, nsHTMLReflowMetrics& aDesiredSize)
  {
    nsTableCellMap* cellMap = GetCellMap();
@@ -431,7 +431,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
    if (rowGroups.IsEmpty()) {
      // tables can be used as rectangular items without content
      nscoord tableSpecifiedHeight = CalcBorderBoxHeight(aReflowState);
-@@ -3061,19 +3065,21 @@ nsTableFrame::CalcDesiredHeight(const ns
+@@ -3185,19 +3189,21 @@ nsTableFrame::CalcDesiredHeight(const ns
      else
        aDesiredSize.Height() = 0;
      return;
@@ -455,7 +455,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
      nscoord tableSpecifiedHeight = CalcBorderBoxHeight(aReflowState);
      if ((tableSpecifiedHeight > 0) &&
          (tableSpecifiedHeight != NS_UNCONSTRAINEDSIZE) &&
-@@ -3123,40 +3129,39 @@ void ResizeCells(nsTableFrame& aTableFra
+@@ -3247,40 +3253,39 @@ void ResizeCells(nsTableFrame& aTableFra
    }
    aTableFrame.FinishAndStoreOverflow(&tableDesiredSize);
  }
@@ -499,7 +499,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
              rowRect.height += amountForRow;
              // XXXbz we don't need to change rowRect.y to be yOriginRow?
              rowFrame->SetRect(rowRect);
-@@ -3272,28 +3277,29 @@ nsTableFrame::DistributeHeightToRows(con
+@@ -3396,28 +3401,29 @@ nsTableFrame::DistributeHeightToRows(con
        else {
          NS_ERROR("invalid divisor");
          return;
@@ -530,7 +530,8 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
            if (eligibleRows) {
              if (!expandEmptyRows) {
                // The amount of additional space each row gets is proportional to
-@@ -3379,33 +3385,70 @@ int32_t nsTableFrame::GetColumnWidth(int
+@@ -3502,34 +3508,81 @@ int32_t nsTableFrame::GetColumnWidth(int
+   nsTableFrame* firstInFlow = static_cast<nsTableFrame*>(FirstInFlow());
    if (this == firstInFlow) {
      nsTableColFrame* colFrame = GetColFrame(aColIndex);
      return colFrame ? colFrame->GetFinalWidth() : 0;
@@ -538,9 +539,17 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
    return firstInFlow->GetColumnWidth(aColIndex);
  }
  
- // XXX: could cache this.  But be sure to check style changes if you do!
--nscoord nsTableFrame::GetCellSpacingX()
--{
+-// XXX: could cache this.  But be sure to check style changes if you do!
+ nscoord nsTableFrame::GetCellSpacingX()
+ {
+   if (IsBorderCollapse())
+     return 0;
+ 
+   return StyleTableBorder()->mBorderSpacingX;
+ }
+ 
+-// XXX: could cache this. But be sure to check style changes if you do!
++// XXX: could cache this.  But be sure to check style changes if you do!
 +nscoord nsTableFrame::GetCellSpacingX(int32_t aColIndex)
 +{
 +  NS_ASSERTION(aColIndex >= -1 && aColIndex <= GetColCount(),
@@ -548,12 +557,9 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 +  // Index is irrelevant for ordinary tables.  We check that it falls within
 +  // appropriate bounds to increase confidence of correctness in situations
 +  // where it does matter.
-   if (IsBorderCollapse())
-     return 0;
- 
-   return StyleTableBorder()->mBorderSpacingX;
- }
- 
++  return GetCellSpacingX();
++}
++
 +nscoord nsTableFrame::GetCellSpacingX(int32_t aStartColIndex,
 +                                      int32_t aEndColIndex)
 +{
@@ -563,14 +569,20 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 +               "End column index exceeds the bounds of the table");
 +  NS_ASSERTION(aStartColIndex <= aEndColIndex,
 +               "End index must not be less than start index");
-+  // Just pick one and multiply it out.  Tables where index matters will
-+  // override this function
-+  return GetCellSpacingX(0) * (aEndColIndex - aStartColIndex);
++  // Only one possible value so just multiply it out. Tables where index
++  // matters will override this function
++  return GetCellSpacingX() * (aEndColIndex - aStartColIndex);
 +}
 +
- // XXX: could cache this. But be sure to check style changes if you do!
--nscoord nsTableFrame::GetCellSpacingY()
--{
+ nscoord nsTableFrame::GetCellSpacingY()
+ {
+   if (IsBorderCollapse())
+     return 0;
+ 
+   return StyleTableBorder()->mBorderSpacingY;
+ }
+ 
++// XXX: could cache this. But be sure to check style changes if you do!
 +nscoord nsTableFrame::GetCellSpacingY(int32_t aRowIndex)
 +{
 +  NS_ASSERTION(aRowIndex >= -1 && aRowIndex <= GetRowCount(),
@@ -578,12 +590,9 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 +  // Index is irrelevant for ordinary tables.  We check that it falls within
 +  // appropriate bounds to increase confidence of correctness in situations
 +  // where it does matter.
-   if (IsBorderCollapse())
-     return 0;
- 
-   return StyleTableBorder()->mBorderSpacingY;
- }
- 
++  return GetCellSpacingY();
++}
++
 +nscoord nsTableFrame::GetCellSpacingY(int32_t aStartRowIndex,
 +                                      int32_t aEndRowIndex)
 +{
@@ -593,9 +602,9 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 +               "End row index exceeds the bounds of the table");
 +  NS_ASSERTION(aStartRowIndex <= aEndRowIndex,
 +               "End index must not be less than start index");
-+  // Just pick one and multiply it out.  Tables where index matters will
-+  // override this function
-+  return GetCellSpacingY(0) * (aEndRowIndex - aStartRowIndex);
++  // Only one possible value so just multiply it out. Tables where index
++  // matters will override this function
++  return GetCellSpacingY() * (aEndRowIndex - aStartRowIndex);
 +}
  
  /* virtual */ nscoord
@@ -608,7 +617,7 @@ diff --git a/layout/tables/nsTableFrame.cpp b/layout/tables/nsTableFrame.cpp
 diff --git a/layout/tables/nsTableFrame.h b/layout/tables/nsTableFrame.h
 --- a/layout/tables/nsTableFrame.h
 +++ b/layout/tables/nsTableFrame.h
-@@ -353,22 +353,41 @@ public:
+@@ -368,22 +368,49 @@ public:
  #ifdef DEBUG_FRAME_DUMP
    /** @see nsIFrame::GetFrameName */
    virtual nsresult GetFrameName(nsAString& aResult) const MOZ_OVERRIDE;
@@ -618,17 +627,13 @@ diff --git a/layout/tables/nsTableFrame.h b/layout/tables/nsTableFrame.h
    int32_t GetColumnWidth(int32_t aColIndex);
  
 -  /** helper to get the cell spacing X style value */
--  nscoord GetCellSpacingX();
 +  /** Helper to get the cell spacing X style value.  An index of of -1
 +   *  indicates the padding between the table and the left border, an index
 +   *  equal to the number of rows indicates that of the table and the right
 +   *  border.
 +   */
 +  virtual nscoord GetCellSpacingX(int32_t aColIndex);
- 
--  /** helper to get the cell spacing Y style value */
--  nscoord GetCellSpacingY();
-- 
++
 +  /** Sums the combined cell spacing between the columns aStartColIndex to
 +   *  aEndColIndex.
 +   */
@@ -647,6 +652,17 @@ diff --git a/layout/tables/nsTableFrame.h b/layout/tables/nsTableFrame.h
 +  virtual nscoord GetCellSpacingY(int32_t aStartRowIndex,
 +                                  int32_t aEndRowIndex);
 +
++private:
++  /* For the base implementation of nsTableFrame, cell spacing does not depend
++   * on row/column indexing.
++   */
+   nscoord GetCellSpacingX();
++  nscoord GetCellSpacingY();
+ 
+-  /** helper to get the cell spacing Y style value */
+-  nscoord GetCellSpacingY();
+- 
++public:
    virtual nscoord GetBaseline() const MOZ_OVERRIDE;
    /** return the row span of a cell, taking into account row span magic at the bottom
      * of a table. The row span equals the number of rows spanned by aCell starting at
@@ -658,7 +674,7 @@ diff --git a/layout/tables/nsTableFrame.h b/layout/tables/nsTableFrame.h
 diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.cpp
 --- a/layout/tables/nsTableRowFrame.cpp
 +++ b/layout/tables/nsTableRowFrame.cpp
-@@ -273,26 +273,25 @@ nsTableRowFrame::GetUsedPadding() const
+@@ -271,26 +271,25 @@ nsTableRowFrame::GetUsedPadding() const
    return nsMargin(0,0,0,0);
  }
  
@@ -686,7 +702,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
  nsTableCellFrame*  
  nsTableRowFrame::GetFirstCell() 
  {
-@@ -674,41 +673,39 @@ nsTableRowFrame::CalculateCellActualHeig
+@@ -677,41 +676,39 @@ nsTableRowFrame::CalculateCellActualHeig
  
    return NS_OK;
  }
@@ -730,7 +746,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
    if (aIsLeftToRight) {
      for (colX = aPrevColIndex + 1; aColIndex > colX; colX++) {
        bool isCollapsed = false;
-@@ -723,17 +720,17 @@ GetSpaceBetween(int32_t       aPrevColIn
+@@ -726,17 +723,17 @@ GetSpaceBetween(int32_t       aPrevColIn
          const nsStyleVisibility* groupVis = cgFrame->StyleVisibility();
          bool collapseGroup = (NS_STYLE_VISIBILITY_COLLAPSE ==
                                  groupVis->mVisible);
@@ -749,7 +765,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
      for (colX = aPrevColIndex - 1; colX > lastCol; colX--) {
        bool isCollapsed = false;
        if (!aCheckVisibility) {
-@@ -747,17 +744,17 @@ GetSpaceBetween(int32_t       aPrevColIn
+@@ -750,17 +747,17 @@ GetSpaceBetween(int32_t       aPrevColIn
          const nsStyleVisibility* groupVis = cgFrame->StyleVisibility();
          bool collapseGroup = (NS_STYLE_VISIBILITY_COLLAPSE ==
                                  groupVis->mVisible);
@@ -768,7 +784,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
  
  // subtract the heights of aRow's prev in flows from the unpaginated height
  static
-@@ -785,17 +782,16 @@ nsTableRowFrame::ReflowChildren(nsPresCo
+@@ -788,17 +785,16 @@ nsTableRowFrame::ReflowChildren(nsPresCo
                                  nsReflowStatus&          aStatus)
  {
    aStatus = NS_FRAME_COMPLETE;
@@ -776,7 +792,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
    // XXXldb Should we be checking constrained height instead?
    const bool isPaginated = aPresContext->IsPaginated();
    const bool borderCollapse = aTableFrame.IsBorderCollapse();
-
+ 
 -  nscoord cellSpacingX = aTableFrame.GetCellSpacingX();
    int32_t cellColSpan = 1;  // must be defined here so it's set properly for non-cell kids
    
@@ -786,7 +802,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
    int32_t prevColIndex  = firstPrevColIndex;
    nscoord x = 0; // running total of children x offset
  
-@@ -847,32 +843,32 @@ nsTableRowFrame::ReflowChildren(nsPresCo
+@@ -850,32 +846,32 @@ nsTableRowFrame::ReflowChildren(nsPresCo
      int32_t cellColIndex;
      cellFrame->GetColIndex(cellColIndex);
      cellColSpan = aTableFrame.GetEffectiveColSpan(*cellFrame);
@@ -821,7 +837,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
        // it is a style change reflow or we are printing, then we must reflow the
        // cell. Otherwise we can skip the reflow.
        // XXXldb Why is this condition distinct from doReflowChild above?
-@@ -971,17 +967,17 @@ nsTableRowFrame::ReflowChildren(nsPresCo
+@@ -974,17 +970,17 @@ nsTableRowFrame::ReflowChildren(nsPresCo
        // we need to account for the cell's width even if it isn't reflowed
        x += kidRect.width;
  
@@ -840,7 +856,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
    if (aReflowState.mFlags.mSpecialHeightReflow) {
      aDesiredSize.Height() = mRect.height;
    }
-@@ -1140,23 +1136,23 @@ nsTableRowFrame::CollapseRowIfNecessary(
+@@ -1139,23 +1135,23 @@ nsTableRowFrame::CollapseRowIfNecessary(
    nsRect rowRect = GetRect();
    nsRect oldRect = rowRect;
    nsRect oldVisualOverflow = GetVisualOverflowRect();
@@ -867,7 +883,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
        // span out of this row, so invalidating our row rect won't do enough.
        if (aRowOffset == 0) {
          InvalidateFrame();
-@@ -1173,33 +1169,31 @@ nsTableRowFrame::CollapseRowIfNecessary(
+@@ -1172,33 +1168,31 @@ nsTableRowFrame::CollapseRowIfNecessary(
      // row
      int32_t firstPrevColIndex = (iter.IsLeftToRight()) ? -1 :
                                  tableFrame->GetColCount();
@@ -902,7 +918,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
          // spans into
          prevColIndex = (iter.IsLeftToRight()) ?
                         cellColIndex + (cellColSpan - 1) : cellColIndex;
-@@ -1224,33 +1218,34 @@ nsTableRowFrame::CollapseRowIfNecessary(
+@@ -1223,33 +1217,34 @@ nsTableRowFrame::CollapseRowIfNecessary(
              isVisible = true;
              if ((actualColSpan > 1)) {
                nsTableColFrame* nextColFrame =
@@ -943,7 +959,7 @@ diff --git a/layout/tables/nsTableRowFrame.cpp b/layout/tables/nsTableRowFrame.c
 diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGroupFrame.cpp
 --- a/layout/tables/nsTableRowGroupFrame.cpp
 +++ b/layout/tables/nsTableRowGroupFrame.cpp
-@@ -322,17 +322,16 @@ nsTableRowGroupFrame::ReflowChildren(nsP
+@@ -336,17 +336,16 @@ nsTableRowGroupFrame::ReflowChildren(nsP
                                       nsReflowStatus&        aStatus,
                                       bool*                aPageBreakBeforeEnd)
  {
@@ -961,7 +977,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
  
    bool haveRow = false;
    bool reflowAllKids = aReflowState.reflowState.ShouldReflowAllKids() ||
-@@ -343,17 +342,17 @@ nsTableRowGroupFrame::ReflowChildren(nsP
+@@ -357,17 +356,17 @@ nsTableRowGroupFrame::ReflowChildren(nsP
    for (nsIFrame* kidFrame = mFrames.FirstChild(); kidFrame;
         prevKidFrame = kidFrame, kidFrame = kidFrame->GetNextSibling()) {
      nsTableRowFrame *rowFrame = do_QueryFrame(kidFrame);
@@ -980,7 +996,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
          (aReflowState.reflowState.mFlags.mSpecialHeightReflow &&
           (isPaginated || (kidFrame->GetStateBits() &
                            NS_FRAME_CONTAINS_RELATIVE_HEIGHT)))) {
-@@ -434,17 +433,18 @@ nsTableRowGroupFrame::ReflowChildren(nsP
+@@ -448,17 +447,18 @@ nsTableRowGroupFrame::ReflowChildren(nsP
        if (NS_UNCONSTRAINEDSIZE != aReflowState.availSize.height) {
          aReflowState.availSize.height -= height;
        }
@@ -1000,7 +1016,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
    if (aReflowState.reflowState.mFlags.mSpecialHeightReflow) {
      DidResizeRows(aDesiredSize);
      if (isPaginated) {
-@@ -520,19 +520,16 @@ nsTableRowGroupFrame::DidResizeRows(nsHT
+@@ -532,19 +532,16 @@ nsTableRowGroupFrame::DidResizeRows(nsHT
  void 
  nsTableRowGroupFrame::CalculateRowHeights(nsPresContext*           aPresContext, 
                                            nsHTMLReflowMetrics&     aDesiredSize,
@@ -1020,7 +1036,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
  
    if (!startRowFrame) return;
  
-@@ -602,16 +599,17 @@ nsTableRowGroupFrame::CalculateRowHeight
+@@ -614,16 +611,17 @@ nsTableRowGroupFrame::CalculateRowHeight
      for (rowFrame = startRowFrame, rowIndex = 0; rowFrame; rowFrame = rowFrame->GetNextRow(), rowIndex++) {
        // See if the row has an originating cell with rowspan > 1. We cannot determine this for a row in a 
        // continued row group by calling RowHasSpanningCells, because the row's fif may not have any originating
@@ -1038,7 +1054,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
            if (rowSpan > 1) { // a cell with rowspan > 1, determine the height of the rows it spans
              nscoord heightOfRowsSpanned = 0;
              nscoord heightOfUnStyledRowsSpanned = 0;
-@@ -719,17 +717,18 @@ nsTableRowGroupFrame::CalculateRowHeight
+@@ -731,17 +729,18 @@ nsTableRowGroupFrame::CalculateRowHeight
                           ? rInfo.pctHeight - rInfo.height: 0;
        rowExtra = std::min(rowExtra, extra);
        UpdateHeights(rInfo, rowExtra, heightOfRows, heightOfUnStyledRows);
@@ -1058,7 +1074,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
      bool haveUnStyledRows = (heightOfUnStyledRows > 0);
      nscoord divisor = (haveUnStyledRows) 
                        ? heightOfUnStyledRows : heightOfRows;
-@@ -778,17 +777,17 @@ nsTableRowGroupFrame::CalculateRowHeight
+@@ -790,17 +789,17 @@ nsTableRowGroupFrame::CalculateRowHeight
  
        nsTableFrame::InvalidateTableFrame(rowFrame, rowBounds, rowVisualOverflow,
                                           false);
@@ -1077,7 +1093,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
    }
  
    DidResizeRows(aDesiredSize);
-@@ -822,17 +821,18 @@ nsTableRowGroupFrame::CollapseRowGroupIf
+@@ -834,17 +833,18 @@ nsTableRowGroupFrame::CollapseRowGroupIf
  
    nsRect groupRect = GetRect();
    nsRect oldGroupRect = groupRect;
@@ -1097,8 +1113,8 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
    if (aYTotalOffset != 0) {
      InvalidateFrameSubtree();
    }
-@@ -1034,17 +1034,16 @@ nsTableRowGroupFrame::SplitRowGroup(nsPr
-   nsresult rv = NS_OK;
+@@ -1045,17 +1045,16 @@ nsTableRowGroupFrame::SplitRowGroup(nsPr
+ 
    nsTableRowFrame* prevRowFrame = nullptr;
    aDesiredSize.Height() = 0;
  
@@ -1115,7 +1131,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
  
    bool isTopOfPage = aReflowState.mFlags.mIsTopOfPage;
    nsTableRowFrame* firstRowThisPage = GetFirstRow();
-@@ -1052,16 +1051,17 @@ nsTableRowGroupFrame::SplitRowGroup(nsPr
+@@ -1063,16 +1062,17 @@ nsTableRowGroupFrame::SplitRowGroup(nsPr
    // Need to dirty the table's geometry, or else the row might skip
    // reflowing its cell as an optimization.
    aTableFrame->SetGeometryDirty();
@@ -1133,7 +1149,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
        // row (on the page) or there is at least 5% of the current page available 
        // XXX this 5% should be made a preference 
        if (!prevRowFrame || (availHeight - aDesiredSize.Height() > pageHeight / 20)) { 
-@@ -1504,28 +1504,32 @@ nsTableRowGroupFrame::GetUsedPadding() c
+@@ -1507,28 +1507,31 @@ nsTableRowGroupFrame::GetUsedPadding() c
    return nsMargin(0,0,0,0);
  }
  
@@ -1158,8 +1174,7 @@ diff --git a/layout/tables/nsTableRowGroupFrame.cpp b/layout/tables/nsTableRowGr
      if (parentRS && (tableFrame == parentRS->frame) && 
          (parentRS->ComputedHeight() > 0) && (parentRS->ComputedHeight() < NS_UNCONSTRAINEDSIZE)) {
 -      nscoord cellSpacing = std::max(0, tableFrame->GetRowCount() + 1) * tableFrame->GetCellSpacingY();
-+      nscoord cellSpacing =
-+        tableFrame->GetCellSpacingY(-1, std::max(-1, tableFrame->GetRowCount()));
++      nscoord cellSpacing = tableFrame->GetCellSpacingY(-1, tableFrame->GetRowCount());
        result = parentRS->ComputedHeight() - cellSpacing;
      }
    }
