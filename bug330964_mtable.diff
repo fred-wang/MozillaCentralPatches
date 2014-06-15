@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 28f220ed13239c97e3bb6c434641d9d3f260fe8d
+# Parent c4545eca5e15c718361cb232cd26aeb92a3d014a
 # User James Kitchener <jkitch.bug@gmail.com>
-Bug 330964 - Add rowspacing/columnspacing/framespacing to MathML mtable
+Bug 330964 - Add rowspacing/columnspacing/framespacing to MathML mtable r=fredw
 
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
@@ -76,7 +76,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  #include "RestyleManager.h"
  #include <algorithm>
  
-@@ -224,45 +225,86 @@ ApplyBorderToStyle(const nsMathMLmtdFram
+@@ -224,45 +225,84 @@ ApplyBorderToStyle(const nsMathMLmtdFram
      } else {
        aStyleBorder.SetBorderStyle(NS_SIDE_LEFT,
                      columnLinesList->ElementAt(listLength - 1));
@@ -96,25 +96,23 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +  aFrame->GetCellIndexes(rowIndex, columnIndex);
 +  if (!columnIndex) {
 +    overflow.left = mathMLmtableFrame->GetCellSpacingX(-1);
-+    overflow.right = mathMLmtableFrame->GetCellSpacingX(0)/2;
++    overflow.right = mathMLmtableFrame->GetCellSpacingX(0) / 2;
 +  } else if (columnIndex == mathMLmtableFrame->GetColCount() - 1) {
-+    overflow.left = mathMLmtableFrame->GetCellSpacingX(columnIndex - 1)/2;
++    overflow.left = mathMLmtableFrame->GetCellSpacingX(columnIndex - 1) / 2;
 +    overflow.right =  mathMLmtableFrame->GetCellSpacingX(columnIndex + 1);
 +  } else {
-+    overflow.left =
-+      mathMLmtableFrame->GetCellSpacingX(columnIndex-1) /2;
-+    overflow.right = mathMLmtableFrame->GetCellSpacingX(columnIndex)/2;
++    overflow.left = mathMLmtableFrame->GetCellSpacingX(columnIndex-1) / 2;
++    overflow.right = mathMLmtableFrame->GetCellSpacingX(columnIndex) / 2;
 +  }
 +  if (!rowIndex) {
 +    overflow.top = mathMLmtableFrame->GetCellSpacingY(-1);
-+    overflow.bottom = mathMLmtableFrame->GetCellSpacingY(0)/2;
++    overflow.bottom = mathMLmtableFrame->GetCellSpacingY(0) / 2;
 +  } else if (rowIndex == mathMLmtableFrame->GetRowCount() - 1) {
 +    overflow.top = mathMLmtableFrame->GetCellSpacingY(rowIndex - 1) / 2;
 +    overflow.bottom = mathMLmtableFrame->GetCellSpacingY(rowIndex + 1);
 +  } else {
-+    overflow.top =
-+      mathMLmtableFrame->GetCellSpacingY(rowIndex-1) /2;
-+    overflow.bottom = mathMLmtableFrame->GetCellSpacingY(rowIndex)/2;
++    overflow.top = mathMLmtableFrame->GetCellSpacingY(rowIndex-1) / 2;
++    overflow.bottom = mathMLmtableFrame->GetCellSpacingY(rowIndex) / 2;
 +  }
 +  return overflow;
 +}
@@ -169,7 +167,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  
  #ifdef DEBUG
  #define DEBUG_VERIFY_THAT_FRAME_IS(_frame, _expected) \
-@@ -292,29 +334,225 @@ ParseFrameAttribute(nsIFrame* aFrame, ns
+@@ -292,29 +332,226 @@ ParseFrameAttribute(nsIFrame* aFrame, ns
        FrameProperties props = aFrame->Properties();
        props.Set(AttributeToProperty(aAttribute), valueList);
      } else {
@@ -386,6 +384,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
    ParseFrameAttribute(aTableFrame, nsGkAtoms::columnalign_, true);
    ParseFrameAttribute(aTableFrame, nsGkAtoms::columnlines_, true);
  
++  // Map mtable rowspacing, columnspacing & framespacing
 +  ParseSpacingAttributes(aTableFrame);
 +
    // mtable is simple and only has one (pseudo) row-group
@@ -396,7 +395,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
    nsIFrame* rowFrame = rgFrame->GetFirstPrincipalChild();
    for ( ; rowFrame; rowFrame = rowFrame->GetNextSibling()) {
      DEBUG_VERIFY_THAT_FRAME_IS(rowFrame, TABLE_ROW);
-@@ -436,28 +674,28 @@ nsMathMLmtableOuterFrame::~nsMathMLmtabl
+@@ -436,28 +673,28 @@ nsMathMLmtableOuterFrame::~nsMathMLmtabl
  
  nsresult
  nsMathMLmtableOuterFrame::AttributeChanged(int32_t  aNameSpaceID,
@@ -428,7 +427,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
    nsIFrame* rgFrame = tableFrame->GetFirstPrincipalChild();
    if (!rgFrame || rgFrame->GetType() != nsGkAtoms::tableRowGroupFrame)
      return NS_OK;
-@@ -478,33 +716,39 @@ nsMathMLmtableOuterFrame::AttributeChang
+@@ -478,33 +715,39 @@ nsMathMLmtableOuterFrame::AttributeChang
      // affect siblings.
      PresContext()->PresShell()->
        FrameNeedsReflow(GetParent(), nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
@@ -482,7 +481,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  }
  
  nsIFrame*
-@@ -674,16 +918,123 @@ nsMathMLmtableFrame::RestyleTable()
+@@ -677,16 +920,149 @@ nsMathMLmtableFrame::RestyleTable()
    MapAllAttributesIntoCSS(this);
  
    // Explicitly request a re-resolve and reflow in our subtree to pick up any changes
@@ -498,7 +497,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +    return nsTableFrame::GetCellSpacingX(aColIndex);
 +  }
 +  if (!mColSpacing.Length()) {
-+    NS_ASSERTION(false, "mColSpacing should not be empty");
++    NS_ERROR("mColSpacing should not be empty");
 +    return 0;
 +  }
 +  if (aColIndex < 0 || aColIndex >= GetColCount()) {
@@ -519,6 +518,13 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +  if (mUseCSSSpacing) {
 +    return nsTableFrame::GetCellSpacingX(aStartColIndex, aEndColIndex);
 +  }
++  if (aStartColIndex == aEndColIndex) {
++    return 0;
++  }
++  if (!mColSpacing.Length()) {
++    NS_ERROR("mColSpacing should not be empty");
++    return 0;
++  }
 +  nscoord space = 0;
 +  if (aStartColIndex < 0) {
 +    NS_ASSERTION(aStartColIndex == -1,
@@ -532,9 +538,15 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +    space += mFrameSpacingX;
 +    aEndColIndex = GetColCount();
 +  }
-+  for (int32_t i = aStartColIndex; i < aEndColIndex; i++) {
-+    space += GetCellSpacingX(i);
++  // Only iterate over column spacing when there is the potential to vary
++  int32_t min = std::min(aEndColIndex, (int32_t) mColSpacing.Length());
++  for (int32_t i = aStartColIndex; i < min; i++) {
++    space += mColSpacing.ElementAt(i);
 +  }
++  // The remaining values are constant.  Note that if there are more
++  // column spacings specified than there are columns, LastElement() will be
++  // multiplied by 0, so it is still safe to use.
++  space += (aEndColIndex - min) * mColSpacing.LastElement();
 +  return space;
 +}
 +
@@ -545,7 +557,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +    return nsTableFrame::GetCellSpacingY(aRowIndex);
 +  }
 +  if (!mRowSpacing.Length()) {
-+    NS_ASSERTION(false, "mRowSpacing should not be empty");
++    NS_ERROR("mRowSpacing should not be empty");
 +    return 0;
 +  }
 +  if (aRowIndex < 0 || aRowIndex >= GetRowCount()) {
@@ -566,6 +578,13 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +  if (mUseCSSSpacing) {
 +    return nsTableFrame::GetCellSpacingY(aStartRowIndex, aEndRowIndex);
 +  }
++  if (aStartRowIndex == aEndRowIndex) {
++    return 0;
++  }
++  if (!mRowSpacing.Length()) {
++    NS_ERROR("mRowSpacing should not be empty");
++    return 0;
++  }
 +  nscoord space = 0;
 +  if (aStartRowIndex < 0) {
 +    NS_ASSERTION(aStartRowIndex == -1,
@@ -579,9 +598,15 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
 +    space += mFrameSpacingY;
 +    aEndRowIndex = GetRowCount();
 +  }
-+  for (int32_t i = aStartRowIndex; i < aEndRowIndex; i++) {
-+    space += GetCellSpacingY(i);
++  // Only iterate over row spacing when there is the potential to vary
++  int32_t min = std::min(aEndRowIndex, (int32_t) mRowSpacing.Length());
++  for (int32_t i = aStartRowIndex; i < min; i++) {
++    space += mRowSpacing.ElementAt(i);
 +  }
++  // The remaining values are constant.  Note that if there are more
++  // row spacings specified than there are row, LastElement() will be
++  // multiplied by 0, so it is still safe to use.
++  space += (aEndRowIndex - min) * mRowSpacing.LastElement();
 +  return space;
 +}
 +
@@ -606,7 +631,7 @@ diff --git a/layout/mathml/nsMathMLmtableFrame.cpp b/layout/mathml/nsMathMLmtabl
  {
    return new (aPresShell) nsMathMLmtrFrame(aContext);
  }
-@@ -850,16 +1201,25 @@ nsMargin*
+@@ -853,16 +1229,25 @@ nsMargin*
  nsMathMLmtdFrame::GetBorderWidth(nsMargin& aBorder) const
  {
    nsStyleBorder styleBorder = *StyleBorder();
