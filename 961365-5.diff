@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 018685e4b9d9da7251484bc5019dd5738da454bf
+# Parent 2eae378684c260b111f79066e9670590489ff9da
 # User Frédéric Wang <fred.wang@free.fr>
 Part 5 - Use MATH constants for limits. r=jfkthame, b=961365
 
@@ -25,7 +25,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
    GetItalicCorrection (bmBase, correction);
  
    // there are 2 different types of placement depending on 
-@@ -392,43 +394,63 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -392,43 +394,71 @@ nsMathMLmunderoverFrame::Place(nsRenderi
  
    if (!NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
      // Rule 13a, App. G, TeXbook
@@ -36,11 +36,14 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
                        bigOpSpacing5);
 +    if (mathFont) {
 +      // XXXfredw The Open Type MATH table has some StretchStack* parameters
-+      // that we may use when the base is a stretchy horizontal operator.
-+      mathFont->GetMathConstant(gfxFontEntry::LowerLimitGapMin,
-+                                oneDevPixel, bigOpSpacing2);
-+      mathFont->GetMathConstant(gfxFontEntry::LowerLimitBaselineDropMin,
-+                                oneDevPixel, bigOpSpacing4);
++      // that we may use when the base is a stretchy horizontal operator. See
++      // bug 963131.
++      bigOpSpacing2 =
++        mathFont->GetMathConstant(gfxFontEntry::LowerLimitGapMin,
++                                  oneDevPixel);
++      bigOpSpacing4 =
++        mathFont->GetMathConstant(gfxFontEntry::LowerLimitBaselineDropMin,
++                                  oneDevPixel);
 +      bigOpSpacing5 = 0;
 +    }
      underDelta1 = std::max(bigOpSpacing2, (bigOpSpacing4 - bmUnder.ascent));
@@ -52,7 +55,8 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -
 -    // Should we use Rule 10 like \underline does?
 +    // XXX Should we use Rule 10 like \underline does?
-+    // XXXfredw Perhaps use the Underbar* parameters of the MATH table.
++    // XXXfredw Perhaps use the Underbar* parameters of the MATH table. See
++    // bug 963125.
      underDelta1 = ruleThickness + onePixel/2;
      underDelta2 = ruleThickness;
    }
@@ -68,7 +72,8 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
    if (!NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {    
      // Rule 13a, App. G, TeXbook
 +    // XXXfredw The Open Type MATH table has some StretchStack* parameters
-+    // that we may use when the base is a stretchy horizontal operator.
++    // that we may use when the base is a stretchy horizontal operator. See
++    // bug 963131.
      nscoord bigOpSpacing1, bigOpSpacing3, bigOpSpacing5, dummy; 
      GetBigOpSpacings (fm, 
                        bigOpSpacing1, dummy, 
@@ -76,11 +81,14 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
                        bigOpSpacing5);
 +    if (mathFont) {
 +      // XXXfredw The Open Type MATH table has some StretchStack* parameters
-+      // that we may use when the base is a stretchy horizontal operator.
-+      mathFont->GetMathConstant(gfxFontEntry::UpperLimitGapMin,
-+                                oneDevPixel, bigOpSpacing1);
-+      mathFont->GetMathConstant(gfxFontEntry::UpperLimitBaselineRiseMin,
-+                                oneDevPixel, bigOpSpacing3);
++      // that we may use when the base is a stretchy horizontal operator. See
++      // bug 963131.
++      bigOpSpacing1 =
++        mathFont->GetMathConstant(gfxFontEntry::UpperLimitGapMin,
++                                  oneDevPixel);
++      bigOpSpacing3 =
++        mathFont->GetMathConstant(gfxFontEntry::UpperLimitBaselineRiseMin,
++                                  oneDevPixel);
 +      bigOpSpacing5 = 0;
 +    }
      overDelta1 = std::max(bigOpSpacing1, (bigOpSpacing3 - bmOver.descent));
@@ -91,7 +99,7 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
      // negative,  e.g., if the content is &OverBar. In such case, we use the height
      if (bmOver.descent < 0)    
        overDelta1 = std::max(bigOpSpacing1, (bigOpSpacing3 - (bmOver.ascent + bmOver.descent)));
-@@ -459,19 +481,24 @@ nsMathMLmunderoverFrame::Place(nsRenderi
+@@ -459,19 +489,25 @@ nsMathMLmunderoverFrame::Place(nsRenderi
      // do not follow this convention. So we modify TeX's rule 
      // so that TeX's rule gets subsumed for accents that follow 
      // TeX's convention,
@@ -105,8 +113,9 @@ diff --git a/layout/mathml/nsMathMLmunderoverFrame.cpp b/layout/mathml/nsMathMLm
 -      overDelta1 += xHeight - bmBase.ascent;
 +    nscoord accentBaseHeight = xHeight;
 +    if (mathFont) {
-+      mathFont->GetMathConstant(gfxFontEntry::AccentBaseHeight,
-+                                oneDevPixel, accentBaseHeight);
++      accentBaseHeight =
++        mathFont->GetMathConstant(gfxFontEntry::AccentBaseHeight,
++                                  oneDevPixel);
 +    }
 +    if (bmBase.ascent < accentBaseHeight) {
 +      // also ensure at least accentBaseHeight above the baseline of the base

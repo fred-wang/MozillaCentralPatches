@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 2ab2f8677ba23f5540529320c4cbacc36b71b2d5
+# Parent 8cb36cb5f70d489f283ba6474b50c4074b375f84
 # User Frédéric Wang <fred.wang@free.fr>
 Part 1 - Add helper functions to access MATH constants and use them to get the AxisHeight. r=jfkthame, b=961365
 
@@ -25,46 +25,7 @@ diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
          if (UnitsPerEm() == kInvalidUPEM) {
              return false;
          }
-@@ -3805,16 +3805,38 @@ gfxFont::NotifyGlyphsChanged()
-         mGlyphExtentsArray[i]->NotifyGlyphsChanged();
-     }
- 
-     if (mGlyphChangeObservers) {
-         mGlyphChangeObservers->EnumerateEntries(NotifyGlyphChangeObservers, nullptr);
-     }
- }
- 
-+bool
-+gfxFont::GetMathConstant(gfxFontEntry::MathConstant aConstant,
-+                         uint32_t aAppUnitsPerDevPixel, nscoord& aValue)
-+{
-+    if (!mFontEntry->TryGetMathTable()) {
-+        return false;
-+    }
-+    aValue = NSToCoordRound(mFontEntry->GetMathConstant(aConstant) *
-+                            GetAdjustedSize() * aAppUnitsPerDevPixel);
-+    return true;
-+}
-+
-+bool
-+gfxFont::GetMathConstant(gfxFontEntry::MathConstant aConstant, float& aValue)
-+{
-+    if (!mFontEntry->TryGetMathTable()) {
-+        return false;
-+    }
-+    aValue = mFontEntry->GetMathConstant(aConstant);
-+    return true;
-+}
-+
- static bool
- IsBoundarySpace(char16_t aChar, char16_t aNextChar)
- {
-     return (aChar == ' ' || aChar == 0x00A0) && !IsClusterExtender(aNextChar);
- }
- 
- static inline uint32_t
- HashMix(uint32_t aHash, char16_t aCh)
-@@ -5117,16 +5139,29 @@ gfxFontGroup::HasFont(const gfxFontEntry
+@@ -5117,16 +5117,29 @@ gfxFontGroup::HasFont(const gfxFontEntry
      return false;
  }
  
@@ -116,7 +77,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      bool     GetMathVariantsParts(uint32_t aGlyphID, bool aVertical,
                                    uint32_t aGlyphs[4]);
  
-@@ -1936,16 +1936,25 @@ public:
+@@ -1936,16 +1936,34 @@ public:
          return mFontEntry->TryGetSVGData(this);
      }
  
@@ -126,13 +87,22 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
 +    // Get a font dimension from the MATH table, scaled to appUnits;
-+    // returns true if it succeeds, false if no MATH table is available.
-+    bool GetMathConstant(gfxFontEntry::MathConstant aConstant,
-+                         uint32_t aAppUnitsPerDevPixel,
-+                         nscoord& aValue);
++    // may only be called if mFontEntry->TryGetMathTable has succeeded
++    // (i.e. the font is known to be a valid OpenType math font).
++    nscoord GetMathConstant(gfxFontEntry::MathConstant aConstant,
++                            uint32_t aAppUnitsPerDevPixel)
++    {
++        return NSToCoordRound(mFontEntry->GetMathConstant(aConstant) *
++                              GetAdjustedSize() * aAppUnitsPerDevPixel);
++    }
++
 +    // Get a dimensionless math constant (e.g. a percentage);
-+    // returns true if it succeeds, false if no MATH table is available.
-+    bool GetMathConstant(gfxFontEntry::MathConstant aConstant, float& aValue);
++    // may only be called if mFontEntry->TryGetMathTable has succeeded
++    // (i.e. the font is known to be a valid OpenType math font).
++    float GetMathConstant(gfxFontEntry::MathConstant aConstant)
++    {
++        return mFontEntry->GetMathConstant(aConstant);
++    }
 +
  protected:
      // Return a font that is a "clone" of this one, but reduced to 80% size
@@ -142,7 +112,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      // an alternative technique. (gfxPangoFonts, I'm looking at you...)
      virtual already_AddRefed<gfxFont> GetSmallCapsFont();
  
-@@ -3540,16 +3549,20 @@ public:
+@@ -3540,16 +3558,21 @@ public:
                       "Whoever was caching this font group should have "
                       "called UpdateFontList on it");
          NS_ASSERTION(mFonts.Length() > uint32_t(i) && mFonts[i].Font(), 
@@ -152,7 +122,8 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
      }
  
 +    // Returns the first font in the font-group that has an OpenType MATH table,
-+    // or null if no such font is available.
++    // or null if no such font is available. The GetMathConstant methods may be
++    // called on the returned font.
 +    gfxFont *GetFirstMathFont();
 +
      uint32_t FontListLength() const {
@@ -215,10 +186,10 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -      nscoord minHeight = largeopFactor * (bm.ascent + bm.descent);
 -      if (displayOperatorMinHeight < minHeight) {
 -        displayOperatorMinHeight = minHeight;
-+      if (mathFont &&
++      if (mathFont) {
++        displayOperatorMinHeight =
 +          mathFont->GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight,
-+                                    oneDevPixel,
-+                                    displayOperatorMinHeight)) {
++                                    oneDevPixel);
 +        nsAutoPtr<gfxTextRun> textRun;
 +        textRun = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
 +                                           *aFontGroup, ch);
@@ -264,7 +235,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
 --- a/layout/mathml/nsMathMLFrame.cpp
 +++ b/layout/mathml/nsMathMLFrame.cpp
-@@ -171,16 +171,23 @@ nsMathMLFrame::GetRuleThickness(nsRender
+@@ -171,16 +171,24 @@ nsMathMLFrame::GetRuleThickness(nsRender
    }
  }
  
@@ -274,9 +245,10 @@ diff --git a/layout/mathml/nsMathMLFrame.cpp b/layout/mathml/nsMathMLFrame.cpp
                               nscoord&             aAxisHeight)
  {
 +  gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
-+  if (mathFont && mathFont->GetMathConstant(gfxFontEntry::AxisHeight,
-+                                            aFontMetrics->AppUnitsPerDevPixel(),
-+                                            aAxisHeight)) {
++  if (mathFont) {
++    aAxisHeight =
++      mathFont->GetMathConstant(gfxFontEntry::AxisHeight,
++                                aFontMetrics->AppUnitsPerDevPixel());
 +    return;
 +  }
 +

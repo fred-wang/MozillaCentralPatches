@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent fff49fa2d7d4b36ecb4a09952aa9ba7930f6da8b
+# Parent f0d1dcf214ff1940dae6cfde036a2693ec4f9d60
 # User Frédéric Wang <fred.wang@free.fr>
 Part 4 - Use MATH constants for scripts. r=jfkthame, b=961365
 
@@ -45,7 +45,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
    // to avoid additional checks later.
    if (tag == nsGkAtoms::mover_)
      tag = nsGkAtoms::msup_;
-@@ -182,83 +176,107 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -182,83 +176,108 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
    if (!baseFrame) {
      if (tag == nsGkAtoms::mmultiscripts_)
        aFrame->ReportErrorToConsole("NoBase");
@@ -67,11 +67,11 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 -  GetRuleThickness (aRenderingContext, fm, ruleSize);
 +  nscoord oneDevPixel = fm->AppUnitsPerDevPixel();
 +  gfxFont* mathFont = fm->GetThebesFontGroup()->GetFirstMathFont();
-+  // scriptspace from TeX for extra spacing after sup/subscript 
++  // scriptspace from TeX for extra spacing after sup/subscript
 +  nscoord scriptSpace;
 +  if (mathFont) {
-+      mathFont->GetMathConstant(gfxFontEntry::SpaceAfterScript,
-+                                oneDevPixel, scriptSpace);
++    scriptSpace =
++      mathFont->GetMathConstant(gfxFontEntry::SpaceAfterScript, oneDevPixel);
 +  } else {
 +    // (0.5pt in plain TeX)
 +    scriptSpace = nsPresContext::CSSPointsToAppUnits(0.5f);
@@ -94,8 +94,8 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  if (mathFont) {
 +    // Try and get the sub script shift from the MATH table. Note that contrary
 +    // to TeX we only have one parameter.
-+    mathFont->GetMathConstant(gfxFontEntry::SubscriptShiftDown,
-+                              oneDevPixel, subScriptShift);
++    subScriptShift =
++      mathFont->GetMathConstant(gfxFontEntry::SubscriptShiftDown, oneDevPixel);
 +  } else {
 +    // subScriptShift{1,2}
 +    // = minimum amount to shift the subscript down
@@ -154,10 +154,11 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +  if (mathFont) {
 +    // Try and get the super script shift from the MATH table. Note that
 +    // contrary to TeX we only have two parameters.
-+    mathFont->GetMathConstant(NS_MATHML_IS_COMPRESSED(presentationData.flags) ?
-+                              gfxFontEntry::SuperscriptShiftUpCramped :
-+                              gfxFontEntry::SuperscriptShiftUp,
-+                              oneDevPixel, supScriptShift);
++    supScriptShift = mathFont->
++      GetMathConstant(NS_MATHML_IS_COMPRESSED(presentationData.flags) ?
++                      gfxFontEntry::SuperscriptShiftUpCramped :
++                      gfxFontEntry::SuperscriptShiftUp,
++                      oneDevPixel);
    } else {
 -    // everything else = T,S,SS
 -    supScriptShift = supScriptShift2;
@@ -170,7 +171,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +    nscoord supScriptShift1, supScriptShift2, supScriptShift3;
 +    // Set supScriptShift{1,2,3} default from font
 +    GetSupScriptShifts (fm, supScriptShift1, supScriptShift2, supScriptShift3);
-+    
++
 +    // get sup script shift depending on current script level and display style
 +    // Rule 18c, App. G, TeXbook
 +    if (font->mScriptLevel == 0 &&
@@ -193,7 +194,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
    }
  
    ////////////////////////////////////
-@@ -379,58 +397,71 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -379,58 +398,72 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
             std::max(multiSubSize.BlockStartAscent(),
                      subScriptSize.BlockStartAscent()));
          bmMultiSub.ascent = std::max(bmMultiSub.ascent, bmSubScript.ascent);
@@ -216,8 +217,9 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 -            (bmSubScript.ascent - (4.0f/5.0f) * xHeight);
 +          nscoord subscriptTopMax;
 +          if (mathFont) {
++            subscriptTopMax =
 +              mathFont->GetMathConstant(gfxFontEntry::SubscriptTopMax,
-+                                        oneDevPixel, subscriptTopMax);
++                                        oneDevPixel);
 +          } else {
 +            // get min subscript shift limit from x-height
 +            // = h(x) - 4/5 * sigma_5, Rule 18b, App. G, TeXbook
@@ -243,14 +245,14 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 -          ((bmSupScript.descent + (1.0f/4.0f) * xHeight));
 +        nscoord superscriptBottomMin;
 +        if (mathFont) {
++          superscriptBottomMin =
 +            mathFont->GetMathConstant(gfxFontEntry::SuperscriptBottomMin,
-+                                      oneDevPixel,
-+                                      superscriptBottomMin);
++                                      oneDevPixel);
 +        } else {
 +          // get min supscript shift limit from x-height
 +          // = d(x) + 1/4 * sigma_5, Rule 18c, App. G, TeXbook
-+          superscriptBottomMin = NSToCoordRound((1.0f/4.0f) * xHeight);
-+        } 
++          superscriptBottomMin = NSToCoordRound((1.0f / 4.0f) * xHeight);
++        }
 +        minShiftFromXHeight = bmSupScript.descent + superscriptBottomMin;
          trySupScriptShift = std::max(minSupScriptShift,
                                       std::max(minShiftFromXHeight,
@@ -275,7 +277,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
            boundingMetrics.width += width;
          } else {
            prescriptsWidth += width;
-@@ -442,28 +473,48 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -442,28 +475,47 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
          }
          width = rightBearing = 0;
  
@@ -286,9 +288,9 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
              tag == nsGkAtoms::msubsup_) {
 +          nscoord subSuperscriptGapMin;
 +          if (mathFont) {
++            subSuperscriptGapMin =
 +              mathFont->GetMathConstant(gfxFontEntry::SubSuperscriptGapMin,
-+                                        oneDevPixel,
-+                                        subSuperscriptGapMin);
++                                        oneDevPixel);
 +          } else {
 +            nscoord ruleSize;
 +            GetRuleThickness(aRenderingContext, fm, ruleSize);
@@ -312,13 +314,12 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
 +          // will be > superscriptBottomMaxWithSubscript
 +          nscoord superscriptBottomMaxWithSubscript;
 +          if (mathFont) {
-+              mathFont->GetMathConstant(gfxFontEntry::
-+                                        SuperscriptBottomMaxWithSubscript,
-+                                        oneDevPixel,
-+                                        superscriptBottomMaxWithSubscript);
++            superscriptBottomMaxWithSubscript = mathFont->
++              GetMathConstant(gfxFontEntry::SuperscriptBottomMaxWithSubscript,
++                              oneDevPixel);
 +          } else {
 +            superscriptBottomMaxWithSubscript =
-+              NSToCoordRound((4.0f/5.0f) * xHeight);
++              NSToCoordRound((4.0f / 5.0f) * xHeight);
 +          }
 +          gap = superscriptBottomMaxWithSubscript -
 +            (trySupScriptShift - bmSupScript.descent);
@@ -330,7 +331,7 @@ diff --git a/layout/mathml/nsMathMLmmultiscriptsFrame.cpp b/layout/mathml/nsMath
  
          maxSubScriptShift = std::max(maxSubScriptShift, trySubScriptShift);
          maxSupScriptShift = std::max(maxSupScriptShift, trySupScriptShift);
-@@ -623,17 +674,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
+@@ -623,17 +675,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiSc
                maxSupScriptShift;
              FinishReflowChild (supScriptFrame, aPresContext, supScriptSize,
                                 nullptr,
