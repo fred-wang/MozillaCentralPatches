@@ -1,0 +1,317 @@
+# HG changeset patch
+# Parent bdac18bd6c7441154559413600d80a340d026bda
+# User James Kitchener <jkitch.bug@gmail.com>
+Bug 1027354 - fix fontweight and fontstyle on single char <mi>
+
+diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLTextRunFactory.cpp
+--- a/layout/generic/MathMLTextRunFactory.cpp
++++ b/layout/generic/MathMLTextRunFactory.cpp
+@@ -591,17 +591,33 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+   bool doMathvariantStyling = true;
+ 
+   for (uint32_t i = 0; i < length; ++i) {
+     int extraChars = 0;
+     nsStyleContext* styleContext = styles[i];
+     mathVar = styleContext->StyleFont()->mMathVariant;
+ 
+     if (singleCharMI && mathVar == NS_MATHML_MATHVARIANT_NONE) {
+-      mathVar = NS_MATHML_MATHVARIANT_ITALIC;
++      // If the user has explicitely set a non-default value for fontstyle or
++      // font weight, the italic mathvariant behaviour of <mi> is disabled
++      // This overrides the initial values specified in fontStyle, to avoid
++      // inconsistencies in which vraiables allow CSS changes and which do not.
++      if (mFlags & MATH_FONT_WEIGHT_BOLD) {
++        fontStyle.weight = NS_FONT_WEIGHT_BOLD;
++        if (mFlags & MATH_FONT_STYLING_NORMAL) {
++          fontStyle.style = NS_FONT_STYLE_NORMAL;
++        } else {
++          fontStyle.style = NS_FONT_STYLE_ITALIC;
++        }
++      } else if (mFlags & MATH_FONT_STYLING_NORMAL) {
++        fontStyle.style = NS_FONT_STYLE_NORMAL;
++        fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
++      } else {
++        mathVar = NS_MATHML_MATHVARIANT_ITALIC;
++      }
+     }
+ 
+     uint32_t ch = str[i];
+     if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
+         NS_IS_LOW_SURROGATE(str[i + 1])) {
+       ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+     }
+     uint32_t ch2 = MathVariant(ch, mathVar);
+diff --git a/layout/generic/MathMLTextRunFactory.h b/layout/generic/MathMLTextRunFactory.h
+--- a/layout/generic/MathMLTextRunFactory.h
++++ b/layout/generic/MathMLTextRunFactory.h
+@@ -9,20 +9,29 @@
+ #include "nsTextRunTransformations.h"
+ 
+ /**
+  * Builds textruns that render their text with MathML specific renderings.
+  */
+ class MathMLTextRunFactory : public nsTransformingTextRunFactory {
+ public:
+   MathMLTextRunFactory(nsTransformingTextRunFactory* aInnerTransformingTextRunFactory,
+-                       uint8_t aSSTYScriptLevel)
++                       uint32_t aFlags, uint8_t aSSTYScriptLevel)
+     : mInnerTransformingTextRunFactory(aInnerTransformingTextRunFactory),
++      mFlags(aFlags),
+       mSSTYScriptLevel(aSSTYScriptLevel) {}
+ 
+   virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,
+                               gfxContext* aRefContext) MOZ_OVERRIDE;
++  enum {
++    // Style effects which may override single character <mi> behaviour
++    MATH_FONT_STYLING_NORMAL   = 0x1, // fontstyle="normal" has been set.
++    MATH_FONT_WEIGHT_BOLD      = 0x2, // fontweight="bold" has been set on the
++                                      // (possibly ancestor) frame.
++  };
++
+ protected:
+   nsAutoPtr<nsTransformingTextRunFactory> mInnerTransformingTextRunFactory;
++  uint32_t mFlags;
+   uint8_t mSSTYScriptLevel;
+ };
+ 
+ #endif /*MATHMLTEXTRUNFACTORY_H_*/
+diff --git a/layout/generic/nsTextFrame.cpp b/layout/generic/nsTextFrame.cpp
+--- a/layout/generic/nsTextFrame.cpp
++++ b/layout/generic/nsTextFrame.cpp
+@@ -1816,16 +1816,17 @@ gfxTextRun*
+ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
+ {
+   gfxSkipChars skipChars;
+ 
+   const void* textPtr = aTextBuffer;
+   bool anyTextTransformStyle = false;
+   bool anyMathMLStyling = false;
+   uint8_t sstyScriptLevel = 0;
++  uint32_t mathFlags = 0;
+   uint32_t textFlags = nsTextFrameUtils::TEXT_NO_BREAKS;
+ 
+   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_WHITESPACE) {
+     textFlags |= nsTextFrameUtils::TEXT_INCOMING_WHITESPACE;
+   }
+   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_ARABICCHAR) {
+     textFlags |= gfxTextRunFactory::TEXT_INCOMING_ARABICCHAR;
+   }
+@@ -1895,16 +1896,49 @@ BuildTextRunsScanner::BuildTextRunForFra
+       textFlags |= gfxTextRunFactory::TEXT_ENABLE_SPACING;
+     }
+     fontStyle = f->StyleFont();
+     if (NS_MATHML_MATHVARIANT_NONE != fontStyle->mMathVariant) {
+       anyMathMLStyling = true;
+     } else if (mLineContainer->GetStateBits() & NS_FRAME_IS_IN_SINGLE_CHAR_MI) {
+       textFlags |= nsTextFrameUtils::TEXT_IS_SINGLE_CHAR_MI;
+       anyMathMLStyling = true;
++      // Test for fontstyle attribute as StyleFont() may not be accurate
++      // To be consistent in terms of ignoring CSS style changes, fontweight
++      // gets checked too.
++      nsIFrame* parent = mLineContainer->GetParent();
++      nsIContent* content = parent->GetContent();
++      if (content && content->AttrValueIs(kNameSpaceID_None,
++                                          nsGkAtoms::fontstyle_,
++                                          NS_LITERAL_STRING("normal"),
++                                          eCaseMatters)) {
++        mathFlags |= MathMLTextRunFactory::MATH_FONT_STYLING_NORMAL;
++      }
++      // fontweight may be inherited.
++      while (parent) {
++        content = parent->GetContent();
++        if (content) {
++          nsAutoString attrValue;
++          if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::fontweight_,
++                               attrValue)) {
++            if (attrValue.EqualsLiteral("bold")) {
++              mathFlags |= MathMLTextRunFactory::MATH_FONT_WEIGHT_BOLD;
++              break;
++            }
++            if (attrValue.EqualsLiteral("normal")) {
++              break;
++            }
++            //Otherwise an invalid option.  Continue looking
++          }
++          if (content->Tag() == nsGkAtoms::math) {
++            break;
++          }
++        }
++        parent = parent->GetParent();
++      }
+     }
+     nsIFrame* parent = mLineContainer->GetParent();
+     if (mLineContainer->HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
+       // All MathML tokens except <mtext> use 'math' script.
+       if (!(parent && parent->GetContent() &&
+           parent->GetContent()->Tag() == nsGkAtoms::mtext_)) {
+         textFlags |= gfxTextRunFactory::TEXT_USE_MATH_SCRIPT;
+       }
+@@ -2060,17 +2094,18 @@ BuildTextRunsScanner::BuildTextRunForFra
+   // Setup factory chain
+   nsAutoPtr<nsTransformingTextRunFactory> transformingFactory;
+   if (anyTextTransformStyle) {
+     transformingFactory =
+       new nsCaseTransformTextRunFactory(transformingFactory.forget());
+   }
+   if (anyMathMLStyling) {
+     transformingFactory =
+-      new MathMLTextRunFactory(transformingFactory.forget(), sstyScriptLevel);
++      new MathMLTextRunFactory(transformingFactory.forget(), mathFlags,
++                               sstyScriptLevel);
+   }
+   nsTArray<nsStyleContext*> styles;
+   if (transformingFactory) {
+     iter.SetOriginalOffset(0);
+     for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
+       MappedFlow* mappedFlow = &mMappedFlows[i];
+       nsTextFrame* f;
+       for (f = mappedFlow->mStartFrame; f != mappedFlow->mEndFrame;
+diff --git a/layout/reftests/mathml/mathvariant-3-ref.html b/layout/reftests/mathml/mathvariant-3-ref.html
+--- a/layout/reftests/mathml/mathvariant-3-ref.html
++++ b/layout/reftests/mathml/mathvariant-3-ref.html
+@@ -1,14 +1,69 @@
+ <!doctype html>
+ <html>
+   <head>
+-    <title>Test math-variant overrides fontstyle and fontweight</title>
++    <title>Test math-variant interaction with fontstyle and fontweight</title>
+   </head>
+   <body>
+     <math>
+       <mrow>
+         <mtext>A</mtext>
+         <mtext>A</mtext>
+       </mrow>
+     </math>
++    <p>
++    <math>
++    <mn>A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold" fontstyle="italic">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold" fontstyle="italic">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle>
++        <mn fontweight="bold" fontstyle="italic">A</mn>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle>
++        <mstyle>
++          <mn mathvariant="italic">A</mn>
++        </mstyle>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle >
++        <mstyle>
++          <mn fontweight="bold" fontstyle="italic">A</mn>
++        </mstyle>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mn fontweight="bold" fontstyle="italic">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mn>A</mn>
++    </math>
++    </p>
+   </body>
+  </html>
+diff --git a/layout/reftests/mathml/mathvariant-3.html b/layout/reftests/mathml/mathvariant-3.html
+--- a/layout/reftests/mathml/mathvariant-3.html
++++ b/layout/reftests/mathml/mathvariant-3.html
+@@ -1,15 +1,70 @@
+ <!doctype html>
+ <html>
+   <head>
+-    <title>Test math-variant overrides fontstyle and fontweight</title>
++    <title>Test math-variant interaction with fontstyle and fontweight</title>
+   </head>
+   <body>
+     <math>
+       <mrow>
+         <mtext mathvariant="normal" fontweight="bold">A</mtext>
+         <mtext mathvariant="normal" fontstyle="italic">A</mtext>
+       </mrow>
+     </math>
++    <p>
++    <math>
++      <mi fontstyle="normal">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mi fontstyle="normal" fontweight="bold">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mi fontweight="bold">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mi fontweight="bold" fontstyle="italic">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle fontweight="bold">
++        <mi>A</mi>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle fontweight="bold">
++        <mstyle fontweight="normal">
++          <mi>A</mi>
++        </mstyle>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mstyle fontweight="bold">
++        <mstyle fontweight="fish">
++          <mi>A</mi>
++        </mstyle>
++      </mstyle>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mi fontweight="bold" style="font-style:normal">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++      <mi fontstyle="normal" style="font-weight:bold">A</mi>
++    </math>
++    </p>
+   </body>
+  </html>
+ 
