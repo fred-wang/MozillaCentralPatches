@@ -1,0 +1,149 @@
+
+# HG changeset patch
+# User James Kitchener <jkitch.bug@gmail.com>
+# Date 1403270377 -34200
+# Node ID 9427390bbb28ace99f491eb1ab943ad198df0f20
+# Parent  b1dbd771595d566ec5af5944d743a9bcf340e2b1
+Bug 1027354 - MathML changes to fix legacy fontweight/fontstyle on single char <mi>
+
+diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
+--- a/layout/mathml/mathml.css
++++ b/layout/mathml/mathml.css
+@@ -41,16 +41,25 @@ math[displaystyle="false"] {
+ math[displaystyle="true"] {
+   -moz-math-display: block;
+ }
+ 
+ /**************************************************************************/
+ /* Token elements                                                         */
+ /**************************************************************************/
+ 
++/* If the textual content of an <mi> consists of a single character
++   with a corresponding mathematical italic alphanumeric character,
++   then try to emulate that character.
++   This is a fallback for when mathvariant character substitutions are not used.
++*/
++[_moz-math-font-style="italic"] {
++  font-style: italic;
++}
++
+ ms {
+   display: inline;
+ }
+ ms:before, ms:after {
+   content: "\0022"
+ }
+ ms[lquote]:before {
+   content: attr(lquote)
+diff --git a/layout/mathml/nsMathMLTokenFrame.cpp b/layout/mathml/nsMathMLTokenFrame.cpp
+--- a/layout/mathml/nsMathMLTokenFrame.cpp
++++ b/layout/mathml/nsMathMLTokenFrame.cpp
+@@ -83,16 +83,28 @@ nsMathMLTokenFrame::MarkTextFramesAsToke
+     int32_t length = data.Length();
+ 
+     bool isSingleCharacter = length == 1 ||
+       (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
+ 
+     if (isSingleCharacter) {
+       child->AddStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI);
+       AddStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI);
++      nsAutoString fontstyle;
++      fontstyle.AssignLiteral("italic");
++      if (!mContent->AttrValueIs(kNameSpaceID_None,
++                                 nsGkAtoms::_moz_math_fontstyle_,
++                                 fontstyle, eCaseMatters)) {
++        mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::_moz_math_fontstyle_,
++                          fontstyle, true);
++      }
++    } else if (mContent->HasAttr(kNameSpaceID_None,
++                                 nsGkAtoms::_moz_math_fontstyle_)) {
++      mContent->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_moz_math_fontstyle_,
++                          false);
+     }
+   }
+ }
+ 
+ void
+ nsMathMLTokenFrame::SetInitialChildList(ChildListID     aListID,
+                                         nsFrameList&    aChildList)
+ {
+diff --git a/layout/reftests/mathml/mathvariant-3-ref.html b/layout/reftests/mathml/mathvariant-3-ref.html
+--- a/layout/reftests/mathml/mathvariant-3-ref.html
++++ b/layout/reftests/mathml/mathvariant-3-ref.html
+@@ -1,14 +1,34 @@
+ <!doctype html>
+ <html>
+   <head>
+-    <title>Test math-variant overrides fontstyle and fontweight</title>
++    <title>Test math-variant interaction with fontstyle and fontweight</title>
+   </head>
+   <body>
+     <math>
+       <mrow>
+         <mtext>A</mtext>
+         <mtext>A</mtext>
+       </mrow>
+     </math>
++    <p>
++    <math>
++    <mn>A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold" fontstyle="italic">A</mn>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mn fontweight="bold" fontstyle="italic">A</mn>
++    </math>
++    </p>
+   </body>
+  </html>
+diff --git a/layout/reftests/mathml/mathvariant-3.html b/layout/reftests/mathml/mathvariant-3.html
+--- a/layout/reftests/mathml/mathvariant-3.html
++++ b/layout/reftests/mathml/mathvariant-3.html
+@@ -1,15 +1,35 @@
+ <!doctype html>
+ <html>
+   <head>
+-    <title>Test math-variant overrides fontstyle and fontweight</title>
++    <title>Test math-variant interaction with fontstyle and fontweight</title>
+   </head>
+   <body>
+     <math>
+       <mrow>
+         <mtext mathvariant="normal" fontweight="bold">A</mtext>
+         <mtext mathvariant="normal" fontstyle="italic">A</mtext>
+       </mrow>
+     </math>
++    <p>
++    <math>
++    <mi fontstyle="normal">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mi fontstyle="normal" fontweight="bold">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mi fontweight="bold">A</mi>
++    </math>
++    </p>
++    <p>
++    <math>
++    <mi fontweight="bold" fontstyle="italic">A</mi>
++    </math>
++    </p>
+   </body>
+  </html>
+ 
+
