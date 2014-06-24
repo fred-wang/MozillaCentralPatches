@@ -106,7 +106,7 @@ diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
 +
  protected:
      // Return a font that is a "clone" of this one, but reduced to 80% size
-     // (and with the smallCaps style set to false).
+     // (and with variantCaps set to normal).
      // Default implementation relies on gfxFontEntry::CreateFontInstance;
      // backends that don't implement that will need to override this and use
      // an alternative technique. (gfxPangoFonts, I'm looking at you...)
