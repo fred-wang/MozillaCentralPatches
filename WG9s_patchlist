@@ -8,5 +8,3 @@ default-math-font.patch
 bug687807_stretch.diff
 bug687807_tests.diff
 bug969906_maction-tooltip.patch
-1027354-1.diff
-1027354-2.diff
