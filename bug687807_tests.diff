@@ -6,7 +6,7 @@ Bug 687807 - Tests for stretchy MathML r=fredw
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -38,16 +38,47 @@ skip-if(B2G) fails-if(smallScreen&&Andro
+@@ -39,16 +39,47 @@ skip-if(B2G&&browserIsRemote) random-if(
  fails-if(/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfenced-10.html mfenced-10-ref.html # Windows versions without Cambria Math, see bug 670592
  == mi-mathvariant-1.xhtml mi-mathvariant-1-ref.xhtml
  == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
@@ -14,7 +14,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
  == overbar-width-1.xhtml overbar-width-1-ref.xhtml
  skip-if(B2G) == quotes-1.xhtml quotes-1-ref.xhtml
- != stretchy-underbar-1.xhtml stretchy-underbar-1-ref.xhtml 
+ != stretchy-underbar-1.xhtml stretchy-underbar-1-ref.xhtml
 +!= stretchy-munderover-1a.html stretchy-munderover-1-ref.html
 +== stretchy-munderover-1b.html stretchy-munderover-1-ref.html
 +== stretchy-munderover-1c.html stretchy-munderover-1-ref.html

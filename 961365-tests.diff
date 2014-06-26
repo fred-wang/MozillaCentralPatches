@@ -2351,7 +2351,7 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -149,16 +149,17 @@ skip-if(B2G) == maction-dynamic-1.html m
+@@ -150,16 +150,17 @@ skip-if(B2G) == maction-dynamic-1.html m
  == mo-invisibleoperators-2.html mo-invisibleoperators-2-ref.html
  skip-if(B2G) == maction-dynamic-3.html maction-dynamic-3-ref.html # bug 773482
  == whitespace-trim-1.html whitespace-trim-1-ref.html
@@ -2369,7 +2369,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
  != menclose-1a.html menclose-1-ref.html
  != menclose-1b.html menclose-1-ref.html
-@@ -286,23 +287,23 @@ random-if(B2G&&browserIsRemote) == munde
+@@ -297,23 +298,23 @@ fails-if(B2G||Android||/^Windows\x20NT\x
  == mfrac-A-2.html mfrac-A-2-ref.html
  == mfrac-A-3.html mfrac-A-3-ref.html
  == mfrac-A-4.html mfrac-A-4-ref.html
@@ -2377,23 +2377,23 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mfrac-A-6.html mfrac-A-6-ref.html
  == mfrac-A-7.html mfrac-A-7-ref.html
  == mfrac-A-8.html mfrac-A-8-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-B-1.html mfrac-B-1-ref.html
--random-if(B2G&&browserIsRemote) == mfrac-B-2.html mfrac-B-2-3-ref.html
--random-if(B2G&&browserIsRemote) == mfrac-B-3.html mfrac-B-2-3-ref.html
-+random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-B-2.html mfrac-B-2-3-ref.html
-+random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-B-3.html mfrac-B-2-3-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-B-4.html mfrac-B-4-5-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-B-5.html mfrac-B-4-5-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-B-6.html mfrac-B-6-7-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-B-7.html mfrac-B-6-7-ref.html
- fuzzy-if(OSX,1,100) random-if(B2G&&browserIsRemote) == mfrac-C-1.html mfrac-C-1-ref.html
--random-if(B2G&&browserIsRemote) == mfrac-C-2.html mfrac-C-2-ref.html
-+random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-C-2.html mfrac-C-2-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-C-3.html mfrac-C-3-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-C-4.html mfrac-C-4-ref.html
- fuzzy-if(OSX,1,100) random-if(B2G&&browserIsRemote) == mfrac-D-1.html mfrac-D-1-ref.html
--random-if(B2G&&browserIsRemote) == mfrac-D-2.html mfrac-D-2-ref.html
-+random-if((B2G&&browserIsRemote)||(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu))) == mfrac-D-2.html mfrac-D-2-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-D-3.html mfrac-D-3-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-D-4.html mfrac-D-4-ref.html
- random-if(B2G&&browserIsRemote) == mfrac-E-1.html mfrac-E-1-ref.html
+ == mfrac-B-1.html mfrac-B-1-ref.html
+-== mfrac-B-2.html mfrac-B-2-3-ref.html
+-== mfrac-B-3.html mfrac-B-2-3-ref.html
++random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-2.html mfrac-B-2-3-ref.html
++random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-3.html mfrac-B-2-3-ref.html
+ == mfrac-B-4.html mfrac-B-4-5-ref.html
+ == mfrac-B-5.html mfrac-B-4-5-ref.html
+ == mfrac-B-6.html mfrac-B-6-7-ref.html
+ == mfrac-B-7.html mfrac-B-6-7-ref.html
+ fuzzy-if(OSX,1,100) == mfrac-C-1.html mfrac-C-1-ref.html
+-== mfrac-C-2.html mfrac-C-2-ref.html
++random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-C-2.html mfrac-C-2-ref.html
+ == mfrac-C-3.html mfrac-C-3-ref.html
+ == mfrac-C-4.html mfrac-C-4-ref.html
+ fuzzy-if(OSX,1,100) == mfrac-D-1.html mfrac-D-1-ref.html
+-== mfrac-D-2.html mfrac-D-2-ref.html
++random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-D-2.html mfrac-D-2-ref.html
+ == mfrac-D-3.html mfrac-D-3-ref.html
+ == mfrac-D-4.html mfrac-D-4-ref.html
+ == mfrac-E-1.html mfrac-E-1-ref.html
