@@ -1,10 +1,4 @@
 default-math-font.patch
-961365-1.diff
-961365-2.diff
-961365-3.diff
-961365-4.diff
-961365-5.diff
-961365-tests.diff
 bug687807_stretch.diff
 bug687807_tests.diff
 bug969906_maction-tooltip.patch
