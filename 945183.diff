@@ -1,33 +1,102 @@
 # HG changeset patch
-# Parent c477e6a37eade0fb958b78638ad5e446779ef624
+# Parent e8df6826a571509fdd08d5538f8158671c4fd58b
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 945183 - Mirroring large/stretchy operators
 
+diff --git a/layout/mathml/mathfont.properties b/layout/mathml/mathfont.properties
+--- a/layout/mathml/mathfont.properties
++++ b/layout/mathml/mathfont.properties
+@@ -274,19 +274,19 @@ operator.\u2228.infix = lspace:4 rspace:
+ operator.\u2229.infix = lspace:4 rspace:4 # &cap;
+ operator.\u222A.infix = lspace:4 rspace:4 # &cup;
+ operator.\u222B.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &Integral;
+ operator.\u222C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # double integral
+ operator.\u222D.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # triple integral
+ operator.\u222E.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ContourIntegral;
+ operator.\u222F.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &DoubleContourIntegral;
+ operator.\u2230.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # volume integral
+-operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # clockwise integral
+-operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &ClockwiseContourIntegral;
+-operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral # &CounterClockwiseContourIntegral;
++operator.\u2231.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # clockwise integral
++operator.\u2232.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &ClockwiseContourIntegral;
++operator.\u2233.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # &CounterClockwiseContourIntegral;
+ operator.\u2234.infix = lspace:5 rspace:5 # &Therefore;
+ operator.\u2235.infix = lspace:5 rspace:5 # &Because;
+ operator.\u2236.infix = lspace:5 rspace:5 # ratio
+ operator.\u2237.infix = lspace:5 rspace:5 # &Colon; &Proportion;
+ operator.\u2238.infix = lspace:4 rspace:4 # dot minus
+ operator.\u2239.infix = lspace:5 rspace:5 # excess
+ operator.\u223A.infix = lspace:4 rspace:4 # geometric proportion
+ operator.\u223B.infix = lspace:5 rspace:5 # homothetic
+@@ -844,17 +844,17 @@ operator.\u2A08.prefix = lspace:1 rspace
+ operator.\u2A09.prefix = lspace:1 rspace:2 largeop movablelimits symmetric # n-ary times operator
+ operator.\u2A0A.prefix = lspace:1 rspace:2 largeop movablelimits symmetric mirrorable # modulo two sum
+ operator.\u2A0B.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # summation with integral
+ operator.\u2A0C.prefix = lspace:0 rspace:1 largeop symmetric direction:vertical integral mirrorable # quadruple integral operator
+ operator.\u2A0D.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # finite part integral
+ operator.\u2A0E.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with double stroke
+ operator.\u2A0F.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral average with slash
+ operator.\u2A10.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # circulation function
+-operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral # anticlockwise integration
++operator.\u2A11.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # anticlockwise integration
+ operator.\u2A12.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with rectangular path around pole
+ operator.\u2A13.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration with semicircular path around pole
+ operator.\u2A14.prefix = lspace:1 rspace:2 largeop movablelimits symmetric direction:vertical integral mirrorable # line integration not including the pole
+ operator.\u2A15.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral around a point operator
+ operator.\u2A16.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # quaternion integral operator
+ operator.\u2A17.prefix = lspace:1 rspace:2 largeop symmetric integral mirrorable direction:vertical # integral with leftwards arrow with hook
+ operator.\u2A18.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with times sign
+ operator.\u2A19.prefix = lspace:1 rspace:2 largeop symmetric direction:vertical integral mirrorable # integral with intersection
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -31,16 +31,42 @@
+@@ -6,16 +6,17 @@
+ #include "nsMathMLChar.h"
+ #include "mozilla/MathAlgorithms.h"
  
- using namespace mozilla;
+ #include "nsCOMPtr.h"
+ #include "nsIFrame.h"
+ #include "nsPresContext.h"
+ #include "nsStyleContext.h"
+ #include "nsUnicharUtils.h"
++#include "nsUnicodeProperties.h"
+ #include "nsRenderingContext.h"
  
- //#define NOISY_SEARCH 1
+ #include "mozilla/Preferences.h"
+ #include "nsIPersistentProperties2.h"
+ #include "nsIObserverService.h"
+ #include "nsIObserver.h"
+ #include "nsNetUtil.h"
  
+@@ -36,16 +37,48 @@ using namespace mozilla;
+ 
+ // BUG 848725 Drawing failure with stretchy horizontal parenthesis when no fonts
+ // are installed. "kMaxScaleFactor" is required to limit the scale for the
+ // vertical and horizontal stretchy operators.
+ static const float kMaxScaleFactor = 20.0;
  static const float kLargeOpFactor = float(M_SQRT2);
  static const float kIntegralFactor = 2.0;
  
++static bool
++IsMirrorableUnicodeCharacter(uint32_t aCh)
++{
++  return aCh != unicode::GetMirroredChar(aCh);
++}
++
 +static gfxTextRun*
 +MakeTextRunWithDirection(gfxFontGroup*   aFontGroup,
 +                         const char16_t* aString,
 +                         uint32_t        aLength,
 +                         gfxContext*     aThebesContext,
 +                         int32_t         aAppUnitsPerDevPixel,
-+                         bool            aRTL)
++                         bool            aMirrored)
 +{
 +  nsRefPtr<gfxFontGroup> newFontGroup;
-+  if (aRTL) {
++  if (aMirrored) {
 +    gfxFontStyle fontStyle = *aFontGroup->GetStyle();
 +    gfxFontFeature settingRTLM;
-+    settingRTLM.mTag = TRUETYPE_TAG('r','t','l','m');
++    settingRTLM.mTag = TRUETYPE_TAG('r', 't', 'l', 'm');
 +    settingRTLM.mValue = 1;
 +    fontStyle.featureSettings.AppendElement(settingRTLM);
 +    newFontGroup = aFontGroup->Copy(&fontStyle);
@@ -38,19 +107,19 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +  return newFontGroup->
 +    MakeTextRun(aString, aLength, aThebesContext,
 +                aAppUnitsPerDevPixel,
-+                aRTL ? gfxTextRunFactory::TEXT_IS_RTL : 0);
++                aMirrored ? gfxTextRunFactory::TEXT_IS_RTL : 0);
 +}
 +
- // -----------------------------------------------------------------------------
- static const nsGlyphCode kNullGlyph = {{{0, 0}}, 0};
- 
- // -----------------------------------------------------------------------------
- // nsGlyphTable is a class that provides an interface for accessing glyphs
- // of stretchy chars. It acts like a table that stores the variants of bigger
- // sizes (if any) and the partial glyphs needed to build extensible symbols.
- //
-@@ -59,30 +85,33 @@ public:
-   virtual const nsAString&
+ static void
+ NormalizeDefaultFont(nsFont& aFont)
+ {
+   if (aFont.fontlist.GetDefaultFontType() != eFamily_none) {
+     aFont.fontlist.Append(aFont.fontlist.GetDefaultFontType());
+     aFont.fontlist.SetDefaultFontType(eFamily_none);
+   }
+ }
+@@ -73,30 +106,33 @@ public:
+   virtual const FontFamilyName&
    FontNameFor(const nsGlyphCode& aGlyphCode) const = 0;
  
    // Getters for the parts
@@ -58,14 +127,14 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                  int32_t       aAppUnitsPerDevPixel,
                                  gfxFontGroup* aFontGroup,
                                  char16_t      aChar,
-+                                bool          aRTL,
++                                bool          aMirrored,
                                  bool          aVertical,
                                  uint32_t      aPosition) = 0;
    virtual nsGlyphCode BigOf(gfxContext*   aThebesContext,
                              int32_t       aAppUnitsPerDevPixel,
                              gfxFontGroup* aFontGroup,
                              char16_t      aChar,
-+                            bool          aRTL,
++                            bool          aMirrored,
                              bool          aVertical,
                              uint32_t      aSize) = 0;
  
@@ -74,7 +143,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                            int32_t       aAppUnitsPerDevPixel,
                            gfxFontGroup* aFontGroup,
                            char16_t      aChar,
-+                          bool          aRTL,
++                          bool          aMirrored,
                            bool          aVertical) = 0;
  
    virtual gfxTextRun* MakeTextRun(gfxContext*        aThebesContext,
@@ -83,16 +152,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                    const nsGlyphCode& aGlyph) = 0;
  protected:
    nsGlyphTable() : mCharCache(0) {}
-@@ -167,44 +196,47 @@ public:
+@@ -180,44 +216,47 @@ public:
                   "nsPropertiesTable can only access glyphs by code point");
-     return mFontName[aGlyphCode.font];
+     return mGlyphCodeFonts[aGlyphCode.font];
    }
  
    virtual nsGlyphCode ElementAt(gfxContext*   aThebesContext,
                                  int32_t       aAppUnitsPerDevPixel,
                                  gfxFontGroup* aFontGroup,
                                  char16_t      aChar,
-+                                bool          aRTL,
++                                bool          aMirrored,
                                  bool          aVertical,
                                  uint32_t      aPosition) MOZ_OVERRIDE;
  
@@ -100,34 +169,34 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              int32_t       aAppUnitsPerDevPixel,
                              gfxFontGroup* aFontGroup,
                              char16_t      aChar,
-+                            bool          aRTL,
++                            bool          aMirrored,
                              bool          aVertical,
                              uint32_t      aSize) MOZ_OVERRIDE
    {
      return ElementAt(aThebesContext, aAppUnitsPerDevPixel, aFontGroup,
 -                     aChar, aVertical, 4 + aSize);
-+                     aChar, aRTL, aVertical, 4 + aSize);
++                     aChar, aMirrored, aVertical, 4 + aSize);
    }
  
    virtual bool HasPartsOf(gfxContext*   aThebesContext,
                            int32_t       aAppUnitsPerDevPixel,
                            gfxFontGroup* aFontGroup,
                            char16_t      aChar,
-+                          bool          aRTL,
++                          bool          aMirrored,
                            bool          aVertical) MOZ_OVERRIDE
    {
      return (ElementAt(aThebesContext, aAppUnitsPerDevPixel, aFontGroup,
 -                      aChar, aVertical, 0).Exists() ||
-+                      aChar, aRTL, aVertical, 0).Exists() ||
++                      aChar, aMirrored, aVertical, 0).Exists() ||
              ElementAt(aThebesContext, aAppUnitsPerDevPixel, aFontGroup,
 -                      aChar, aVertical, 1).Exists() ||
-+                      aChar, aRTL, aVertical, 1).Exists() ||
++                      aChar, aMirrored, aVertical, 1).Exists() ||
              ElementAt(aThebesContext, aAppUnitsPerDevPixel, aFontGroup,
 -                      aChar, aVertical, 2).Exists() ||
-+                      aChar, aRTL, aVertical, 2).Exists() ||
++                      aChar, aMirrored, aVertical, 2).Exists() ||
              ElementAt(aThebesContext, aAppUnitsPerDevPixel, aFontGroup,
 -                      aChar, aVertical, 3).Exists());
-+                      aChar, aRTL, aVertical, 3).Exists());
++                      aChar, aMirrored, aVertical, 3).Exists());
    }
  
    virtual gfxTextRun* MakeTextRun(gfxContext*        aThebesContext,
@@ -136,7 +205,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                    const nsGlyphCode& aGlyph) MOZ_OVERRIDE;
  private:
  
-@@ -241,16 +273,17 @@ private:
+@@ -254,16 +293,17 @@ private:
  };
  
  /* virtual */
@@ -145,16 +214,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                               int32_t       /* aAppUnitsPerDevPixel */,
                               gfxFontGroup* /* aFontGroup */,
                               char16_t      aChar,
-+                             bool          /* aRTL */,
++                             bool          /* aMirrored */,
                               bool          /* aVertical */,
                               uint32_t      aPosition)
  {
    if (mState == NS_TABLE_STATE_ERROR) return kNullGlyph;
    // Load glyph properties if this is the first time we have been here
    if (mState == NS_TABLE_STATE_EMPTY) {
-     nsresult rv = LoadProperties(mFontName[0], mGlyphProperties);
- #ifdef DEBUG
-@@ -375,28 +408,31 @@ public:
+     nsAutoString primaryFontName;
+     mGlyphCodeFonts[0].AppendToString(primaryFontName);
+@@ -390,28 +430,31 @@ public:
    {
      MOZ_COUNT_DTOR(nsOpenTypeTable);
    }
@@ -163,44 +232,46 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                  int32_t       aAppUnitsPerDevPixel,
                                  gfxFontGroup* aFontGroup,
                                  char16_t      aChar,
-+                                bool          aRTL,
++                                bool          aMirrored,
                                  bool          aVertical,
                                  uint32_t      aPosition) MOZ_OVERRIDE;
    virtual nsGlyphCode BigOf(gfxContext*   aThebesContext,
                              int32_t       aAppUnitsPerDevPixel,
                              gfxFontGroup* aFontGroup,
                              char16_t      aChar,
-+                            bool          aRTL,
++                            bool          aMirrored,
                              bool          aVertical,
                              uint32_t      aSize) MOZ_OVERRIDE;
    virtual bool HasPartsOf(gfxContext*   aThebesContext,
                            int32_t       aAppUnitsPerDevPixel,
                            gfxFontGroup* aFontGroup,
                            char16_t      aChar,
-+                          bool          aRTL,
++                          bool          aMirrored,
                            bool          aVertical) MOZ_OVERRIDE;
  
-   const nsAString&
+   const FontFamilyName&
    FontNameFor(const nsGlyphCode& aGlyphCode) const MOZ_OVERRIDE {
      NS_ASSERTION(aGlyphCode.IsGlyphID(),
                   "nsOpenTypeTable can only access glyphs by id");
-     return mFontEntry->FamilyName();
+     return mFontFamilyName;
    }
-@@ -415,60 +451,66 @@ public:
-       return nullptr;
+@@ -431,61 +474,84 @@ public:
      }
      return new nsOpenTypeTable(aFont->GetFontEntry());
    }
  
  private:
    nsRefPtr<gfxFontEntry> mFontEntry;
+   FontFamilyName mFontFamilyName;
    uint32_t mGlyphID;
-+  bool mRTLCache;
++  bool mMirroredCache;
  
    explicit nsOpenTypeTable(gfxFontEntry* aFontEntry)
--    : mFontEntry(aFontEntry) {
+-    : mFontEntry(aFontEntry),
+-      mFontFamilyName(aFontEntry->FamilyName(), eUnquotedName) {
 +    : mFontEntry(aFontEntry)
-+    , mRTLCache(false) {
++    , mFontFamilyName(aFontEntry->FamilyName(), eUnquotedName)
++    , mMirroredCache(false) {
      MOZ_COUNT_CTOR(nsOpenTypeTable);
    }
  
@@ -209,7 +280,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                     gfxFontGroup* aFontGroup,
 -                   char16_t      aChar);
 +                   char16_t      aChar,
-+                   bool          aRTL);
++                   bool          aMirrored);
  };
  
  void
@@ -218,16 +289,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                               gfxFontGroup* aFontGroup,
 -                             char16_t      aChar)
 +                             char16_t      aChar,
-+                             bool          aRTL)
++                             bool          aMirrored)
  {
 -  if (mCharCache != aChar) {
-+  if (mCharCache != aChar || mRTLCache != aRTL) {
++  if (mCharCache != aChar || mMirroredCache != aMirrored) {
      nsAutoPtr<gfxTextRun> textRun;
 -    textRun = aFontGroup->
 -      MakeTextRun(&aChar, 1, aThebesContext, aAppUnitsPerDevPixel, 0);
+-    const gfxTextRun::CompressedGlyph& data = textRun->GetCharacterGlyphs()[0];
 +    textRun = MakeTextRunWithDirection(aFontGroup, &aChar, 1, aThebesContext,
-+                                       aAppUnitsPerDevPixel, aRTL);
-     const gfxTextRun::CompressedGlyph& data = textRun->GetCharacterGlyphs()[0];
++                                       aAppUnitsPerDevPixel, aMirrored);
++    gfxTextRun::CompressedGlyph data = textRun->GetCharacterGlyphs()[0];
      if (data.IsSimpleGlyph()) {
        mGlyphID = data.GetSimpleGlyph();
      } else if (data.GetGlyphCount() == 1) {
@@ -235,8 +307,21 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      } else {
        mGlyphID = 0;
      }
++    if (mGlyphID && aMirrored && !IsMirrorableUnicodeCharacter(aChar)) {
++      // Verify whether the "rtlm" transform was successfully applied for this
++      // font and clear the glyph index otherwise. This will give a chance to
++      // try rtl-aware math fonts later in order to mirror this glyph.
++      textRun = aFontGroup->MakeTextRun(&aChar, 1, aThebesContext,
++                                        aAppUnitsPerDevPixel, 0);
++      data = textRun->GetCharacterGlyphs()[0];
++      if ((data.IsSimpleGlyph() && data.GetSimpleGlyph() == mGlyphID) ||
++          (!data.IsSimpleGlyph() && data.GetGlyphCount() == 1 &&
++           textRun->GetDetailedGlyphs(0)->mGlyphID == mGlyphID)) {
++        mGlyphID = 0;
++      }
++    }
      mCharCache = aChar;
-+    mRTLCache = aRTL;
++    mMirroredCache = aMirrored;
    }
  }
  
@@ -246,12 +331,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                             int32_t       aAppUnitsPerDevPixel,
                             gfxFontGroup* aFontGroup,
                             char16_t      aChar,
-+                           bool          aRTL,
++                           bool          aMirrored,
                             bool          aVertical,
                             uint32_t      aPosition)
  {
 -  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar);
-+  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar, aRTL);
++  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar,
++              aMirrored);
++  if (!mGlyphID) {
++    return kNullGlyph;
++  }
  
    uint32_t parts[4];
    if (!mFontEntry->GetMathVariantsParts(mGlyphID, aVertical, parts)) {
@@ -260,7 +349,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    uint32_t glyphID = parts[aPosition];
    if (!glyphID) {
-@@ -481,20 +523,21 @@ nsOpenTypeTable::ElementAt(gfxContext*  
+@@ -498,20 +564,25 @@ nsOpenTypeTable::ElementAt(gfxContext*  
  }
  
  /* virtual */
@@ -269,12 +358,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                         int32_t       aAppUnitsPerDevPixel,
                         gfxFontGroup* aFontGroup,
                         char16_t      aChar,
-+                       bool          aRTL,
++                       bool          aMirrored,
                         bool          aVertical,
                         uint32_t      aSize)
  {
 -  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar);
-+  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar, aRTL);
++  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar,
++              aMirrored);
++  if (!mGlyphID) {
++    return kNullGlyph;
++  }
  
    uint32_t glyphID =
      mFontEntry->GetMathVariantsSize(mGlyphID, aVertical, aSize);
@@ -283,7 +376,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    }
  
    nsGlyphCode glyph;
-@@ -504,19 +547,20 @@ nsOpenTypeTable::BigOf(gfxContext*   aTh
+@@ -521,19 +592,24 @@ nsOpenTypeTable::BigOf(gfxContext*   aTh
  }
  
  /* virtual */
@@ -292,11 +385,15 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                              int32_t       aAppUnitsPerDevPixel,
                              gfxFontGroup* aFontGroup,
                              char16_t      aChar,
-+                            bool          aRTL,
++                            bool          aMirrored,
                              bool          aVertical)
  {
 -  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar);
-+  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar, aRTL);
++  UpdateCache(aThebesContext, aAppUnitsPerDevPixel, aFontGroup, aChar,
++              aMirrored);
++  if (!mGlyphID) {
++    return false;
++  }
  
    uint32_t parts[4];
    if (!mFontEntry->GetMathVariantsParts(mGlyphID, aVertical, parts)) {
@@ -305,7 +402,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    return parts[0] || parts[1] || parts[2] || parts[3];
  }
-@@ -1067,17 +1111,17 @@ StretchEnumContext::TryVariants(nsGlyphT
+@@ -1114,17 +1190,17 @@ StretchEnumContext::TryVariants(nsGlyphT
  
    // start at size = 1 (size = 0 is the char at its normal size)
    int32_t size = 1;
@@ -315,16 +412,16 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      NS_ASSERTION(isVertical, "Stretching should be in the vertical direction");
      ch = aGlyphTable->BigOf(mThebesContext, oneDevPixel, *aFontGroup, uchar,
 -                            isVertical, 0);
-+                            mChar->mRTL, isVertical, 0);
++                            mChar->mMirrored, isVertical, 0);
      if (ch.IsGlyphID()) {
-       gfxFont* mathFont = aFontGroup->get()->GetFontAt(0);
+       gfxFont* mathFont = aFontGroup->get()->GetFirstMathFont();
        // For OpenType MATH fonts, we will rely on the DisplayOperatorMinHeight
        // to select the right size variant. Note that the value is sometimes too
        // small so we use kLargeOpFactor/kIntegralFactor as a minimum value.
-       displayOperatorMinHeight =
-         NSToCoordRound(mathFont->GetFontEntry()->
-                        GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight) *
-@@ -1097,17 +1141,18 @@ StretchEnumContext::TryVariants(nsGlyphT
+       if (mathFont) {
+         displayOperatorMinHeight =
+           mathFont->GetMathConstant(gfxFontEntry::DisplayOperatorMinHeight,
+@@ -1145,17 +1221,18 @@ StretchEnumContext::TryVariants(nsGlyphT
        }
      }
    }
@@ -334,17 +431,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  #endif
    while ((ch = aGlyphTable->BigOf(mThebesContext, oneDevPixel, *aFontGroup,
 -                                  uchar, isVertical, size)).Exists()) {
-+                                  uchar, mChar->mRTL,
++                                  uchar, mChar->mMirrored,
 +                                  isVertical, size)).Exists()) {
  
-     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font,
+     if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamilyList, font,
                                aFontGroup)) {
        // if largeopOnly is set, break now
        if (largeopOnly) break;
        ++size;
        continue;
      }
-@@ -1206,22 +1251,23 @@ nsMathMLChar::StretchEnumContext::TryPar
+@@ -1255,22 +1332,23 @@ nsMathMLChar::StretchEnumContext::TryPar
    nsBoundingMetrics bmdata[4];
    nscoord sizedata[4];
  
@@ -354,23 +451,23 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
    bool maxWidth = (NS_STRETCH_MAXWIDTH & mStretchHint) != 0;
    if (!aGlyphTable->HasPartsOf(mThebesContext, oneDevPixel, *aFontGroup,
 -                               uchar, isVertical))
-+                               uchar, mChar->mRTL, isVertical))
++                               uchar, mChar->mMirrored, isVertical))
      return false; // to next table
  
    for (int32_t i = 0; i < 4; i++) {
      nsGlyphCode ch = aGlyphTable->ElementAt(mThebesContext, oneDevPixel,
 -                                            *aFontGroup, uchar, isVertical, i);
-+                                            *aFontGroup, uchar, mChar->mRTL,
++                                            *aFontGroup, uchar, mChar->mMirrored,
 +                                            isVertical, i);
      chdata[i] = ch;
      if (ch.Exists()) {
-       if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamily, font,
+       if (!mChar->SetFontFamily(mPresContext, aGlyphTable, ch, aFamilyList, font,
                                  aFontGroup))
          return false;
  
        textRun[i] = aGlyphTable->MakeTextRun(mThebesContext, oneDevPixel,
                                              *aFontGroup, ch);
-@@ -1420,19 +1466,21 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1531,19 +1609,21 @@ nsMathMLChar::StretchInternal(nsPresCont
    aPresContext->DeviceContext()->
      GetMetricsFor(font,
                    mStyleContext->StyleFont()->mLanguage,
@@ -386,7 +483,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 +                                     static_cast<const char16_t*>(mData.get()),
 +                                     len, aThebesContext,
 +                                     aPresContext->AppUnitsPerDevPixel(),
-+                                     mRTL);
++                                     mMirrored);
    aDesiredStretchSize = MeasureTextRun(aThebesContext, textRun);
    mGlyphs[0] = textRun;
  
@@ -395,26 +492,70 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      mUnscaledAscent = aDesiredStretchSize.ascent;
    }
  
-@@ -1633,17 +1681,17 @@ nsMathMLChar::Stretch(nsPresContext*    
-                       bool                     aRTL)
- {
-   NS_ASSERTION(!(aStretchHint &
-                  ~(NS_STRETCH_VARIABLE_MASK | NS_STRETCH_LARGEOP |
-                    NS_STRETCH_INTEGRAL)),
-                "Unexpected stretch flags");
+@@ -1672,16 +1752,20 @@ nsMathMLChar::StretchInternal(nsPresCont
+     // variables accordingly.
+     mUnscaledAscent = aDesiredStretchSize.ascent;
+   }
+     
+   if (glyphFound) {
+     return NS_OK;
+   }
  
-   mDraw = DRAW_NORMAL;
--  mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
-+  mRTL = aRTL;
-   mScaleY = mScaleX = 1.0;
-   mDirection = aStretchDirection;
-   nsresult rv =
-     StretchInternal(aPresContext, aRenderingContext.ThebesContext(), mDirection,
-                     aContainerSize, aDesiredStretchSize, aStretchHint);
++  // XXXfredw if mMirrored && !IsMirrorableUnicodeCharacter(mData[0]) (e.g.
++  // for radicals) should we try another attempt in RTL before applying the
++  // scale?
++
+   // stretchy character
+   if (stretchy) {
+     if (isVertical) {
+       float scale =
+         std::min(kMaxScaleFactor, float(aContainerSize.ascent + aContainerSize.descent) /
+         (aDesiredStretchSize.ascent + aDesiredStretchSize.descent));
+       if (!largeop || scale > 1.0) {
+         // make the character match the desired height.
+@@ -1742,16 +1826,40 @@ nsMathMLChar::StretchInternal(nsPresCont
+       if (!maxWidth) {
+         mScaleY *= scale;
+       }
+       aDesiredStretchSize.ascent *= scale;
+       aDesiredStretchSize.descent *= scale;
+     }
+   }
  
-   // Record the metrics
-   mBoundingMetrics = aDesiredStretchSize;
-@@ -1902,29 +1950,21 @@ nsMathMLChar::Display(nsDisplayListBuild
++  if (mMirrored && len == 1 && !IsMirrorableUnicodeCharacter(mData[0])) {
++    // Verify whether the "rtlm" transform was successfully applied and
++    // otherwise use a scale transform to mirror the glyph.
++    // XXXfred This changes the semantics of e.g. clockwise integral.
++    char16_t uchar = mData[0];
++    textRun = fm->
++      GetThebesFontGroup()->
++      MakeTextRun(&uchar, 1,
++                  aThebesContext, aPresContext->AppUnitsPerDevPixel(), 0);
++    gfxTextRun::CompressedGlyph data = textRun->GetCharacterGlyphs()[0];
++    uint32_t glyphID = 0;
++    if (data.IsSimpleGlyph()) {
++      glyphID = data.GetSimpleGlyph();
++    } else if (data.GetGlyphCount() == 1) {
++      glyphID = textRun->GetDetailedGlyphs(0)->mGlyphID;
++    }
++    data = mGlyphs[0]->GetCharacterGlyphs()[0];
++    if ((data.IsSimpleGlyph() && data.GetSimpleGlyph() == glyphID) ||
++        (!data.IsSimpleGlyph() && data.GetGlyphCount() == 1 &&
++         textRun->GetDetailedGlyphs(0)->mGlyphID == glyphID)) {
++      mScaleX = -mScaleX;
++    }
++  }
++
+   return NS_OK;
+ }
+ 
+ nsresult
+ nsMathMLChar::Stretch(nsPresContext*           aPresContext,
+                       nsRenderingContext&     aRenderingContext,
+                       nsStretchDirection       aStretchDirection,
+                       const nsBoundingMetrics& aContainerSize,
+@@ -2028,34 +2136,28 @@ nsMathMLChar::Display(nsDisplayListBuild
+                                   !aSelectedRect->IsEmpty()));
  }
  
  void
@@ -422,6 +563,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
                                int32_t aAppUnitsPerGfxUnit,
                                nsRect &r)
  {
++  bool mirrorWithScale = mScaleX < 0;
++
    // apply the transforms
 -  if (mMirrored) {
 -    nsPoint pt = r.TopRight();
@@ -436,7 +579,7 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 -                         NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
 -    aThebesContext->Scale(mScaleX, mScaleY);
 -  }
-+  nsPoint pt = r.TopLeft();
++  nsPoint pt = mirrorWithScale ? r.TopRight() : r.TopLeft();
 +  aThebesContext->
 +    Translate(gfxPoint(NSAppUnitsToFloatPixels(pt.x, aAppUnitsPerGfxUnit),
 +                       NSAppUnitsToFloatPixels(pt.y, aAppUnitsPerGfxUnit)));
@@ -444,12 +587,17 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
    // update the bounding rectangle.
    r.x = r.y = 0;
-   r.width /= mScaleX;
+-  r.width /= mScaleX;
++  r.width /= (mirrorWithScale ? -mScaleX : mScaleX);
    r.height /= mScaleY;
  }
  
  void
-@@ -1958,17 +1998,18 @@ nsMathMLChar::PaintForeground(nsPresCont
+ nsMathMLChar::PaintForeground(nsPresContext* aPresContext,
+                               nsRenderingContext& aRenderingContext,
+                               nsPoint aPt,
+                               bool aIsSelected)
+@@ -2085,19 +2187,22 @@ nsMathMLChar::PaintForeground(nsPresCont
  
    switch(mDraw)
    {
@@ -459,55 +607,19 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
        // XXXfredw verify if mGlyphs[0] is non-null to workaround bug 973322.
        if (mGlyphs[0]) {
 -        mGlyphs[0]->Draw(thebesContext, gfxPoint(0.0, mUnscaledAscent),
-+        mGlyphs[0]->Draw(thebesContext,
-+                         gfxPoint(mRTL ? r.width : 0.0, mUnscaledAscent),
-                          DrawMode::GLYPH_FILL, 0, mGlyphs[0]->GetLength(),
-                          nullptr, nullptr, nullptr);
+-                         DrawMode::GLYPH_FILL, 0, mGlyphs[0]->GetLength(),
+-                         nullptr, nullptr, nullptr);
++        mGlyphs[0]->
++          Draw(thebesContext,
++               gfxPoint(mMirrored && mDraw == DRAW_NORMAL ?
++                        r.width : 0.0, mUnscaledAscent),
++               DrawMode::GLYPH_FILL, 0, mGlyphs[0]->GetLength(),
++               nullptr, nullptr, nullptr);
        }
        break;
      case DRAW_PARTS: {
        // paint by parts
        if (NS_STRETCH_DIRECTION_VERTICAL == mDirection)
          PaintVertically(aPresContext, thebesContext, r);
-diff --git a/layout/mathml/nsMathMLChar.h b/layout/mathml/nsMathMLChar.h
---- a/layout/mathml/nsMathMLChar.h
-+++ b/layout/mathml/nsMathMLChar.h
-@@ -86,17 +86,17 @@ class nsMathMLChar
- public:
-   // constructor and destructor
-   nsMathMLChar() {
-     MOZ_COUNT_CTOR(nsMathMLChar);
-     mStyleContext = nullptr;
-     mUnscaledAscent = 0;
-     mScaleX = mScaleY = 1.0;
-     mDraw = DRAW_NORMAL;
--    mMirrored = false;
-+    mRTL = false;
-   }
- 
-   // not a virtual destructor: this class is not intended to be subclassed
-   ~nsMathMLChar();
- 
-   void Display(nsDisplayListBuilder*   aBuilder,
-                nsIFrame*               aForFrame,
-                const nsDisplayListSet& aLists,
-@@ -222,18 +222,17 @@ private:
-   // - DRAW_VARIANT: we draw a larger size variant given by mGlyphs[0].
-   // - DRAW_PARTS: we assemble several parts given by mGlyphs[0], ... mGlyphs[4]
-   // XXXfredw: the MATH table can have any numbers of parts and extenders.
-   enum DrawingMethod {
-     DRAW_NORMAL, DRAW_VARIANT, DRAW_PARTS
-   };
-   DrawingMethod mDraw;
- 
--  // mMirrored indicates whether the character is mirrored. 
--  bool               mMirrored;
-+  bool mRTL;
- 
-   class StretchEnumContext;
-   friend class StretchEnumContext;
- 
-   // helper methods
-   bool
-   SetFontFamily(nsPresContext*          aPresContext,
-                 const nsGlyphTable*     aGlyphTable,
+       else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection)
+         PaintHorizontally(aPresContext, thebesContext, r);
