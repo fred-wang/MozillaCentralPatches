@@ -37,7 +37,7 @@ diff --git a/layout/style/moz.build b/layout/style/moz.build
  
 -DIRS += ['xbl-marquee']
 +DIRS += ['xbl-marquee', 'xbl-maction']
- TEST_TOOL_DIRS += ['test']
+ TEST_DIRS += ['test']
  
  EXPORTS += [
      'AnimationCommon.h',
