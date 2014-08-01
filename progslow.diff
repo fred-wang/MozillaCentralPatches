@@ -1,0 +1,830 @@
+# HG changeset patch
+# Parent 005424a764da20705e205aeb0083b2ae7f4b559d
+# User James Kitchener <jkitch.bug@gmail.com>
+Bug 1043358 - Mathvariant performance improvements
+
+diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLTextRunFactory.cpp
+--- a/layout/generic/MathMLTextRunFactory.cpp
++++ b/layout/generic/MathMLTextRunFactory.cpp
+@@ -247,16 +247,23 @@ MathvarMappingSearch(uint32_t aKey, cons
+ #define MATH_BOLD_PARTIAL_DIFFERENTIAL  0x1D6DB
+ #define MATH_BOLD_EPSILON_SYMBOL        0x1D6DC
+ #define MATH_BOLD_THETA_SYMBOL          0x1D6DD
+ #define MATH_BOLD_KAPPA_SYMBOL          0x1D6DE
+ #define MATH_BOLD_PHI_SYMBOL            0x1D6DF
+ #define MATH_BOLD_RHO_SYMBOL            0x1D6E0
+ #define MATH_BOLD_PI_SYMBOL             0x1D6E1
+ 
++#define MATH_HOLE_ITALIC_LOWER_H        0x1D455
++#define MATH_HOLE_DOUBLE_UPPER_Z        0x1D551
++
++#define ARABIC_ALEF                     0x0627
++#define ARABIC_NOON_GHUNNA              0x06BA
++
++
+ /*
+   Performs the character mapping needed to implement MathML's mathvariant
+   attribute.  It takes a unicode character and maps it to its appropriate
+   mathvariant counterpart specified by aMathVar.  The mapped character is
+   typically located within Unicode's mathematical blocks (0x1D***, 0x1EE**) but
+   there are exceptions which this function accounts for.
+   Characters without a valid mapping or valid aMathvar value are returned
+   unaltered.  Characters already in the mathematical blocks (or are one of the
+@@ -275,54 +282,21 @@ MathVariant(uint32_t aCh, uint8_t aMathV
+     kIsGreekish,
+     kIsNumber,
+     kIsArabic,
+   };
+   CharacterType varType;
+ 
+   int8_t multiplier;
+ 
+-  if (aMathVar <= NS_MATHML_MATHVARIANT_NORMAL) {
+-    // nothing to do here
+-    return aCh;
+-  }
+-  if (aMathVar > NS_MATHML_MATHVARIANT_STRETCHED) {
+-    NS_ASSERTION(false, "Illegal mathvariant value");
+-    return aCh;
+-  }
++  NS_ASSERTION(aMathVar > NS_MATHML_MATHVARIANT_NORMAL,
++               "Don't call this method if you don't want any transformations");
+ 
+-  // Exceptional characters with at most one possible transformation
+-  if (aCh == HOLE_GREEK_UPPER_THETA) {
+-    // Nothing at this code point is transformed
+-    return aCh;
+-  }
+-  if (aCh == GREEK_LETTER_DIGAMMA) {
+-    if (aMathVar == NS_MATHML_MATHVARIANT_BOLD) {
+-      return MATH_BOLD_CAPITAL_DIGAMMA;
+-    }
+-    return aCh;
+-  }
+-  if (aCh == GREEK_SMALL_LETTER_DIGAMMA) {
+-    if (aMathVar == NS_MATHML_MATHVARIANT_BOLD) {
+-      return MATH_BOLD_SMALL_DIGAMMA;
+-    }
+-    return aCh;
+-  }
+-  if (aCh == LATIN_SMALL_LETTER_DOTLESS_I) {
+-    if (aMathVar == NS_MATHML_MATHVARIANT_ITALIC) {
+-      return MATH_ITALIC_SMALL_DOTLESS_I;
+-    }
+-    return aCh;
+-  }
+-  if (aCh == LATIN_SMALL_LETTER_DOTLESS_J) {
+-    if (aMathVar == NS_MATHML_MATHVARIANT_ITALIC) {
+-      return MATH_ITALIC_SMALL_DOTLESS_J;
+-    }
+-    return aCh;
+-  }
++  NS_ASSERTION(aMathVar <= NS_MATHML_MATHVARIANT_STRETCHED,
++               "Illegal mathvariant value");
+ 
+   // The Unicode mathematical blocks are divided into four segments: Latin,
+   // Greek, numbers and Arabic.  In the case of the first three
+   // baseChar represents the relative order in which the characters are
+   // encoded in the Unicode mathematical block, normalised to the first
+   // character of that sequence.
+   //
+   if ('A' <= aCh && aCh <= 'Z') {
+@@ -334,29 +308,53 @@ MathVariant(uint32_t aCh, uint8_t aMathV
+     // represents the number of characters between the start of the sequence
+     // (capital A) and the first lowercase letter.
+     baseChar = MATH_BOLD_SMALL_A-MATH_BOLD_UPPER_A + aCh - 'a';
+     varType = kIsLatin;
+   } else if ('0' <= aCh && aCh <= '9') {
+     baseChar = aCh - '0';
+     varType = kIsNumber;
+   } else if (GREEK_UPPER_ALPHA <= aCh && aCh <= GREEK_UPPER_OMEGA) {
++    if (aCh == HOLE_GREEK_UPPER_THETA) {
++      // Nothing at this code point is transformed
++      return aCh;
++    }
+     baseChar = aCh-GREEK_UPPER_ALPHA;
+     varType = kIsGreekish;
+   } else if (GREEK_LOWER_ALPHA <= aCh && aCh <= GREEK_LOWER_OMEGA) {
+     // Lowercase Greek comes after uppercase Greek.
+     // Note in this instance the presence of an additional character (Nabla)
+     // between the end of the uppercase Greek characters and the lowercase
+     // ones.
+     baseChar =  MATH_BOLD_SMALL_ALPHA - MATH_BOLD_UPPER_ALPHA
+                 + aCh-GREEK_LOWER_ALPHA;
+     varType = kIsGreekish;
+-  } else if (0x0600 <= aCh && aCh <= 0x06FF) {
+-    // Arabic characters are defined within this range
++  } else if (ARABIC_ALEF <= aCh && aCh <= ARABIC_NOON_GHUNNA) {
++    // Transformable Arabic characters are defined within this range
+     varType = kIsArabic;
++  } else if (aCh == GREEK_LETTER_DIGAMMA) {
++    if (aMathVar == NS_MATHML_MATHVARIANT_BOLD) {
++      return MATH_BOLD_CAPITAL_DIGAMMA;
++    }
++    return aCh;
++  } else if (aCh == GREEK_SMALL_LETTER_DIGAMMA) {
++    if (aMathVar == NS_MATHML_MATHVARIANT_BOLD) {
++      return MATH_BOLD_SMALL_DIGAMMA;
++    }
++    return aCh;
++  } else if (aCh == LATIN_SMALL_LETTER_DOTLESS_I) {
++    if (aMathVar == NS_MATHML_MATHVARIANT_ITALIC) {
++      return MATH_ITALIC_SMALL_DOTLESS_I;
++    }
++    return aCh;
++  } else if (aCh == LATIN_SMALL_LETTER_DOTLESS_J) {
++    if (aMathVar == NS_MATHML_MATHVARIANT_ITALIC) {
++      return MATH_ITALIC_SMALL_DOTLESS_J;
++    }
++    return aCh;
+   } else {
+     switch (aCh) {
+       case GREEK_UPPER_THETA:
+         baseChar = MATH_BOLD_UPPER_THETA-MATH_BOLD_UPPER_ALPHA;
+         break;
+       case NABLA:
+         baseChar = MATH_BOLD_NABLA-MATH_BOLD_UPPER_ALPHA;
+         break;
+@@ -496,31 +494,150 @@ MathVariant(uint32_t aCh, uint8_t aMathV
+     // characters are located within their unicode block (less an offset to
+     // avoid _NONE and _NORMAL variants)
+     // See the kIsNumber case for an explanation of the following calculation
+     tempChar =  baseChar + MATH_BOLD_UPPER_A +
+                 multiplier*(MATH_ITALIC_UPPER_A - MATH_BOLD_UPPER_A);
+     // There are roughly twenty characters that are located outside of the
+     // mathematical block, so the spaces where they ought to be are used
+     // as keys for a lookup table containing the correct character mappings.
++    if (tempChar < MATH_HOLE_ITALIC_LOWER_H ||
++        tempChar > MATH_HOLE_DOUBLE_UPPER_Z) {
++      // No exceptions outside this range;
++      return tempChar;
++    }
+     newChar = MathvarMappingSearch(tempChar, gLatinExceptionMapTable,
+                                    ArrayLength(gLatinExceptionMapTable));
+   }
+ 
+   if (newChar) {
+     return newChar;
+   } else if (varType == kIsLatin) {
+     return tempChar;
+   } else {
+     // An Arabic character without a corresponding mapping
+     return aCh;
+   }
+ 
+ }
+ 
++/*static*/ bool
++MathMLTextRunFactory::TransformableCharacter(char16_t aCh)
++{
++  if (aCh > NABLA) {
++    return false;
++  }
++  if (('A' <= aCh && aCh <= 'Z')  ||
++      ('a' <= aCh && aCh <= 'z') ||
++      ('0' <= aCh && aCh <= '9') ||
++      (GREEK_UPPER_ALPHA <= aCh && aCh <= GREEK_UPPER_OMEGA &&
++       aCh != HOLE_GREEK_UPPER_THETA) ||
++      (GREEK_LOWER_ALPHA <= aCh && aCh <= GREEK_LOWER_OMEGA) ||
++      (ARABIC_ALEF <= aCh && aCh <= ARABIC_NOON_GHUNNA)) {
++    return true;
++  }
++  switch (aCh) {
++    case LATIN_SMALL_LETTER_DOTLESS_I:
++    case LATIN_SMALL_LETTER_DOTLESS_J:
++    case GREEK_THETA_SYMBOL:
++    case GREEK_PHI_SYMBOL:
++    case GREEK_PI_SYMBOL:
++    case GREEK_LETTER_DIGAMMA:
++    case GREEK_SMALL_LETTER_DIGAMMA:
++    case GREEK_KAPPA_SYMBOL:
++    case GREEK_RHO_SYMBOL:
++    case GREEK_UPPER_THETA:
++    case GREEK_LUNATE_EPSILON_SYMBOL:
++    case PARTIAL_DIFFERENTIAL:
++    case NABLA:
++      return true;
++    default:
++      return false;
++  }
++}
++
++/* static */ already_AddRefed<gfxFontGroup>
++MathMLTextRunFactory::AdjustFontStyle(gfxFontGroup* aFontGroup,
++                                      const nsStyleFont* aStyleFont,
++                                      uint32_t aFlags,
++                                      uint8_t aSSTYScriptLevel)
++{
++  gfxFontStyle fontStyle = *aFontGroup->GetStyle();
++
++  if (aSSTYScriptLevel) {
++    bool found = false;
++    // We respect ssty settings explicitly set by the user
++    for (uint32_t i = 0; i < fontStyle.featureSettings.Length(); i++) {
++      if (fontStyle.featureSettings[i].mTag == TRUETYPE_TAG('s', 's', 't', 'y')) {
++        found = true;
++        break;
++      }
++    }
++    if (!found) {
++      uint8_t sstyLevel;
++      float scriptScaling = pow(aStyleFont->mScriptSizeMultiplier,
++                                aSSTYScriptLevel);
++      static_assert(NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER < 1,
++                    "Shouldn't it make things smaller?");
++      /*
++      An SSTY level of 2 is set if the scaling factor is less than or equal
++      to halfway between that for a scriptlevel of 1 (0.71) and that of a
++      scriptlevel of 2 (0.71^2), assuming the default script size multiplier.
++      An SSTY level of 1 is set if the script scaling factor is less than
++      or equal that for a scriptlevel of 1 assuming the default script size
++      multiplier.
++
++      User specified values of script size multiplier will change the scaling
++      factor which mSSTYScriptLevel values correspond to.
++
++      In the event that the script size multiplier actually makes things
++      larger, no change is made.
++
++      To opt out of this change, add "-moz-font-feature-settings: 'ssty' 0" to
++      the relevant style sheet
++      */
++      if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
++                            (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER *
++                             NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER)) / 2) {
++        // Currently only the first two ssty settings are used, so two is large
++        // as we go
++        sstyLevel = 2;
++      } else if (scriptScaling <= NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER) {
++        sstyLevel = 1;
++      } else {
++        sstyLevel = 0;
++      }
++      if (sstyLevel) {
++        gfxFontFeature settingSSTY;
++        settingSSTY.mTag = TRUETYPE_TAG('s', 's', 't', 'y');
++        settingSSTY.mValue = sstyLevel;
++        fontStyle.featureSettings.AppendElement(settingSSTY);
++      }
++    }
++  }
++
++  // Manually apply font styling as CSS isn't guaranteed to calculate it
++  // correctly.  fontweight gets included to to avoid inconsistencies in which
++  // attributes allow CSS changes and which do not.
++  if (aFlags & MATH_FONT_WEIGHT_BOLD) {
++    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
++    if (aFlags & MATH_FONT_STYLING_NORMAL) {
++      fontStyle.style = NS_FONT_STYLE_NORMAL;
++    } else {
++      fontStyle.style = NS_FONT_STYLE_ITALIC;
++    }
++  } else if (aFlags & MATH_FONT_STYLING_NORMAL) {
++    fontStyle.style = NS_FONT_STYLE_NORMAL;
++    fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
++  }
++
++  nsRefPtr<gfxFontGroup> newFontGroup = aFontGroup->Copy(&fontStyle);
++  return newFontGroup.forget();
++}
++
+ void
+ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
+                                      gfxContext* aRefContext)
+ {
+   gfxFontGroup* fontGroup = aTextRun->GetFontGroup();
+   gfxFontStyle fontStyle = *fontGroup->GetStyle();
+ 
+   nsAutoString convertedString;
+@@ -529,114 +646,57 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+   nsAutoTArray<nsStyleContext*,50> styleArray;
+   nsAutoTArray<uint8_t,50> canBreakBeforeArray;
+   bool mergeNeeded = false;
+ 
+   bool singleCharMI =
+     aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SINGLE_CHAR_MI;
+ 
+   uint32_t length = aTextRun->GetLength();
++  NS_ASSERTION(length,
++               "Don't call this method if there is nothing to transform");
++
+   const char16_t* str = aTextRun->mString.BeginReading();
+   nsRefPtr<nsStyleContext>* styles = aTextRun->mStyles.Elements();
+ 
+-  if (mSSTYScriptLevel && length) {
+-    bool found = false;
+-    // We respect ssty settings explicitly set by the user
+-    for (uint32_t i = 0; i < fontStyle.featureSettings.Length(); i++) {
+-      if (fontStyle.featureSettings[i].mTag == TRUETYPE_TAG('s','s','t','y')) {
+-        found = true;
+-        break;
+-      }
+-    }
+-    if (!found) {
+-      uint8_t sstyLevel = 0;
+-      float scriptScaling = pow(styles[0]->StyleFont()->mScriptSizeMultiplier,
+-                                mSSTYScriptLevel);
+-      static_assert(NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER < 1,
+-                    "Shouldn't it make things smaller?");
+-      /*
+-        An SSTY level of 2 is set if the scaling factor is less than or equal
+-        to halfway between that for a scriptlevel of 1 (0.71) and that of a
+-        scriptlevel of 2 (0.71^2), assuming the default script size multiplier.
+-        An SSTY level of 1 is set if the script scaling factor is less than 
+-        or equal that for a scriptlevel of 1 assuming the default script size
+-        multiplier.
++  uint8_t mathVar = NS_MATHML_MATHVARIANT_NONE;
++  if (length) {
++    mathVar = styles[0]->StyleFont()->mMathVariant;
+ 
+-        User specified values of script size multiplier will change the scaling
+-        factor which mSSTYScriptLevel values correspond to.
+-
+-        In the event that the script size multiplier actually makes things
+-        larger, no change is made.
+-
+-        If the user doesn't want this to happen, all they need to do is set
+-        style="-moz-font-feature-settings: 'ssty' 0"
+-      */
+-      if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
+-                            (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER*
+-                             NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER))/2) {
+-        // Currently only the first two ssty settings are used, so two is large
+-        // as we go
+-        sstyLevel = 2;
+-      } else if (scriptScaling <= NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER) {
+-        sstyLevel = 1;
+-      }
+-      if (sstyLevel) {
+-        gfxFontFeature settingSSTY;
+-        settingSSTY.mTag = TRUETYPE_TAG('s','s','t','y');
+-        settingSSTY.mValue = sstyLevel;
+-        fontStyle.featureSettings.AppendElement(settingSSTY);
+-      }
++    if (singleCharMI) {
++      NS_ASSERTION(mathVar == NS_MATHML_MATHVARIANT_NONE,
++                   "Single flag shouldn't be set with explicit mathvariant");
++      mathVar = NS_MATHML_MATHVARIANT_ITALIC;
+     }
+   }
+-
+-  uint8_t mathVar;
+-  bool doMathvariantStyling = true;
++  // Includes bold and italic
++  bool maybeMathVariantStyling = mathVar <= NS_MATHML_MATHVARIANT_BOLD_ITALIC;
++  bool doMathvariantStyling = maybeMathVariantStyling;
+ 
+   for (uint32_t i = 0; i < length; ++i) {
+-    int extraChars = 0;
+-    nsStyleContext* styleContext = styles[i];
+-    mathVar = styleContext->StyleFont()->mMathVariant;
+ 
+-    if (singleCharMI && mathVar == NS_MATHML_MATHVARIANT_NONE) {
+-      // If the user has explicitly set a non-default value for fontstyle or
+-      // fontweight, the italic mathvariant behaviour of <mi> is disabled
+-      // This overrides the initial values specified in fontStyle, to avoid
+-      // inconsistencies in which attributes allow CSS changes and which do not.
+-      if (mFlags & MATH_FONT_WEIGHT_BOLD) {
+-        fontStyle.weight = NS_FONT_WEIGHT_BOLD;
+-        if (mFlags & MATH_FONT_STYLING_NORMAL) {
+-          fontStyle.style = NS_FONT_STYLE_NORMAL;
+-        } else {
+-          fontStyle.style = NS_FONT_STYLE_ITALIC;
+-        }
+-      } else if (mFlags & MATH_FONT_STYLING_NORMAL) {
+-        fontStyle.style = NS_FONT_STYLE_NORMAL;
+-        fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
+-      } else {
+-        mathVar = NS_MATHML_MATHVARIANT_ITALIC;
+-      }
+-    }
+-
++    NS_ASSERTION(mathVar == styles[i]->StyleFont()->mMathVariant ||
++                 singleCharMI,
++                 "How can this change during a textrun?");
+     uint32_t ch = str[i];
+     if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
+         NS_IS_LOW_SURROGATE(str[i + 1])) {
+       ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+     }
+     uint32_t ch2 = MathVariant(ch, mathVar);
+ 
+-    if (mathVar == NS_MATHML_MATHVARIANT_BOLD ||
+-        mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC ||
+-        mathVar == NS_MATHML_MATHVARIANT_ITALIC) {
+-      if (ch == ch2  && ch != 0x20 && ch != 0xA0) {
++    if (maybeMathVariantStyling) {
++      if (ch == ch2) {
++        if (ch != 0x20 && ch != 0xA0) {
+         // Don't apply the CSS style if a character cannot be
+         // transformed. There is an exception for whitespace as it is both
+         // common and innocuous.
+-        doMathvariantStyling = false;
+-      }
+-      if (ch2 != ch) {
++          doMathvariantStyling = false;
++        }
++      } else {
+         // Bug 930504. Some platforms do not have fonts for Mathematical
+         // Alphanumeric Symbols. Hence we check whether the transformed
+         // character is actually available.
+         uint8_t matchType;
+         nsRefPtr<gfxFont> mathFont = fontGroup->
+           FindFontForChar(ch2, 0, HB_SCRIPT_COMMON, nullptr, &matchType);
+         if (mathFont) {
+           // Don't apply the CSS style if there is a math font for at least one
+@@ -646,70 +706,61 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+           // We fallback to the original character.
+           ch2 = ch;
+         }
+       }
+     }
+ 
+     deletedCharsArray.AppendElement(false);
+     charsToMergeArray.AppendElement(false);
+-    styleArray.AppendElement(styleContext);
++    styleArray.AppendElement(styles[i]);
+     canBreakBeforeArray.AppendElement(aTextRun->CanBreakLineBefore(i));
+ 
+     if (IS_IN_BMP(ch2)) {
+       convertedString.Append(ch2);
+     } else {
+       convertedString.Append(H_SURROGATE(ch2));
+       convertedString.Append(L_SURROGATE(ch2));
+-      ++extraChars;
++      mergeNeeded = true;
++      charsToMergeArray.AppendElement(true);
++      styleArray.AppendElement(styles[i]);
++      canBreakBeforeArray.AppendElement(false);
+       if (!IS_IN_BMP(ch)) {
+         deletedCharsArray.AppendElement(true); // not exactly deleted, but
+                                           // the trailing surrogate is skipped
+         ++i;
+       }
+     }
+-
+-    while (extraChars-- > 0) {
+-      mergeNeeded = true;
+-      charsToMergeArray.AppendElement(true);
+-      styleArray.AppendElement(styleContext);
+-      canBreakBeforeArray.AppendElement(false);
+-    }
+   }
+ 
+   uint32_t flags;
+   gfxTextRunFactory::Parameters innerParams =
+       GetParametersForInner(aTextRun, &flags, aRefContext);
+ 
+   nsAutoPtr<nsTransformedTextRun> transformedChild;
+   nsAutoPtr<gfxTextRun> cachedChild;
+   gfxTextRun* child;
+ 
+-  if (mathVar == NS_MATHML_MATHVARIANT_BOLD && doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_NORMAL;
+-    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
+-  } else if (mathVar == NS_MATHML_MATHVARIANT_ITALIC && doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_ITALIC;
+-    fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
+-  } else if (mathVar == NS_MATHML_MATHVARIANT_BOLD_ITALIC &&
+-             doMathvariantStyling) {
+-    fontStyle.style = NS_FONT_STYLE_ITALIC;
+-    fontStyle.weight = NS_FONT_WEIGHT_BOLD;
+-  } else if (mathVar != NS_MATHML_MATHVARIANT_NONE) {
+-    // Mathvariant overrides fontstyle and fontweight
+-    // Need to check to see if mathvariant is actually applied as this function
+-    // is used for other purposes.
++  if (doMathvariantStyling) {
++    if (mathVar == NS_MATHML_MATHVARIANT_ITALIC) {
++      fontStyle.style = NS_FONT_STYLE_ITALIC;
++      fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
++    } else if (mathVar == NS_MATHML_MATHVARIANT_BOLD) {
++      fontStyle.style = NS_FONT_STYLE_NORMAL;
++      fontStyle.weight = NS_FONT_WEIGHT_BOLD;
++    } else{
++      fontStyle.style = NS_FONT_STYLE_ITALIC;
++      fontStyle.weight = NS_FONT_WEIGHT_BOLD;
++    }
++  } else {
+     fontStyle.style = NS_FONT_STYLE_NORMAL;
+     fontStyle.weight = NS_FONT_WEIGHT_NORMAL;
+   }
+   nsRefPtr<gfxFontGroup> newFontGroup = fontGroup->Copy(&fontStyle);
+ 
+-  if (!newFontGroup)
+-    return;
+-
+   if (mInnerTransformingTextRunFactory) {
+     transformedChild = mInnerTransformingTextRunFactory->MakeTextRun(
+         convertedString.BeginReading(), convertedString.Length(),
+         &innerParams, newFontGroup, flags, styleArray.Elements(), false);
+     child = transformedChild.get();
+   } else {
+     cachedChild = newFontGroup->MakeTextRun(
+         convertedString.BeginReading(), convertedString.Length(),
+diff --git a/layout/generic/MathMLTextRunFactory.h b/layout/generic/MathMLTextRunFactory.h
+--- a/layout/generic/MathMLTextRunFactory.h
++++ b/layout/generic/MathMLTextRunFactory.h
+@@ -8,29 +8,38 @@
+ 
+ #include "nsTextRunTransformations.h"
+ 
+ /**
+  * Builds textruns that render their text with MathML specific renderings.
+  */
+ class MathMLTextRunFactory : public nsTransformingTextRunFactory {
+ public:
+-  MathMLTextRunFactory(nsTransformingTextRunFactory* aInnerTransformingTextRunFactory,
+-                       uint32_t aFlags, uint8_t aSSTYScriptLevel)
+-    : mInnerTransformingTextRunFactory(aInnerTransformingTextRunFactory),
+-      mFlags(aFlags),
+-      mSSTYScriptLevel(aSSTYScriptLevel) {}
++  MathMLTextRunFactory(nsTransformingTextRunFactory* aInnerTransformingTextRunFactory)
++    : mInnerTransformingTextRunFactory(aInnerTransformingTextRunFactory) {}
+ 
+-  virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,
+-                              gfxContext* aRefContext) MOZ_OVERRIDE;
++  void RebuildTextRun(nsTransformedTextRun* aTextRun,
++                      gfxContext* aRefContext) MOZ_OVERRIDE;
+   enum {
+     // Style effects which may override single character <mi> behaviour
+     MATH_FONT_STYLING_NORMAL   = 0x1, // fontstyle="normal" has been set.
+     MATH_FONT_WEIGHT_BOLD      = 0x2, // fontweight="bold" has been set.
+   };
+ 
++  // Applies MathML related font feature settings to the specified font group.
++  // User specified font feature settings are respected and override automatic
++  // behaviour.
++  // Returns true if the adjustments were successfully applied.
++  static
++  already_AddRefed<gfxFontGroup> AdjustFontStyle(gfxFontGroup* aFontGroup,
++                                                 const nsStyleFont* aStyleFont,
++                                                 uint32_t aFlags,
++                                                 uint8_t aSSTYScriptLevel);
++
++  // Returns true if there is the potential for a mathvariant mapping
++  // (32 bit characters are never transformable).
++  static bool TransformableCharacter(char16_t aCh);
++
+ protected:
+   nsAutoPtr<nsTransformingTextRunFactory> mInnerTransformingTextRunFactory;
+-  uint32_t mFlags;
+-  uint8_t mSSTYScriptLevel;
+ };
+ 
+ #endif /*MATHMLTEXTRUNFACTORY_H_*/
+diff --git a/layout/generic/nsTextFrame.cpp b/layout/generic/nsTextFrame.cpp
+--- a/layout/generic/nsTextFrame.cpp
++++ b/layout/generic/nsTextFrame.cpp
+@@ -1814,17 +1814,17 @@ static const nsTextFrameUtils::Compressi
+ 
+ gfxTextRun*
+ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
+ {
+   gfxSkipChars skipChars;
+ 
+   const void* textPtr = aTextBuffer;
+   bool anyTextTransformStyle = false;
+-  bool anyMathMLStyling = false;
++  bool applyMathVariant = false;
+   uint8_t sstyScriptLevel = 0;
+   uint32_t mathFlags = 0;
+   uint32_t textFlags = nsTextFrameUtils::TEXT_NO_BREAKS;
+ 
+   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_WHITESPACE) {
+     textFlags |= nsTextFrameUtils::TEXT_INCOMING_WHITESPACE;
+   }
+   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_ARABICCHAR) {
+@@ -1891,74 +1891,16 @@ BuildTextRunsScanner::BuildTextRunForFra
+     textFlags |= GetSpacingFlags(LetterSpacing(f));
+     textFlags |= GetSpacingFlags(WordSpacing(f));
+     nsTextFrameUtils::CompressionMode compression =
+       CSSWhitespaceToCompressionMode[textStyle->mWhiteSpace];
+     if (enabledJustification && !textStyle->WhiteSpaceIsSignificant()) {
+       textFlags |= gfxTextRunFactory::TEXT_ENABLE_SPACING;
+     }
+     fontStyle = f->StyleFont();
+-    nsIFrame* parent = mLineContainer->GetParent();
+-    if (NS_MATHML_MATHVARIANT_NONE != fontStyle->mMathVariant) {
+-      anyMathMLStyling = true;
+-    } else if (mLineContainer->GetStateBits() & NS_FRAME_IS_IN_SINGLE_CHAR_MI) {
+-      textFlags |= nsTextFrameUtils::TEXT_IS_SINGLE_CHAR_MI;
+-      anyMathMLStyling = true;
+-      // Test for fontstyle attribute as StyleFont() may not be accurate
+-      // To be consistent in terms of ignoring CSS style changes, fontweight
+-      // gets checked too.
+-      if (parent) {
+-        nsIContent* content = parent->GetContent();
+-        if (content) {
+-          if (content->AttrValueIs(kNameSpaceID_None,
+-                                  nsGkAtoms::fontstyle_,
+-                                  NS_LITERAL_STRING("normal"),
+-                                  eCaseMatters)) {
+-            mathFlags |= MathMLTextRunFactory::MATH_FONT_STYLING_NORMAL;
+-          }
+-          if (content->AttrValueIs(kNameSpaceID_None,
+-                                   nsGkAtoms::fontweight_,
+-                                   NS_LITERAL_STRING("bold"),
+-                                   eCaseMatters)) {
+-            mathFlags |= MathMLTextRunFactory::MATH_FONT_WEIGHT_BOLD;
+-          }
+-        }
+-      }
+-    }
+-    if (mLineContainer->HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
+-      // All MathML tokens except <mtext> use 'math' script.
+-      if (!(parent && parent->GetContent() &&
+-          parent->GetContent()->Tag() == nsGkAtoms::mtext_)) {
+-        textFlags |= gfxTextRunFactory::TEXT_USE_MATH_SCRIPT;
+-      }
+-    }
+-    nsIFrame* child = mLineContainer;
+-    uint8_t oldScriptLevel = 0;
+-    while (parent && 
+-           child->HasAnyStateBits(NS_FRAME_MATHML_SCRIPT_DESCENDANT)) {
+-      // Reconstruct the script level ignoring any user overrides. It is
+-      // calculated this way instead of using scriptlevel to ensure the 
+-      // correct ssty font feature setting is used even if the user sets a
+-      // different (especially negative) scriptlevel.
+-      nsIMathMLFrame* mathFrame= do_QueryFrame(parent);
+-      if (mathFrame) {
+-        sstyScriptLevel += mathFrame->ScriptIncrement(child);
+-      }
+-      if (sstyScriptLevel < oldScriptLevel) {
+-        // overflow
+-        sstyScriptLevel = UINT8_MAX;
+-        break;
+-      }
+-      child = parent;
+-      parent = parent->GetParent();
+-      oldScriptLevel = sstyScriptLevel;
+-    }
+-    if (sstyScriptLevel) {
+-      anyMathMLStyling = true;
+-    }
+ 
+     // Figure out what content is included in this flow.
+     nsIContent* content = f->GetContent();
+     const nsTextFragment* frag = content->GetText();
+     int32_t contentStart = mappedFlow->mStartFrame->GetContentOffset();
+     int32_t contentEnd = mappedFlow->GetContentEnd();
+     int32_t contentLength = contentEnd - contentStart;
+ 
+@@ -2018,30 +1960,134 @@ BuildTextRunsScanner::BuildTextRunForFra
+     userData = nullptr;
+     finalUserData = mMappedFlows[0].mStartFrame;
+   } else {
+     finalUserData = userData;
+   }
+ 
+   uint32_t transformedLength = currentTransformedTextOffset;
+ 
++  //  Test to see if special MathML behaviour should be applied.
++  nsIFrame* parent = mLineContainer->GetParent();
++  if (mLineContainer->HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML) && parent) {
++    MappedFlow* mappedFlow = &mMappedFlows[0];
++    nsIContent* content = parent->GetContent();
++    bool maybeApplyMathvariant = false;
++    const nsStyleFont* mathFontStyle = mappedFlow->mStartFrame->StyleFont();
++    if (content) {
++      if (content->Tag() != nsGkAtoms::mtext_) {
++        // All MathML tokens except <mtext> use 'math' script.
++        textFlags |= gfxTextRunFactory::TEXT_USE_MATH_SCRIPT;
++      }
++      NS_ASSERTION(mathFontStyle->mMathVariant == NS_MATHML_MATHVARIANT_NONE ||
++                   (mathFontStyle->mFont.style == NS_FONT_STYLE_NORMAL &&
++                    mathFontStyle->mFont.weight == NS_FONT_WEIGHT_NORMAL),
++                   "This was supposed to have been set during CSS processing");
++      if (NS_MATHML_MATHVARIANT_NONE != mathFontStyle->mMathVariant) {
++        maybeApplyMathvariant =
++          NS_MATHML_MATHVARIANT_NORMAL != mathFontStyle->mMathVariant;
++      } else if (mLineContainer->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
++        // Test for fontstyle attribute as StyleFont() may not be accurate.
++        // To be consistent in terms of ignoring CSS style changes, fontweight
++        // gets checked too.
++        NS_ASSERTION(!mathFlags,
++                     "Change mathFlags nullcheck to test for "
++                     "relevant flags as it no longer starts empty");
++
++        if (content->AttrValueIs(kNameSpaceID_None,
++                                 nsGkAtoms::fontstyle_,
++                                 NS_LITERAL_STRING("normal"),
++                                 eCaseMatters)) {
++          mathFlags |= MathMLTextRunFactory::MATH_FONT_STYLING_NORMAL;
++        }
++        if (content->AttrValueIs(kNameSpaceID_None,
++                                 nsGkAtoms::fontweight_,
++                                 NS_LITERAL_STRING("bold"),
++                                 eCaseMatters)) {
++          mathFlags |= MathMLTextRunFactory::MATH_FONT_WEIGHT_BOLD;
++        }
++        if (!mathFlags) {
++          textFlags |= nsTextFrameUtils::TEXT_IS_SINGLE_CHAR_MI;
++          maybeApplyMathvariant = true;
++        }
++      }
++      if (maybeApplyMathvariant) {
++        // Only create the MathMLTextRunFactory if there if there is the
++        // potential for transformable text
++        if (mDoubleByteText) {
++          const char16_t* text = static_cast<const char16_t*>(textPtr);
++          for (uint32_t i = 0; i < transformedLength; i++) {
++            if (!nsContentUtils::IsHTMLWhitespaceOrNBSP(text[i])) {
++              if (mLineContainer->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
++                applyMathVariant =
++                  MathMLTextRunFactory::TransformableCharacter(text[i]);
++              } else {
++                applyMathVariant = true;
++              }
++              break;
++            }
++          }
++        } else {
++          const uint8_t* text = static_cast<const uint8_t*>(textPtr);
++          for (uint32_t i = 0; i < transformedLength; i++) {
++            if (!nsContentUtils::IsHTMLWhitespaceOrNBSP(text[i])) {
++              if (mLineContainer->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
++                applyMathVariant =
++                  MathMLTextRunFactory::TransformableCharacter(text[i]);
++              } else {
++                applyMathVariant = true;
++              }
++              break;
++            }
++          }
++        }
++      }
++    }
++  }
++  nsIFrame* child = mLineContainer;
++  uint8_t oldScriptLevel = 0;
++  while (child->HasAnyStateBits(NS_FRAME_MATHML_SCRIPT_DESCENDANT) &&
++         parent) {
++    // Reconstruct the script level ignoring any user overrides. It is
++    // calculated this way instead of using scriptlevel to ensure the
++    // correct ssty font feature setting is used even if the user sets a
++    // different (especially negative) scriptlevel.
++    nsIMathMLFrame* mathFrame = do_QueryFrame(parent);
++    if (mathFrame) {
++      sstyScriptLevel += mathFrame->ScriptIncrement(child);
++    }
++    if (MOZ_UNLIKELY(sstyScriptLevel < oldScriptLevel)) {
++      // overflow
++      sstyScriptLevel = UINT8_MAX;
++      break;
++    }
++    child = parent;
++    parent = parent->GetParent();
++    oldScriptLevel = sstyScriptLevel;
++  }
++
+   // Now build the textrun
+   nsTextFrame* firstFrame = mMappedFlows[0].mStartFrame;
+   float fontInflation;
+   if (mWhichTextRun == nsTextFrame::eNotInflated) {
+     fontInflation = 1.0f;
+   } else {
+     fontInflation = nsLayoutUtils::FontSizeInflationFor(firstFrame);
+   }
+ 
+-  gfxFontGroup* fontGroup = GetFontGroupForFrame(firstFrame, fontInflation);
++  nsRefPtr<gfxFontGroup> fontGroup = GetFontGroupForFrame(firstFrame, fontInflation);
+   if (!fontGroup) {
+     DestroyUserData(userDataToDestroy);
+     return nullptr;
+   }
++  if (sstyScriptLevel || mathFlags) {
++    fontGroup =
++      MathMLTextRunFactory::AdjustFontStyle(fontGroup, firstFrame->StyleFont(),
++                                            mathFlags, sstyScriptLevel);
++  }
+ 
+   if (textFlags & nsTextFrameUtils::TEXT_HAS_TAB) {
+     textFlags |= gfxTextRunFactory::TEXT_ENABLE_SPACING;
+   }
+   if (textFlags & nsTextFrameUtils::TEXT_HAS_SHY) {
+     textFlags |= gfxTextRunFactory::TEXT_ENABLE_HYPHEN_BREAKS;
+   }
+   if (mBidiEnabled && (NS_GET_EMBEDDING_LEVEL(firstFrame) & 1)) {
+@@ -2079,20 +2125,19 @@ BuildTextRunsScanner::BuildTextRunForFra
+   }
+ 
+   // Setup factory chain
+   nsAutoPtr<nsTransformingTextRunFactory> transformingFactory;
+   if (anyTextTransformStyle) {
+     transformingFactory =
+       new nsCaseTransformTextRunFactory(transformingFactory.forget());
+   }
+-  if (anyMathMLStyling) {
++  if (applyMathVariant) {
+     transformingFactory =
+-      new MathMLTextRunFactory(transformingFactory.forget(), mathFlags,
+-                               sstyScriptLevel);
++      new MathMLTextRunFactory(transformingFactory.forget());
+   }
+   nsTArray<nsStyleContext*> styles;
+   if (transformingFactory) {
+     iter.SetOriginalOffset(0);
+     for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
+       MappedFlow* mappedFlow = &mMappedFlows[i];
+       nsTextFrame* f;
+       for (f = mappedFlow->mStartFrame; f != mappedFlow->mEndFrame;
