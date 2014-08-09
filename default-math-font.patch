@@ -279,9 +279,9 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    display: block;
    text-align: -moz-center;
    -moz-math-display: block;
-diff --git a/modules/libpref/src/init/all.js b/modules/libpref/src/init/all.js
---- a/modules/libpref/src/init/all.js
-+++ b/modules/libpref/src/init/all.js
+diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
+--- a/modules/libpref/init/all.js
++++ b/modules/libpref/init/all.js
 @@ -2375,16 +2375,20 @@ pref("ui.mouse.radius.topmm", 12);
  pref("ui.mouse.radius.rightmm", 8);
  pref("ui.mouse.radius.bottommm", 4);
