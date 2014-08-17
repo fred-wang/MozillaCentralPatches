@@ -34,11 +34,11 @@ diff --git a/layout/style/moz.build b/layout/style/moz.build
  # This Source Code Form is subject to the terms of the Mozilla Public
  # License, v. 2.0. If a copy of the MPL was not distributed with this
  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
+ 
 -DIRS += ['xbl-marquee']
 +DIRS += ['xbl-marquee', 'xbl-maction']
  TEST_DIRS += ['test']
-
+ 
  EXPORTS += [
      'AnimationCommon.h',
      'CounterStyleManager.h',
