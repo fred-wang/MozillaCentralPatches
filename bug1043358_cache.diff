@@ -108,7 +108,7 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
 +          larger, no change is made.
  
 -        If the user doesn't want this to happen, all they need to do is set
--        style="-moz-font-feature-settings: 'ssty' 0"
+-        style="font-feature-settings: 'ssty' 0"
 -      */
 -      if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
 -                            (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER*
@@ -125,7 +125,7 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
 -        settingSSTY.mValue = sstyLevel;
 -        fontStyle.featureSettings.AppendElement(settingSSTY);
 +          To opt out of this change, add the following to the stylesheet:
-+          style="-moz-font-feature-settings: 'ssty' 0"
++          style="font-feature-settings: 'ssty' 0"
 +        */
 +        if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
 +                              (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER*
