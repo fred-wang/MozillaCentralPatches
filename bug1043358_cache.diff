@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 111a1da2a95d76860e1856b0a4d0b7154f3ca7c7
+# Parent 0b9dd32d1e160948e2e460b7e4a1587bd0a40e2e
 # User James Kitchener <jkitch.bug@internode.on.net>
 Bug 1043358 - Fix up font caching in MathMLTextRunFactory
 
@@ -25,7 +25,7 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
    character to be transformed and is used for searching the tables.
    mReplacement represents the mapped mathvariant Unicode character.
  */
-@@ -516,107 +518,114 @@ MathVariant(uint32_t aCh, uint8_t aMathV
+@@ -516,105 +518,108 @@ MathVariant(uint32_t aCh, uint8_t aMathV
  
  }
  
@@ -93,7 +93,7 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
 +          An SSTY level of 2 is set if the scaling factor is less than or equal
 +          to halfway between that for a scriptlevel of 1 (0.71) and that of a
 +          scriptlevel of 2 (0.71^2), assuming the default script size multiplier.
-+          An SSTY level of 1 is set if the script scaling factor is less than 
++          An SSTY level of 1 is set if the script scaling factor is less than
 +          or equal that for a scriptlevel of 1 assuming the default script size
 +          multiplier.
  
@@ -125,10 +125,10 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
 -        settingSSTY.mValue = sstyLevel;
 -        fontStyle.featureSettings.AppendElement(settingSSTY);
 +          To opt out of this change, add the following to the stylesheet:
-+          style="font-feature-settings: 'ssty' 0"
++          "font-feature-settings: 'ssty' 0"
 +        */
 +        if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
-+                              (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER*
++                              (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER *
 +                               NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER))/2) {
 +          // Currently only the first two ssty settings are used, so two is large
 +          // as we go
@@ -177,19 +177,13 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
 +        font.weight = NS_FONT_WEIGHT_NORMAL;
        } else {
          mathVar = NS_MATHML_MATHVARIANT_ITALIC;
-+        // Reset style and weight as they may have been set in a manner we
-+        // don't consider
-+        font.style = NS_FONT_STYLE_NORMAL;
-+        font.weight = NS_FONT_WEIGHT_NORMAL;
        }
      }
  
      uint32_t ch = str[i];
      if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
          NS_IS_LOW_SURROGATE(str[i + 1])) {
-       ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
-     }
-@@ -679,36 +688,53 @@ MathMLTextRunFactory::RebuildTextRun(nsT
+@@ -679,36 +684,53 @@ MathMLTextRunFactory::RebuildTextRun(nsT
    gfxTextRunFactory::Parameters innerParams =
        GetParametersForInner(aTextRun, &flags, aRefContext);
  
@@ -254,3 +248,27 @@ diff --git a/layout/generic/MathMLTextRunFactory.cpp b/layout/generic/MathMLText
      child = transformedChild.get();
    } else {
      cachedChild = newFontGroup->MakeTextRun(
+diff --git a/layout/generic/nsTextFrame.cpp b/layout/generic/nsTextFrame.cpp
+--- a/layout/generic/nsTextFrame.cpp
++++ b/layout/generic/nsTextFrame.cpp
+@@ -1905,17 +1905,19 @@ BuildTextRunsScanner::BuildTextRunForFra
+     nsTextFrameUtils::CompressionMode compression =
+       CSSWhitespaceToCompressionMode[textStyle->mWhiteSpace];
+     if (enabledJustification && !textStyle->WhiteSpaceIsSignificant()) {
+       textFlags |= gfxTextRunFactory::TEXT_ENABLE_SPACING;
+     }
+     fontStyle = f->StyleFont();
+     nsIFrame* parent = mLineContainer->GetParent();
+     if (NS_MATHML_MATHVARIANT_NONE != fontStyle->mMathVariant) {
+-      anyMathMLStyling = true;
++      if (NS_MATHML_MATHVARIANT_NORMAL != fontStyle->mMathVariant) {
++        anyMathMLStyling = true;
++      }
+     } else if (mLineContainer->GetStateBits() & NS_FRAME_IS_IN_SINGLE_CHAR_MI) {
+       textFlags |= nsTextFrameUtils::TEXT_IS_SINGLE_CHAR_MI;
+       anyMathMLStyling = true;
+       // Test for fontstyle attribute as StyleFont() may not be accurate
+       // To be consistent in terms of ignoring CSS style changes, fontweight
+       // gets checked too.
+       if (parent) {
+         nsIContent* content = parent->GetContent();
