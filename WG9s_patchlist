@@ -2,4 +2,3 @@ default-math-font.patch
 bug687807_changes.diff
 bug687807_tests.diff
 bug969906_maction-tooltip.patch
-bug1043358_cache.diff
