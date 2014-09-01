@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent fee4c5641b5c171f6ae121dc2aa61f126b77a2ee
+# Parent 24f944c358881ab8e68bdbf08bf91d68202f3a27
 # User James Kitchener <jkitch.bug@internode.on.net>
 Bug 687807 - Tests for stretchy MathML r=fredw
 
@@ -45,7 +45,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
 +== stretchy-mfenced-4b.html stretchy-mfenced-4-ref.html
 +== stretchy-mover-1a.html stretchy-mover-1-ref.html
 +== stretchy-mover-1b.html stretchy-mover-1-ref.html
-+== stretchy-mover-2a.html stretchy-mover-2-ref.html
++fails == stretchy-mover-2a.html stretchy-mover-2-ref.html
 +!= stretchy-mover-2b.html stretchy-mover-2-ref.html
 +== stretchy-mover-3.html stretchy-mover-3-ref.html
  == table-width-1.xhtml table-width-1-ref.xhtml
