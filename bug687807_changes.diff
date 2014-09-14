@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent eed9fe35a00d284c6a10f083c104d3f4373108ba
+# Parent 2db5b64f6d498ff36b7113ec7f175d72c871196c
 # User James Kitchener <jkitch.bug@internode.on.net>
 Bug 687807 - Improvements to stretching of embellished operators
 
@@ -73,30 +73,27 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
            break;
          }
        }
-@@ -282,16 +286,22 @@ nsMathMLContainerFrame::GetPreferredStre
- }
+@@ -302,19 +306,16 @@ nsMathMLContainerFrame::Stretch(nsRender
  
- NS_IMETHODIMP
- nsMathMLContainerFrame::Stretch(nsRenderingContext& aRenderingContext,
-                                 nsStretchDirection   aStretchDirection,
-                                 nsBoundingMetrics&   aContainerSize,
-                                 nsHTMLReflowMetrics& aDesiredStretchSize)
- {
-+
-+  NS_PRECONDITION(aStretchDirection != NS_STRETCH_DIRECTION_DEFAULT,
-+                  "Default is not a supported direction.");
-+  // If in doubt, choose a vertical direction and this method will correct
-+  // to horizontal if necessary.
-+
-   if (NS_MATHML_IS_EMBELLISH_OPERATOR(mEmbellishData.flags)) {
+     // Pass the stretch to the base child ...
  
-     if (NS_MATHML_STRETCH_WAS_DONE(mPresentationData.flags)) {
-       NS_WARNING("it is wrong to fire stretch more than once on a frame");
-       return NS_OK;
-     }
-     mPresentationData.flags |= NS_MATHML_STRETCH_DONE;
+     nsIFrame* baseFrame = mPresentationData.baseFrame;
+     if (baseFrame) {
+       nsIMathMLFrame* mathMLFrame = do_QueryFrame(baseFrame);
+       NS_ASSERTION(mathMLFrame, "Something is wrong somewhere");
+       if (mathMLFrame) {
+-        bool stretchAll =
+-          NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) ||
+-          NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags);
  
-@@ -323,31 +333,35 @@ nsMathMLContainerFrame::Stretch(nsRender
+         // And the trick is that the child's rect.x is still holding the descent,
+         // and rect.y is still holding the ascent ...
+         nsHTMLReflowMetrics childSize(aDesiredStretchSize);
+         GetReflowAndBoundingMetricsFor(baseFrame, childSize, childSize.mBoundingMetrics);
+ 
+         // See if we should downsize and confine the stretch to us...
+         // XXX there may be other cases where we can downsize the stretch,
+@@ -323,40 +324,45 @@ nsMathMLContainerFrame::Stretch(nsRender
          //   <mstyle>
          //     <msub>
          //        <msub><mo>&Sum;</mo><mfrac><mi>a</mi><mi>b</mi></mfrac></msub>
@@ -107,20 +104,26 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
          nsBoundingMetrics containerSize = aContainerSize;
 -        if (aStretchDirection != NS_STRETCH_DIRECTION_DEFAULT &&
 -            aStretchDirection != mEmbellishData.direction) {
-+        if (aStretchDirection != mEmbellishData.direction) {
-           if (mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED) {
+-          if (mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED) {
++        if (aStretchDirection != mEmbellishData.direction &&
++            mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED &&
++            mEmbellishData.direction != NS_STRETCH_DIRECTION_DEFAULT) {
++          if (mEmbellishData.direction == NS_STRETCH_DIRECTION_VERTICAL ?
++              NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) :
++              NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags)) {
++            GetPreferredStretchSize(aRenderingContext, 0,
++                                    mEmbellishData.direction, containerSize);
++            // Stop further recalculations
++            aStretchDirection = mEmbellishData.direction;
++          } else {
++            // We aren't going to stretch the child, so just use the child metrics.
              containerSize = childSize.mBoundingMetrics;
            }
-           else {
-             GetPreferredStretchSize(aRenderingContext, 
-                                     stretchAll ? STRETCH_CONSIDER_EMBELLISHMENTS : 0,
-                                     mEmbellishData.direction, containerSize);
-+            if (mEmbellishData.direction == NS_STRETCH_DIRECTION_HORIZONTAL &&
-+                NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags)) {
-+              // Stop subsequent calls from retriggering size calculations
-+              aStretchDirection = NS_STRETCH_DIRECTION_HORIZONTAL;
-+            }
-           }
+-          else {
+-            GetPreferredStretchSize(aRenderingContext, 
+-                                    stretchAll ? STRETCH_CONSIDER_EMBELLISHMENTS : 0,
+-                                    mEmbellishData.direction, containerSize);
+-          }
          }
  
          // do the stretching...
@@ -135,7 +138,19 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
          // Now that this embellished child may have changed, we need to
          // fire the stretch on its siblings using our updated size
  
-@@ -497,27 +511,32 @@ nsMathMLContainerFrame::FinalizeReflow(n
+-        if (stretchAll) {
++        if (NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) ||
++            NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags)) {
+ 
+           nsStretchDirection stretchDir =
+             NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) ?
+               NS_STRETCH_DIRECTION_VERTICAL : NS_STRETCH_DIRECTION_HORIZONTAL;
+ 
+           GetPreferredStretchSize(aRenderingContext, STRETCH_CONSIDER_EMBELLISHMENTS,
+                                   stretchDir, containerSize);
+ 
+@@ -497,28 +503,31 @@ nsMathMLContainerFrame::FinalizeReflow(n
+     }
      if (!parentWillFireStretch) {
        // There is nobody who will fire the stretch for us, we do it ourselves!
  
@@ -143,28 +158,31 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
          /* NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) || */
          NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags);
  
-       nsBoundingMetrics defaultSize;
+-      nsBoundingMetrics defaultSize;
 -      if (mEmbellishData.coreFrame == this /* case of a bare <mo>...</mo> itself */
 -          || stretchAll) { /* or <mover><mo>...</mo>...</mover>, or friends */
+-        // use our current size as computed earlier by Place()
+-        defaultSize = aDesiredSize.mBoundingMetrics;
 +      nsStretchDirection stretchDir;
 +      if (mEmbellishData.coreFrame == this || /* case of a bare <mo>...</mo> itself */
 +          (mEmbellishData.direction == NS_STRETCH_DIRECTION_HORIZONTAL &&
 +           stretchAll) || /* or <mover><mo>...</mo>...</mover>, or friends */
 +          mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED) { /* Doesn't stretch */
-         // use our current size as computed earlier by Place()
-         defaultSize = aDesiredSize.mBoundingMetrics;
 +        stretchDir = mEmbellishData.direction;
++      } else {
++        // Let the Stretch() call decide the direction.
++        stretchDir = NS_STRETCH_DIRECTION_DEFAULT;
        }
-       else { /* case of <msup><mo>...</mo>...</msup> or friends */
+-      else { /* case of <msup><mo>...</mo>...</msup> or friends */
 -        // compute a size that doesn't include embellishments
 -        GetPreferredStretchSize(aRenderingContext, 0, mEmbellishData.direction,
 -                                defaultSize);
-+        // Default to a vertical stretch.  This will be corrected within
-+        // Stretch() where necessary.
-+        stretchDir = NS_STRETCH_DIRECTION_VERTICAL;
-+        GetPreferredStretchSize(aRenderingContext, 0, stretchDir, defaultSize);
-       }
+-      }
 -      Stretch(aRenderingContext, NS_STRETCH_DIRECTION_DEFAULT, defaultSize,
++      // Use our current size as computed earlier by Place()
++      // The stretch call will detect if this is incorrect and recalculate the size.
++      nsBoundingMetrics defaultSize = aDesiredSize.mBoundingMetrics;
++
 +      Stretch(aRenderingContext, stretchDir, defaultSize,
                aDesiredSize);
  #ifdef DEBUG
