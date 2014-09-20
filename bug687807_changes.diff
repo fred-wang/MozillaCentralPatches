@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 2db5b64f6d498ff36b7113ec7f175d72c871196c
+# Parent 3475e6a1665a6339dcbdc220a06ebdcdd9a9293c
 # User James Kitchener <jkitch.bug@internode.on.net>
-Bug 687807 - Improvements to stretching of embellished operators
+Bug 687807 - Improvements to stretching of embellished operators r=karlt
 
 diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLContainerFrame.cpp
 --- a/layout/mathml/nsMathMLContainerFrame.cpp
@@ -93,7 +93,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
  
          // See if we should downsize and confine the stretch to us...
          // XXX there may be other cases where we can downsize the stretch,
-@@ -323,40 +324,45 @@ nsMathMLContainerFrame::Stretch(nsRender
+@@ -323,40 +324,46 @@ nsMathMLContainerFrame::Stretch(nsRender
          //   <mstyle>
          //     <msub>
          //        <msub><mo>&Sum;</mo><mfrac><mi>a</mi><mi>b</mi></mfrac></msub>
@@ -106,8 +106,9 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
 -            aStretchDirection != mEmbellishData.direction) {
 -          if (mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED) {
 +        if (aStretchDirection != mEmbellishData.direction &&
-+            mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED &&
-+            mEmbellishData.direction != NS_STRETCH_DIRECTION_DEFAULT) {
++            mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED) {
++          NS_ASSERTION(mEmbellishData.direction != NS_STRETCH_DIRECTION_DEFAULT,
++                       "Stretches may have a default direction, operators can not.");
 +          if (mEmbellishData.direction == NS_STRETCH_DIRECTION_VERTICAL ?
 +              NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) :
 +              NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(mPresentationData.flags)) {
@@ -149,7 +150,7 @@ diff --git a/layout/mathml/nsMathMLContainerFrame.cpp b/layout/mathml/nsMathMLCo
            GetPreferredStretchSize(aRenderingContext, STRETCH_CONSIDER_EMBELLISHMENTS,
                                    stretchDir, containerSize);
  
-@@ -497,28 +503,31 @@ nsMathMLContainerFrame::FinalizeReflow(n
+@@ -497,28 +504,31 @@ nsMathMLContainerFrame::FinalizeReflow(n
      }
      if (!parentWillFireStretch) {
        // There is nobody who will fire the stretch for us, we do it ourselves!
