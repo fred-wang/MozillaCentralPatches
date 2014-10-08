@@ -1,0 +1,288 @@
+# HG changeset patch
+# Parent 25a91f05f04f312b0b51dbfb5aeb8488e1c8b16d
+# User John Daggett <jdaggett@mozilla.com>
+Bug 1079422 - eliminate the ptr to FontFace within @font-face rules.
+
+diff --git a/layout/style/FontFace.cpp b/layout/style/FontFace.cpp
+--- a/layout/style/FontFace.cpp
++++ b/layout/style/FontFace.cpp
+@@ -268,27 +268,26 @@ LoadStateToStatus(gfxUserFontEntry::User
+   }
+   NS_NOTREACHED("invalid aLoadState value");
+   return FontFaceLoadStatus::Error;
+ }
+ 
+ already_AddRefed<FontFace>
+ FontFace::CreateForRule(nsISupports* aGlobal,
+                         nsPresContext* aPresContext,
+-                        nsCSSFontFaceRule* aRule,
+-                        gfxUserFontEntry* aUserFontEntry)
++                        nsCSSFontFaceRule* aRule)
+ {
+   nsCOMPtr<nsIGlobalObject> globalObject = do_QueryInterface(aGlobal);
+ 
+   nsRefPtr<FontFace> obj = new FontFace(aGlobal, aPresContext);
+   obj->mInitialized = true;
+   obj->mRule = aRule;
+   obj->mSourceType = eSourceType_FontFaceRule;
+   obj->mInFontFaceSet = true;
+-  obj->SetUserFontEntry(aUserFontEntry);
++  obj->SetUserFontEntry(nullptr);
+   return obj.forget();
+ }
+ 
+ already_AddRefed<FontFace>
+ FontFace::Constructor(const GlobalObject& aGlobal,
+                       const nsAString& aFamily,
+                       const StringOrArrayBufferOrArrayBufferView& aSource,
+                       const FontFaceDescriptors& aDescriptors,
+@@ -822,18 +821,16 @@ FontFace::GetFamilyName(nsString& aResul
+ void
+ FontFace::DisconnectFromRule()
+ {
+   MOZ_ASSERT(HasRule());
+ 
+   // Make a copy of the descriptors.
+   mDescriptors = new CSSFontFaceDescriptors;
+   mRule->GetDescriptors(*mDescriptors);
+-
+-  mRule->SetFontFace(nullptr);
+   mRule = nullptr;
+   mInFontFaceSet = false;
+ }
+ 
+ bool
+ FontFace::HasFontData() const
+ {
+   return mSourceType == eSourceType_Buffer && mSourceBuffer;
+diff --git a/layout/style/FontFace.h b/layout/style/FontFace.h
+--- a/layout/style/FontFace.h
++++ b/layout/style/FontFace.h
+@@ -68,21 +68,19 @@ public:
+   };
+ 
+   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FontFace)
+ 
+   nsISupports* GetParentObject() const { return mParent; }
+   virtual JSObject* WrapObject(JSContext* aCx) MOZ_OVERRIDE;
+ 
+-  static already_AddRefed<FontFace> CreateForRule(
+-                                              nsISupports* aGlobal,
+-                                              nsPresContext* aPresContext,
+-                                              nsCSSFontFaceRule* aRule,
+-                                              gfxUserFontEntry* aUserFontEntry);
++  static already_AddRefed<FontFace>
++  CreateForRule(nsISupports* aGlobal, nsPresContext* aPresContext,
++                nsCSSFontFaceRule* aRule);
+ 
+   nsCSSFontFaceRule* GetRule() { return mRule; }
+ 
+   void GetDesc(nsCSSFontDesc aDescID, nsCSSValue& aResult) const;
+ 
+   gfxUserFontEntry* GetUserFontEntry() const { return mUserFontEntry; }
+   void SetUserFontEntry(gfxUserFontEntry* aEntry);
+ 
+diff --git a/layout/style/FontFaceSet.cpp b/layout/style/FontFaceSet.cpp
+--- a/layout/style/FontFaceSet.cpp
++++ b/layout/style/FontFaceSet.cpp
+@@ -528,27 +528,40 @@ FontFaceSet::UpdateRules(const nsTArray<
+   mUserFontSet->mFontFamilies.Enumerate(DetachFontEntries, nullptr);
+ 
+   // Sometimes aRules has duplicate @font-face rules in it; we should make
+   // that not happen, but in the meantime, don't try to insert the same
+   // FontFace object more than once into mRuleFaces.  We track which
+   // ones we've handled in this table.
+   nsTHashtable<nsPtrHashKey<nsCSSFontFaceRule>> handledRules;
+ 
++  // reuse existing FontFace objects mapped to rules already
++  nsDataHashtable<nsPtrHashKey<nsCSSFontFaceRule>, FontFace*> ruleFaceMap;
++  for (size_t i = 0, i_end = mRuleFaces.Length(); i < i_end; ++i) {
++    FontFace* f = mRuleFaces[i].mFontFace;
++    if (!f) {
++      continue;
++    }
++    ruleFaceMap.Put(f->GetRule(), f);
++  }
++
+   for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
+     // Insert each FontFace objects for each rule into our list, migrating old
+     // font entries if possible rather than creating new ones; set  modified  to
+     // true if we detect that rule ordering has changed, or if a new entry is
+     // created.
+     if (handledRules.Contains(aRules[i].mRule)) {
+       continue;
+     }
+-    InsertRuleFontFace(FontFaceForRule(aRules[i].mRule),
+-                       aRules[i].mSheetType, oldRecords,
+-                       modified);
++    nsCSSFontFaceRule* rule = aRules[i].mRule;
++    nsRefPtr<FontFace> f = ruleFaceMap.Get(rule);
++    if (!f.get()) {
++      f = FontFace::CreateForRule(GetParentObject(), mPresContext, rule);
++    }
++    InsertRuleFontFace(f, aRules[i].mSheetType, oldRecords, modified);
+     handledRules.PutEntry(aRules[i].mRule);
+   }
+ 
+   for (size_t i = 0, i_end = mNonRuleFaces.Length(); i < i_end; ++i) {
+     // Do the same for the non rule backed FontFace objects.
+     InsertNonRuleFontFace(mNonRuleFaces[i], modified);
+   }
+ 
+@@ -975,26 +988,16 @@ FontFaceSet::FindRuleForUserFontEntry(gf
+     FontFace* f = mRuleFaces[i].mFontFace;
+     if (f->GetUserFontEntry() == aUserFontEntry) {
+       return f->GetRule();
+     }
+   }
+   return nullptr;
+ }
+ 
+-gfxUserFontEntry*
+-FontFaceSet::FindUserFontEntryForRule(nsCSSFontFaceRule* aRule)
+-{
+-  FontFace* f = aRule->GetFontFace();
+-  if (f) {
+-    return f->GetUserFontEntry();
+-  }
+-  return nullptr;
+-}
+-
+ nsresult
+ FontFaceSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
+                         const char* aMessage,
+                         uint32_t aFlags,
+                         nsresult aStatus)
+ {
+   nsCOMPtr<nsIConsoleService>
+     console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+@@ -1260,33 +1263,16 @@ FontFaceSet::DoRebuildUserFontSet()
+     // this font-set, which means it is in the process of being torn down --
+     // so there's no point trying to update its rules.
+     return;
+   }
+ 
+   mPresContext->RebuildUserFontSet();
+ }
+ 
+-FontFace*
+-FontFaceSet::FontFaceForRule(nsCSSFontFaceRule* aRule)
+-{
+-  FontFace* f = aRule->GetFontFace();
+-  if (f) {
+-    return f;
+-  }
+-
+-  // We might be creating a FontFace object for an @font-face rule that we are
+-  // just about to create a user font entry for, so entry might be null.
+-  gfxUserFontEntry* entry = FindUserFontEntryForRule(aRule);
+-  nsRefPtr<FontFace> newFontFace =
+-    FontFace::CreateForRule(GetParentObject(), mPresContext, aRule, entry);
+-  aRule->SetFontFace(newFontFace);
+-  return newFontFace;
+-}
+-
+ void
+ FontFaceSet::AddUnavailableFontFace(FontFace* aFontFace)
+ {
+   MOZ_ASSERT(!aFontFace->HasRule());
+   MOZ_ASSERT(!aFontFace->IsInFontFaceSet());
+   MOZ_ASSERT(!mUnavailableFaces.Contains(aFontFace));
+ 
+   mUnavailableFaces.AppendElement(aFontFace);
+diff --git a/layout/style/FontFaceSet.h b/layout/style/FontFaceSet.h
+--- a/layout/style/FontFaceSet.h
++++ b/layout/style/FontFaceSet.h
+@@ -224,29 +224,24 @@ private:
+   // Note: if you add new cycle collected objects to FontFaceRecord,
+   // make sure to update FontFaceSet's cycle collection macros
+   // accordingly.
+   struct FontFaceRecord {
+     nsRefPtr<FontFace> mFontFace;
+     uint8_t mSheetType;
+   };
+ 
+-  FontFace* FontFaceForRule(nsCSSFontFaceRule* aRule);
+-
+   already_AddRefed<gfxUserFontEntry> FindOrCreateUserFontEntryFromFontFace(
+                                                    const nsAString& aFamilyName,
+                                                    FontFace* aFontFace,
+                                                    uint8_t aSheetType);
+ 
+   // search for @font-face rule that matches a userfont font entry
+   nsCSSFontFaceRule* FindRuleForUserFontEntry(gfxUserFontEntry* aUserFontEntry);
+ 
+-  // search for user font entry for the given @font-face rule
+-  gfxUserFontEntry* FindUserFontEntryForRule(nsCSSFontFaceRule* aRule);
+-
+   nsresult StartLoad(gfxUserFontEntry* aUserFontEntry,
+                      const gfxFontFaceSrc* aFontFaceSrc);
+   nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
+                          nsIPrincipal** aPrincipal,
+                          bool* aBypassCache);
+   bool GetPrivateBrowsing();
+   nsresult SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
+                             const gfxFontFaceSrc* aFontFaceSrc,
+diff --git a/layout/style/nsCSSRules.cpp b/layout/style/nsCSSRules.cpp
+--- a/layout/style/nsCSSRules.cpp
++++ b/layout/style/nsCSSRules.cpp
+@@ -1711,25 +1711,23 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsCSSFont
+ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsCSSFontFaceRule)
+   // Trace the wrapper for our declaration.  This just expands out
+   // NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER which we can't use
+   // directly because the wrapper is on the declaration, not on us.
+   tmp->mDecl.TraceWrapper(aCallbacks, aClosure);
+ NS_IMPL_CYCLE_COLLECTION_TRACE_END
+ 
+ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsCSSFontFaceRule)
+-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFace)
+   // Unlink the wrapper for our declaraton.  This just expands out
+   // NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER which we can't use
+   // directly because the wrapper is on the declaration, not on us.
+   tmp->mDecl.ReleaseWrapper(static_cast<nsISupports*>(p));
+ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+ 
+ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsCSSFontFaceRule)
+-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFace)
+   // NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS will call into our
+   // Trace hook, where we do the right thing with declarations already.
+   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
+ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+ 
+ DOMCI_DATA(CSSFontFaceRule, nsCSSFontFaceRule)
+ 
+ // QueryInterface implementation for nsCSSFontFaceRule
+diff --git a/layout/style/nsCSSRules.h b/layout/style/nsCSSRules.h
+--- a/layout/style/nsCSSRules.h
++++ b/layout/style/nsCSSRules.h
+@@ -267,29 +267,22 @@ public:
+   // nsIDOMCSSFontFaceRule interface
+   NS_DECL_NSIDOMCSSFONTFACERULE
+ 
+   void SetDesc(nsCSSFontDesc aDescID, nsCSSValue const & aValue);
+   void GetDesc(nsCSSFontDesc aDescID, nsCSSValue & aValue);
+ 
+   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const MOZ_OVERRIDE;
+ 
+-  mozilla::dom::FontFace* GetFontFace() const { return mFontFace; }
+-  void SetFontFace(mozilla::dom::FontFace* aFontFace) { mFontFace = aFontFace; }
+-
+   void GetDescriptors(mozilla::CSSFontFaceDescriptors& aDescriptors) const
+     { aDescriptors = mDecl.mDescriptors; }
+ 
+ protected:
+   ~nsCSSFontFaceRule() {}
+ 
+-  // The CSS-connected FontFace object reflecting this @font-face rule, if one
+-  // has been created.
+-  nsRefPtr<mozilla::dom::FontFace> mFontFace;
+-
+   friend class nsCSSFontFaceStyleDecl;
+   nsCSSFontFaceStyleDecl mDecl;
+ };
+ 
+ // nsFontFaceRuleContainer - used for associating sheet type with
+ // specific @font-face rules
+ struct nsFontFaceRuleContainer {
+   nsRefPtr<nsCSSFontFaceRule> mRule;

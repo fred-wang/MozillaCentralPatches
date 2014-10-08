@@ -1,2 +1,4 @@
 default-math-font.patch
 bug969906_maction-tooltip.patch
+backout-b1077746.patch
+fixup-fontset-crasher.patch
