@@ -1,12 +1,15 @@
+
 # HG changeset patch
-# Parent 25a91f05f04f312b0b51dbfb5aeb8488e1c8b16d
 # User John Daggett <jdaggett@mozilla.com>
-Bug 1079422 - eliminate the ptr to FontFace within @font-face rules.
+# Date 1412838236 -32400
+# Node ID 3d2e70bf38135cf6f1293c965cbef901b829c3c7
+# Parent  f214e1efac1ba654e233e85c4edba06f95ababfb
+Bug 1079422 - eliminate the ptr to FontFace within @font-face rules. r=heycam
 
 diff --git a/layout/style/FontFace.cpp b/layout/style/FontFace.cpp
 --- a/layout/style/FontFace.cpp
 +++ b/layout/style/FontFace.cpp
-@@ -268,27 +268,26 @@ LoadStateToStatus(gfxUserFontEntry::User
+@@ -268,27 +268,25 @@ LoadStateToStatus(gfxUserFontEntry::User
    }
    NS_NOTREACHED("invalid aLoadState value");
    return FontFaceLoadStatus::Error;
@@ -27,7 +30,6 @@ diff --git a/layout/style/FontFace.cpp b/layout/style/FontFace.cpp
    obj->mSourceType = eSourceType_FontFaceRule;
    obj->mInFontFaceSet = true;
 -  obj->SetUserFontEntry(aUserFontEntry);
-+  obj->SetUserFontEntry(nullptr);
    return obj.forget();
  }
  
@@ -36,7 +38,7 @@ diff --git a/layout/style/FontFace.cpp b/layout/style/FontFace.cpp
                        const nsAString& aFamily,
                        const StringOrArrayBufferOrArrayBufferView& aSource,
                        const FontFaceDescriptors& aDescriptors,
-@@ -822,18 +821,16 @@ FontFace::GetFamilyName(nsString& aResul
+@@ -822,18 +820,16 @@ FontFace::GetFamilyName(nsString& aResul
  void
  FontFace::DisconnectFromRule()
  {
@@ -86,14 +88,14 @@ diff --git a/layout/style/FontFace.h b/layout/style/FontFace.h
 diff --git a/layout/style/FontFaceSet.cpp b/layout/style/FontFaceSet.cpp
 --- a/layout/style/FontFaceSet.cpp
 +++ b/layout/style/FontFaceSet.cpp
-@@ -528,27 +528,40 @@ FontFaceSet::UpdateRules(const nsTArray<
-   mUserFontSet->mFontFamilies.Enumerate(DetachFontEntries, nullptr);
+@@ -503,16 +503,26 @@ FontFaceSet::UpdateRules(const nsTArray<
+ {
+   MOZ_ASSERT(mUserFontSet);
  
-   // Sometimes aRules has duplicate @font-face rules in it; we should make
-   // that not happen, but in the meantime, don't try to insert the same
-   // FontFace object more than once into mRuleFaces.  We track which
-   // ones we've handled in this table.
-   nsTHashtable<nsPtrHashKey<nsCSSFontFaceRule>> handledRules;
+   // If there was a change to the mNonRuleFaces array, then there could
+   // have been a modification to the user font set.
+   bool modified = mNonRuleFacesDirty;
+   mNonRuleFacesDirty = false;
  
 +  // reuse existing FontFace objects mapped to rules already
 +  nsDataHashtable<nsPtrHashKey<nsCSSFontFaceRule>, FontFace*> ruleFaceMap;
@@ -105,6 +107,15 @@ diff --git a/layout/style/FontFaceSet.cpp b/layout/style/FontFaceSet.cpp
 +    ruleFaceMap.Put(f->GetRule(), f);
 +  }
 +
+   // The @font-face rules that make up the user font set have changed,
+   // so we need to update the set. However, we want to preserve existing
+   // font entries wherever possible, so that we don't discard and then
+   // re-download resources in the (common) case where at least some of the
+   // same rules are still present.
+ 
+   nsTArray<FontFaceRecord> oldRecords;
+   mRuleFaces.SwapElements(oldRecords);
+@@ -533,19 +543,22 @@ FontFaceSet::UpdateRules(const nsTArray<
    for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
      // Insert each FontFace objects for each rule into our list, migrating old
      // font entries if possible rather than creating new ones; set  modified  to
@@ -130,7 +141,7 @@ diff --git a/layout/style/FontFaceSet.cpp b/layout/style/FontFaceSet.cpp
      InsertNonRuleFontFace(mNonRuleFaces[i], modified);
    }
  
-@@ -975,26 +988,16 @@ FontFaceSet::FindRuleForUserFontEntry(gf
+@@ -972,26 +985,16 @@ FontFaceSet::FindRuleForUserFontEntry(gf
      FontFace* f = mRuleFaces[i].mFontFace;
      if (f->GetUserFontEntry() == aUserFontEntry) {
        return f->GetRule();
@@ -157,7 +168,7 @@ diff --git a/layout/style/FontFaceSet.cpp b/layout/style/FontFaceSet.cpp
  {
    nsCOMPtr<nsIConsoleService>
      console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
-@@ -1260,33 +1263,16 @@ FontFaceSet::DoRebuildUserFontSet()
+@@ -1257,33 +1260,16 @@ FontFaceSet::DoRebuildUserFontSet()
      // this font-set, which means it is in the process of being torn down --
      // so there's no point trying to update its rules.
      return;
@@ -286,3 +297,4 @@ diff --git a/layout/style/nsCSSRules.h b/layout/style/nsCSSRules.h
  // specific @font-face rules
  struct nsFontFaceRuleContainer {
    nsRefPtr<nsCSSFontFaceRule> mRule;
+
