@@ -6,7 +6,7 @@ Bug 947654 - Add a font.name-list.mathml preference to configure the default fon
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -1440,16 +1440,39 @@ nsPresContext::GetDefaultFont(uint8_t aF
+@@ -1457,16 +1457,39 @@ nsPresContext::GetDefaultFont(uint8_t aF
      default:
        font = nullptr;
        NS_ERROR("invalid arg");
@@ -49,7 +49,7 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -348,16 +348,21 @@ public:
+@@ -371,16 +371,21 @@ public:
     * For aFontID corresponding to a CSS Generic, the nsFont returned has
     * its name set to that generic font's name, and its size set to
     * the user's preference for font size for that generic and the
@@ -71,7 +71,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
      // this switch statement away.
      switch (aPrefType) {
      case kPresContext_UseDocumentFonts:
-@@ -1125,16 +1130,19 @@ protected:
+@@ -1140,16 +1145,19 @@ protected:
    const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const;
  
    void ResetCachedFontPrefs() {
@@ -91,7 +91,7 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    void DoChangeCharSet(const nsCString& aCharSet);
  
    /**
-@@ -1257,16 +1265,18 @@ protected:
+@@ -1289,16 +1297,18 @@ protected:
  
    bool mExistThrottledUpdates;
  
@@ -108,12 +108,12 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
  
    mozilla::TimeStamp    mReflowStartTime;
  
-   // last time animations styles were flushed to their primary frames
-   mozilla::TimeStamp    mLastUpdateThrottledAnimationStyle;
+   // last time we did a full style flush
+   mozilla::TimeStamp    mLastStyleUpdateForAllAnimations;
 diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 --- a/layout/base/nsPresShell.cpp
 +++ b/layout/base/nsPresShell.cpp
-@@ -1311,16 +1311,19 @@ PresShell::SetPreferenceStyleRules(bool 
+@@ -1354,16 +1354,19 @@ PresShell::SetPreferenceStyleRules(bool 
        result = SetPrefFocusRules();
      }
      if (NS_SUCCEEDED(result)) {
@@ -133,7 +133,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
      // will recalculate style if needed
  
      return result;
-@@ -1366,16 +1369,23 @@ PresShell::CreatePreferenceStyleSheet()
+@@ -1409,16 +1412,23 @@ PresShell::CreatePreferenceStyleSheet()
      mPrefStyleSheet = nullptr;
      return rv;
    }
@@ -157,7 +157,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
    }
    rv =
      mPrefStyleSheet->InsertRuleInternal(NS_LITERAL_STRING("@namespace url(http://www.w3.org/1999/xhtml);"),
-@@ -1387,17 +1397,17 @@ PresShell::CreatePreferenceStyleSheet()
+@@ -1430,17 +1440,17 @@ PresShell::CreatePreferenceStyleSheet()
  
    mStyleSet->AppendStyleSheet(nsStyleSet::eUserSheet, mPrefStyleSheet);
    return NS_OK;
@@ -176,7 +176,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
  
    // also handle the case where print is done from print preview
    // see bug #342439 for more details
-@@ -1605,16 +1615,45 @@ nsresult PresShell::SetPrefFocusRules(vo
+@@ -1648,16 +1658,45 @@ nsresult PresShell::SetPrefFocusRules(vo
          result = mPrefStyleSheet->
            InsertRuleInternal(strRule, sInsertPrefSheetRulesAt, &index);
        }
@@ -225,7 +225,7 @@ diff --git a/layout/base/nsPresShell.cpp b/layout/base/nsPresShell.cpp
 diff --git a/layout/base/nsPresShell.h b/layout/base/nsPresShell.h
 --- a/layout/base/nsPresShell.h
 +++ b/layout/base/nsPresShell.h
-@@ -483,16 +483,17 @@ protected:
+@@ -504,16 +504,17 @@ protected:
      *  - initially created for bugs 31816, 20760, 22963
      */
    nsresult ClearPreferenceStyleRules(void);
@@ -246,20 +246,21 @@ diff --git a/layout/base/nsPresShell.h b/layout/base/nsPresShell.h
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -6,27 +6,29 @@
+@@ -6,29 +6,31 @@
  /**************************************************************************/
  /* namespace for MathML elements                                          */
  /**************************************************************************/
- 
+
  @namespace url(http://www.w3.org/1998/Math/MathML);
- 
+
  /**************************************************************************/
  /* <math> - outermost math element                                        */
 -/* Put Cambria before Cambria Math as Cambria Math has neither bold nor   */
 -/* italic.                                                                */
  /**************************************************************************/
- 
+
  math {
+   writing-mode: horizontal-tb !important;
    direction: ltr;
    unicode-bidi: embed;
    display: inline;
@@ -269,9 +270,9 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    font-size: inherit;
    font-style: normal;
 -  font-family: MathJax_Main, STIXGeneral, Cambria, Cambria Math, XITS, Latin Modern Math, DejaVu Serif, DejaVu Sans, Times, Lucida Sans Unicode, OpenSymbol, Standard Symbols L, serif;
+   text-rendering: optimizeLegibility;
 +  /* The default font-family is given by the font.name-list.mathml preference,
 +     see PresShell::SetPrefMathFontFamilyRule. */
-   text-rendering: optimizeLegibility;
    -moz-float-edge: margin-box;
    -moz-math-display: inline;
  }
@@ -279,10 +280,11 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
    display: block;
    text-align: -moz-center;
    -moz-math-display: block;
+ }
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
-@@ -2375,16 +2375,20 @@ pref("ui.mouse.radius.topmm", 12);
+@@ -2640,16 +2640,20 @@ pref("ui.mouse.radius.topmm", 12);
  pref("ui.mouse.radius.rightmm", 8);
  pref("ui.mouse.radius.bottommm", 4);
  pref("ui.mouse.radius.visitedWeight", 120);
@@ -298,8 +300,8 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  #ifdef XP_WIN
  
  pref("font.name.serif.ar", "Times New Roman");
- pref("font.name.sans-serif.ar", "Arial");
+ pref("font.name.sans-serif.ar", "Segoe UI");
+ pref("font.name-list.sans-serif.ar", "Segoe UI, Tahoma, Arial");
  pref("font.name.monospace.ar", "Courier New");
  pref("font.name.cursive.ar", "Comic Sans MS");
  
- pref("font.name.serif.el", "Times New Roman");
