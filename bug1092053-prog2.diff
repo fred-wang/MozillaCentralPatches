@@ -1,0 +1,272 @@
+# HG changeset patch
+# Parent 29d086b32a2607108f2b7ffaef22925cf9e9a190
+# User James Kitchener <jkitch.bug@internode.on.net>
+Bug 1092053 - Consider largeop's larger size when determining stretch size
+
+diff --git a/layout/mathml/nsMathMLmoFrame.cpp b/layout/mathml/nsMathMLmoFrame.cpp
+--- a/layout/mathml/nsMathMLmoFrame.cpp
++++ b/layout/mathml/nsMathMLmoFrame.cpp
+@@ -950,16 +950,70 @@ nsMathMLmoFrame::Reflow(nsPresContext*  
+   // certain values use units that depend on our style context, so
+   // it is safer to just process the whole lot here
+   ProcessOperatorData();
+ 
+   nsMathMLTokenFrame::Reflow(aPresContext, aDesiredSize,
+                              aReflowState, aStatus);
+ }
+ 
++nsresult
++nsMathMLmoFrame::Place(nsRenderingContext&  aRenderingContext,
++                       bool                 aPlaceOrigin,
++                       nsHTMLReflowMetrics& aDesiredSize)
++{
++  nsresult rv = nsMathMLTokenFrame::Place(aRenderingContext, aPlaceOrigin,
++                                          aDesiredSize);
++
++  if (NS_FAILED(rv)) {
++    return rv;
++  }
++
++  /* Special behaviour for largeops.
++     In MathML "stretchy" and displaystyle "largeop" are different notions,
++     even if we use the same technique to draw them (picking size variants).
++     So largeop display operators should be considered "non-stretchy" and
++     thus their sizes should be taken into account for the stretch size of
++     other elements.
++
++     This is a preliminary stretch - exact sizing/placement is handled by the
++     Stretch() method.
++  */
++
++  if (!aPlaceOrigin &&
++      StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK &&
++      NS_MATHML_OPERATOR_IS_LARGEOP(mFlags) && UseMathMLChar()) {
++    nsBoundingMetrics newMetrics;
++    rv = mMathMLChar.Stretch(PresContext(), aRenderingContext,
++                                      nsLayoutUtils::FontSizeInflationFor(this),
++                                      NS_STRETCH_DIRECTION_VERTICAL,
++                                      aDesiredSize.mBoundingMetrics, newMetrics,
++                                      NS_STRETCH_LARGEOP, StyleVisibility()->mDirection);
++
++    if (NS_FAILED(rv)) {
++      // Just use the initial size
++      return NS_OK;
++    }
++
++    aDesiredSize.mBoundingMetrics = newMetrics;
++     /* Treat the ascent/descent values calculated in the TokenFrame place
++       calculations as the minimum for aDesiredSize calculations, rather
++       than fetching them from font metrics again.
++    */
++    aDesiredSize.SetBlockStartAscent(std::max(mBoundingMetrics.ascent,
++                                              newMetrics.ascent));
++    aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
++                            std::max(mBoundingMetrics.descent,
++                                     newMetrics.descent);
++    aDesiredSize.Width() = newMetrics.width;
++    mBoundingMetrics = newMetrics;
++  }
++  return NS_OK;
++}
++
+ /* virtual */ void
+ nsMathMLmoFrame::MarkIntrinsicISizesDirty()
+ {
+   // if we get this, it may mean that something changed in the text
+   // content. So blow away everything an re-build the automatic data
+   // from the parent of our outermost embellished container (we ensure
+   // that we are the core, not just a sibling of the core)
+ 
+diff --git a/layout/mathml/nsMathMLmoFrame.h b/layout/mathml/nsMathMLmoFrame.h
+--- a/layout/mathml/nsMathMLmoFrame.h
++++ b/layout/mathml/nsMathMLmoFrame.h
+@@ -43,16 +43,21 @@ public:
+                       nsFrameList&    aChildList) MOZ_OVERRIDE;
+ 
+   virtual void
+   Reflow(nsPresContext*          aPresContext,
+          nsHTMLReflowMetrics&     aDesiredSize,
+          const nsHTMLReflowState& aReflowState,
+          nsReflowStatus&          aStatus) MOZ_OVERRIDE;
+ 
++  virtual nsresult
++  Place(nsRenderingContext& aRenderingContext,
++        bool                 aPlaceOrigin,
++        nsHTMLReflowMetrics& aDesiredSize) MOZ_OVERRIDE;
++
+   virtual void MarkIntrinsicISizesDirty() MOZ_OVERRIDE;
+ 
+   virtual void
+   GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
+                            nsHTMLReflowMetrics& aDesiredSize) MOZ_OVERRIDE;
+ 
+   virtual nsresult
+   AttributeChanged(int32_t         aNameSpaceID,
+diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
+--- a/layout/reftests/mathml/reftest.list
++++ b/layout/reftests/mathml/reftest.list
+@@ -74,16 +74,17 @@ skip-if(B2G) == quotes-1.xhtml quotes-1-
+ != stretchy-mfenced-3b.html stretchy-mfenced-3-ref.html
+ == stretchy-mfenced-4a.html stretchy-mfenced-4-ref.html
+ == stretchy-mfenced-4b.html stretchy-mfenced-4-ref.html
+ == stretchy-mover-1a.html stretchy-mover-1-ref.html
+ == stretchy-mover-1b.html stretchy-mover-1-ref.html
+ fails == stretchy-mover-2a.html stretchy-mover-2-ref.html
+ != stretchy-mover-2b.html stretchy-mover-2-ref.html
+ == stretchy-mover-3.html stretchy-mover-3-ref.html
++== stretchy-largeop-1.html stretchy-largeop-1-ref.html
+ == table-width-1.xhtml table-width-1-ref.xhtml
+ == table-width-2.html table-width-2-ref.html
+ == table-width-3.html table-width-3-ref.html
+ == table-width-4.html table-width-4-ref.html
+ == underbar-width-1.xhtml underbar-width-1-ref.xhtml
+ == mathml-type-supported.xhtml mathml-type-supported-ref.xml
+ == mtable-align-negative-rownumber.html mtable-align-negative-rownumber-ref.html
+ != embellished-op-1-1.html embellished-op-1-1-ref.html
+diff --git a/layout/reftests/mathml/stretchy-largeop-1-ref.html b/layout/reftests/mathml/stretchy-largeop-1-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-largeop-1-ref.html
+@@ -0,0 +1,56 @@
++﻿<!doctype html>
++<html>
++  <head>
++    <title>Largeop stretching</title>
++    <meta charset="utf-8"/>
++  </head>
++  <body>
++    <p>
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo0">(</mo>
++          <mo>∫</mo>
++          <mo id="mo1">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mrow>
++          <mo id="mo0a">(</mo>
++          <mo>∫</mo>
++          <mo id="mo1a">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo2">(</mo>
++          <mo>&Product;</mo>
++          <mo id="mo3">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mrow>
++          <mo id="mo2a">(</mo>
++          <mo>&Product;</mo>
++          <mo id="mo3a">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <!-- &bigotimes; included in the test to check for an assertion involving
++           the direction of the largeop pre-stretch -->
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo4">(</mo>
++          <mo>&bigotimes;</mo>
++          <mo id="mo5">)</mo>
++        <mrow>
++      </math>
++    </p>
++  </body>
++</html>
+diff --git a/layout/reftests/mathml/stretchy-largeop-1.html b/layout/reftests/mathml/stretchy-largeop-1.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/mathml/stretchy-largeop-1.html
+@@ -0,0 +1,81 @@
++﻿<!doctype html>
++<html class="reftest-wait">
++  <head>
++    <title>Largeop stretching</title>
++    <meta charset="utf-8"/>
++    <script type="text/javascript">
++
++      function verifyGreaterThan(aElement, aReference) {
++        /* Verify that the height of the element is greater than that of the
++           reference, and otherwise paint the element in red. */
++        var element = document.getElementById(aElement);
++        var ref = document.getElementById(aReference);
++        if (element.getBoundingClientRect().height -
++            ref.getBoundingClientRect().height <= 1) {
++          element.setAttribute("mathcolor", "red");
++        }
++      }
++
++      function doTest() {
++        /* Ensure that the parentheses in the displaystyle case stretch more
++           than the alternative. */
++        verifyGreaterThan("mo0", "mo0a");
++        verifyGreaterThan("mo1", "mo1a");
++        verifyGreaterThan("mo2", "mo2a");
++        verifyGreaterThan("mo3", "mo3a");
++
++        document.documentElement.removeAttribute("class");
++
++      }
++    </script>
++  </head>
++  <body onload="doTest();">
++    <p>
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo0">(</mo>
++          <mo>∫</mo>
++          <mo id="mo1">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mrow>
++          <mo id="mo0a">(</mo>
++          <mo>∫</mo>
++          <mo id="mo1a">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo2">(</mo>
++          <mo>&Product;</mo>
++          <mo id="mo3">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <math>
++        <mrow>
++          <mo id="mo2a">(</mo>
++          <mo>&Product;</mo>
++          <mo id="mo3a">)</mo>
++        <mrow>
++      </math>
++    </p>
++    <p>
++      <!-- &bigotimes; included in the test to check for an assertion involving
++           the direction of the largeop pre-stretch -->
++      <math displaystyle="true">
++        <mrow>
++          <mo id="mo4">(</mo>
++          <mo>&bigotimes;</mo>
++          <mo id="mo5">)</mo>
++        <mrow>
++      </math>
++    </p>
++  </body>
++</html>
