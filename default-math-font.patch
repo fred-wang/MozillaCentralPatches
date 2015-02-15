@@ -1,3 +1,8 @@
+# HG changeset patch
+# Parent 334c35063bde09494857898c9d69b746d1958e7f
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 947654 - Add a font.name-list.mathml preference to configure the default font-family on the <math> element.
+
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
