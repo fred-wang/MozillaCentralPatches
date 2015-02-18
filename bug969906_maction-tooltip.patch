@@ -37,7 +37,7 @@ diff --git a/layout/style/moz.build b/layout/style/moz.build
  
 -DIRS += ['xbl-marquee']
 +DIRS += ['xbl-marquee', 'xbl-maction']
- TEST_TOOL_DIRS += ['test']
+ TEST_DIRS += ['test']
  
  EXPORTS += [
      'AnimationCommon.h',
@@ -111,7 +111,7 @@ new file mode 100644
 +          xmlns:m="http://www.w3.org/1998/Math/MathML"
 +          xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 +
-+  <binding id="tooltipBinding" inheritstyle="true">
++  <binding id="tooltipBinding" inheritstyle="true" bindToUntrustedContent="true">
 +    <resources>
 +      <stylesheet src="chrome://xbl-maction/content/xbl-maction.css"/>
 +    </resources>
@@ -135,7 +135,7 @@ new file mode 100644
 +            }
 +          ]]>
 +        </body>
-+      </method>      
++      </method>
 +    </implementation>
 +    <handlers>
 +      <handler event="mouseover" action="this.updateTooltip()"/>
