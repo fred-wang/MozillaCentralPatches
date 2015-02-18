@@ -1,0 +1,172 @@
+# HG changeset patch
+# Parent 5842bb83ba5e25d3b524603dddbdce1eac97f538
+# User Frédéric Wang <fred.wang@free.fr>
+Part 1 - Force a reflow in nsThebesFontEnumerator::UpdateFontList. b=648548, r=jfkthame
+
+diff --git a/gfx/src/nsThebesFontEnumerator.cpp b/gfx/src/nsThebesFontEnumerator.cpp
+--- a/gfx/src/nsThebesFontEnumerator.cpp
++++ b/gfx/src/nsThebesFontEnumerator.cpp
+@@ -95,16 +95,17 @@ nsThebesFontEnumerator::GetDefaultFont(c
+     *aResult = nullptr;
+     return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsThebesFontEnumerator::UpdateFontList(bool *_retval)
+ {
+     gfxPlatform::GetPlatform()->UpdateFontList();
++    gfxPlatform::ForceGlobalReflow();
+     *_retval = false; // always return false for now
+     return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsThebesFontEnumerator::GetStandardFamilyName(const char16_t *aName,
+                                               char16_t **aResult)
+ {
+diff --git a/gfx/thebes/gfxMacPlatformFontList.mm b/gfx/thebes/gfxMacPlatformFontList.mm
+--- a/gfx/thebes/gfxMacPlatformFontList.mm
++++ b/gfx/thebes/gfxMacPlatformFontList.mm
+@@ -782,17 +782,17 @@ gfxMacPlatformFontList::RegisteredFontsC
+     }
+ 
+     gfxMacPlatformFontList* fl = static_cast<gfxMacPlatformFontList*>(observer);
+ 
+     // xxx - should be carefully pruning the list of fonts, not rebuilding it from scratch
+     fl->UpdateFontList();
+ 
+     // modify a preference that will trigger reflow everywhere
+-    fl->ForceGlobalReflow();
++    gfxPlatform::ForceGlobalReflow();
+ }
+ 
+ gfxFontEntry*
+ gfxMacPlatformFontList::GlobalFontFallback(const uint32_t aCh,
+                                            int32_t aRunScript,
+                                            const gfxFontStyle* aMatchStyle,
+                                            uint32_t& aCmapCount,
+                                            gfxFontFamily** aMatchedFamily)
+diff --git a/gfx/thebes/gfxPlatform.cpp b/gfx/thebes/gfxPlatform.cpp
+--- a/gfx/thebes/gfxPlatform.cpp
++++ b/gfx/thebes/gfxPlatform.cpp
+@@ -305,16 +305,24 @@ gfxPlatform*
+ gfxPlatform::GetPlatform()
+ {
+     if (!gPlatform) {
+         Init();
+     }
+     return gPlatform;
+ }
+ 
++void gfxPlatform::ForceGlobalReflow()
++{
++    // modify a preference that will trigger reflow everywhere
++    static const char kPrefName[] = "font.internaluseonly.changed";
++    bool fontInternalChange = Preferences::GetBool(kPrefName, false);
++    Preferences::SetBool(kPrefName, !fontInternalChange);
++}
++
+ void RecordingPrefChanged(const char *aPrefName, void *aClosure)
+ {
+   if (Preferences::GetBool("gfx.2d.recording", false)) {
+     nsAutoCString fileName;
+     nsAdoptingString prefFileName = Preferences::GetString("gfx.2d.recordingfile");
+ 
+     if (prefFileName) {
+       fileName.Append(NS_ConvertUTF16toUTF8(prefFileName));
+diff --git a/gfx/thebes/gfxPlatform.h b/gfx/thebes/gfxPlatform.h
+--- a/gfx/thebes/gfxPlatform.h
++++ b/gfx/thebes/gfxPlatform.h
+@@ -167,16 +167,21 @@ public:
+ 
+     /**
+      * Return a pointer to the current active platform.
+      * This is a singleton; it contains mostly convenience
+      * functions to obtain platform-specific objects.
+      */
+     static gfxPlatform *GetPlatform();
+ 
++    /**
++     * Force a global reflow.
++     * This is used when new fonts become available.
++     */
++    static void ForceGlobalReflow();
+ 
+     /**
+      * Shut down Thebes.
+      * Init() arranges for this to be called at an appropriate time.
+      */
+     static void Shutdown();
+ 
+     static void InitLayersIPC();
+diff --git a/gfx/thebes/gfxPlatformFontList.cpp b/gfx/thebes/gfxPlatformFontList.cpp
+--- a/gfx/thebes/gfxPlatformFontList.cpp
++++ b/gfx/thebes/gfxPlatformFontList.cpp
+@@ -1041,17 +1041,17 @@ gfxPlatformFontList::CleanupLoader()
+ 
+     if (mOtherNamesMissed) {
+         LookupMissedOtherNamesData othernamesdata(this);
+         mOtherNamesMissed->EnumerateEntries(LookupMissedOtherNamesProc,
+                                             &othernamesdata);
+         mOtherNamesMissed = nullptr;
+         if (othernamesdata.mFoundName) {
+             forceReflow = true;
+-            ForceGlobalReflow();
++            gfxPlatform::ForceGlobalReflow();
+         }
+     }
+ 
+ #ifdef PR_LOGGING
+     if (LOG_FONTINIT_ENABLED() && mFontInfo) {
+         LOG_FONTINIT(("(fontinit) fontloader load thread took %8.2f ms "
+                       "%d families %d fonts %d cmaps "
+                       "%d facenames %d othernames %s %s",
+@@ -1078,25 +1078,16 @@ gfxPlatformFontList::GetPrefsAndStartLoa
+     uint32_t delay =
+         std::max(1u, Preferences::GetUint(FONT_LOADER_DELAY_PREF));
+     uint32_t interval =
+         std::max(1u, Preferences::GetUint(FONT_LOADER_INTERVAL_PREF));
+ 
+     StartLoader(delay, interval);
+ }
+ 
+-void
+-gfxPlatformFontList::ForceGlobalReflow()
+-{
+-    // modify a preference that will trigger reflow everywhere
+-    static const char kPrefName[] = "font.internaluseonly.changed";
+-    bool fontInternalChange = Preferences::GetBool(kPrefName, false);
+-    Preferences::SetBool(kPrefName, !fontInternalChange);
+-}
+-
+ // Support for memory reporting
+ 
+ static size_t
+ SizeOfFamilyEntryExcludingThis(const nsAString&               aKey,
+                                const nsRefPtr<gfxFontFamily>& aFamily,
+                                MallocSizeOf                   aMallocSizeOf,
+                                void*                          aUserArg)
+ {
+diff --git a/gfx/thebes/gfxPlatformFontList.h b/gfx/thebes/gfxPlatformFontList.h
+--- a/gfx/thebes/gfxPlatformFontList.h
++++ b/gfx/thebes/gfxPlatformFontList.h
+@@ -279,19 +279,16 @@ protected:
+     // gfxFontInfoLoader overrides, used to load in font cmaps
+     virtual void InitLoader();
+     virtual bool LoadFontInfo();
+     virtual void CleanupLoader();
+ 
+     // read the loader initialization prefs, and start it
+     void GetPrefsAndStartLoader();
+ 
+-    // for font list changes that affect all documents
+-    void ForceGlobalReflow();
+-
+     // used by memory reporter to accumulate sizes of family names in the hash
+     static size_t
+     SizeOfFamilyNameEntryExcludingThis(const nsAString&               aKey,
+                                        const nsRefPtr<gfxFontFamily>& aFamily,
+                                        mozilla::MallocSizeOf          aMallocSizeOf,
+                                        void*                          aUserArg);
+ 
+     // canonical family name ==> family entry (unique, one name per family entry)
