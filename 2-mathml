@@ -1,0 +1,1323 @@
+# HG changeset patch
+# Parent 7bb16ad65867b9c0cd525eeba0eee34edde6c60a
+# User Jonathan Wei <jwei@jonathanwei.ca>
+
+diff --git a/accessible/base/AccIterator.cpp b/accessible/base/AccIterator.cpp
+--- a/accessible/base/AccIterator.cpp
++++ b/accessible/base/AccIterator.cpp
+@@ -449,8 +449,20 @@ XULTreeItemIterator::Next()
+       break;
+     }
+ 
+     mCurrRowIdx++;
+   }
+ 
+   return nullptr;
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// ChildIterator
++////////////////////////////////////////////////////////////////////////////////
++
++Accessible*
++ChildIterator::Next()
++{
++  return (mAcc && !mAcc->IsDefunct()) ?
++         mAcc->GetChildAt(mIndex++) :
++         nullptr;
++}
+diff --git a/accessible/base/AccIterator.h b/accessible/base/AccIterator.h
+--- a/accessible/base/AccIterator.h
++++ b/accessible/base/AccIterator.h
+@@ -351,12 +351,32 @@ private:
+ 
+   XULTreeAccessible* mXULTree;
+   nsITreeView* mTreeView;
+   int32_t mRowCount;
+   int32_t mContainerLevel;
+   int32_t mCurrRowIdx;
+ };
+ 
++/**
++ * Iterates over children of a given accessible.
++ */
++class ChildIterator : public AccIterable
++{
++public:
++  ChildIterator(Accessible* aTarget): mAcc(aTarget), mIndex(0) { }
++  virtual ~ChildIterator() { }
++
++  virtual Accessible* Next();
++
++private:
++  ChildIterator();
++  ChildIterator(const ChildIterator&);
++  ChildIterator& operator = (const ChildIterator&);
++
++  nsRefPtr<Accessible> mAcc;
++  uint32_t mIndex;
++};
++
+ } // namespace a11y
+ } // namespace mozilla
+ 
+ #endif
+diff --git a/accessible/base/RelationType.h b/accessible/base/RelationType.h
+--- a/accessible/base/RelationType.h
++++ b/accessible/base/RelationType.h
+@@ -122,16 +122,162 @@ enum class RelationType {
+    */
+   CONTAINING_WINDOW = 0x13,
+ 
+   /**
+    * The target object is the containing application object.
+    */
+   CONTAINING_APPLICATION = 0x14,
+ 
+-  LAST = CONTAINING_APPLICATION
++  /**
++   * This object is a numerator for a target mfrac.
++   */
++  MATHML_NUMERATOR_OF = 0x15,
++
++  /**
++   * This object is an mfrac whose numerator is the target.
++   */
++  MATHML_NUMERATOR = 0x16,
++
++  /**
++   * This object is a denominator for a target mfrac.
++   */
++  MATHML_DENOMINATOR_OF = 0x17,
++
++  /**
++   * This object is an mfrac whose denominator is the target.
++   */
++  MATHML_DENOMINATOR = 0x18,
++
++  /**
++   * This object is a radicand for a target msqrt or mroot.
++   */
++  MATHML_RADICAND_OF = 0x19,
++
++  /**
++   * This object is an msqrt or mroot whose radicand is the target.
++   */
++  MATHML_RADICAND = 0x1a,
++
++  /**
++   * This object is a root index for a target mroot.
++   */
++  MATHML_ROOT_INDEX_OF = 0x1b,
++
++  /**
++   * This object is an mroot whose root index is the target.
++   */
++  MATHML_ROOT_INDEX = 0x1c,
++
++  /**
++   * This object is an underscript for a target munder or munderover.
++   */
++  MATHML_UNDER_OF = 0x1d,
++
++  /**
++   * This object is an munder or munderover whose underscript is the target.
++   */
++  MATHML_UNDER = 0x1e,
++
++  /**
++   * This object is an overscript for a target mover or munderover.
++   */
++  MATHML_OVER_OF = 0x1f,
++
++  /**
++   * This object is an mover or munderover whose overscript is the target.
++   */
++  MATHML_OVER = 0x20,
++
++  /**
++   * This object is the base for a target munder, mover, munderover, msub, msup,
++   * msubsup, or mmultiscripts.
++   */
++  MATHML_BASE_OF = 0x21,
++
++  /**
++   * This object is an munder, mover, munderover, msub, msup, msubsup, or
++   * mmultiscripts whose base is the target.
++   */
++  MATHML_BASE = 0x22,
++
++  /**
++   * This object is a subscript for a target msub or msubsup, or is a
++   * post-subscript for a target mmultiscripts.
++   */
++  MATHML_SUBSCRIPT_OF = 0x23,
++
++  /**
++   * This object is an msub or msubsup whose subscript is the target, or is an
++   * mmultiscripts whose post-subscript is the target.
++   */
++  MATHML_SUBSCRIPT = 0x24,
++
++  /**
++   * This object is a superscript for a target msup or msubsup, or is a
++   * post-superscript for a target mmultiscripts.
++   */
++  MATHML_SUPERSCRIPT_OF = 0x25,
++
++  /**
++   * This object is an msup or msubsup whose superscript is the target, or is an
++   * mmultiscripts whose post-superscript is the target.
++   */
++  MATHML_SUPERSCRIPT = 0x26,
++
++  /**
++   * This object is a pre-subscript for a target mmultiscripts.
++   */
++  MATHML_PRE_SUBSCRIPT_OF = 0x27,
++
++  /**
++   * This object is an mmultiscripts whose pre-subscript is the target.
++   */
++  MATHML_PRE_SUBSCRIPT = 0x28,
++
++  /**
++   * This object is a pre-superscript for a target mmultiscripts.
++   */
++  MATHML_PRE_SUPERSCRIPT_OF = 0x29,
++
++  /**
++   * This object is an mmultiscripts whose pre-superscript is the target.
++   */
++  MATHML_PRE_SUPERSCRIPT = 0x2a,
++
++  /**
++   * This object is a post-subscript for a target mmultiscripts.
++   */
++  MATHML_POST_SUBSCRIPT_OF = 0x2b,
++
++  /**
++   * This object is an mmultiscripts whose post-subscript is the target.
++   */
++  MATHML_POST_SUBSCRIPT = 0x2c,
++
++  /**
++   * This object is a post-superscript for a target mmultiscripts.
++   */
++  MATHML_POST_SUPERSCRIPT_OF = 0x2d,
++
++  /**
++   * This object is an mmultiscripts whose post-superscript is the target.
++   */
++  MATHML_POST_SUPERSCRIPT = 0x2e,
++
++  /**
++   * This object is an mrow containing the target element.
++   */
++  MATHML_ROW_FOR = 0x2f,
++
++  /**
++   * This object is an element contained in a target mrow.
++   */
++  MATHML_IN_ROW = 0x30,
++
++  LAST = MATHML_IN_ROW
+ 
+ };
+ 
+ } // namespace a11y
+ } // namespace mozilla
+ 
+ #endif
+diff --git a/accessible/base/RelationTypeMap.h b/accessible/base/RelationTypeMap.h
+--- a/accessible/base/RelationTypeMap.h
++++ b/accessible/base/RelationTypeMap.h
+@@ -123,8 +123,176 @@ RELATIONTYPE(CONTAINING_TAB_PANE,
+              NAVRELATION_CONTAINING_TAB_PANE,
+              IA2_RELATION_CONTAINING_TAB_PANE)
+ 
+ RELATIONTYPE(CONTAINING_APPLICATION,
+              "containing application",
+              ATK_RELATION_NULL,
+              NAVRELATION_CONTAINING_APPLICATION,
+              IA2_RELATION_CONTAINING_APPLICATION)
++
++RELATIONTYPE(MATHML_NUMERATOR_OF,
++             "mathml numerator of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_NUMERATOR,
++             "mathml numerator",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_DENOMINATOR_OF,
++             "mathml denominator of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_DENOMINATOR,
++             "mathml denominator",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_RADICAND_OF,
++             "mathml radicand of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_RADICAND,
++             "mathml radicand",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_ROOT_INDEX_OF,
++             "mathml root index of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_ROOT_INDEX,
++             "mathml root index",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_UNDER_OF,
++             "mathml under of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_UNDER,
++             "mathml under",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_OVER_OF,
++             "mathml over of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_OVER,
++             "mathml over",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_BASE_OF,
++             "mathml base of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_BASE,
++             "mathml base",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_SUBSCRIPT_OF,
++             "mathml subscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_SUBSCRIPT,
++             "mathml subscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_SUPERSCRIPT_OF,
++             "mathml superscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_SUPERSCRIPT,
++             "mathml superscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_PRE_SUBSCRIPT_OF,
++             "mathml pre subscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_PRE_SUBSCRIPT,
++             "mathml pre subscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_PRE_SUPERSCRIPT_OF,
++             "mathml pre superscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_PRE_SUPERSCRIPT,
++             "mathml pre superscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_POST_SUBSCRIPT_OF,
++             "mathml post subscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_POST_SUBSCRIPT,
++             "mathml post subscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_POST_SUPERSCRIPT_OF,
++             "mathml post superscript of",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_POST_SUPERSCRIPT,
++             "mathml post superscript",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_ROW_FOR,
++             "mathml row for",
++             ATK_RELATION_NULL,
++             0,
++             0)
++
++RELATIONTYPE(MATHML_IN_ROW,
++             "mathml in row",
++             ATK_RELATION_NULL,
++             0,
++             0)
+diff --git a/accessible/base/nsAccUtils.cpp b/accessible/base/nsAccUtils.cpp
+--- a/accessible/base/nsAccUtils.cpp
++++ b/accessible/base/nsAccUtils.cpp
+@@ -7,16 +7,17 @@
+ 
+ #include "Accessible-inl.h"
+ #include "ARIAMap.h"
+ #include "nsAccessibilityService.h"
+ #include "nsCoreUtils.h"
+ #include "DocAccessible.h"
+ #include "HyperTextAccessible.h"
+ #include "nsIAccessibleTypes.h"
++#include "Relation.h"
+ #include "Role.h"
+ #include "States.h"
+ #include "TextLeafAccessible.h"
+ 
+ #include "nsIDOMXULContainerElement.h"
+ #include "nsIPersistentProperties2.h"
+ #include "mozilla/dom/Element.h"
+ 
+@@ -597,8 +598,384 @@ nsAccUtils::MathMLRoleFor(Accessible* aA
+   nsIAtom* tag = aAccessible->GetContent()->Tag();
+ 
+   for (uint32_t i = 0; i < kMathMLPresMapLen; ++i)
+     if (*kMathMLPresMap[i].tag == tag)
+       return kMathMLPresMap[i].role;
+ 
+   return roles::NOTHING;
+ }
++
++void
++nsAccUtils::GetMathMLRelationByType(Accessible* aAccessible,
++                                    Relation* aRelation,
++                                    RelationType aType)
++{
++  Accessible* parent = aAccessible->Parent();
++  role accRole = MathMLRoleFor(aAccessible);
++  int32_t indexInParent = aAccessible->IndexInParent();
++
++  switch (aType) {
++    case RelationType::MATHML_NUMERATOR_OF: {
++     if (!parent || parent->NativeRole() != roles::MATHML_FRACTION)
++       break;
++
++     if (indexInParent == 0)
++       aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_NUMERATOR: {
++      if (accRole != roles::MATHML_FRACTION)
++        break;
++
++      aRelation->AppendTarget(aAccessible->FirstChild());
++      break;
++    }
++
++    case RelationType::MATHML_DENOMINATOR_OF: {
++      if (!parent || parent->NativeRole() != roles::MATHML_FRACTION)
++        break;
++
++      if (indexInParent == 1)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++   case RelationType::MATHML_DENOMINATOR: {
++      if (accRole != roles::MATHML_FRACTION)
++        break;
++
++      aRelation->AppendTarget(aAccessible->GetChildAt(1));
++      break;
++    }
++
++    case RelationType::MATHML_RADICAND_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_SQUARE_ROOT &&
++          parentRole != roles::MATHML_ROOT)
++        break;
++
++      if (indexInParent == 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_RADICAND: {
++      if (accRole != roles::MATHML_SQUARE_ROOT &&
++          accRole != roles::MATHML_ROOT)
++        break;
++
++      aRelation->AppendTarget(aAccessible->GetChildAt(0));
++      break;
++    }
++
++    case RelationType::MATHML_ROOT_INDEX_OF: {
++      if (!parent)
++        break;
++
++      if (parent->NativeRole() != roles::MATHML_ROOT)
++        break;
++
++      if (indexInParent == 1)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_ROOT_INDEX: {
++      if (accRole != roles::MATHML_ROOT)
++        break;
++
++      aRelation->AppendTarget(aAccessible->GetChildAt(1));
++      break;
++    }
++
++    case RelationType::MATHML_UNDER_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_UNDER &&
++          parentRole != roles::MATHML_UNDER_OVER)
++        break;
++
++      if (indexInParent == 1)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_UNDER: {
++      if (accRole != roles::MATHML_UNDER &&
++          accRole != roles::MATHML_UNDER_OVER)
++        break;
++
++      aRelation->AppendTarget(aAccessible->GetChildAt(1));
++      break;
++    }
++
++    case RelationType::MATHML_OVER_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_OVER &&
++          parentRole != roles::MATHML_UNDER_OVER)
++        break;
++
++      if (indexInParent == (parentRole == roles::MATHML_OVER ? 1 : 2))
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_OVER: {
++      if (accRole != roles::MATHML_OVER &&
++          accRole != roles::MATHML_UNDER_OVER)
++        break;
++
++      uint32_t index = (accRole == roles::MATHML_OVER) ? 1 : 2;
++      aRelation->AppendTarget(aAccessible->GetChildAt(index));
++     break;
++    }
++
++    case RelationType::MATHML_BASE_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_UNDER &&
++          parentRole != roles::MATHML_OVER &&
++          parentRole != roles::MATHML_UNDER_OVER &&
++          parentRole != roles::MATHML_SUB &&
++          parentRole != roles::MATHML_SUP &&
++          parentRole != roles::MATHML_SUB_SUP &&
++          parentRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      if (indexInParent == 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_BASE: {
++      if (accRole != roles::MATHML_UNDER &&
++          accRole != roles::MATHML_OVER &&
++          accRole != roles::MATHML_UNDER_OVER &&
++          accRole != roles::MATHML_SUB &&
++          accRole != roles::MATHML_SUP &&
++          accRole != roles::MATHML_SUB_SUP &&
++          accRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      aRelation->AppendTarget(aAccessible->FirstChild());
++      break;
++    }
++
++    case RelationType::MATHML_SUBSCRIPT_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_SUB &&
++          parentRole != roles::MATHML_SUB_SUP)
++        break;
++
++      if (indexInParent == 1)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_SUBSCRIPT: {
++      if (accRole != roles::MATHML_SUB &&
++          accRole != roles::MATHML_SUB_SUP)
++        break;
++
++      aRelation->AppendTarget(aAccessible->GetChildAt(1));
++      break;
++    }
++
++    case RelationType::MATHML_SUPERSCRIPT_OF: {
++      if (!parent)
++        break;
++
++      role parentRole = parent->NativeRole();
++      if (parentRole != roles::MATHML_SUP &&
++          parentRole != roles::MATHML_SUB_SUP)
++        break;
++
++      if (indexInParent == (parentRole == roles::MATHML_SUP ? 1 : 2))
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_SUPERSCRIPT: {
++      if (accRole != roles::MATHML_SUP &&
++          accRole != roles::MATHML_SUB_SUP)
++        break;
++
++      uint32_t index = (accRole == roles::MATHML_SUP) ? 1 : 2;
++      aRelation->AppendTarget(aAccessible->GetChildAt(index));
++      break;
++    }
++
++    case RelationType::MATHML_PRE_SUBSCRIPT_OF: {
++      if (!parent || parent->NativeRole() != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(parent);
++      // Must have mprescripts element, and pre-subscript elements are even
++      // indices.
++      if (mprescriptsIndex != 0 &&
++          static_cast<uint32_t>(indexInParent) > mprescriptsIndex &&
++          indexInParent % 2 == 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_PRE_SUBSCRIPT: {
++      if (accRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(aAccessible);
++      if (mprescriptsIndex == 0)
++        break;
++
++      uint32_t length = aAccessible->ChildCount();
++      for (uint32_t i = mprescriptsIndex + 1; i < length; i += 2)
++        aRelation->AppendTarget(aAccessible->GetChildAt(i));
++
++      break;
++    }
++
++    case RelationType::MATHML_PRE_SUPERSCRIPT_OF: {
++      if (!parent || parent->NativeRole() != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(parent);
++      // Must have mprescripts element, and pre-superscript elements are odd
++      // indices.
++      if (mprescriptsIndex != 0 &&
++          static_cast<uint32_t>(indexInParent) > mprescriptsIndex &&
++          indexInParent % 2 != 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_PRE_SUPERSCRIPT: {
++      if (accRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(aAccessible);
++      if (mprescriptsIndex == 0)
++        break;
++
++      uint32_t length = aAccessible->ChildCount();
++      for (uint32_t i = mprescriptsIndex + 2; i < length; i += 2)
++        aRelation->AppendTarget(aAccessible->GetChildAt(i));
++
++      break;
++    }
++
++    case RelationType::MATHML_POST_SUBSCRIPT_OF: {
++      if (!parent || parent->NativeRole() != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(parent);
++      // Post-subscripts are odd indices before the mprescript if it exists.
++      if ((mprescriptsIndex == 0 ||
++           static_cast<uint32_t>(indexInParent) < mprescriptsIndex) &&
++          indexInParent % 2 != 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_POST_SUBSCRIPT: {
++      if (accRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(aAccessible);
++      if (mprescriptsIndex == 0)
++        mprescriptsIndex = aAccessible->ChildCount();
++
++      for (uint32_t i = 1; i < mprescriptsIndex; i += 2)
++        aRelation->AppendTarget(aAccessible->GetChildAt(i));
++
++      break;
++    }
++
++    case RelationType::MATHML_POST_SUPERSCRIPT_OF: {
++      if (!parent || parent->NativeRole() != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(parent);
++      // Post-superscripts are even indices before the mprescript if it exists.
++      // Must not be 0 (the base).
++      if ((mprescriptsIndex == 0 ||
++           static_cast<uint32_t>(indexInParent) < mprescriptsIndex) &&
++          indexInParent > 0 && indexInParent % 2 == 0)
++        aRelation->AppendTarget(parent);
++
++      break;
++    }
++
++    case RelationType::MATHML_POST_SUPERSCRIPT: {
++      if (accRole != roles::MATHML_MULTISCRIPTS)
++        break;
++
++      uint32_t mprescriptsIndex = GetMPrescriptsIndex(aAccessible);
++      if (mprescriptsIndex == 0)
++        mprescriptsIndex = aAccessible->ChildCount();
++
++      for (uint32_t i = 2; i < mprescriptsIndex; i += 2)
++        aRelation->AppendTarget(aAccessible->GetChildAt(i));
++
++      break;
++    }
++
++    case RelationType::MATHML_ROW_FOR: {
++      if (accRole != roles::MATHML_ROW)
++        break;
++
++      aRelation->AppendIter(new ChildIterator(aAccessible));
++      break;
++    }
++
++    case RelationType::MATHML_IN_ROW: {
++      if (!parent || parent->NativeRole() != roles::MATHML_ROW)
++        break;
++
++      aRelation->AppendTarget(parent);
++      break;
++    }
++
++    default:
++      break;
++  }
++}
++
++uint32_t
++nsAccUtils::GetMPrescriptsIndex(Accessible* aAccessible)
++{
++  uint32_t length = aAccessible->ChildCount();
++  for (uint32_t i = 1; i < length; i++) {
++    Accessible* child = aAccessible->GetChildAt(i);
++    if (child &&
++        child->IsContent() &&
++        child->GetContent()->Tag() == nsGkAtoms::mprescripts_) {
++      return i;
++    }
++  }
++  return 0;
++}
+diff --git a/accessible/base/nsAccUtils.h b/accessible/base/nsAccUtils.h
+--- a/accessible/base/nsAccUtils.h
++++ b/accessible/base/nsAccUtils.h
+@@ -250,15 +250,25 @@ public:
+    * Return true if no accessible should be created for the element associated
+    * with the tag.
+    */
+   static bool IsMathMLUnexposedTag(const nsIAtom* aTag);
+ 
+   static void SetMathMLAttrs(Accessible* aAccessible,
+                              nsIPersistentProperties* aAttributes);
+ 
++  static void GetMathMLRelationByType(Accessible* aAccessible,
++                                      Relation* aRelation,
++                                      RelationType aType);
++
+   static role MathMLRoleFor(Accessible* aAccessible);
++
++private:
++  /**
++   * Return 0 if mprescripts element is not found, > 0 otherwise.
++   */
++  static uint32_t GetMPrescriptsIndex(Accessible* aAccessible);
+ };
+ 
+ } // namespace a11y
+ } // namespace mozilla
+ 
+ #endif
+diff --git a/accessible/interfaces/nsIAccessibleRelation.idl b/accessible/interfaces/nsIAccessibleRelation.idl
+--- a/accessible/interfaces/nsIAccessibleRelation.idl
++++ b/accessible/interfaces/nsIAccessibleRelation.idl
+@@ -120,16 +120,162 @@ interface nsIAccessibleRelation : nsISup
+   const unsigned long RELATION_CONTAINING_TAB_PANE = 0x12;
+ 
+   /**
+    * The target object is the containing application object.
+    */
+   const unsigned long RELATION_CONTAINING_APPLICATION = 0x14;
+ 
+   /**
++   * This object is a numerator for a target mfrac.
++   */
++  const unsigned long RELATION_MATHML_NUMERATOR_OF = 0x15;
++
++  /**
++   * This object is an mfrac whose numerator is the target.
++   */
++  const unsigned long RELATION_MATHML_NUMERATOR = 0x16;
++
++  /**
++   * This object is a denominator for a target mfrac.
++   */
++  const unsigned long RELATION_MATHML_DENOMINATOR_OF = 0x17;
++
++  /**
++   * This object is an mfrac whose denominator is the target.
++   */
++  const unsigned long RELATION_MATHML_DENOMINATOR = 0x18;
++
++  /**
++   * This object is a radicand for a target msqrt or mroot.
++   */
++  const unsigned long RELATION_MATHML_RADICAND_OF = 0x19;
++
++  /**
++   * This object is an msqrt or mroot whose radicand is the target.
++   */
++  const unsigned long RELATION_MATHML_RADICAND = 0x1a;
++
++  /**
++   * This object is a root index for a target mroot.
++   */
++  const unsigned long RELATION_MATHML_ROOT_INDEX_OF = 0x1b;
++
++  /**
++   * This object is an mroot whose root index is the target.
++   */
++  const unsigned long RELATION_MATHML_ROOT_INDEX = 0x1c;
++
++  /**
++   * This object is an underscript for a target munder or munderover.
++   */
++  const unsigned long RELATION_MATHML_UNDER_OF = 0x1d;
++
++  /**
++   * This object is an munder or munderover whose underscript is the target.
++   */
++  const unsigned long RELATION_MATHML_UNDER = 0x1e;
++
++  /**
++   * This object is an overscript for a target mover or munderover.
++   */
++  const unsigned long RELATION_MATHML_OVER_OF = 0x1f;
++
++  /**
++   * This object is an mover or munderover whose overscript is the target.
++   */
++  const unsigned long RELATION_MATHML_OVER = 0x20;
++
++  /**
++   * This object is the base for a target munder, mover, munderover, msub, msup,
++   * msubsup, or mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_BASE_OF = 0x21;
++
++  /**
++   * This object is an munder, mover, munderover, msub, msup, msubsup, or
++   * mmultiscripts whose base is the target.
++   */
++  const unsigned long RELATION_MATHML_BASE = 0x22;
++
++  /**
++   * This object is a subscript for a target msub or msubsup, or is a
++   * post-subscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_SUBSCRIPT_OF = 0x23;
++
++  /**
++   * This object is an msub or msubsup whose subscript is the target, or is an
++   * mmultiscripts whose post-subscript is the target.
++   */
++  const unsigned long RELATION_MATHML_SUBSCRIPT = 0x24;
++
++  /**
++   * This object is a superscript for a target msup or msubsup, or is a
++   * post-superscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_SUPERSCRIPT_OF = 0x25;
++
++  /**
++   * This object is an msup or msubsup whose superscript is the target, or is an
++   * mmultiscripts whose post-superscript is the target.
++   */
++  const unsigned long RELATION_MATHML_SUPERSCRIPT = 0x26;
++
++  /**
++   * This object is a pre-subscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_PRE_SUBSCRIPT_OF = 0x27;
++
++  /**
++   * This object is an mmultiscripts whose pre-subscript is the target.
++   */
++  const unsigned long RELATION_MATHML_PRE_SUBSCRIPT = 0x28;
++
++  /**
++   * This object is a pre-superscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_PRE_SUPERSCRIPT_OF = 0x29;
++
++  /**
++   * This object is an mmultiscripts whose pre-superscript is the target.
++   */
++  const unsigned long RELATION_MATHML_PRE_SUPERSCRIPT = 0x2a;
++
++  /**
++   * This object is a post-subscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_POST_SUBSCRIPT_OF = 0x2b;
++
++  /**
++   * This object is an mmultiscripts whose post-subscript is the target.
++   */
++  const unsigned long RELATION_MATHML_POST_SUBSCRIPT = 0x2c;
++
++  /**
++   * This object is a post-superscript for a target mmultiscripts.
++   */
++  const unsigned long RELATION_MATHML_POST_SUPERSCRIPT_OF = 0x2d;
++
++  /**
++   * This object is an mmultiscripts whose post-superscript is the target.
++   */
++  const unsigned long RELATION_MATHML_POST_SUPERSCRIPT = 0x2e;
++
++  /**
++   * This object is an mrow containing the target element.
++   */
++  const unsigned long RELATION_MATHML_ROW_FOR = 0x2f;
++
++  /**
++   * This object is an element contained in a target mrow.
++   */
++  const unsigned long RELATION_MATHML_IN_ROW = 0x30;
++
++  /**
+    * Returns the type of the relation.
+    */
+   readonly attribute unsigned long relationType;
+ 
+   /**
+    * Returns the number of targets for this relation.
+    */
+   readonly attribute unsigned long targetsCount;
+diff --git a/accessible/tests/mochitest/relations.js b/accessible/tests/mochitest/relations.js
+--- a/accessible/tests/mochitest/relations.js
++++ b/accessible/tests/mochitest/relations.js
+@@ -16,16 +16,44 @@ const RELATION_MEMBER_OF = nsIAccessible
+ const RELATION_NODE_CHILD_OF = nsIAccessibleRelation.RELATION_NODE_CHILD_OF;
+ const RELATION_NODE_PARENT_OF = nsIAccessibleRelation.RELATION_NODE_PARENT_OF;
+ const RELATION_PARENT_WINDOW_OF = nsIAccessibleRelation.RELATION_PARENT_WINDOW_OF;
+ const RELATION_POPUP_FOR = nsIAccessibleRelation.RELATION_POPUP_FOR;
+ const RELATION_SUBWINDOW_OF = nsIAccessibleRelation.RELATION_SUBWINDOW_OF;
+ const RELATION_CONTAINING_DOCUMENT = nsIAccessibleRelation.RELATION_CONTAINING_DOCUMENT;
+ const RELATION_CONTAINING_TAB_PANE = nsIAccessibleRelation.RELATION_CONTAINING_TAB_PANE;
+ const RELATION_CONTAINING_APPLICATION = nsIAccessibleRelation.RELATION_CONTAINING_APPLICATION;
++const RELATION_MATHML_NUMERATOR_OF = nsIAccessibleRelation.RELATION_MATHML_NUMERATOR_OF;
++const RELATION_MATHML_NUMERATOR = nsIAccessibleRelation.RELATION_MATHML_NUMERATOR;
++const RELATION_MATHML_DENOMINATOR_OF = nsIAccessibleRelation.RELATION_MATHML_DENOMINATOR_OF;
++const RELATION_MATHML_DENOMINATOR = nsIAccessibleRelation.RELATION_MATHML_DENOMINATOR;
++const RELATION_MATHML_RADICAND_OF = nsIAccessibleRelation.RELATION_MATHML_RADICAND_OF;
++const RELATION_MATHML_RADICAND = nsIAccessibleRelation.RELATION_MATHML_RADICAND;
++const RELATION_MATHML_ROOT_INDEX_OF = nsIAccessibleRelation.RELATION_MATHML_ROOT_INDEX_OF;
++const RELATION_MATHML_ROOT_INDEX = nsIAccessibleRelation.RELATION_MATHML_ROOT_INDEX;
++const RELATION_MATHML_UNDER_OF = nsIAccessibleRelation.RELATION_MATHML_UNDER_OF;
++const RELATION_MATHML_UNDER = nsIAccessibleRelation.RELATION_MATHML_UNDER;
++const RELATION_MATHML_OVER_OF = nsIAccessibleRelation.RELATION_MATHML_OVER_OF;
++const RELATION_MATHML_OVER = nsIAccessibleRelation.RELATION_MATHML_OVER;
++const RELATION_MATHML_BASE_OF = nsIAccessibleRelation.RELATION_MATHML_BASE_OF;
++const RELATION_MATHML_BASE = nsIAccessibleRelation.RELATION_MATHML_BASE;
++const RELATION_MATHML_SUBSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_SUBSCRIPT_OF;
++const RELATION_MATHML_SUBSCRIPT = nsIAccessibleRelation.RELATION_MATHML_SUBSCRIPT;
++const RELATION_MATHML_SUPERSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_SUPERSCRIPT_OF;
++const RELATION_MATHML_SUPERSCRIPT = nsIAccessibleRelation.RELATION_MATHML_SUPERSCRIPT;
++const RELATION_MATHML_PRE_SUBSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_PRE_SUBSCRIPT_OF;
++const RELATION_MATHML_PRE_SUBSCRIPT = nsIAccessibleRelation.RELATION_MATHML_PRE_SUBSCRIPT;
++const RELATION_MATHML_PRE_SUPERSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_PRE_SUPERSCRIPT_OF;
++const RELATION_MATHML_PRE_SUPERSCRIPT = nsIAccessibleRelation.RELATION_MATHML_PRE_SUPERSCRIPT;
++const RELATION_MATHML_POST_SUBSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_POST_SUBSCRIPT_OF;
++const RELATION_MATHML_POST_SUBSCRIPT = nsIAccessibleRelation.RELATION_MATHML_POST_SUBSCRIPT;
++const RELATION_MATHML_POST_SUPERSCRIPT_OF = nsIAccessibleRelation.RELATION_MATHML_POST_SUPERSCRIPT_OF;
++const RELATION_MATHML_POST_SUPERSCRIPT = nsIAccessibleRelation.RELATION_MATHML_POST_SUPERSCRIPT;
++const RELATION_MATHML_ROW_FOR = nsIAccessibleRelation.RELATION_MATHML_ROW_FOR;
++const RELATION_MATHML_IN_ROW = nsIAccessibleRelation.RELATION_MATHML_IN_ROW;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // General
+ 
+ /**
+  * Test the accessible relation.
+  *
+  * @param aIdentifier          [in] identifier to get an accessible, may be ID
+diff --git a/accessible/tests/mochitest/relations/a11y.ini b/accessible/tests/mochitest/relations/a11y.ini
+--- a/accessible/tests/mochitest/relations/a11y.ini
++++ b/accessible/tests/mochitest/relations/a11y.ini
+@@ -1,10 +1,11 @@
+ [DEFAULT]
+ 
+ [test_bindings.xhtml]
+ [test_embeds.xul]
+ [test_general.html]
+ [test_general.xul]
++[test_mathml.html]
+ [test_tabbrowser.xul]
+ [test_tree.xul]
+ [test_ui_modalprompt.html]
+ [test_update.html]
+diff --git a/accessible/tests/mochitest/relations/test_mathml.html b/accessible/tests/mochitest/relations/test_mathml.html
+new file mode 100644
+--- /dev/null
++++ b/accessible/tests/mochitest/relations/test_mathml.html
+@@ -0,0 +1,193 @@
++<html>
++
++<head>
++  <title>MathML Accessible Relations Tests</title>
++  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
++
++  <script type="application/javascript"
++          src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
++
++  <script type="application/javascript"
++          src="../common.js"></script>
++  <script type="application/javascript"
++          src="../relations.js"></script>
++
++  <script type="application/javascript">
++    function doTest()
++    {
++      // MATHML_NUMERATOR/_OF exists for an mfrac.
++      testRelation("numerator", RELATION_MATHML_NUMERATOR_OF, "fraction");
++      testRelation("fraction", RELATION_MATHML_NUMERATOR, "numerator");
++
++      // MATHML_DENOMINATOR/_OF exists for an mfrac.
++      testRelation("denominator", RELATION_MATHML_DENOMINATOR_OF, "fraction");
++      testRelation("fraction", RELATION_MATHML_DENOMINATOR, "denominator");
++
++      // MATHML_RADICAND/_OF exists for an mroot and msqrt.
++      testRelation("radicand_1", RELATION_MATHML_RADICAND_OF, "root");
++      testRelation("root", RELATION_MATHML_RADICAND, "radicand_1");
++      testRelation("radicand_2", RELATION_MATHML_RADICAND_OF, "sqrt");
++      testRelation("sqrt", RELATION_MATHML_RADICAND, "radicand_2");
++
++      // MATHML_ROOT_INDEX/_OF exists for an mroot.
++      testRelation("index", RELATION_MATHML_ROOT_INDEX_OF, "root");
++      testRelation("root", RELATION_MATHML_ROOT_INDEX, "index");
++
++      // MATHML_UNDER/_OF exists for an munder and munderover.
++      testRelation("under_1", RELATION_MATHML_UNDER_OF, "under");
++      testRelation("under", RELATION_MATHML_UNDER, "under_1");
++      testRelation("under_2", RELATION_MATHML_UNDER_OF, "underover");
++      testRelation("underover", RELATION_MATHML_UNDER, "under_2");
++
++      // MATHML_OVER/_OF exists for an mover and munderover.
++      testRelation("over_1", RELATION_MATHML_OVER_OF, "over");
++      testRelation("over", RELATION_MATHML_OVER, "over_1");
++      testRelation("over_2", RELATION_MATHML_OVER_OF, "underover");
++      testRelation("underover", RELATION_MATHML_OVER, "over_2");
++
++      // MATHML_BASE/_OF exists for an munder, mover, munderover, msub, msup,
++      // msubsup, and mmultiscripts.
++      testRelation("base_1", RELATION_MATHML_BASE_OF, "under");
++      testRelation("under", RELATION_MATHML_BASE, "base_1");
++      testRelation("base_2", RELATION_MATHML_BASE_OF, "over");
++      testRelation("over", RELATION_MATHML_BASE, "base_2");
++      testRelation("base_3", RELATION_MATHML_BASE_OF, "underover");
++      testRelation("underover", RELATION_MATHML_BASE, "base_3");
++      testRelation("base_4", RELATION_MATHML_BASE_OF, "sub");
++      testRelation("sub", RELATION_MATHML_BASE, "base_4");
++      testRelation("base_5", RELATION_MATHML_BASE_OF, "sup");
++      testRelation("sup", RELATION_MATHML_BASE, "base_5");
++      testRelation("base_6", RELATION_MATHML_BASE_OF, "subsup");
++      testRelation("subsup", RELATION_MATHML_BASE, "base_6");
++      testRelation("base_7", RELATION_MATHML_BASE_OF, "multiscripts");
++      testRelation("multiscripts", RELATION_MATHML_BASE, "base_7");
++
++      // MATHML_SUBSCRIPT/_OF exists for an msub and msubsup.
++      testRelation("sub_1", RELATION_MATHML_SUBSCRIPT_OF, "sub");
++      testRelation("sub", RELATION_MATHML_SUBSCRIPT, "sub_1");
++      testRelation("sub_2", RELATION_MATHML_SUBSCRIPT_OF, "subsup");
++      testRelation("subsup", RELATION_MATHML_SUBSCRIPT, "sub_2");
++
++      // MATHML_SUPERSCRIPT/_OF exists for an msup and msubsup.
++      testRelation("sup_1", RELATION_MATHML_SUPERSCRIPT_OF, "sup");
++      testRelation("sup", RELATION_MATHML_SUPERSCRIPT, "sup_1");
++      testRelation("sup_2", RELATION_MATHML_SUPERSCRIPT_OF, "subsup");
++      testRelation("subsup", RELATION_MATHML_SUPERSCRIPT, "sup_2");
++
++      // MATHML_PRE_SUBSCRIPT/_OF exists for an mmultiscripts.
++      testRelation("presub_1", RELATION_MATHML_PRE_SUBSCRIPT_OF,
++        "multiscripts");
++      testRelation("presub_2", RELATION_MATHML_PRE_SUBSCRIPT_OF,
++        "multiscripts");
++      testRelation("multiscripts", RELATION_MATHML_PRE_SUBSCRIPT,
++        ["presub_1", "presub_2"]);
++
++      // MATHML_PRE_SUPERSCRIPT/_OF exists for an mmultiscripts.
++      testRelation("presup_1", RELATION_MATHML_PRE_SUPERSCRIPT_OF,
++        "multiscripts");
++      testRelation("presup_2", RELATION_MATHML_PRE_SUPERSCRIPT_OF,
++        "multiscripts");
++      testRelation("multiscripts", RELATION_MATHML_PRE_SUPERSCRIPT,
++        ["presup_1", "presup_2"]);
++
++      // MATHML_POST_SUBSCRIPT/_OF exists for an mmultiscripts.
++      testRelation("postsub_1", RELATION_MATHML_POST_SUBSCRIPT_OF,
++        "multiscripts");
++      testRelation("postsub_2", RELATION_MATHML_POST_SUBSCRIPT_OF,
++        "multiscripts");
++      testRelation("multiscripts", RELATION_MATHML_POST_SUBSCRIPT,
++        ["postsub_1", "postsub_2"]);
++
++      // MATHML_POST_SUPERSCRIPT/_OF exists for an mmultiscripts.
++      testRelation("postsup_1", RELATION_MATHML_POST_SUPERSCRIPT_OF,
++        "multiscripts");
++      testRelation("postsup_2", RELATION_MATHML_POST_SUPERSCRIPT_OF,
++        "multiscripts");
++      testRelation("multiscripts", RELATION_MATHML_POST_SUPERSCRIPT,
++        ["postsup_1", "postsup_2"]);
++
++      // MATHML_ROW_FOR/MATHML_IN_ROW exists for an mrow.
++      testRelation("rowitem_1", RELATION_MATHML_IN_ROW, "row");
++      testRelation("rowitem_2", RELATION_MATHML_IN_ROW, "row");
++      testRelation("rowitem_3", RELATION_MATHML_IN_ROW, "row");
++      testRelation("rowitem_4", RELATION_MATHML_IN_ROW, "row");
++      testRelation("rowitem_5", RELATION_MATHML_IN_ROW, "row");
++      testRelation("row", RELATION_MATHML_ROW_FOR,
++        ["rowitem_1", "rowitem_2", "rowitem_3", "rowitem_4", "rowitem_5"]);
++
++      // finish test
++      SimpleTest.finish();
++    }
++
++    SimpleTest.waitForExplicitFinish();
++    addA11yLoadEvent(doTest);
++  </script>
++
++</head>
++
++<body>
++  <p id="display"></p>
++  <div id="content" style="display: none"></div>
++  <pre id="test">
++  </pre>
++
++  <math>
++    <mfrac id="fraction">
++      <mn id="numerator">1</mn>
++      <mn id="denominator">2</mn>
++    </mfrac>
++    <mroot id="root">
++      <mn id="radicand_1">2</mn>
++      <mn id="index">5</mn>
++    </mroot>
++    <msqrt id="sqrt">
++      <mn id="radicand_2">2</mn>
++    </msqrt>
++    <munder id="under">
++      <mi id="base_1">x</mi>
++      <mn id="under_1">1</mn>
++    </munder>
++    <mover id="over">
++      <mi id="base_2">x</mi>
++      <mn id="over_1">1</mn>
++    </mover>
++    <munderover id="underover">
++      <mi id="base_3">x</mi>
++      <mn id="under_2">1</mn>
++      <mn id="over_2">1</mn>
++    </munderover>
++    <msub id="sub">
++      <mi id="base_4">x</mi>
++      <mn id="sub_1">1</mn>
++    </msub>
++    <msup id="sup">
++      <mi id="base_5">x</mi>
++      <mn id="sup_1">1</mn>
++    </msup>
++    <msubsup id="subsup">
++      <mi id="base_6">x</mi>
++      <mn id="sub_2">1</mn>
++      <mn id="sup_2">1</mn>
++    </msubsup>
++    <mmultiscripts id="multiscripts">
++      <mi id="base_7">x</mi>
++      <mn id="postsub_1">1</mn>
++      <mn id="postsup_1">1</mn>
++      <mn id="postsub_2">1</mn>
++      <mn id="postsup_2">1</mn>
++      <mprescripts/>
++      <mn id="presub_1">1</mn>
++      <mn id="presup_1">1</mn>
++      <mn id="presub_2">1</mn>
++      <mn id="presup_2">1</mn>
++    </mmultiscripts>
++    <mrow id="row">
++      <mn id="rowitem_1">1</mn>
++      <mn id="rowitem_2">2</mn>
++      <mn id="rowitem_3">3</mn>
++      <mn id="rowitem_4">4</mn>
++      <mn id="rowitem_5">5</mn>
++    </mrow>
++  </math>
++</body>
++</html>
+diff --git a/accessible/xpcom/xpcAccessible.cpp b/accessible/xpcom/xpcAccessible.cpp
+--- a/accessible/xpcom/xpcAccessible.cpp
++++ b/accessible/xpcom/xpcAccessible.cpp
+@@ -421,17 +421,45 @@ xpcAccessible::GetRelations(nsIArray** a
+     nsIAccessibleRelation::RELATION_SUBWINDOW_OF,
+     nsIAccessibleRelation::RELATION_EMBEDS,
+     nsIAccessibleRelation::RELATION_EMBEDDED_BY,
+     nsIAccessibleRelation::RELATION_POPUP_FOR,
+     nsIAccessibleRelation::RELATION_PARENT_WINDOW_OF,
+     nsIAccessibleRelation::RELATION_DEFAULT_BUTTON,
+     nsIAccessibleRelation::RELATION_CONTAINING_DOCUMENT,
+     nsIAccessibleRelation::RELATION_CONTAINING_TAB_PANE,
+-    nsIAccessibleRelation::RELATION_CONTAINING_APPLICATION
++    nsIAccessibleRelation::RELATION_CONTAINING_APPLICATION,
++    nsIAccessibleRelation::RELATION_MATHML_NUMERATOR_OF,
++    nsIAccessibleRelation::RELATION_MATHML_NUMERATOR,
++    nsIAccessibleRelation::RELATION_MATHML_DENOMINATOR_OF,
++    nsIAccessibleRelation::RELATION_MATHML_DENOMINATOR,
++    nsIAccessibleRelation::RELATION_MATHML_RADICAND_OF,
++    nsIAccessibleRelation::RELATION_MATHML_RADICAND,
++    nsIAccessibleRelation::RELATION_MATHML_ROOT_INDEX_OF,
++    nsIAccessibleRelation::RELATION_MATHML_ROOT_INDEX,
++    nsIAccessibleRelation::RELATION_MATHML_UNDER_OF,
++    nsIAccessibleRelation::RELATION_MATHML_UNDER,
++    nsIAccessibleRelation::RELATION_MATHML_OVER_OF,
++    nsIAccessibleRelation::RELATION_MATHML_OVER,
++    nsIAccessibleRelation::RELATION_MATHML_BASE_OF,
++    nsIAccessibleRelation::RELATION_MATHML_BASE,
++    nsIAccessibleRelation::RELATION_MATHML_SUBSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_SUBSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_SUPERSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_SUPERSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_PRE_SUBSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_PRE_SUBSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_PRE_SUPERSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_PRE_SUPERSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_POST_SUBSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_POST_SUBSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_POST_SUPERSCRIPT_OF,
++    nsIAccessibleRelation::RELATION_MATHML_POST_SUPERSCRIPT,
++    nsIAccessibleRelation::RELATION_MATHML_ROW_FOR,
++    nsIAccessibleRelation::RELATION_MATHML_IN_ROW
+   };
+ 
+   for (uint32_t idx = 0; idx < ArrayLength(relationTypes); idx++) {
+     nsCOMPtr<nsIAccessibleRelation> relation;
+     nsresult rv = GetRelationByType(relationTypes[idx], getter_AddRefs(relation));
+ 
+     if (NS_SUCCEEDED(rv) && relation) {
+       uint32_t targets = 0;

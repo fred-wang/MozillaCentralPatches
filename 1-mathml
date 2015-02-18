@@ -1,0 +1,1339 @@
+# HG changeset patch
+# Parent d7e156a7a0a6d050119885d972b048c09d267e74
+# User Jonathan Wei <jwei@jonathanwei.ca>
+
+diff --git a/accessible/base/AccTypes.h b/accessible/base/AccTypes.h
+--- a/accessible/base/AccTypes.h
++++ b/accessible/base/AccTypes.h
+@@ -36,16 +36,17 @@ enum AccType {
+   eHTMLRangeType,
+   eHTMLSpinnerType,
+   eHTMLTableType,
+   eHTMLTableCellType,
+   eHTMLTableRowType,
+   eHTMLTextFieldType,
+   eHyperTextType,
+   eImageType,
++  eMathMLType,
+   eOuterDocType,
+   ePluginType,
+   eTextLeafType,
+ 
+   /**
+    * Other accessible types.
+    */
+   eApplicationType,
+diff --git a/accessible/base/Role.h b/accessible/base/Role.h
+--- a/accessible/base/Role.h
++++ b/accessible/base/Role.h
+@@ -780,17 +780,203 @@ enum Role {
+    */
+   DEFINITION = 128,
+ 
+   /**
+    * Represent a keyboard or keypad key (ARIA role "key").
+    */
+   KEY = 129,
+ 
+-  LAST_ROLE = KEY
++  /**
++   * A block of MathML code (math).
++   */
++  MATHML_MATH = 130,
++
++  /**
++   * A MathML identifier (mi in MathML).
++   */
++  MATHML_IDENTIFIER = 131,
++
++  /**
++   * A MathML number (mn in MathML).
++   */
++  MATHML_NUMBER = 132,
++
++  /**
++   * A MathML operator (mo in MathML).
++   */
++  MATHML_OPERATOR = 133,
++
++  /**
++   * A MathML text (mtext in MathML).
++   */
++  MATHML_TEXT = 134,
++
++  /**
++   * A MathML string literal (ms in MathML).
++   */
++  MATHML_STRING_LITERAL = 135,
++
++  /**
++   * A MathML glyph (mglyph in MathML).
++   */
++  MATHML_GLYPH = 136,
++
++  /**
++   * A MathML row (mrow in MathML).
++   */
++  MATHML_ROW = 137,
++
++  /**
++   * A MathML fraction (mfrac in MathML).
++   */
++  MATHML_FRACTION = 138,
++
++  /**
++   * A MathML square root (msqrt in MathML).
++   */
++  MATHML_SQUARE_ROOT = 139,
++
++  /**
++   * A MathML root (mroot in MathML).
++   */
++  MATHML_ROOT = 140,
++
++  /**
++   * A MathML fenced element (mfenced in MathML).
++   */
++  MATHML_FENCED = 141,
++
++  /**
++   * A MathML enclosed element (menclose in MathML).
++   */
++  MATHML_ENCLOSED = 142,
++
++  /**
++   * A MathML styling element (mstyle in MathML).
++   */
++  MATHML_STYLE = 143,
++
++  /**
++   * A MathML subscript (msub in MathML).
++   */
++  MATHML_SUB = 144,
++
++  /**
++   * A MathML superscript (msup in MathML).
++   */
++  MATHML_SUP = 145,
++
++  /**
++   * A MathML subscript and superscript (msubsup in MathML).
++   */
++  MATHML_SUB_SUP = 146,
++
++  /**
++   * A MathML underscript (munder in MathML).
++   */
++  MATHML_UNDER = 147,
++
++  /**
++   * A MathML overscript (mover in MathML).
++   */
++  MATHML_OVER = 148,
++
++  /**
++   * A MathML underscript and overscript (munderover in MathML).
++   */
++  MATHML_UNDER_OVER = 149,
++
++  /**
++   * A MathML multiple subscript and superscript element (mmultiscripts in
++   * MathML).
++   */
++  MATHML_MULTISCRIPTS = 150,
++
++  /**
++   * A MathML table (mtable in MathML).
++   */
++  MATHML_TABLE = 151,
++
++  /**
++   * A MathML labelled table row (mlabeledtr in MathML).
++   */
++  MATHML_LABELED_ROW = 152,
++
++  /**
++   * A MathML table row (mtr in MathML).
++   */
++  MATHML_TABLE_ROW = 153,
++
++  /**
++   * A MathML table entry or cell (mtd in MathML).
++   */
++  MATHML_CELL = 154,
++
++  /**
++   * A MathML interactive element (maction in MathML).
++   */
++  MATHML_ACTION = 155,
++
++  /**
++   * A MathML error message (merror in MathML).
++   */
++  MATHML_ERROR = 156,
++
++  /**
++   * A MathML semantics annotation element (semantics in MathML).
++   */
++  MATHML_SEMANTICS = 157,
++
++  /**
++   * A MathML annotation (annotation in MathML).
++   */
++  MATHML_ANNOTATION = 158,
++
++  /**
++   * A MathML XML annotation (annotation-xml in MathML).
++   */
++  MATHML_XML_ANNOTATION = 159,
++
++  /**
++   * A MathML stacked (rows of numbers) element (mstack in MathML).
++   */
++  MATHML_STACK = 160,
++
++  /**
++   * A MathML long division element (mlongdiv in MathML).
++   */
++  MATHML_LONG_DIVISION = 161,
++
++  /**
++   * A MathML stack group (msgroup in MathML).
++   */
++  MATHML_STACK_GROUP = 162,
++
++  /**
++   * A MathML stack row (msrow in MathML).
++   */
++  MATHML_STACK_ROW = 163,
++
++  /**
++   * MathML carries, borrows, or crossouts for a row (mscarries in MathML).
++   */
++  MATHML_STACK_CARRIES = 164,
++
++  /**
++   * A MathML carry, borrow, or crossout for a column (mscarry in MathML).
++   */
++  MATHML_STACK_CARRY = 165,
++
++  /**
++   * A MathML line in a stack (msline in MathML).
++   */
++  MATHML_STACK_LINE = 166,
++
++  LAST_ROLE = MATHML_STACK_LINE
+ };
+ 
+ } // namespace role
+ 
+ typedef enum mozilla::a11y::roles::Role role;
+ 
+ } // namespace a11y
+ } // namespace mozilla
+diff --git a/accessible/base/RoleMap.h b/accessible/base/RoleMap.h
+--- a/accessible/base/RoleMap.h
++++ b/accessible/base/RoleMap.h
+@@ -1050,8 +1050,304 @@ ROLE(DEFINITION,
+ 
+ ROLE(KEY,
+      "key",
+      ATK_ROLE_PUSH_BUTTON,
+      NSAccessibilityButtonRole,
+      ROLE_SYSTEM_PUSHBUTTON,
+      ROLE_SYSTEM_PUSHBUTTON,
+      eNameFromSubtreeRule)
++
++ROLE(MATHML_MATH,
++     "math",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     ROLE_SYSTEM_EQUATION,
++     ROLE_SYSTEM_EQUATION,
++     eNoNameRule)
++
++ROLE(MATHML_IDENTIFIER,
++     "mathml identifier",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_NUMBER,
++     "mathml number",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_OPERATOR,
++     "mathml operator",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_TEXT,
++     "mathml text",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_STRING_LITERAL,
++     "mathml string literal",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_GLYPH,
++     "mathml glyph",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNameFromSubtreeRule)
++
++ROLE(MATHML_ROW,
++     "mathml row",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_FRACTION,
++     "mathml fraction",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_SQUARE_ROOT,
++     "mathml square root",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_ROOT,
++     "mathml root",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_FENCED,
++     "mathml fenced",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_ENCLOSED,
++     "mathml enclosed",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STYLE,
++     "mathml style",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_SUB,
++     "mathml sub",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_SUP,
++     "mathml sup",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_SUB_SUP,
++     "mathml sub sup",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_UNDER,
++     "mathml under",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_OVER,
++     "mathml over",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_UNDER_OVER,
++     "mathml under over",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_MULTISCRIPTS,
++     "mathml multiscripts",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_TABLE,
++     "mathml table",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_LABELED_ROW,
++     "mathml labeled row",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_TABLE_ROW,
++     "mathml table row",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_CELL,
++     "mathml cell",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_ACTION,
++     "mathml action",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_ERROR,
++     "mathml error",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_SEMANTICS,
++     "mathml semantics",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_ANNOTATION,
++     "mathml annotation",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_XML_ANNOTATION,
++     "mathml xml annotation",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK,
++     "mathml stack",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_LONG_DIVISION,
++     "mathml long division",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK_GROUP,
++     "mathml stack group",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK_ROW,
++     "mathml stack row",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK_CARRIES,
++     "mathml stack carries",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK_CARRY,
++     "mathml stack carry",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
++
++ROLE(MATHML_STACK_LINE,
++     "mathml stack line",
++     ATK_ROLE_UNKNOWN,
++     NSAccessibilityUnknownRole,
++     0,
++     IA2_ROLE_UNKNOWN,
++     eNoNameRule)
+diff --git a/accessible/base/nsAccUtils.cpp b/accessible/base/nsAccUtils.cpp
+--- a/accessible/base/nsAccUtils.cpp
++++ b/accessible/base/nsAccUtils.cpp
+@@ -18,16 +18,157 @@
+ 
+ #include "nsIDOMXULContainerElement.h"
+ #include "nsIPersistentProperties2.h"
+ #include "mozilla/dom/Element.h"
+ 
+ using namespace mozilla;
+ using namespace mozilla::a11y;
+ 
++namespace {
++
++struct MathMLPresElm
++{
++  nsIAtom** tag;
++  roles::Role role;
++};
++
++static MathMLPresElm kMathMLPresMap[] = {
++  {&nsGkAtoms::math, roles::MATHML_MATH},
++  {&nsGkAtoms::mi_, roles::MATHML_IDENTIFIER},
++  {&nsGkAtoms::mn_, roles::MATHML_NUMBER},
++  {&nsGkAtoms::mo_, roles::MATHML_OPERATOR},
++  {&nsGkAtoms::mtext_, roles::MATHML_TEXT},
++  {&nsGkAtoms::ms_, roles::MATHML_STRING_LITERAL},
++  {&nsGkAtoms::mglyph_, roles::MATHML_GLYPH},
++  {&nsGkAtoms::mrow_, roles::MATHML_ROW},
++  {&nsGkAtoms::mfrac_, roles::MATHML_FRACTION},
++  {&nsGkAtoms::msqrt_, roles::MATHML_SQUARE_ROOT},
++  {&nsGkAtoms::mroot_, roles::MATHML_ROOT},
++  {&nsGkAtoms::mfenced_, roles::MATHML_FENCED},
++  {&nsGkAtoms::menclose_, roles::MATHML_ENCLOSED},
++  {&nsGkAtoms::mstyle_, roles::MATHML_STYLE},
++  {&nsGkAtoms::msub_, roles::MATHML_SUB},
++  {&nsGkAtoms::msup_, roles::MATHML_SUP},
++  {&nsGkAtoms::msubsup_, roles::MATHML_SUB_SUP},
++  {&nsGkAtoms::munder_, roles::MATHML_UNDER},
++  {&nsGkAtoms::mover_, roles::MATHML_OVER},
++  {&nsGkAtoms::munderover_, roles::MATHML_UNDER_OVER},
++  {&nsGkAtoms::mmultiscripts_, roles::MATHML_MULTISCRIPTS},
++  {&nsGkAtoms::mtable_, roles::MATHML_TABLE},
++  {&nsGkAtoms::mlabeledtr_, roles::MATHML_LABELED_ROW},
++  {&nsGkAtoms::mtr_, roles::MATHML_TABLE_ROW},
++  {&nsGkAtoms::mtd_, roles::MATHML_CELL},
++  {&nsGkAtoms::maction_, roles::MATHML_ACTION},
++  {&nsGkAtoms::merror_, roles::MATHML_ERROR},
++  {&nsGkAtoms::semantics_, roles::MATHML_SEMANTICS},
++  {&nsGkAtoms::annotation_, roles::MATHML_ANNOTATION},
++  {&nsGkAtoms::annotation_xml_, roles::MATHML_XML_ANNOTATION},
++  {&nsGkAtoms::mstack_, roles::MATHML_STACK},
++  {&nsGkAtoms::mlongdiv_, roles::MATHML_LONG_DIVISION},
++  {&nsGkAtoms::msgroup_, roles::MATHML_STACK_GROUP},
++  {&nsGkAtoms::msrow_, roles::MATHML_STACK_ROW},
++  {&nsGkAtoms::mscarries_, roles::MATHML_STACK_CARRIES},
++  {&nsGkAtoms::mscarry_, roles::MATHML_STACK_CARRY},
++  {&nsGkAtoms::msline_, roles::MATHML_STACK_LINE}
++};
++
++static const uint32_t kMathMLPresMapLen = ArrayLength(kMathMLPresMap);
++
++static nsIAtom** kUnexposedMathML[] = {
++  &nsGkAtoms::mpadded_,
++  &nsGkAtoms::mphantom_,
++  &nsGkAtoms::maligngroup_,
++  &nsGkAtoms::malignmark_,
++  &nsGkAtoms::mspace_,
++};
++
++static const uint32_t kUnexposedMathMLLen = ArrayLength(kUnexposedMathML);
++
++struct MathMLAttrMask
++{
++  nsIAtom** attr;
++  uint64_t mask;
++};
++
++#define ROLEBIT(role) (1ULL << (role & 63))
++static MathMLAttrMask kMathMLMaskList[] = {
++  {&nsGkAtoms::accent_, ROLEBIT(roles::MATHML_STYLE) |
++                        ROLEBIT(roles::MATHML_OPERATOR) |
++                        ROLEBIT(roles::MATHML_OVER) |
++                        ROLEBIT(roles::MATHML_UNDER_OVER)},
++  {&nsGkAtoms::accentunder_, ROLEBIT(roles::MATHML_STYLE) |
++                             ROLEBIT(roles::MATHML_UNDER) |
++                             ROLEBIT(roles::MATHML_UNDER_OVER)},
++  {&nsGkAtoms::actiontype_, ROLEBIT(roles::MATHML_STYLE) |
++                            ROLEBIT(roles::MATHML_ACTION)},
++  {&nsGkAtoms::align, ROLEBIT(roles::MATHML_STYLE) |
++                      ROLEBIT(roles::MATHML_TABLE) |
++                      ROLEBIT(roles::MATHML_UNDER) |
++                      ROLEBIT(roles::MATHML_OVER) |
++                      ROLEBIT(roles::MATHML_UNDER_OVER) |
++                      ROLEBIT(roles::MATHML_STACK)},
++  {&nsGkAtoms::bevelled_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_FRACTION)},
++  {&nsGkAtoms::close, ROLEBIT(roles::MATHML_STYLE) |
++                      ROLEBIT(roles::MATHML_FENCED)},
++  {&nsGkAtoms::columnlines_, ROLEBIT(roles::MATHML_STYLE) |
++                             ROLEBIT(roles::MATHML_TABLE)},
++  {&nsGkAtoms::crossout_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_STACK_CARRY)},
++  {&nsGkAtoms::dir, ROLEBIT(roles::MATHML_STYLE) |
++                    ROLEBIT(roles::MATHML_IDENTIFIER) |
++                    ROLEBIT(roles::MATHML_OPERATOR) |
++                    ROLEBIT(roles::MATHML_ROW) |
++                    ROLEBIT(roles::MATHML_STRING_LITERAL) |
++                    ROLEBIT(roles::MATHML_TEXT)},
++  {&nsGkAtoms::fence_, ROLEBIT(roles::MATHML_STYLE) |
++                       ROLEBIT(roles::MATHML_OPERATOR)},
++  {&nsGkAtoms::href, 1ULL << 63},
++  {&nsGkAtoms::largeop_, ROLEBIT(roles::MATHML_STYLE) |
++                         ROLEBIT(roles::MATHML_OPERATOR)},
++  {&nsGkAtoms::linethickness_, ROLEBIT(roles::MATHML_STYLE) |
++                               ROLEBIT(roles::MATHML_FRACTION)},
++  {&nsGkAtoms::location_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_STACK_CARRIES)},
++  {&nsGkAtoms::longdivstyle_, ROLEBIT(roles::MATHML_STYLE) |
++                              ROLEBIT(roles::MATHML_LONG_DIVISION)},
++  {&nsGkAtoms::mathvariant_, ROLEBIT(roles::MATHML_STYLE) |
++                             ROLEBIT(roles::MATHML_IDENTIFIER) |
++                             ROLEBIT(roles::MATHML_NUMBER) |
++                             ROLEBIT(roles::MATHML_OPERATOR) |
++                             ROLEBIT(roles::MATHML_STRING_LITERAL) |
++                             ROLEBIT(roles::MATHML_TEXT)},
++  {&nsGkAtoms::notation_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_ENCLOSED)},
++  {&nsGkAtoms::open, ROLEBIT(roles::MATHML_STYLE) |
++                     ROLEBIT(roles::MATHML_FENCED)},
++  {&nsGkAtoms::position, ROLEBIT(roles::MATHML_STYLE) |
++                         ROLEBIT(roles::MATHML_STACK_GROUP) |
++                         ROLEBIT(roles::MATHML_STACK_ROW) |
++                         ROLEBIT(roles::MATHML_STACK_CARRIES) |
++                         ROLEBIT(roles::MATHML_STACK_LINE)},
++  {&nsGkAtoms::rowlines_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_TABLE)},
++  {&nsGkAtoms::selection_, ROLEBIT(roles::MATHML_STYLE) |
++                           ROLEBIT(roles::MATHML_ACTION)},
++  {&nsGkAtoms::separator_, ROLEBIT(roles::MATHML_STYLE) |
++                           ROLEBIT(roles::MATHML_OPERATOR)},
++  {&nsGkAtoms::separators_, ROLEBIT(roles::MATHML_STYLE) |
++                            ROLEBIT(roles::MATHML_FENCED)},
++  {&nsGkAtoms::shift_, ROLEBIT(roles::MATHML_STYLE) |
++                       ROLEBIT(roles::MATHML_STACK_GROUP)},
++  {&nsGkAtoms::stretchy_, ROLEBIT(roles::MATHML_STYLE) |
++                          ROLEBIT(roles::MATHML_OPERATOR)}
++};
++
++static const uint32_t kMathMLMaskListLen = ArrayLength(kMathMLMaskList);
++
++}
++
+ void
+ nsAccUtils::GetAccAttr(nsIPersistentProperties *aAttributes,
+                        nsIAtom *aAttrName, nsAString& aAttrValue)
+ {
+   aAttrValue.Truncate();
+ 
+   aAttributes->GetStringProperty(nsAtomCString(aAttrName), aAttrValue);
+ }
+@@ -409,8 +550,55 @@ nsAccUtils::MustPrune(Accessible* aAcces
+      role == roles::TOGGLE_BUTTON ||
+      role == roles::GRAPHIC ||
+      role == roles::SLIDER ||
+      role == roles::PROGRESSBAR ||
+      role == roles::SEPARATOR) &&
+     aAccessible->ContentChildCount() == 1 &&
+     aAccessible->ContentChildAt(0)->IsTextLeaf();
+ }
++
++void
++nsAccUtils::SetMathMLAttrs(Accessible* aAccessible,
++                           nsIPersistentProperties* aAttributes)
++{
++  nsAutoString value;
++  nsIContent* content = aAccessible->GetContent();
++  role accRole = MathMLRoleFor(aAccessible);
++
++  for (uint32_t i = 0; i < kMathMLMaskListLen; ++i)
++    if ((kMathMLMaskList[i].mask & ROLEBIT(accRole)) &&
++        content->GetAttr(kNameSpaceID_None, *kMathMLMaskList[i].attr, value))
++      SetAccAttr(aAttributes, *kMathMLMaskList[i].attr, value);
++}
++#undef ROLEBIT
++
++bool
++nsAccUtils::IsMathMLUnexposedTag(const nsIAtom* aTag)
++{
++  for (uint32_t i = 0; i < kUnexposedMathMLLen; ++i)
++    if (*kUnexposedMathML[i] == aTag)
++      return true;
++
++  return false;
++}
++
++bool
++nsAccUtils::IsMathMLPresentationTag(const nsIAtom* aTag)
++{
++  for (uint32_t i = 0; i < kMathMLPresMapLen; ++i)
++    if (*kMathMLPresMap[i].tag == aTag)
++      return true;
++
++  return false;
++}
++
++role
++nsAccUtils::MathMLRoleFor(Accessible* aAccessible)
++{
++  nsIAtom* tag = aAccessible->GetContent()->Tag();
++
++  for (uint32_t i = 0; i < kMathMLPresMapLen; ++i)
++    if (*kMathMLPresMap[i].tag == tag)
++      return kMathMLPresMap[i].role;
++
++  return roles::NOTHING;
++}
+diff --git a/accessible/base/nsAccUtils.h b/accessible/base/nsAccUtils.h
+--- a/accessible/base/nsAccUtils.h
++++ b/accessible/base/nsAccUtils.h
+@@ -235,14 +235,30 @@ public:
+     return aState | extraState;
+   }
+ 
+   /**
+    * Return true if the given accessible can't have children. Used when exposing
+    * to platform accessibility APIs, should the children be pruned off?
+    */
+   static bool MustPrune(Accessible* aAccessible);
++
++  /**
++   * Return true if the given tag corresponds to a MathML presentation element.
++   */
++  static bool IsMathMLPresentationTag(const nsIAtom* aTag);
++
++  /**
++   * Return true if no accessible should be created for the element associated
++   * with the tag.
++   */
++  static bool IsMathMLUnexposedTag(const nsIAtom* aTag);
++
++  static void SetMathMLAttrs(Accessible* aAccessible,
++                             nsIPersistentProperties* aAttributes);
++
++  static role MathMLRoleFor(Accessible* aAccessible);
+ };
+ 
+ } // namespace a11y
+ } // namespace mozilla
+ 
+ #endif
+diff --git a/accessible/base/nsAccessibilityService.cpp b/accessible/base/nsAccessibilityService.cpp
+--- a/accessible/base/nsAccessibilityService.cpp
++++ b/accessible/base/nsAccessibilityService.cpp
+@@ -14,16 +14,17 @@
+ #include "HTMLCanvasAccessible.h"
+ #include "HTMLElementAccessibles.h"
+ #include "HTMLImageMapAccessible.h"
+ #include "HTMLLinkAccessible.h"
+ #include "HTMLListAccessible.h"
+ #include "HTMLSelectAccessible.h"
+ #include "HTMLTableAccessibleWrap.h"
+ #include "HyperTextAccessibleWrap.h"
++#include "MathMLAccessible.h"
+ #include "RootAccessible.h"
+ #include "nsAccessiblePivot.h"
+ #include "nsAccUtils.h"
+ #include "nsAttrName.h"
+ #include "nsEventShell.h"
+ #include "nsIURI.h"
+ #include "OuterDocAccessible.h"
+ #include "Platform.h"
+@@ -1054,20 +1055,22 @@ nsAccessibilityService::GetOrCreateAcces
+       if (pathGeometryFrame) {
+         // A graphic elements: rect, circle, ellipse, line, path, polygon,
+         // polyline and image. A 'use' and 'text' graphic elements require
+         // special support.
+         newAcc = new EnumRoleAccessible(content, document, roles::GRAPHIC);
+       } else if (content->Tag() == nsGkAtoms::svg) {
+         newAcc = new EnumRoleAccessible(content, document, roles::DIAGRAM);
+       }
+-    } else if (content->IsMathML()){
+-      if (content->Tag() == nsGkAtoms::math)
+-        newAcc = new EnumRoleAccessible(content, document, roles::EQUATION);
+-      else
++    } else if (content->IsMathML()) {
++      if (nsAccUtils::IsMathMLUnexposedTag(content->Tag()))
++        return nullptr;
++      else if (nsAccUtils::IsMathMLPresentationTag(content->Tag()))
++        newAcc = new MathMLAccessible(content, document);
++      else  // Fall back to text when encountering Content MathML.
+         newAcc = new HyperTextAccessible(content, document);
+     }
+   }
+ 
+   // If no accessible, see if we need to create a generic accessible because
+   // of some property that makes this object interesting
+   // We don't do this for <body>, <html>, <window>, <dialog> etc. which
+   // correspond to the doc accessible and will be created in any case
+diff --git a/accessible/generic/Accessible.cpp b/accessible/generic/Accessible.cpp
+--- a/accessible/generic/Accessible.cpp
++++ b/accessible/generic/Accessible.cpp
+@@ -1857,17 +1857,19 @@ Accessible::NativeName(nsString& aName)
+     while ((label = iter.Next())) {
+       nsTextEquivUtils::AppendTextEquivFromContent(this, label->GetContent(),
+                                                    &aName);
+       aName.CompressWhitespace();
+     }
+ 
+     if (!aName.IsEmpty())
+       return eNameOK;
+-
++  }
++
++  if (mContent->IsHTML() || mContent->IsMathML()) {
+     nsTextEquivUtils::GetNameFromSubtree(this, aName);
+     return aName.IsEmpty() ? eNameOK : eNameFromSubtree;
+   }
+ 
+   if (mContent->IsXUL()) {
+     XULElmName(mDoc, mContent, aName);
+     if (!aName.IsEmpty())
+       return eNameOK;
+diff --git a/accessible/generic/Accessible.h b/accessible/generic/Accessible.h
+--- a/accessible/generic/Accessible.h
++++ b/accessible/generic/Accessible.h
+@@ -34,16 +34,17 @@ class AccGroupInfo;
+ class ApplicationAccessible;
+ class DocAccessible;
+ class EmbeddedObjCollector;
+ class HTMLImageMapAccessible;
+ class HTMLLIAccessible;
+ class HyperTextAccessible;
+ class ImageAccessible;
+ class KeyBinding;
++class MathMLAccessible;
+ class ProxyAccessible;
+ class Relation;
+ class RootAccessible;
+ class TableAccessible;
+ class TableCellAccessible;
+ class TextLeafAccessible;
+ class XULLabelAccessible;
+ class XULTreeAccessible;
+@@ -599,16 +600,19 @@ public:
+ 
+   bool IsImageMap() const { return mType == eImageMapType; }
+   HTMLImageMapAccessible* AsImageMap();
+ 
+   bool IsList() const { return HasGenericType(eList); }
+ 
+   bool IsListControl() const { return HasGenericType(eListControl); }
+ 
++  bool IsMathML() const { return mType == eMathMLType; }
++  MathMLAccessible* AsMathML();
++
+   bool IsMenuButton() const { return HasGenericType(eMenuButton); }
+ 
+   bool IsMenuPopup() const { return mType == eMenuPopupType; }
+ 
+   bool IsProxy() const { return mType == eProxyType; }
+ 
+   bool IsProgress() const { return mType == eProgressType; }
+ 
+diff --git a/accessible/generic/MathMLAccessible.cpp b/accessible/generic/MathMLAccessible.cpp
+new file mode 100644
+--- /dev/null
++++ b/accessible/generic/MathMLAccessible.cpp
+@@ -0,0 +1,41 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 sw=2 et tw=78: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "MathMLAccessible.h"
++#include "nsAccUtils.h"
++
++#include "DocAccessible.h"
++#include "Relation.h"
++
++using namespace mozilla;
++using namespace mozilla::a11y;
++
++////////////////////////////////////////////////////////////////////////////////
++// MathMLAccessible
++////////////////////////////////////////////////////////////////////////////////
++
++MathMLAccessible::MathMLAccessible(nsIContent* aNode, DocAccessible* aDoc) :
++  HyperTextAccessibleWrap(aNode, aDoc)
++{
++  mType = eMathMLType;
++}
++
++already_AddRefed<nsIPersistentProperties>
++MathMLAccessible::NativeAttributes()
++{
++  nsCOMPtr<nsIPersistentProperties> attributes =
++    HyperTextAccessibleWrap::NativeAttributes();
++
++  nsAccUtils::SetMathMLAttrs(this, attributes);
++
++  return attributes.forget();
++}
++
++role
++MathMLAccessible::NativeRole()
++{
++  return nsAccUtils::MathMLRoleFor(this);
++}
+diff --git a/accessible/generic/MathMLAccessible.h b/accessible/generic/MathMLAccessible.h
+new file mode 100644
+--- /dev/null
++++ b/accessible/generic/MathMLAccessible.h
+@@ -0,0 +1,41 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_a11y_MathMLAccessible_h__
++#define mozilla_a11y_MathMLAccessible_h__
++
++#include "AccessibleWrap.h"
++
++namespace mozilla {
++namespace a11y {
++
++/**
++  * Accessible representing a MathML node.
++  */
++class MathMLAccessible : public HyperTextAccessibleWrap
++{
++public:
++  MathMLAccessible(nsIContent* aContent, DocAccessible* aDoc);
++  virtual ~MathMLAccessible() { }
++
++  // Accessible
++  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() MOZ_OVERRIDE;
++  virtual mozilla::a11y::role NativeRole() MOZ_OVERRIDE;
++};
++
++
++////////////////////////////////////////////////////////////////////////////////
++// Accessible downcasting method
++
++inline MathMLAccessible*
++Accessible::AsMathML()
++{
++  return IsMathML() ? static_cast<MathMLAccessible*>(this) : nullptr;
++}
++
++} // namespace a11y
++} // namespace mozilla
++
++#endif
+diff --git a/accessible/generic/moz.build b/accessible/generic/moz.build
+--- a/accessible/generic/moz.build
++++ b/accessible/generic/moz.build
+@@ -14,16 +14,17 @@ UNIFIED_SOURCES += [
+     'Accessible.cpp',
+     'ApplicationAccessible.cpp',
+     'ARIAGridAccessible.cpp',
+     'BaseAccessibles.cpp',
+     'DocAccessible.cpp',
+     'FormControlAccessible.cpp',
+     'HyperTextAccessible.cpp',
+     'ImageAccessible.cpp',
++    'MathMLAccessible.cpp',
+     'OuterDocAccessible.cpp',
+     'RootAccessible.cpp',
+     'TableCellAccessible.cpp',
+     'TextLeafAccessible.cpp',
+ ]
+ 
+ LOCAL_INCLUDES += [
+     '/accessible/base',
+diff --git a/accessible/interfaces/nsIAccessibleRole.idl b/accessible/interfaces/nsIAccessibleRole.idl
+--- a/accessible/interfaces/nsIAccessibleRole.idl
++++ b/accessible/interfaces/nsIAccessibleRole.idl
+@@ -773,9 +773,195 @@ interface nsIAccessibleRole : nsISupport
+    * An HTML definition <dd>
+    */
+   const unsigned long ROLE_DEFINITION = 128;
+ 
+   /**
+    * A keyboard or keypad key.
+    */
+   const unsigned long ROLE_KEY = 129;
++
++  /**
++   * A block of MathML code (math).
++   */
++  const unsigned long ROLE_MATHML_MATH = 130;
++
++  /**
++   * A MathML identifier (mi in MathML).
++   */
++  const unsigned long ROLE_MATHML_IDENTIFIER = 131;
++
++  /**
++   * A MathML number (mn in MathML).
++   */
++  const unsigned long ROLE_MATHML_NUMBER = 132;
++
++  /**
++   * A MathML operator (mo in MathML).
++   */
++  const unsigned long ROLE_MATHML_OPERATOR = 133;
++
++  /**
++   * A MathML text (mtext in MathML).
++   */
++  const unsigned long ROLE_MATHML_TEXT = 134;
++
++  /**
++   * A MathML string literal (ms in MathML).
++   */
++  const unsigned long ROLE_MATHML_STRING_LITERAL = 135;
++
++  /**
++   * A MathML glyph (mglyph in MathML).
++   */
++  const unsigned long ROLE_MATHML_GLYPH = 136;
++
++  /**
++   * A MathML row (mrow in MathML).
++   */
++  const unsigned long ROLE_MATHML_ROW = 137;
++
++  /**
++   * A MathML fraction (mfrac in MathML).
++   */
++  const unsigned long ROLE_MATHML_FRACTION = 138;
++
++  /**
++   * A MathML square root (msqrt in MathML).
++   */
++  const unsigned long ROLE_MATHML_SQUARE_ROOT = 139;
++
++  /**
++   * A MathML root (mroot in MathML).
++   */
++  const unsigned long ROLE_MATHML_ROOT = 140;
++
++  /**
++   * A MathML fenced element (mfenced in MathML).
++   */
++  const unsigned long ROLE_MATHML_FENCED = 141;
++
++  /**
++   * A MathML enclosed element (menclose in MathML).
++   */
++  const unsigned long ROLE_MATHML_ENCLOSED = 142;
++
++  /**
++   * A MathML styling element (mstyle in MathML).
++   */
++  const unsigned long ROLE_MATHML_STYLE = 143;
++
++  /**
++   * A MathML subscript (msub in MathML).
++   */
++  const unsigned long ROLE_MATHML_SUB = 144;
++
++  /**
++   * A MathML superscript (msup in MathML).
++   */
++  const unsigned long ROLE_MATHML_SUP = 145;
++
++  /**
++   * A MathML subscript and superscript (msubsup in MathML).
++   */
++  const unsigned long ROLE_MATHML_SUB_SUP = 146;
++
++  /**
++   * A MathML underscript (munder in MathML).
++   */
++  const unsigned long ROLE_MATHML_UNDER = 147;
++
++  /**
++   * A MathML overscript (mover in MathML).
++   */
++  const unsigned long ROLE_MATHML_OVER = 148;
++
++  /**
++   * A MathML underscript and overscript (munderover in MathML).
++   */
++  const unsigned long ROLE_MATHML_UNDER_OVER = 149;
++
++  /**
++   * A MathML multiple subscript and superscript element (mmultiscripts in
++   * MathML).
++   */
++  const unsigned long ROLE_MATHML_MULTISCRIPTS = 150;
++
++  /**
++   * A MathML table (mtable in MathML).
++   */
++  const unsigned long ROLE_MATHML_TABLE = 151;
++
++  /**
++   * A MathML labelled table row (mlabeledtr in MathML).
++   */
++  const unsigned long ROLE_MATHML_LABELED_ROW = 152;
++
++  /**
++   * A MathML table row (mtr in MathML).
++   */
++  const unsigned long ROLE_MATHML_TABLE_ROW = 153;
++
++  /**
++   * A MathML table entry or cell (mtd in MathML).
++   */
++  const unsigned long ROLE_MATHML_CELL = 154;
++
++  /**
++   * A MathML interactive element (maction in MathML).
++   */
++  const unsigned long ROLE_MATHML_ACTION = 155;
++
++  /**
++   * A MathML error message (merror in MathML).
++   */
++  const unsigned long ROLE_MATHML_ERROR = 156;
++
++  /**
++   * A MathML semantics annotation element (semantics in MathML).
++   */
++  const unsigned long ROLE_MATHML_SEMANTICS = 157;
++
++  /**
++   * A MathML annotation (annotation in MathML).
++   */
++  const unsigned long ROLE_MATHML_ANNOTATION = 158;
++
++  /**
++   * A MathML XML annotation (annotation-xml in MathML).
++   */
++  const unsigned long ROLE_MATHML_XML_ANNOTATION = 159;
++
++  /**
++   * A MathML stacked (rows of numbers) element (mstack in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK = 160;
++
++  /**
++   * A MathML long division element (mlongdiv in MathML).
++   */
++  const unsigned long ROLE_MATHML_LONG_DIVISION = 161;
++
++  /**
++   * A MathML stack group (msgroup in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK_GROUP = 162;
++
++  /**
++   * A MathML stack row (msrow in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK_ROW = 163;
++
++  /**
++   * MathML carries, borrows, or crossouts for a row (mscarries in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK_CARRIES = 164;
++
++  /**
++   * A MathML carry, borrow, or crossout for a column (mscarry in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK_CARRY = 165;
++
++  /**
++   * A MathML line in a stack (msline in MathML).
++   */
++  const unsigned long ROLE_MATHML_STACK_LINE = 166;
+ };
+diff --git a/accessible/tests/mochitest/a11y.ini b/accessible/tests/mochitest/a11y.ini
+--- a/accessible/tests/mochitest/a11y.ini
++++ b/accessible/tests/mochitest/a11y.ini
+@@ -9,16 +9,17 @@ support-files =
+   actions.js
+   attributes.js
+   autocomplete.js
+   browser.js
+   common.js
+   events.js
+   grid.js
+   layout.js
++  mathml.js
+   name.js
+   pivot.js
+   relations.js
+   role.js
+   selectable.js
+   states.js
+   table.js
+   value.js
+diff --git a/accessible/tests/mochitest/mathml.js b/accessible/tests/mochitest/mathml.js
+new file mode 100644
+--- /dev/null
++++ b/accessible/tests/mochitest/mathml.js
+@@ -0,0 +1,22 @@
++// Tests for MathML-related accessibility features.
++// Requires common.js.
++
++////////////////////////////////////////////////////////////////////////////////
++// nsIAccessibleMathML
++
++/**
++ * Test MathML accessible token value (from name field).
++ *
++ * @param  aID      [in] MathML accessible identifier
++ * @param  aValue   [in] Expected value of token
++ */
++function testTokenValue(aID, aValue)
++{
++  var acc = getAccessible(aID, [nsIAccessible]);
++  if (!acc) {
++    ok(false, "No MathML accessible matching " + aID + " found.");
++    return;
++  }
++
++  is(acc.name, aValue, "Wrong token value for " + aID + ".");
++}
+diff --git a/accessible/tests/mochitest/name/a11y.ini b/accessible/tests/mochitest/name/a11y.ini
+--- a/accessible/tests/mochitest/name/a11y.ini
++++ b/accessible/tests/mochitest/name/a11y.ini
+@@ -7,10 +7,11 @@ support-files =
+ 
+ [test_browserui.xul]
+ [test_counterstyle.html]
+ [test_general.html]
+ [test_general.xul]
+ [test_link.html]
+ [test_list.html]
+ [test_markup.html]
++[test_mathml.html]
+ [test_svg.html]
+ [test_tree.xul]
+diff --git a/accessible/tests/mochitest/name/test_mathml.html b/accessible/tests/mochitest/name/test_mathml.html
+new file mode 100644
+--- /dev/null
++++ b/accessible/tests/mochitest/name/test_mathml.html
+@@ -0,0 +1,54 @@
++<html>
++
++<head>
++  <title>nsIAccessibleMathML value testing</title>
++
++  <link rel="stylesheet" type="text/css"
++        href="chrome://mochikit/content/tests/SimpleTest/test.css" />
++
++  <script type="application/javascript"
++          src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
++
++  <script type="application/javascript"
++          src="../common.js"></script>
++  <script type="application/javascript"
++          src="../mathml.js"></script>
++
++  <script type="application/javascript">
++    function doTest()
++    {
++      testTokenValue("mi", "y");
++      testTokenValue("mo", "+");
++      testTokenValue("mn", "10");
++      testTokenValue("mtext", "Arbitrary text");
++      testTokenValue("ms", '"InterpretedStringLiteral"');
++
++      SimpleTest.finish();
++    }
++
++    SimpleTest.waitForExplicitFinish();
++    addA11yLoadEvent(doTest);
++  </script>
++
++</head>
++
++<body>
++  <p id="display"></p>
++  <div id="content" style="display: none">
++  </div>
++  <pre id="test">
++  </pre>
++
++  <math>
++    <mi id="mi">y</mi>
++    <mo id="mo">+</mo>
++    <mn id="mn">10</mn>
++    <mspace width="1em"/>
++    <mtext id="mtext">Arbitrary text</mtext>
++    <mspace width="1em"/>
++    <ms id="ms">InterpretedStringLiteral</ms>
++    <mspace width="1em"/>
++  </math>
++
++</body>
++</html>

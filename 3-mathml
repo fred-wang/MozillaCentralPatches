@@ -1,0 +1,943 @@
+# HG changeset patch
+# Parent 0e28b353b00ebbf3408679d795e6270f3eb07861
+# User Jonathan Wei <jwei@jonathanwei.ca>
+
+diff --git a/accessible/base/nsAccUtils.cpp b/accessible/base/nsAccUtils.cpp
+--- a/accessible/base/nsAccUtils.cpp
++++ b/accessible/base/nsAccUtils.cpp
+@@ -600,16 +600,191 @@ nsAccUtils::MathMLRoleFor(Accessible* aA
+   for (uint32_t i = 0; i < kMathMLPresMapLen; ++i)
+     if (*kMathMLPresMap[i].tag == tag)
+       return kMathMLPresMap[i].role;
+ 
+   return roles::NOTHING;
+ }
+ 
+ void
++nsAccUtils::GetMathMLNativeAttributes(Accessible* aAccessible,
++                                      nsIPersistentProperties* aAttributes)
++{
++  nsAutoString value;
++  nsIContent* content = aAccessible->GetContent();
++  role accRole = MathMLRoleFor(aAccessible);
++
++  // accent
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::accent_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_OPERATOR ||
++       accRole == roles::MATHML_OVER ||
++       accRole == roles::MATHML_UNDER_OVER))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::accent_, value);
++
++  // accentunder
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::accentunder_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_UNDER ||
++       accRole == roles::MATHML_UNDER_OVER))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::accentunder_, value);
++
++  // actiontype
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::actiontype_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_ACTION))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::actiontype_, value);
++
++  // align
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::align, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_TABLE ||
++       accRole == roles::MATHML_UNDER ||
++       accRole == roles::MATHML_OVER ||
++       accRole == roles::MATHML_UNDER_OVER ||
++       accRole == roles::MATHML_STACK))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::align, value);
++
++  // bevelled
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::bevelled_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_FRACTION))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::bevelled_, value);
++
++  // close
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::close, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_FENCED))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::close, value);
++
++  // columnlines
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::columnlines_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_TABLE))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::columnlines_, value);
++
++  // crossout
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::crossout_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_STACK_CARRY))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::crossout_, value);
++
++  // dir
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::dir, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_IDENTIFIER ||
++       accRole == roles::MATHML_OPERATOR ||
++       accRole == roles::MATHML_ROW ||
++       accRole == roles::MATHML_STRING_LITERAL ||
++       accRole == roles::MATHML_TEXT))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::dir, value);
++
++  // fence
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::fence_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_OPERATOR))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::fence_, value);
++
++  // href
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::href, value))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::href, value);
++
++  // largeop
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::largeop_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_OPERATOR))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::largeop_, value);
++
++  // linethickness
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_, value)
++      && (accRole == roles::MATHML_STYLE ||
++          accRole == roles::MATHML_FRACTION))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::linethickness_, value);
++
++  // location
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::location_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_STACK_CARRIES))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::location_, value);
++
++  // longdivstyle
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::longdivstyle_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_LONG_DIVISION))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::longdivstyle_, value);
++
++  // mathvariant
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::mathvariant_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_IDENTIFIER ||
++       accRole == roles::MATHML_NUMBER ||
++       accRole == roles::MATHML_OPERATOR ||
++       accRole == roles::MATHML_STRING_LITERAL ||
++       accRole == roles::MATHML_TEXT))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::mathvariant_, value);
++
++  // notation
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::notation_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_ENCLOSED))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::notation_, value);
++
++  // open
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::open, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_FENCED))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::open, value);
++
++  // position
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::position, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_STACK_GROUP ||
++       accRole == roles::MATHML_STACK_ROW ||
++       accRole == roles::MATHML_STACK_CARRIES ||
++       accRole == roles::MATHML_STACK_LINE))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::position, value);
++
++  // rowlines
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::rowlines_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_TABLE))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::rowlines_, value);
++
++  // selection
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::selection_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_ACTION))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::selection_, value);
++
++  // separator
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::separator_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_OPERATOR))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::separator_, value);
++
++  // separators
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::separators_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_FENCED))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::separators_, value);
++
++  // shift
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::shift_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_STACK_GROUP))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::shift_, value);
++
++  // stretchy
++  if (content->GetAttr(kNameSpaceID_None, nsGkAtoms::stretchy_, value) &&
++      (accRole == roles::MATHML_STYLE ||
++       accRole == roles::MATHML_OPERATOR))
++    nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::stretchy_, value);
++}
++
++void
+ nsAccUtils::GetMathMLRelationByType(Accessible* aAccessible,
+                                     Relation* aRelation,
+                                     RelationType aType)
+ {
+   Accessible* parent = aAccessible->Parent();
+   role accRole = MathMLRoleFor(aAccessible);
+   int32_t indexInParent = aAccessible->IndexInParent();
+ 
+diff --git a/accessible/base/nsAccUtils.h b/accessible/base/nsAccUtils.h
+--- a/accessible/base/nsAccUtils.h
++++ b/accessible/base/nsAccUtils.h
+@@ -250,16 +250,19 @@ public:
+    * Return true if no accessible should be created for the element associated
+    * with the tag.
+    */
+   static bool IsMathMLUnexposedTag(const nsIAtom* aTag);
+ 
+   static void SetMathMLAttrs(Accessible* aAccessible,
+                              nsIPersistentProperties* aAttributes);
+ 
++  static void GetMathMLNativeAttributes(Accessible* aAccessible,
++                                        nsIPersistentProperties* aAttributes);
++
+   static void GetMathMLRelationByType(Accessible* aAccessible,
+                                       Relation* aRelation,
+                                       RelationType aType);
+ 
+   static role MathMLRoleFor(Accessible* aAccessible);
+ 
+ private:
+   /**
+diff --git a/accessible/base/nsAccessibilityService.cpp b/accessible/base/nsAccessibilityService.cpp
+--- a/accessible/base/nsAccessibilityService.cpp
++++ b/accessible/base/nsAccessibilityService.cpp
+@@ -15,16 +15,17 @@
+ #include "HTMLElementAccessibles.h"
+ #include "HTMLImageMapAccessible.h"
+ #include "HTMLLinkAccessible.h"
+ #include "HTMLListAccessible.h"
+ #include "HTMLSelectAccessible.h"
+ #include "HTMLTableAccessibleWrap.h"
+ #include "HyperTextAccessibleWrap.h"
+ #include "MathMLAccessible.h"
++#include "MathMLTableAccessible.h"
+ #include "RootAccessible.h"
+ #include "nsAccessiblePivot.h"
+ #include "nsAccUtils.h"
+ #include "nsAttrName.h"
+ #include "nsEventShell.h"
+ #include "nsIURI.h"
+ #include "OuterDocAccessible.h"
+ #include "Platform.h"
+@@ -1058,16 +1059,23 @@ nsAccessibilityService::GetOrCreateAcces
+         // special support.
+         newAcc = new EnumRoleAccessible(content, document, roles::GRAPHIC);
+       } else if (content->Tag() == nsGkAtoms::svg) {
+         newAcc = new EnumRoleAccessible(content, document, roles::DIAGRAM);
+       }
+     } else if (content->IsMathML()) {
+       if (nsAccUtils::IsMathMLUnexposedTag(content->Tag()))
+         return nullptr;
++      else if (content->Tag() == nsGkAtoms::mtable_)
++        newAcc = new MathMLTableAccessible(content, document);
++      else if (content->Tag() == nsGkAtoms::mtr_ ||
++               content->Tag() == nsGkAtoms::mlabeledtr_)
++        newAcc = new MathMLTableRowAccessible(content, document);
++      else if (content->Tag() == nsGkAtoms::mtd_)
++        newAcc = new MathMLTableCellAccessible(content, document);
+       else if (nsAccUtils::IsMathMLPresentationTag(content->Tag()))
+         newAcc = new MathMLAccessible(content, document);
+       else  // Fall back to text when encountering Content MathML.
+         newAcc = new HyperTextAccessible(content, document);
+     }
+   }
+ 
+   // If no accessible, see if we need to create a generic accessible because
+diff --git a/accessible/generic/Accessible.h b/accessible/generic/Accessible.h
+--- a/accessible/generic/Accessible.h
++++ b/accessible/generic/Accessible.h
+@@ -35,16 +35,19 @@ class ApplicationAccessible;
+ class DocAccessible;
+ class EmbeddedObjCollector;
+ class HTMLImageMapAccessible;
+ class HTMLLIAccessible;
+ class HyperTextAccessible;
+ class ImageAccessible;
+ class KeyBinding;
+ class MathMLAccessible;
++class MathMLTableAccessible;
++class MathMLTableCellAccessible;
++class MathMLTableRowAccessible;
+ class ProxyAccessible;
+ class Relation;
+ class RootAccessible;
+ class TableAccessible;
+ class TableCellAccessible;
+ class TextLeafAccessible;
+ class XULLabelAccessible;
+ class XULTreeAccessible;
+@@ -601,17 +604,22 @@ public:
+   bool IsImageMap() const { return mType == eImageMapType; }
+   HTMLImageMapAccessible* AsImageMap();
+ 
+   bool IsList() const { return HasGenericType(eList); }
+ 
+   bool IsListControl() const { return HasGenericType(eListControl); }
+ 
+   bool IsMathML() const { return mType == eMathMLType; }
++  bool IsMathMLTable() const { return IsMathML() && IsTable(); }
++  bool IsMathMLTableRow() const { return IsMathML() && IsTableRow(); }
++  bool IsMathMLTableCell() const { return IsMathML() && IsTableCell(); }
+   MathMLAccessible* AsMathML();
++  MathMLTableAccessible* AsMathMLTable();
++  MathMLTableCellAccessible* AsMathMLTableCell();
+ 
+   bool IsMenuButton() const { return HasGenericType(eMenuButton); }
+ 
+   bool IsMenuPopup() const { return mType == eMenuPopupType; }
+ 
+   bool IsProxy() const { return mType == eProxyType; }
+ 
+   bool IsProgress() const { return mType == eProgressType; }
+diff --git a/accessible/generic/MathMLTableAccessible.cpp b/accessible/generic/MathMLTableAccessible.cpp
+new file mode 100644
+--- /dev/null
++++ b/accessible/generic/MathMLTableAccessible.cpp
+@@ -0,0 +1,105 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 sw=2 et tw=78: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "MathMLTableAccessible.h"
++#include "nsAccUtils.h"
++
++using namespace mozilla;
++using namespace mozilla::a11y;
++
++////////////////////////////////////////////////////////////////////////////////
++// MathMLTableCellAccessible
++////////////////////////////////////////////////////////////////////////////////
++
++already_AddRefed<nsIPersistentProperties>
++MathMLTableCellAccessible::NativeAttributes()
++{
++  nsCOMPtr<nsIPersistentProperties> attributes =
++    HTMLTableCellAccessible::NativeAttributes();
++
++  nsAccUtils::GetMathMLNativeAttributes(this, attributes);
++
++  return attributes.forget();
++}
++
++role
++MathMLTableCellAccessible::NativeRole()
++{
++  return nsAccUtils::MathMLRoleFor(this);
++}
++
++Relation
++MathMLTableCellAccessible::RelationByType(RelationType aType)
++{
++  Relation rel = HTMLTableCellAccessible::RelationByType(aType);
++  nsAccUtils::GetMathMLRelationByType(this, &rel, aType);
++  return rel;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// MathMLTableRowAccessible
++////////////////////////////////////////////////////////////////////////////////
++
++already_AddRefed<nsIPersistentProperties>
++MathMLTableRowAccessible::NativeAttributes()
++{
++  nsCOMPtr<nsIPersistentProperties> attributes =
++    HTMLTableRowAccessible::NativeAttributes();
++
++  nsAccUtils::GetMathMLNativeAttributes(this, attributes);
++
++  return attributes.forget();
++}
++
++role
++MathMLTableRowAccessible::NativeRole()
++{
++  return nsAccUtils::MathMLRoleFor(this);
++}
++
++Relation
++MathMLTableRowAccessible::RelationByType(RelationType aType)
++{
++  Relation rel = HTMLTableRowAccessible::RelationByType(aType);
++  nsAccUtils::GetMathMLRelationByType(this, &rel, aType);
++  return rel;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// MathMLTableAccessible
++////////////////////////////////////////////////////////////////////////////////
++
++already_AddRefed<nsIPersistentProperties>
++MathMLTableAccessible::NativeAttributes()
++{
++  nsCOMPtr<nsIPersistentProperties> attributes =
++    HTMLTableAccessible::NativeAttributes();
++
++  nsAccUtils::GetMathMLNativeAttributes(this, attributes);
++
++  return attributes.forget();
++}
++
++role
++MathMLTableAccessible::NativeRole()
++{
++  return nsAccUtils::MathMLRoleFor(this);
++}
++
++Relation
++MathMLTableAccessible::RelationByType(RelationType aType)
++{
++  Relation rel = HTMLTableAccessible::RelationByType(aType);
++  nsAccUtils::GetMathMLRelationByType(this, &rel, aType);
++  return rel;
++}
++
++uint32_t
++MathMLTableAccessible::RowCount()
++{ // If mtable contains elements that aren't mtr or mlabeledtr, it's an error
++  // and the DOM breaks the rest of the markup off from the <math> element.
++  return mChildren.Length();
++}
+diff --git a/accessible/generic/MathMLTableAccessible.h b/accessible/generic/MathMLTableAccessible.h
+new file mode 100644
+--- /dev/null
++++ b/accessible/generic/MathMLTableAccessible.h
+@@ -0,0 +1,94 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_a11y_MathMLTableAccessible_h__
++#define mozilla_a11y_MathMLTableAccessible_h__
++
++#include "HTMLTableAccessible.h"
++
++namespace mozilla {
++namespace a11y {
++
++/**
++ * MathML table cell accessible (mathml:mtd).
++ */
++class MathMLTableCellAccessible : public HTMLTableCellAccessible
++{
++public:
++  MathMLTableCellAccessible(nsIContent* aContent, DocAccessible* aDoc) :
++    HTMLTableCellAccessible(aContent, aDoc)
++  {
++    mType = eMathMLType;
++  }
++  virtual ~MathMLTableCellAccessible() { }
++
++  // Accessible
++  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() MOZ_OVERRIDE;
++  virtual mozilla::a11y::role NativeRole() MOZ_OVERRIDE;
++  virtual Relation RelationByType(RelationType aType) MOZ_OVERRIDE;
++};
++
++/**
++ * MathML table row accessible (mathml:mtr or mathml:mlabeledtr).
++ */
++class MathMLTableRowAccessible : public HTMLTableRowAccessible
++{
++public:
++  MathMLTableRowAccessible(nsIContent* aContent, DocAccessible* aDoc) :
++    HTMLTableRowAccessible(aContent, aDoc)
++  {
++    mType = eMathMLType;
++  }
++  virtual ~MathMLTableRowAccessible() { }
++
++  // Accessible
++  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() MOZ_OVERRIDE;
++  virtual mozilla::a11y::role NativeRole() MOZ_OVERRIDE;
++  virtual Relation RelationByType(RelationType aType) MOZ_OVERRIDE;
++};
++
++/**
++ * MathML table accessible (mathml:mtable).
++ */
++class MathMLTableAccessible : public HTMLTableAccessible
++{
++public:
++  MathMLTableAccessible(nsIContent* aContent, DocAccessible* aDoc) :
++    HTMLTableAccessible(aContent, aDoc)
++  {
++    mType = eMathMLType;
++  }
++  virtual ~MathMLTableAccessible() { }
++
++  // Accessible
++  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() MOZ_OVERRIDE;
++  virtual mozilla::a11y::role NativeRole() MOZ_OVERRIDE;
++  virtual Relation RelationByType(RelationType aType) MOZ_OVERRIDE;
++
++  // TableAccessible
++  virtual uint32_t RowCount();
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// Accessible downcasting methods
++
++inline MathMLTableAccessible*
++Accessible::AsMathMLTable()
++{
++  return IsMathMLTable() ? static_cast<MathMLTableAccessible*>(this) : nullptr;
++}
++
++inline MathMLTableCellAccessible*
++Accessible::AsMathMLTableCell()
++{
++  return IsMathMLTableCell() ?
++    static_cast<MathMLTableCellAccessible*>(this) :
++    nullptr;
++}
++
++} // namespace a11y
++} // namespace mozilla
++
++#endif
+diff --git a/accessible/generic/moz.build b/accessible/generic/moz.build
+--- a/accessible/generic/moz.build
++++ b/accessible/generic/moz.build
+@@ -15,16 +15,17 @@ UNIFIED_SOURCES += [
+     'ApplicationAccessible.cpp',
+     'ARIAGridAccessible.cpp',
+     'BaseAccessibles.cpp',
+     'DocAccessible.cpp',
+     'FormControlAccessible.cpp',
+     'HyperTextAccessible.cpp',
+     'ImageAccessible.cpp',
+     'MathMLAccessible.cpp',
++    'MathMLTableAccessible.cpp',
+     'OuterDocAccessible.cpp',
+     'RootAccessible.cpp',
+     'TableCellAccessible.cpp',
+     'TextLeafAccessible.cpp',
+ ]
+ 
+ LOCAL_INCLUDES += [
+     '/accessible/base',
+diff --git a/accessible/html/HTMLTableAccessible.cpp b/accessible/html/HTMLTableAccessible.cpp
+--- a/accessible/html/HTMLTableAccessible.cpp
++++ b/accessible/html/HTMLTableAccessible.cpp
+@@ -136,17 +136,18 @@ HTMLTableCellAccessible::NativeAttribute
+ // HTMLTableCellAccessible: TableCellAccessible implementation
+ 
+ TableAccessible*
+ HTMLTableCellAccessible::Table() const
+ {
+   Accessible* parent = const_cast<HTMLTableCellAccessible*>(this);
+   while ((parent = parent->Parent())) {
+     roles::Role role = parent->Role();
+-    if (role == roles::TABLE || role == roles::TREE_TABLE)
++    if (role == roles::TABLE || role == roles::TREE_TABLE ||
++        role == roles::MATHML_TABLE)
+       return parent->AsTable();
+   }
+ 
+   return nullptr;
+ }
+ 
+ uint32_t
+ HTMLTableCellAccessible::ColIdx() const
+diff --git a/accessible/tests/mochitest/mathml.js b/accessible/tests/mochitest/mathml.js
+--- a/accessible/tests/mochitest/mathml.js
++++ b/accessible/tests/mochitest/mathml.js
+@@ -1,13 +1,13 @@
+ // Tests for MathML-related accessibility features.
+ // Requires common.js.
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+-// nsIAccessibleMathML
++// nsIAccessible
+ 
+ /**
+  * Test MathML accessible token value (from name field).
+  *
+  * @param  aID      [in] MathML accessible identifier
+  * @param  aValue   [in] Expected value of token
+  */
+ function testTokenValue(aID, aValue)
+@@ -15,8 +15,226 @@ function testTokenValue(aID, aValue)
+   var acc = getAccessible(aID, [nsIAccessible]);
+   if (!acc) {
+     ok(false, "No MathML accessible matching " + aID + " found.");
+     return;
+   }
+ 
+   is(acc.name, aValue, "Wrong token value for " + aID + ".");
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// nsIAccessibleTable
++
++/**
++ * Test table row and column count.
++ *
++ * @param  aID        [in] MathML table accessible identifier
++ * @param  aCounts    [in] Array containing expected row count and column count
++ */
++function testTableCounts(aID, aCounts)
++{
++  var tableAcc = getAccessible(aID, [nsIAccessibleTable]);
++  if (!tableAcc) {
++    ok(false, "No MathML table accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (!aCounts || aCounts.length < 2) {
++    ok(false, "Expected column and row counts were not found.");
++    return;
++  }
++
++  ok(tableAcc.rowCount == aCounts[0], "Expected row count (" + aCounts[0] +
++     ") did not match actual row count (" + tableAcc.rowCount + ") for " + aID +
++     ".");
++
++  ok(tableAcc.columnCount == aCounts[1], "Expected column count (" +
++     aCounts[1] + ") did not match actual column count (" +
++     tableAcc.columnCount + ") for " + aID + ".");
++}
++
++/**
++ * Test getCellAt.
++ *
++ * @param  aID        [in] MathML table accessible identifier
++ * @param  aIndices   [in] Array containing row and column indices
++ * @param  aCellID    [in] Expected obtained cell's identifier
++ */
++function testTableGetCellAt(aID, aIndices, aCellID)
++{
++  var tableAcc = getAccessible(aID, [nsIAccessibleTable]);
++  var cellAcc = aCellID ? getAccessible(aCellID, [nsIAccessible]) : null;
++  var obtainedCellAcc = null;
++  if (!tableAcc) {
++    ok(false, "No MathML table accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (!aIndices || aIndices.length < 2) {
++    ok(false, "Given row and column indices were not found.");
++    return;
++  }
++
++  try {
++    obtainedCellAcc = tableAcc.getCellAt(aIndices[0], aIndices[1]);
++  } catch (e) { }
++
++  ok(obtainedCellAcc == cellAcc, "Expected cell MathML accessible (" + cellAcc +
++     ") did not match obtained cell MathML accessible (" + obtainedCellAcc +
++     ") for " + aID + ".");
++}
++
++/**
++ * Test table row and column extents of a particular cell.
++ *
++ * @param  aID        [in] MathML table accessible identifier
++ * @param  aIndices   [in] Array containing row and column indices
++ * @param  aExtents   [in] Array containing expected row and column extents
++ */
++function testTableExtents(aID, aIndices, aExtents)
++{
++  var tableAcc = getAccessible(aID, [nsIAccessibleTable]);
++  var rowExtent = 0;
++  var colExtent = 0;
++  if (!tableAcc) {
++    ok(false, "No MathML table accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (!aIndices || aIndices.length < 2) {
++    ok(false, "Given row and column indices were not found.");
++    return;
++  }
++
++  if (!aExtents || aExtents.length < 2) {
++    ok(false, "Expected row and column extents were not found.");
++    return;
++  }
++
++  try {
++    rowExtent = tableAcc.getRowExtentAt(aIndices[0], aIndices[1]);
++    colExtent = tableAcc.getColumnExtentAt(aIndices[0], aIndices[1]);
++  } catch (e) { }
++
++  ok(aExtents[0] == rowExtent, "Expected row extent (" + aExtents[0] + ") " +
++     "did not match obtained row extent (" + rowExtent + ") for " + aID + ".");
++
++  ok(aExtents[1] == colExtent, "Expected column extent (" + aExtents[0] + ") " +
++     "did not match obtained column extent (" + colExtent + ") for " + aID +
++     ".");
++}
++
++/**
++ * Test getRowLabel.
++ *
++ * @param  aID        [in] MathML table accessible identifier
++ * @param  aIndex     [in] Row index
++ * @param  aLabelID   [in] Expected obtained label's identifier
++ */
++function testTableGetRowLabel(aID, aIndex, aLabelID)
++{
++  var tableAcc = getAccessible(aID, [nsIAccessibleTable]);
++  var labelAcc = aLabelID ? getAccessible(aLabelID, [nsIAccessible]) :
++    null;
++  var obtainedLabelAcc = null;
++  if (!tableAcc) {
++    ok(false, "No MathML table accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (aIndex === null || aIndex === undefined) {
++    ok(false, "Given row index was not found.");
++    return;
++  }
++
++  try {
++    obtainedLabelAcc = tableAcc.getLabelAt(aIndex);
++  } catch (e) { }
++
++  ok(obtainedLabelAcc == labelAcc, "Expected label MathML accessible (" +
++     labelAcc + ") did not match obtained label MathML accessible (" +
++     obtainedLabelAcc + ") for " + aID + ".");
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// nsIAccessibleTableCell
++
++/**
++ * Test getting the mtable accessible from a cell.
++ *
++ * @param  aID        [in] MathML table cell accessible identifier
++ * @param  aTableID   [in] Expected obtained table's identifier
++ */
++function testCellTable(aID, aTableID)
++{
++  var cellAcc = getAccessible(aID, [nsIAccessibleTableCell]);
++  var tableAcc = aTableID ?
++    getAccessible(aTableID, [nsIAccessibleTable]) :
++    null;
++
++  if (!cellAcc) {
++    ok(false, "No MathML table cell accessible matching " + aID + " found.");
++    return;
++  }
++
++  ok(tableAcc == cellAcc.table, "Expected table MathML accessible (" +
++     tableAcc + ") did not match obtained table MathML accessible (" +
++     cellAcc.table + ") for " + aID + ".");
++}
++
++/**
++ * Test cell row and column indices.
++ *
++ * @param  aID        [in] MathML table cell accessible identifier
++ * @param  aIndices   [in] Array containing expected row and column indices
++ */
++function testCellIndices(aID, aIndices)
++{
++  var cellAcc = getAccessible(aID, [nsIAccessibleTableCell]);
++
++  if (!cellAcc) {
++    ok(false, "No MathML table cell accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (!aIndices || aIndices.length < 2) {
++    ok(false, "Given row and column indices were not found.");
++    return;
++  }
++
++  ok(cellAcc.rowIndex == aIndices[0], "Expected row index (" + aIndices[0] +
++     ") did not match actual row index (" + cellAcc.rowIndex + ") for " + aID +
++     ".");
++
++  ok(cellAcc.columnIndex == aIndices[1], "Expected column index (" +
++     aIndices[1] + ") did not match actual column index (" +
++     cellAcc.columnIndex + ") for " + aID + ".");
++}
++
++/**
++ * Test cell row and column extents.
++ *
++ * @param  aID        [in] MathML table cell accessible identifier
++ * @param  aExtents   [in] Array containing expected row and column extents
++ */
++function testCellExtents(aID, aExtents)
++{
++  var cellAcc = getAccessible(aID, [nsIAccessibleTableCell]);
++
++  if (!cellAcc) {
++    ok(false, "No MathML table cell accessible matching " + aID + " found.");
++    return;
++  }
++
++  if (!aExtents || aExtents.length < 2) {
++    ok(false, "Expected row and column extents were not found.");
++    return;
++  }
++
++  ok(cellAcc.rowExtent == aExtents[0], "Expected row extent (" + aExtents[0] +
++     ") did not match actual row extent (" + cellAcc.rowExtent + ") for " +
++     aID + ".");
++
++  ok(cellAcc.columnExtent == aExtents[1], "Expected column extent (" +
++     aExtents[1] + ") did not match actual column extent (" +
++     cellAcc.columnExtent + ").");
++}
+diff --git a/accessible/tests/mochitest/table/a11y.ini b/accessible/tests/mochitest/table/a11y.ini
+--- a/accessible/tests/mochitest/table/a11y.ini
++++ b/accessible/tests/mochitest/table/a11y.ini
+@@ -4,16 +4,17 @@
+ [test_headers_listbox.xul]
+ [test_headers_table.html]
+ [test_headers_tree.xul]
+ [test_indexes_ariagrid.html]
+ [test_indexes_listbox.xul]
+ [test_indexes_table.html]
+ [test_indexes_tree.xul]
+ [test_layoutguess.html]
++[test_mathml.html]
+ [test_sels_ariagrid.html]
+ [test_sels_listbox.xul]
+ [test_sels_table.html]
+ [test_sels_tree.xul]
+ [test_struct_ariagrid.html]
+ [test_struct_ariatreegrid.html]
+ [test_struct_listbox.xul]
+ [test_struct_table.html]
+diff --git a/accessible/tests/mochitest/table/test_mathml.html b/accessible/tests/mochitest/table/test_mathml.html
+new file mode 100644
+--- /dev/null
++++ b/accessible/tests/mochitest/table/test_mathml.html
+@@ -0,0 +1,106 @@
++<!DOCTYPE html>
++<html>
++<head>
++  <title>MathML table tests</title>
++  <link rel="stylesheet" type="text/css"
++        href="chrome://mochikit/content/tests/SimpleTest/test.css" />
++
++  <script type="application/javascript"
++          src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
++
++  <script type="application/javascript"
++          src="../common.js"></script>
++  <script type="application/javascript"
++          src="../mathml.js"></script>
++
++  <script type="application/javascript">
++    function doTest()
++    {
++      // 'Simple' table
++      testTableCounts("simple", [2, 2]);
++      testTableGetCellAt("simple", [0, 0], "simple_0_0");
++      testTableGetCellAt("simple", [1, 1], "simple_1_1");
++      testTableGetCellAt("simple", [2, 2]); // Try non-existent cell.
++      testTableExtents("simple", [0, 0], [1, 1]);
++      testTableExtents("simple", [2, 2], [0, 0]); // Try non-existent cell.
++      testTableGetRowLabel("simple", 0); // Try table with no labels.
++
++      testCellTable("simple_0_0", "simple");
++      testCellIndices("simple_0_0", [0, 0]);
++      testCellIndices("simple_1_1", [1, 1]);
++      testCellExtents("simple_0_0", [1, 1]);
++      testCellExtents("simple_1_1", [1, 1]);
++
++      // 'Complex' table
++      testTableCounts("complex", [3, 3]);
++      // Try middle of column span cell.
++      testTableGetCellAt("complex", [0, 2], "complex_1x3");
++      // Start of 2x2 cell.
++      testTableExtents("complex", [1, 0], [2, 2]);
++      // Bottom-right (1x1) of 2x2 cell.
++      testTableExtents("complex", [2, 1], [1, 1]);
++
++      // XXX: Can't test getRowLabel until we implement rendering support for
++      // mlabeledtr and stop putting display:none on the label element.
++      testCellTable("complex_1x3", "complex");
++      testCellIndices("complex_2x2", [1, 0]);
++      testCellExtents("complex_1x3", [1, 3]);
++      testCellExtents("complex_2x2", [2, 2]);
++
++      SimpleTest.finish();
++    }
++
++    SimpleTest.waitForExplicitFinish();
++    addA11yLoadEvent(doTest);
++  </script>
++</head>
++<body>
++  <p id="display"></p>
++  <div id="content" style="display: none"></div>
++  <pre id="test">
++  </pre>
++
++  <math>
++    <mtable id="simple">
++      <mtr>
++        <mtd id="simple_0_0">
++          <mn>1</mn>
++        </mtd>
++        <mtd>
++          <mn>0</mn>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mn>0</mn>
++        </mtd>
++        <mtd id="simple_1_1">
++          <mn>1</mn>
++        </mtd>
++      </mtr>
++    </mtable>
++
++    <mtable id="complex">
++      <mtr>
++        <mtd id="complex_1x3" columnspan="3">
++          <mtext>1 x 3</mtext>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd id="complex_2x2" rowspan="2" columnspan="2">
++          <mtext>2 x 2</mtext>
++        </mtd>
++        <mtd>
++          <mtext>1 x 1</mtext>
++        </mtd>
++      </mtr>
++      <mtr>
++        <mtd>
++          <mtext>1 x 1</mtext>
++        </mtd>
++      </mtr>
++    </mtable>
++  </math>
++
++</body>
++</html>

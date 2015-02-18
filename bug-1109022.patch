@@ -1,0 +1,290 @@
+# HG changeset patch
+# Parent 8717d2ab9441894fdc72faa1905a8f36ceedc7d5
+# User Frédéric Wang <fred.wang@free.fr>
+Bug 1109022 - Add basic ATK roles for MathML elements. r=surkov
+
+diff --git a/accessible/atk/AccessibleWrap.cpp b/accessible/atk/AccessibleWrap.cpp
+--- a/accessible/atk/AccessibleWrap.cpp
++++ b/accessible/atk/AccessibleWrap.cpp
+@@ -702,16 +702,20 @@ getRoleCB(AtkObject *aAtkObj)
+   };
+ 
+ #undef ROLE
+ 
+   if (aAtkObj->role == ATK_ROLE_LIST_BOX && !IsAtkVersionAtLeast(2, 1))
+     aAtkObj->role = ATK_ROLE_LIST;
+   else if (aAtkObj->role == ATK_ROLE_TABLE_ROW && !IsAtkVersionAtLeast(2, 1))
+     aAtkObj->role = ATK_ROLE_LIST_ITEM;
++  else if (aAtkObj->role == ATK_ROLE_MATH && !IsAtkVersionAtLeast(2, 12))
++    aAtkObj->role = ATK_ROLE_PANEL;
++  else if (aAtkObj->role == ATK_ROLE_STATIC && !IsAtkVersionAtLeast(2, 16))
++    aAtkObj->role = ATK_ROLE_TEXT;
+ 
+   return aAtkObj->role;
+ }
+ 
+ static AtkAttributeSet*
+ ConvertToAtkAttributeSet(nsIPersistentProperties* aAttributes)
+ {
+     if (!aAttributes)
+diff --git a/accessible/base/RoleMap.h b/accessible/base/RoleMap.h
+--- a/accessible/base/RoleMap.h
++++ b/accessible/base/RoleMap.h
+@@ -1053,73 +1053,73 @@ ROLE(KEY,
+      ATK_ROLE_PUSH_BUTTON,
+      NSAccessibilityButtonRole,
+      ROLE_SYSTEM_PUSHBUTTON,
+      ROLE_SYSTEM_PUSHBUTTON,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_MATH,
+      "math",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_MATH,
+      NSAccessibilityGroupRole,
+      ROLE_SYSTEM_EQUATION,
+      ROLE_SYSTEM_EQUATION,
+      eNoNameRule)
+ 
+ ROLE(MATHML_IDENTIFIER,
+      "mathml identifier",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_STATIC,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_NUMBER,
+      "mathml number",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_STATIC,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_OPERATOR,
+      "mathml operator",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_STATIC,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_TEXT,
+      "mathml text",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_STATIC,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_STRING_LITERAL,
+      "mathml string literal",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_STATIC,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_GLYPH,
+      "mathml glyph",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_IMAGE,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_ROW,
+      "mathml row",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_PANEL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_FRACTION,
+      "mathml fraction",
+      ATK_ROLE_UNKNOWN,
+@@ -1141,33 +1141,33 @@ ROLE(MATHML_ROOT,
+      ATK_ROLE_UNKNOWN,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_FENCED,
+      "mathml fenced",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_PANEL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ENCLOSED,
+      "mathml enclosed",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_PANEL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STYLE,
+      "mathml style",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_PANEL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SUB,
+      "mathml sub",
+      ATK_ROLE_UNKNOWN,
+@@ -1221,57 +1221,57 @@ ROLE(MATHML_MULTISCRIPTS,
+      ATK_ROLE_UNKNOWN,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_TABLE,
+      "mathml table",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_TABLE,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_LABELED_ROW,
+      "mathml labeled row",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_TABLE_ROW,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_TABLE_ROW,
+      "mathml table row",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_TABLE_ROW,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_CELL,
+      "mathml cell",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_TABLE_CELL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ACTION,
+      "mathml action",
+      ATK_ROLE_UNKNOWN,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ERROR,
+      "mathml error",
+-     ATK_ROLE_UNKNOWN,
++     ATK_ROLE_PANEL,
+      NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SEMANTICS,
+      "mathml semantics",
+      ATK_ROLE_UNKNOWN,
+diff --git a/other-licenses/atk-1.0/atk/atkobject.h b/other-licenses/atk-1.0/atk/atkobject.h
+--- a/other-licenses/atk-1.0/atk/atkobject.h
++++ b/other-licenses/atk-1.0/atk/atkobject.h
+@@ -95,17 +95,23 @@ extern "C" {
+  *@ATK_ROLE_SPIN_BUTTON: An object used to get an integer or floating point number from the user
+  *@ATK_ROLE_STATUSBAR: An object which reports messages of minor importance to the user
+  *@ATK_ROLE_TABLE: An object used to represent information in terms of rows and columns
+  *@ATK_ROLE_TABLE_CELL: A cell in a table
+  *@ATK_ROLE_TABLE_COLUMN_HEADER: The header for a column of a table
+  *@ATK_ROLE_TABLE_ROW_HEADER: The header for a row of a table
+  *@ATK_ROLE_TEAR_OFF_MENU_ITEM: A menu item used to tear off and reattach its menu
+  *@ATK_ROLE_TERMINAL: An object that represents an accessible terminal.  @Since: ATK-0.6
+- *@ATK_ROLE_TEXT: An object that presents text to the user
++ *@ATK_ROLE_TEXT: An interactive widget that supports multiple lines of text and
++ * optionally accepts user input, but whose purpose is not to solicit user input.
++ * Thus ATK_ROLE_TEXT is appropriate for the text view in a plain text editor
++ * but inappropriate for an input field in a dialog box or web form. For widgets
++ * whose purpose is to solicit input from the user, see ATK_ROLE_ENTRY and
++ * ATK_ROLE_PASSWORD_TEXT. For generic objects which display a brief amount of
++ * textual information, see ATK_ROLE_STATIC.
+  *@ATK_ROLE_TOGGLE_BUTTON: A specialized push button that can be checked or unchecked, but does not provide a separate indicator for the current state
+  *@ATK_ROLE_TOOL_BAR: A bar or palette usually composed of push buttons or toggle buttons
+  *@ATK_ROLE_TOOL_TIP: An object that provides information about another object
+  *@ATK_ROLE_TREE: An object used to represent hierarchical information to the user
+  *@ATK_ROLE_TREE_TABLE: An object capable of expanding and collapsing rows as well as showing multiple columns of data.   @Since: ATK-0.7
+  *@ATK_ROLE_UNKNOWN: The object contains some Accessible information, but its role is not known
+  *@ATK_ROLE_VIEWPORT: An object usually used in a scroll pane
+  *@ATK_ROLE_WINDOW: A top level window with no title or border.
+@@ -195,16 +201,29 @@ extern "C" {
+  *@ATK_ROLE_DESCRIPTION_TERM: An object that represents the term, or
+  * name, part of a term-description group in a description
+  * list. @Since: ATK-2.12
+  *@ATK_ROLE_DESCRIPTION_VALUE: An object that represents the
+  * description, definition or value of a term-description group in a
+  * description list. The values within a group are alternatives,
+  * meaning that you can have several ATK_ROLE_DESCRIPTION_VALUE for a
+  * given ATK_ROLE_DESCRIPTION_TERM. @Since: ATK-2.12
++ *@ATK_ROLE_STATIC: A generic non-container object whose purpose is to display a
++ * brief amount of information to the user and whose role is known by the
++ * implementor but lacks semantic value for the user. Examples in which
++ * ATK_ROLE_STATIC is appropriate include the message displayed in a message box
++ * and an image used as an alternative means to display text. ATK_ROLE_STATIC
++ * should not be applied to widgets which are traditionally interactive, objects
++ * which display a significant amount of content, or any object which has an
++ * accessible relation pointing to another object. Implementors should expose the
++ * displayed information through the accessible name of the object. If doing so seems
++ * inappropriate, it may indicate that a different role should be used. For
++ * labels which describe another widget, see ATK_ROLE_LABEL. For text views, see
++ * ATK_ROLE_TEXT. For generic containers, see ATK_ROLE_PANEL. For objects whose
++ * role is not known by the implementor, see ATK_ROLE_UNKNOWN. @Since: ATK-2.16.
+  *@ATK_ROLE_LAST_DEFINED: not a valid role, used for finding end of the enumeration
+  *
+  * Describes the role of an object
+  *
+  * These are the built-in enumerated roles that UI components can have in
+  * ATK.  Other roles may be added at runtime, so an AtkRole >=
+  * ATK_ROLE_LAST_DEFINED is not necessarily an error.
+  **/
+@@ -322,16 +341,17 @@ typedef enum
+   ATK_ROLE_LOG,
+   ATK_ROLE_MARQUEE,
+   ATK_ROLE_MATH,
+   ATK_ROLE_RATING,
+   ATK_ROLE_TIMER,
+   ATK_ROLE_DESCRIPTION_LIST,
+   ATK_ROLE_DESCRIPTION_TERM,
+   ATK_ROLE_DESCRIPTION_VALUE,
++  ATK_ROLE_STATIC,
+   ATK_ROLE_LAST_DEFINED
+ } AtkRole;
+ 
+ AtkRole                  atk_role_register        (const gchar *name);
+ 
+ /**
+  *AtkLayer:
+  *@ATK_LAYER_INVALID: The object does not have a layer

@@ -1,0 +1,606 @@
+# HG changeset patch
+# Parent 774006d24fb3b76bd7d17eda09b382f2c2f7e92d
+# User Jonathan Wei <jwei@mozilla.com>
+
+diff --git a/accessible/base/RoleMap.h b/accessible/base/RoleMap.h
+--- a/accessible/base/RoleMap.h
++++ b/accessible/base/RoleMap.h
+@@ -1054,300 +1054,300 @@ ROLE(KEY,
+      NSAccessibilityButtonRole,
+      ROLE_SYSTEM_PUSHBUTTON,
+      ROLE_SYSTEM_PUSHBUTTON,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_MATH,
+      "math",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      ROLE_SYSTEM_EQUATION,
+      ROLE_SYSTEM_EQUATION,
+      eNoNameRule)
+ 
+ ROLE(MATHML_IDENTIFIER,
+      "mathml identifier",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_NUMBER,
+      "mathml number",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_OPERATOR,
+      "mathml operator",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_TEXT,
+      "mathml text",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_STRING_LITERAL,
+      "mathml string literal",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_GLYPH,
+      "mathml glyph",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNameFromSubtreeRule)
+ 
+ ROLE(MATHML_ROW,
+      "mathml row",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_FRACTION,
+      "mathml fraction",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SQUARE_ROOT,
+      "mathml square root",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ROOT,
+      "mathml root",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_FENCED,
+      "mathml fenced",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ENCLOSED,
+      "mathml enclosed",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STYLE,
+      "mathml style",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SUB,
+      "mathml sub",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SUP,
+      "mathml sup",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SUB_SUP,
+      "mathml sub sup",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_UNDER,
+      "mathml under",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_OVER,
+      "mathml over",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_UNDER_OVER,
+      "mathml under over",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_MULTISCRIPTS,
+      "mathml multiscripts",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_TABLE,
+      "mathml table",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_LABELED_ROW,
+      "mathml labeled row",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_TABLE_ROW,
+      "mathml table row",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_CELL,
+      "mathml cell",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ACTION,
+      "mathml action",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ERROR,
+      "mathml error",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_SEMANTICS,
+      "mathml semantics",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_ANNOTATION,
+      "mathml annotation",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_XML_ANNOTATION,
+      "mathml xml annotation",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK,
+      "mathml stack",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_LONG_DIVISION,
+      "mathml long division",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK_GROUP,
+      "mathml stack group",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK_ROW,
+      "mathml stack row",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK_CARRIES,
+      "mathml stack carries",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK_CARRY,
+      "mathml stack carry",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+ 
+ ROLE(MATHML_STACK_LINE,
+      "mathml stack line",
+      ATK_ROLE_UNKNOWN,
+-     NSAccessibilityUnknownRole,
++     NSAccessibilityGroupRole,
+      0,
+      IA2_ROLE_UNKNOWN,
+      eNoNameRule)
+diff --git a/accessible/mac/mozAccessible.mm b/accessible/mac/mozAccessible.mm
+--- a/accessible/mac/mozAccessible.mm
++++ b/accessible/mac/mozAccessible.mm
+@@ -22,16 +22,28 @@
+ #include "nsCocoaUtils.h"
+ #include "nsCoord.h"
+ #include "nsObjCExceptions.h"
+ #include "nsWhitespaceTokenizer.h"
+ 
+ using namespace mozilla;
+ using namespace mozilla::a11y;
+ 
++#define NSAccessibilityMathRootRadicandAttribute @"AXMathRootRadicand"
++#define NSAccessibilityMathRootIndexAttribute @"AXMathRootIndex"
++#define NSAccessibilityMathFractionDenominatorAttribute @"AXMathFractionDenominator"
++#define NSAccessibilityMathFractionNumeratorAttribute @"AXMathFractionNumerator"
++#define NSAccessibilityMathBaseAttribute @"AXMathBase"
++#define NSAccessibilityMathSubscriptAttribute @"AXMathSubscript"
++#define NSAccessibilityMathSuperscriptAttribute @"AXMathSuperscript"
++#define NSAccessibilityMathUnderAttribute @"AXMathUnder"
++#define NSAccessibilityMathOverAttribute @"AXMathOver"
++#define NSAccessibilityMathFencedOpenAttribute @"AXMathFencedOpen"
++#define NSAccessibilityMathFencedCloseAttribute @"AXMathFencedClose"
++
+ // returns the passed in object if it is not ignored. if it's ignored, will return
+ // the first unignored ancestor.
+ static inline id
+ GetClosestInterestingAccessible(id anObject)
+ {
+   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+ 
+   // this object is not ignored, so let's return it.
+@@ -93,16 +105,54 @@ GetClosestInterestingAccessible(id anObj
+   // unknown (either unimplemented, or irrelevant) elements are marked as ignored
+   // as well as expired elements.
+   return !mGeckoAccessible || ([[self role] isEqualToString:NSAccessibilityUnknownRole] &&
+                                !(mGeckoAccessible->InteractiveState() & states::FOCUSABLE));
+ 
+   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
+ }
+ 
++- (NSArray*)additionalAccessibilityAttributeNames
++{
++  NSMutableArray *additional = [NSMutableArray array];
++  switch (mRole) {
++    case roles::MATHML_ROOT:
++      [additional addObject:NSAccessibilityMathRootIndexAttribute];
++    case roles::MATHML_SQUARE_ROOT:
++      [additional addObject:NSAccessibilityMathRootRadicandAttribute];
++      break;
++    case roles::MATHML_FRACTION:
++      [additional addObject:NSAccessibilityMathFractionDenominatorAttribute];
++      [additional addObject:NSAccessibilityMathFractionNumeratorAttribute];
++      break;
++    case roles::MATHML_SUB:
++    case roles::MATHML_SUP:
++    case roles::MATHML_SUB_SUP:
++      [additional addObject:NSAccessibilityMathBaseAttribute];
++      [additional addObject:NSAccessibilityMathSubscriptAttribute];
++      [additional addObject:NSAccessibilityMathSuperscriptAttribute];
++      break;
++    case roles::MATHML_UNDER:
++    case roles::MATHML_OVER:
++    case roles::MATHML_UNDER_OVER:
++      [additional addObject:NSAccessibilityMathBaseAttribute];
++      [additional addObject:NSAccessibilityMathUnderAttribute];
++      [additional addObject:NSAccessibilityMathOverAttribute];
++      break;
++    case roles::MATHML_FENCED:
++      [additional addObject:NSAccessibilityMathFencedOpenAttribute];
++      [additional addObject:NSAccessibilityMathFencedCloseAttribute];
++      break;
++    default:
++      break;
++  }
++
++  return additional;
++}
++
+ - (NSArray*)accessibilityAttributeNames
+ {
+   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+ 
+   // if we're expired, we don't support any attributes.
+   if (!mGeckoAccessible)
+     return [NSArray array];
+   
+@@ -127,17 +177,22 @@ GetClosestInterestingAccessible(id anObj
+                                                            NSAccessibilityTopLevelUIElementAttribute,
+                                                            NSAccessibilityDescriptionAttribute,
+ #if DEBUG
+                                                            @"AXMozDescription",
+ #endif
+                                                            nil];
+   }
+ 
+-  return generalAttributes;
++  NSArray *objectAttributes = generalAttributes;
++  NSArray *additionalAttributes = [self additionalAccessibilityAttributeNames];
++  if ([additionalAttributes count])
++    objectAttributes = [objectAttributes arrayByAddingObjectsFromArray:additionalAttributes];
++
++  return objectAttributes;
+ 
+   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+ }
+ 
+ - (id)accessibilityAttributeValue:(NSString*)attribute
+ {  
+   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+ 
+@@ -184,17 +239,79 @@ GetClosestInterestingAccessible(id anObj
+     return [self title];
+   if ([attribute isEqualToString:NSAccessibilityTitleUIElementAttribute]) {
+     Relation rel = mGeckoAccessible->RelationByType(RelationType::LABELLED_BY);
+     Accessible* tempAcc = rel.Next();
+     return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
+   }
+   if ([attribute isEqualToString:NSAccessibilityHelpAttribute])
+     return [self help];
+-    
++
++  if ([attribute isEqualToString:NSAccessibilityMathRootIndexAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_ROOT_INDEX);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathRootRadicandAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_RADICAND);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathFractionNumeratorAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_NUMERATOR);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathFractionDenominatorAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_DENOMINATOR);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathBaseAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_BASE);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathSubscriptAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_SUBSCRIPT);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathSuperscriptAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_SUPERSCRIPT);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathUnderAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_UNDER);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathOverAttribute]) {
++    Relation rel = mGeckoAccessible->RelationByType(RelationType::MATHML_OVER);
++    Accessible* tempAcc = rel.Next();
++    return tempAcc ? GetNativeFromGeckoAccessible(tempAcc) : nil;
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathFencedOpenAttribute]) {
++      nsCOMPtr<nsIPersistentProperties> attributes = mGeckoAccessible->Attributes();
++      if (attributes) {
++        nsAutoString open;
++        nsAccUtils::GetAccAttr(attributes, nsGkAtoms::open, open);
++        return nsCocoaUtils::ToNSString(open);
++      }
++  }
++  if ([attribute isEqualToString:NSAccessibilityMathFencedCloseAttribute]) {
++      nsCOMPtr<nsIPersistentProperties> attributes = mGeckoAccessible->Attributes();
++      if (attributes) {
++        nsAutoString close;
++        nsAccUtils::GetAccAttr(attributes, nsGkAtoms::close, close);
++        return nsCocoaUtils::ToNSString(close);
++      }
++  }
++
+ #ifdef DEBUG
+  NSLog (@"!!! %@ can't respond to attribute %@", self, attribute);
+ #endif
+   return nil;
+ 
+   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+ }
+ 
+@@ -470,16 +587,68 @@ GetClosestInterestingAccessible(id anObj
+       return @"AXDefinitionList"; // 10.6+ NSAccessibilityDefinitionListSubrole;
+ 
+     case roles::TERM:
+       return @"AXTerm";
+ 
+     case roles::DEFINITION:
+       return @"AXDefinition";
+ 
++    case roles::MATHML_FRACTION:
++      return @"AXMathFraction";
++
++    case roles::MATHML_FENCED:
++      return @"AXMathFenced";
++
++    case roles::MATHML_SUB:
++    case roles::MATHML_SUP:
++    case roles::MATHML_SUB_SUP:
++      return @"AXMathSubscriptSuperscript";
++
++    case roles::MATHML_ROW:
++      return @"AXMathRow";
++
++    case roles::MATHML_UNDER:
++    case roles::MATHML_OVER:
++    case roles::MATHML_UNDER_OVER:
++      return @"AXMathUnderOver";
++
++    case roles::MATHML_SQUARE_ROOT:
++      return @"AXMathSquareRoot";
++
++    case roles::MATHML_ROOT:
++      return @"AXMathRoot";
++
++    case roles::MATHML_TEXT:
++      return @"AXMathText";
++
++    case roles::MATHML_NUMBER:
++      return @"AXMathNumber";
++
++    case roles::MATHML_IDENTIFIER:
++      return @"AXMathIdentifier";
++
++    case roles::MATHML_TABLE:
++      return @"AXMathTable";
++
++    case roles::MATHML_TABLE_ROW:
++      return @"AXMathTableRow";
++
++    case roles::MATHML_CELL:
++      return @"AXMathTableCell";
++
++    // XXX: MathML rendering doesn't have separate accessibles for fence
++    // operators and separators.
++
++    case roles::MATHML_OPERATOR:
++      return @"AXMathOperator";
++
++    case roles::MATHML_MATH:
++      return @"AXDocumentMath";
++
+     default:
+       break;
+   }
+ 
+   return nil;
+ }
+ 
+ - (NSString*)roleDescription
