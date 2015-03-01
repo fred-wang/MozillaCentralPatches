@@ -1,2 +1,4 @@
 default-math-font.patch
 bug969906_maction-tooltip.patch
+bug-648548-1-force-reflow.patch
+bug-648548-2-UI.patch
