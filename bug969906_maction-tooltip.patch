@@ -28,12 +28,14 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/style/moz.build b/layout/style/moz.build
 --- a/layout/style/moz.build
 +++ b/layout/style/moz.build
-@@ -1,15 +1,15 @@
- # -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
- # vim: set filetype=python:
- # This Source Code Form is subject to the terms of the Mozilla Public
- # License, v. 2.0. If a copy of the MPL was not distributed with this
- # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+@@ -14,17 +14,17 @@ with Files('nsROCSSPrimitiveValue.*'):
+     BUG_COMPONENT = ('Core', 'DOM: CSS Object Model')
+ 
+ with Files('CSSRuleList.*'):
+     BUG_COMPONENT = ('Core', 'DOM: CSS Object Model')
+ 
+ with Files('nsDOM*'):
+     BUG_COMPONENT = ('Core', 'DOM: CSS Object Model')
  
 -DIRS += ['xbl-marquee']
 +DIRS += ['xbl-marquee', 'xbl-maction']
