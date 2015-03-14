@@ -1,0 +1,338 @@
+# HG changeset patch
+# User Jonathan Kew <jkew@mozilla.com>
+# Parent 42afc7ef5ccbe8eb97c027c0eccf9528019e5ad3
+Part 2 - Offer to download additional fonts, if available, for characters lacking font coverage. b=648548, r=mfinkle
+
+diff --git a/mobile/android/chrome/content/FontLocator.js b/mobile/android/chrome/content/FontLocator.js
+new file mode 100644
+--- /dev/null
++++ b/mobile/android/chrome/content/FontLocator.js
+@@ -0,0 +1,220 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
++ * You can obtain one at http://mozilla.org/MPL/2.0/. */
++"use strict";
++
++let Cc = Components.classes;
++let Ci = Components.interfaces;
++let Cu = Components.utils;
++
++Cu.import("resource://gre/modules/Services.jsm");
++Cu.import("resource://gre/modules/NetUtil.jsm");
++
++var FontLocator = {
++  // _missingScripts is used as an associative array, indexed by script code;
++  // for each known script, we have:
++  //   name:  name of the script
++  //   state: "available" - available on the server
++  //          "wanted"    - available and needed for text on a page
++  //          "loading"   - font load has been triggered
++  //          "loaded"    - font has been downloaded
++  //          "ignore"    - user has asked us to ignore this script
++  //          "unknown"   - no font available for this script
++  //   font:  the font file to be downloaded for this script, if needed
++  _missingScripts: null,
++
++  _isLoading: false,
++  _deferredScriptsNeeded: "",
++  // FIXME - fontServer doesn't belong here! Make this a preference?
++  _fontServer: "https://fred-wang.github.io/mozilla-font-server/",
++
++  init: function() {
++    Services.obs.addObserver(this, "font-needed", false);
++    Services.obs.addObserver(this, "available-fonts-update", false);
++  },
++
++  observe: function(aSubject, aTopic, aData) {
++    switch (aTopic) {
++
++      case "font-needed":
++        this.lookForNeededFonts(aData);
++        break;
++
++      case "available-fonts-update":
++        this.updateAvailableFonts(aData);
++        break;
++
++      default:
++        dump('FontLocator.observe: unexpected topic "' + aTopic + '"\n');
++        break;
++
++    }
++  },
++
++  addToDeferredScripts: function(aScriptsNeeded) {
++    aScriptsNeeded.split(",").forEach(function(value, index, array) {
++      if (this._deferredScriptsNeeded.indexOf(value) == -1) {
++        this._deferredScriptsNeeded += value + ",";
++      }
++    }, this);
++  },
++
++  lookForNeededFonts: function(aScriptsNeeded) {
++    if (this._isLoading) {
++      // we're waiting for the list of fonts; just remember this request for later
++      this.addToDeferredScripts(aScriptsNeeded);
++      return;
++    }
++
++    if (this._missingScripts == null) {
++      // first time, get the list of available fonts from the server
++      this._isLoading = true;
++      this.addToDeferredScripts(aScriptsNeeded);
++
++      let ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
++      let channel = ios.newChannel(this._fontServer + "fonts.json", null, null);
++      NetUtil.asyncFetch(channel, function(aInputStream, aResult) {
++        if (Components.isSuccessCode(aResult)) {
++          let is = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
++          is.init(aInputStream);
++          let json = is.read(aInputStream.available());
++          try {
++            if (JSON.parse(json) != undefined) {
++              // notify that we're ready to deal with pending missing-script requests
++              Services.obs.notifyObservers(null, "available-fonts-update", json);
++            }
++          } catch(e) { }
++        }
++      });
++
++      return;
++    }
++
++    let missingScripts = this._missingScripts;
++
++    // note which script(s) are needing fonts and haven't been declined already
++    let scriptList = aScriptsNeeded.split(",");
++    let i;
++    scriptList.forEach(function(elem, index, s) {
++      if (elem == "") {
++        // skip empty tag
++      } else if (elem in missingScripts) {
++        if (missingScripts[elem].state == "available") {
++          missingScripts[elem].state = "wanted";
++        }
++      } else {
++        missingScripts[elem] = { state: "unknown" };
++      }
++    });
++
++    let wantedScripts = [];
++    for each (let script in missingScripts) {
++      if (script.state == "wanted") {
++        wantedScripts.push(script.name);
++      }
++    }
++
++    // any potential fonts?
++    if (wantedScripts.length > 0) {
++      wantedScripts.sort();
++      // if so, post a doorhanger asking the user whether to download
++      let buttons = [
++        {
++          label: Strings.browser.GetStringFromName("fontLocator.download"),
++          callback: function() {
++            for each (let script in missingScripts) {
++              if (script.state == "wanted") {
++                script.state = "loading";
++                this.downloadFont(script.font);
++              }
++            }
++            return false;
++          }.bind(this)
++        },
++        {
++          label: Strings.browser.GetStringFromName("fontLocator.ignore"),
++          callback: function() {
++            for each (let script in missingScripts) {
++              if (script.state == "wanted") {
++                script.state = "ignore";
++              }
++            }
++            return false;
++          }
++        }
++      ];
++
++      // TODO: Should we print the list of wantedScripts?
++      NativeWindow.doorhanger.show(Strings.browser.GetStringFromName("fontLocator.downloadPrompt"), "download-fonts", buttons);
++    }
++  },
++
++  updateAvailableFonts: function(aJSON) {
++    dump("updateAvailableFonts: " + aJSON);
++    this._missingScripts = JSON.parse(aJSON);
++    this._isLoading = false;
++    if (this._missingScripts != null) {
++      this.lookForNeededFonts(this._deferredScriptsNeeded);
++    }
++  },
++
++  downloadFont: function(aFontFile) {
++    // get the profile local fonts directory
++    let tps = Cc["@mozilla.org/toolkit/profile-service;1"].createInstance(Ci.nsIToolkitProfileService);
++
++    let fontsDir = tps.selectedProfile.localDir.clone();
++    fontsDir.appendRelativePath("fonts");
++    if (!fontsDir.exists()) {
++      fontsDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0x1ff);
++    } else {
++      fontsDir.permissions = 0x1ff;
++    }
++
++    let localFile = fontsDir;
++    localFile.appendRelativePath(aFontFile);
++    if (localFile.exists()) {
++      // we've already got this font, so nothing more to do
++      // TODO: compare checksums or file sizes or something
++      // to see whether the font we've got is up-to-date
++      return;
++    }
++
++    let fontURI = Services.io.newURI(this._fontServer + aFontFile, null, null);
++
++    let persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
++
++    persist.progressListener = {
++      onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
++        // NOT IMPLEMENTED
++      },
++      onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
++        // NOT IMPLEMENTED
++      },
++      onSecurityChange: function(aWebProgress, aRequest, aState) {
++        // NOT IMPLEMENTED
++      },
++      onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
++        // when the download completes, tell the app to rebuild its font list
++        dump("onStateChange, flags = " + aStateFlags + ", status = " + aStatus);
++        if ((aStateFlags & Ci.nsIWebProgressListener.STATE_IS_REQUEST) &&
++            (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP)) {
++          if (aStatus == 0) {
++            dump("refreshing the font list");
++            let fonts = Cc["@mozilla.org/gfx/fontenumerator;1"].getService(Ci.nsIFontEnumerator);
++            fonts.updateFontList();
++          }
++        }
++      },
++      onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {
++        dump("font-download: " + aMessage);
++      }
++    };
++
++    dump("download " + fontURI.spec + " to " + localFile.path);
++    var privacyContext =
++        window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
++        .getInterface(Components.interfaces.nsIWebNavigation)
++        .QueryInterface(Components.interfaces.nsILoadContext);
++    persist.saveURI(fontURI, null, null, 0, null, null, localFile, privacyContext);
++  },
++};
+diff --git a/mobile/android/chrome/content/browser.js b/mobile/android/chrome/content/browser.js
+--- a/mobile/android/chrome/content/browser.js
++++ b/mobile/android/chrome/content/browser.js
+@@ -117,16 +117,17 @@ let lazilyLoadedBrowserScripts = [
+   ["SelectHelper", "chrome://browser/content/SelectHelper.js"],
+   ["InputWidgetHelper", "chrome://browser/content/InputWidgetHelper.js"],
+   ["MasterPassword", "chrome://browser/content/MasterPassword.js"],
+   ["PluginHelper", "chrome://browser/content/PluginHelper.js"],
+   ["OfflineApps", "chrome://browser/content/OfflineApps.js"],
+   ["Linkifier", "chrome://browser/content/Linkify.js"],
+   ["ZoomHelper", "chrome://browser/content/ZoomHelper.js"],
+   ["CastingApps", "chrome://browser/content/CastingApps.js"],
++  ["FontLocator", "chrome://browser/content/FontLocator.js"],
+ ];
+ if (AppConstants.NIGHTLY_BUILD) {
+   lazilyLoadedBrowserScripts.push(
+     ["WebcompatReporter", "chrome://browser/content/WebcompatReporter.js"]);
+ }
+ 
+ lazilyLoadedBrowserScripts.forEach(function (aScript) {
+   let [name, script] = aScript;
+@@ -434,16 +435,18 @@ var BrowserApp = {
+     Services.obs.addObserver(this, "webapps-launch", false);
+     Services.obs.addObserver(this, "webapps-runtime-uninstall", false);
+     Services.obs.addObserver(this, "Webapps:AutoInstall", false);
+     Services.obs.addObserver(this, "Webapps:Load", false);
+     Services.obs.addObserver(this, "Webapps:AutoUninstall", false);
+     Services.obs.addObserver(this, "sessionstore-state-purge-complete", false);
+     Messaging.addListener(this.getHistory.bind(this), "Session:GetHistory");
+ 
++    FontLocator.init();
++
+     function showFullScreenWarning() {
+       NativeWindow.toast.show(Strings.browser.GetStringFromName("alertFullScreenToast"), "short");
+     }
+ 
+     window.addEventListener("fullscreen", function() {
+       Messaging.sendRequest({
+         type: window.fullScreen ? "ToggleChrome:Show" : "ToggleChrome:Hide"
+       });
+diff --git a/mobile/android/chrome/jar.mn b/mobile/android/chrome/jar.mn
+--- a/mobile/android/chrome/jar.mn
++++ b/mobile/android/chrome/jar.mn
+@@ -46,16 +46,17 @@ chrome.jar:
+   content/MasterPassword.js            (content/MasterPassword.js)
+   content/FindHelper.js                (content/FindHelper.js)
+   content/PermissionsHelper.js         (content/PermissionsHelper.js)
+   content/FeedHandler.js               (content/FeedHandler.js)
+   content/Feedback.js                  (content/Feedback.js)
+   content/Linkify.js                   (content/Linkify.js)
+   content/ZoomHelper.js                (content/ZoomHelper.js)
+   content/CastingApps.js               (content/CastingApps.js)
++  content/FontLocator.js               (content/FontLocator.js)
+ #ifdef MOZ_SERVICES_HEALTHREPORT
+   content/aboutHealthReport.xhtml      (content/aboutHealthReport.xhtml)
+   content/aboutHealthReport.js         (content/aboutHealthReport.js)
+ #endif
+ #ifdef MOZ_DEVICES
+   content/aboutDevices.xhtml           (content/aboutDevices.xhtml)
+   content/aboutDevices.js              (content/aboutDevices.js)
+ #endif
+diff --git a/mobile/android/locales/en-US/chrome/browser.properties b/mobile/android/locales/en-US/chrome/browser.properties
+--- a/mobile/android/locales/en-US/chrome/browser.properties
++++ b/mobile/android/locales/en-US/chrome/browser.properties
+@@ -379,13 +379,18 @@ browser.menu.context.video = Video
+ browser.menu.context.audio = Audio
+ browser.menu.context.tel = Phone
+ browser.menu.context.mailto = Mail
+ 
+ # "Subscribe to page" prompts created in FeedHandler.js
+ feedHandler.chooseFeed=Choose feed
+ feedHandler.subscribeWith=Subscribe with
+ 
++# Messages for FontLocator.js
++fontLocator.downloadPrompt=Additional fonts are needed to display this page properly. Do you want to download them?
++fontLocator.download=Download
++fontLocator.ignore=Ignore
++
+ # LOCALIZATION NOTE (nativeWindow.deprecated):
+ # This string is shown in the console when someone uses deprecated NativeWindow apis.
+ # %1$S=name of the api that's deprecated, %2$S=New API to use. This may be a url to
+ # a file they should import or the name of an api.
+ nativeWindow.deprecated=%1$S is deprecated. Please use %2$S instead
+diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
+--- a/modules/libpref/init/all.js
++++ b/modules/libpref/init/all.js
+@@ -607,17 +607,21 @@ pref("gfx.downloadable_fonts.woff2.enabl
+ 
+ #ifdef ANDROID
+ pref("gfx.bundled_fonts.enabled", true);
+ pref("gfx.bundled_fonts.force-enabled", false);
+ #endif
+ 
+ // Do we fire a notification about missing fonts, so the front-end can decide
+ // whether to try and do something about it (e.g. download additional fonts)?
++#ifdef ANDROID
++pref("gfx.missing_fonts.notify", true);
++#else
+ pref("gfx.missing_fonts.notify", false);
++#endif
+ 
+ pref("gfx.filter.nearest.force-enabled", false);
+ 
+ // prefs controlling the font (name/cmap) loader that runs shortly after startup
+ pref("gfx.font_loader.families_per_slice", 3); // read in info 3 families at a time
+ #ifdef XP_WIN
+ pref("gfx.font_loader.delay", 120000);         // 2 minutes after startup
+ pref("gfx.font_loader.interval", 1000);        // every 1 second until complete
