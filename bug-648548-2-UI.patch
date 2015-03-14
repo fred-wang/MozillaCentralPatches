@@ -222,7 +222,7 @@ new file mode 100644
 +
 +    // TODO: do we care about privacy here?
 +    dump("download " + fontURI.spec + " to " + localFile.path);
-+    persist.saveURI(fontURI, null, null, null, null, localFile, null);
++    persist.saveURI(fontURI, null, null, 0, null, null, localFile, null);
 +  },
 +};
 diff --git a/mobile/android/chrome/content/browser.js b/mobile/android/chrome/content/browser.js
