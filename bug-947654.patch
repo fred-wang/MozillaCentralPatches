@@ -1,7 +1,7 @@
 # HG changeset patch
 # Parent 7723b15ea695e321e6acda04beef9bc98728dd13
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 1156463 - Use font.*.x-math font preferences for MathML. r=karl
+Bug 947654 - Use font.*.x-math font preferences for MathML. r=karl
 
 diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
 --- a/dom/base/nsGkAtomList.h
@@ -183,7 +183,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Sans");
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif");
++pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, serif");
 +pref("font.name.sans-serif.x-math", "DejaVu Sans, sans-serif");
 +pref("font.name.monospace.x-math", "monospace");
  
@@ -218,7 +218,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
   * text fit in *the width of the device*.
   *
   * When both this pref and the next are set, the larger inflation is
-@@ -2918,17 +2927,20 @@ pref("font.name.monospace.x-tibt", "Tibe
+@@ -2918,17 +2927,21 @@ pref("font.name.monospace.x-tibt", "Tibe
  pref("font.name-list.serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.sans-serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.monospace.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
@@ -229,9 +229,10 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
 +// Cambria is put before Cambria Math, to workaround bug 598900.
-+pref("font.name.serif.x-math", "Cambria, Cambria Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Serif");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, sans-serif");
-+pref("font.name.monospace.x-math", "monospace");
++pref("font.name.serif.x-math", "Cambria, Cambria Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Serif, Times New Roman");
++pref("font.name.sans-serif.x-math", "DejaVu Sans, Arial");
++pref("font.name.monospace.x-math", "Courier New");
++pref("font.name.cursive.x-math", "Comic Sans MS");
  
  // cleartype settings - false implies default system settings
  
@@ -240,7 +241,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -3317,17 +3329,19 @@ pref("font.name-list.monospace.zh-HK", "
+@@ -3317,17 +3330,21 @@ pref("font.name-list.monospace.zh-HK", "
  
  // XP_MACOSX changes to default font sizes
  pref("font.minimum-size.th", 10);
@@ -250,9 +251,11 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Sans");
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Serif");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, sans-serif");
-+pref("font.name.monospace.x-math", "monospace");
++pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Serif, Times");
++pref("font.name.sans-serif.x-math", "DejaVu Sans, Helvetica");
++pref("font.name.monospace.x-math", "Courier");
++pref("font.name.cursive.x-math", "Apple Chancery");
++pref("font.name.fantasy.x-math", "Papyrus");
  
  // individual font faces to be treated as independent families
  // names are Postscript names of each face
