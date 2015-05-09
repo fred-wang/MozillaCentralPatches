@@ -106,7 +106,7 @@ new file mode 100644
 +  </head>
 +  <body style="font: 20px monospace;">
 +
-+    <math style="font-family: sans-serif; font-size: 40px;">
++    <math style="font-family: serif; font-size: 40px;">
 +      <mtext>x-math language</mtext>
 +    </math>
 +
@@ -116,7 +116,7 @@ diff --git a/layout/reftests/mathml/default-font.html b/layout/reftests/mathml/d
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/mathml/default-font.html
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,14 @@
 +<html>
 +  <head>
 +    <title>default font</title>
@@ -124,6 +124,7 @@ new file mode 100644
 +  </head>
 +  <body style="font: 20px monospace;">
 +
++    <!-- font.minimum-size.x-math set to 40 -->
 +    <math>
 +      <mtext>x-math language</mtext>
 +    </math>
@@ -133,16 +134,136 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -357,8 +357,9 @@ random-if(winWidget&&!/^Windows\x20NT\x2
+@@ -76,17 +76,17 @@ skip-if(B2G||Mulet) == quotes-1.xhtml qu
+ != stretchy-mfenced-3b.html stretchy-mfenced-3-ref.html
+ == stretchy-mfenced-4a.html stretchy-mfenced-4-ref.html
+ == stretchy-mfenced-4b.html stretchy-mfenced-4-ref.html
+ == stretchy-mover-1a.html stretchy-mover-1-ref.html
+ == stretchy-mover-1b.html stretchy-mover-1-ref.html
+ fails == stretchy-mover-2a.html stretchy-mover-2-ref.html
+ != stretchy-mover-2b.html stretchy-mover-2-ref.html
+ == stretchy-mover-3.html stretchy-mover-3-ref.html
+-== stretchy-largeop-1.html stretchy-largeop-1-ref.html
++random-if(gtk2Widget) == stretchy-largeop-1.html stretchy-largeop-1-ref.html
+ == table-width-1.xhtml table-width-1-ref.xhtml
+ == table-width-2.html table-width-2-ref.html
+ == table-width-3.html table-width-3-ref.html
+ == table-width-4.html table-width-4-ref.html
+ == underbar-width-1.xhtml underbar-width-1-ref.xhtml
+ == mathml-type-supported.xhtml mathml-type-supported-ref.xml
+ == mtable-align-negative-rownumber.html mtable-align-negative-rownumber-ref.html
+ != embellished-op-1-1.html embellished-op-1-1-ref.html
+@@ -105,17 +105,17 @@ fails == stretchy-mover-2a.html stretchy
+ != embellished-op-3-5.html embellished-op-3-5-ref.html
+ == embellished-op-4-1.html embellished-op-4-1-ref.html
+ == embellished-op-4-2.html embellished-op-4-2-ref.html
+ == embellished-op-4-3.html embellished-op-4-3-ref.html
+ == embellished-op-5-1.html embellished-op-5-ref.html
+ == embellished-op-5-2.html embellished-op-5-ref.html
+ random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == semantics-1.xhtml semantics-1-ref.xhtml # Windows versions with Cambria Math
+ == semantics-2.html semantics-2-ref.html
+-== semantics-3.html semantics-3-ref.html
++random-if(gtk2Widget) == semantics-3.html semantics-3-ref.html
+ == semantics-4.html semantics-4-ref.html
+ != mathcolor-1.xml mathcolor-1-ref.xml
+ != mathcolor-2.xml mathcolor-2-ref.xml
+ != mathcolor-3.xml mathcolor-3-ref.xml
+ == mathcolor-4.xml mathcolor-4-ref.xml
+ != mathbackground-1.xml mathbackground-1-ref.xml
+ != mathbackground-2.xml mathbackground-2-ref.xml
+ != mathbackground-3.xml mathbackground-3-ref.xml
+@@ -134,19 +134,19 @@ random-if(winWidget&&!/^Windows\x20NT\x2
+ == mspace-1.html mspace-1-ref.html
+ == mpadded-1.html mpadded-1-ref.html
+ == mpadded-2.html mpadded-2-ref.html
+ == mpadded-3.html mpadded-3-ref.html
+ == mpadded-4.html mpadded-4-ref.html
+ == mpadded-5.html mpadded-5-ref.html
+ == mpadded-1-2.html mpadded-1-2-ref.html
+ == mpadded-6.html mpadded-6-ref.html
+-fails-if(B2G||Mulet) == mpadded-7.html mpadded-7-ref.html # B2G: slight character width variation # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
+-fails-if(B2G) == mpadded-8.html mpadded-8-ref.html # B2G: slight character width variation
+-fails-if(B2G) == mpadded-9.html mpadded-9-ref.html # B2G: slight character width variation
++random-if(B2G||Mulet) == mpadded-7.html mpadded-7-ref.html # B2G: slight character width variation # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
++random-if(B2G) == mpadded-8.html mpadded-8-ref.html # B2G: slight character width variation
++random-if(B2G) == mpadded-9.html mpadded-9-ref.html # B2G: slight character width variation
+ == math-display.html math-display-ref.html
+ == scriptlevel-1.html scriptlevel-1-ref.html
+ == scriptlevel-movablelimits-1.html scriptlevel-movablelimits-1-ref.html
+ == munderover-align-accent-false.html munderover-align-accent-false-ref.html
+ == munderover-align-accent-true.html munderover-align-accent-true-ref.html
+ == munder-mover-align-accent-true.html munder-mover-align-accent-true-ref.html
+ == munder-mover-align-accent-false.html munder-mover-align-accent-false-ref.html
+ == mfrac-linethickness-1.xhtml mfrac-linethickness-1-ref.xhtml
+@@ -193,17 +193,17 @@ skip-if(B2G||Mulet) == maction-dynamic-3
+ == whitespace-trim-3.html whitespace-trim-3-ref.html
+ fails == whitespace-trim-4.html whitespace-trim-4-ref.html # Bug 787215
+ == whitespace-trim-5.html whitespace-trim-5-ref.html
+ random-if(winWidget&&!d2d) == opentype-stretchy.html opentype-stretchy-ref.html
+ == opentype-fraction-dynamic-linethickness.html opentype-fraction-dynamic-linethickness-ref.html
+ == operator-1.xhtml operator-1-ref.xhtml
+ == scriptshift-1.xhtml scriptshift-1-ref.xhtml
+ == number-size-1.xhtml number-size-1-ref.xhtml
+-random-if((B2G&&browserIsRemote)||Mulet) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics # Initial mulet triage: parity with B2G/B2G Desktop
++random-if((B2G&&browserIsRemote)||Mulet||/^Windows\x20NT\x205\.1/.test(http.oscpu)) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics # Initial mulet triage: parity with B2G/B2G Desktop
+ == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
+ == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
+ != menclose-1a.html menclose-1-ref.html
+ != menclose-1b.html menclose-1-ref.html
+ != menclose-1c.html menclose-1-ref.html
+ != menclose-1d.html menclose-1-ref.html
+ != menclose-1e.html menclose-1-ref.html
+ != menclose-1f.html menclose-1-ref.html
+@@ -284,17 +284,17 @@ fails-if(B2G||Android||/^Windows\x20NT\x
+ == mathvariant-1d.html mathvariant-1d-ref.html
+ fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX) == mathvariant-2.html mathvariant-2-ref.html # Bugs 1010678, 1010679
+ == mathvariant-3.html mathvariant-3-ref.html
+ == mathvariant-4.html mathvariant-4-ref.html
+ == mathvariant-5.html mathvariant-5-ref.html
+ == dtls-1.html dtls-1-ref.html
+ == dtls-2.html dtls-2-ref.html
+ == dtls-3.html dtls-3-ref.html
+-== ssty-1.html ssty-1-ref.html
++random-if(!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == ssty-1.html ssty-1-ref.html
+ == ssty-2.html ssty-2-ref.html
+ == ssty-3.html ssty-3-ref.html
+ == ssty-4.html ssty-4-ref.html
+ == mathscript-1.html mathscript-1-ref.html
+ == mathscript-2.html mathscript-2-ref.html
+ == mo-accent-dynamic.html mo-accent-dynamic-ref.html
+ == mo-movablelimits-dynamic.html mo-movablelimits-dynamic-ref.html
+ == munderover-accent-dynamic.html munderover-accent-dynamic-ref.html
+@@ -340,25 +340,26 @@ fails-if(B2G||Android||/^Windows\x20NT\x
+ == mfrac-A-2.html mfrac-A-2-ref.html
+ == mfrac-A-3.html mfrac-A-3-ref.html
+ == mfrac-A-4.html mfrac-A-4-ref.html
+ == mfrac-A-5.html mfrac-A-5-ref.html
+ == mfrac-A-6.html mfrac-A-6-ref.html
+ == mfrac-A-7.html mfrac-A-7-ref.html
+ == mfrac-A-8.html mfrac-A-8-ref.html
+ == mfrac-B-1.html mfrac-B-1-ref.html
+-random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-2.html mfrac-B-2-3-ref.html
+-random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-3.html mfrac-B-2-3-ref.html
++random-if(winWidget) == mfrac-B-2.html mfrac-B-2-3-ref.html
++random-if(winWidget) == mfrac-B-3.html mfrac-B-2-3-ref.html
+ == mfrac-B-4.html mfrac-B-4-5-ref.html
+ == mfrac-B-5.html mfrac-B-4-5-ref.html
+ == mfrac-B-6.html mfrac-B-6-7-ref.html
+ == mfrac-B-7.html mfrac-B-6-7-ref.html
+ fuzzy-if(OSX,1,100) == mfrac-C-1.html mfrac-C-1-ref.html
+-random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-C-2.html mfrac-C-2-ref.html
++random-if(winWidget) == mfrac-C-2.html mfrac-C-2-ref.html
+ == mfrac-C-3.html mfrac-C-3-ref.html
  == mfrac-C-4.html mfrac-C-4-ref.html
  fuzzy-if(OSX,1,100) == mfrac-D-1.html mfrac-D-1-ref.html
- random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-D-2.html mfrac-D-2-ref.html
+-random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-D-2.html mfrac-D-2-ref.html
++random-if(winWidget) == mfrac-D-2.html mfrac-D-2-ref.html
  == mfrac-D-3.html mfrac-D-3-ref.html
  == mfrac-D-4.html mfrac-D-4-ref.html
  == mfrac-E-1.html mfrac-E-1-ref.html
  test-pref(dom.webcomponents.enabled,true) == shadow-dom-1.html shadow-dom-1-ref.html
  pref(font.size.inflation.emPerLine,25) == font-inflation-1.html font-inflation-1-ref.html
-+test-pref(font.minimum-size.x-math,40) test-pref(font.name.serif.x-math,"sans-serif") == default-font.html default-font-ref.html
++test-pref(font.minimum-size.x-math,40) == default-font.html default-font-ref.html
 diff --git a/layout/style/nsHTMLStyleSheet.cpp b/layout/style/nsHTMLStyleSheet.cpp
 --- a/layout/style/nsHTMLStyleSheet.cpp
 +++ b/layout/style/nsHTMLStyleSheet.cpp
@@ -264,3 +385,45 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic ProN,Hiragino Mincho ProN,STSong");
+@@ -3659,16 +3676,20 @@ pref("font.name.sans-serif.zh-HK", "Fira
+ pref("font.name.monospace.zh-HK", "Fira Mono");
+ pref("font.name-list.sans-serif.zh-HK", "Fira Sans,Droid Sans Fallback");
+ 
+ pref("font.name.serif.zh-TW", "Charis SIL Compact");
+ pref("font.name.sans-serif.zh-TW", "Fira Sans");
+ pref("font.name.monospace.zh-TW", "Fira Mono");
+ pref("font.name-list.sans-serif.zh-TW", "Fira Sans,Droid Sans Fallback");
+ 
++pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, Charis SIL Compact");
++pref("font.name.sans-serif.x-math", "DejaVu Sans, Fira Sans");
++pref("font.name.monospace.x-math", "Fira Mono");
++
+ #elif defined(ANDROID)
+ // We use the bundled fonts for Firefox for Android
+ 
+ // ar
+ 
+ pref("font.name.serif.el", "Droid Serif"); // not Charis SIL Compact, only has a few Greek chars
+ pref("font.name.sans-serif.el", "Clear Sans");
+ pref("font.name.monospace.el", "Droid Sans Mono");
+@@ -3732,16 +3753,20 @@ pref("font.name-list.monospace.zh-HK", "
+ 
+ pref("font.name.serif.zh-TW", "Charis SIL Compact");
+ pref("font.name.sans-serif.zh-TW", "Clear Sans");
+ pref("font.name.monospace.zh-TW", "Droid Sans Mono");
+ pref("font.name-list.serif.zh-TW", "Droid Serif, Droid Sans Fallback");
+ pref("font.name-list.sans-serif.zh-TW", "Roboto, Droid Sans, Noto Sans TC, Noto Sans SC, Droid Sans Fallback");
+ pref("font.name-list.monospace.zh-TW", "Droid Sans Fallback");
+ 
++pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, Charis SIL Compact");
++pref("font.name.sans-serif.x-math", "DejaVu Sans, Clear Sans");
++pref("font.name.monospace.x-math", "Droid Sans Mono");
++
+ #endif
+ 
+ #if OS_ARCH==AIX
+ 
+ // Override default Japanese fonts
+ pref("font.name.serif.ja", "dt-interface system-jisx0208.1983-0");
+ pref("font.name.sans-serif.ja", "dt-interface system-jisx0208.1983-0");
+ pref("font.name.monospace.ja", "dt-interface user-jisx0208.1983-0");
