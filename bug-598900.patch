@@ -1,0 +1,274 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Date 1431721829 -7200
+# Node ID c65499f9ae14601d56b73ba4d961c2f180a7411e
+# Parent 66a95a483d2c77dfc387019336d18093acd6aac2
+GDI: use typo metrics when USE_TYPO_METRICS is specified. b=598900, r=karl
+
+diff --git a/gfx/thebes/gfxGDIFont.cpp b/gfx/thebes/gfxGDIFont.cpp
+--- a/gfx/thebes/gfxGDIFont.cpp
++++ b/gfx/thebes/gfxGDIFont.cpp
+@@ -299,16 +299,49 @@ gfxGDIFont::Initialize()
+         mMetrics->maxAdvance = metrics.tmMaxCharWidth;
+         mMetrics->aveCharWidth = std::max<gfxFloat>(1, metrics.tmAveCharWidth);
+         // The font is monospace when TMPF_FIXED_PITCH is *not* set!
+         // See http://msdn2.microsoft.com/en-us/library/ms534202(VS.85).aspx
+         if (!(metrics.tmPitchAndFamily & TMPF_FIXED_PITCH)) {
+             mMetrics->maxAdvance = mMetrics->aveCharWidth;
+         }
+ 
++        // For fonts with USE_TYPO_METRICS set in the fsSelection field,
++        // let the OS/2 sTypo* metrics override the previous values.
++        // (see http://www.microsoft.com/typography/otspec/os2.htm#fss)
++        // Using the equivalent values from oMetrics provides inconsistent
++        // results, so we instead rely on OS2Table.
++        gfxFontEntry::AutoTable os2Table(mFontEntry,
++                                         TRUETYPE_TAG('O','S','/','2'));
++        if (os2Table) {
++            uint32_t len;
++            const OS2Table *os2 =
++                reinterpret_cast<const OS2Table*>(hb_blob_get_data(os2Table,
++                                                                   &len));
++            if (len >= offsetof(OS2Table, sTypoLineGap) + sizeof(int16_t)) {
++                const uint16_t kUseTypoMetricsMask = 1 << 7;
++                if ((uint16_t(os2->fsSelection) & kUseTypoMetricsMask)) {
++                    double ascent = int16_t(os2->sTypoAscender);
++                    double descent = int16_t(os2->sTypoDescender);
++                    double lineGap = int16_t(os2->sTypoLineGap);
++                    mMetrics->maxAscent = ROUND(ascent * mFUnitsConvFactor);
++                    mMetrics->maxDescent = -ROUND(descent * mFUnitsConvFactor);
++                    mMetrics->maxHeight =
++                        mMetrics->maxAscent + mMetrics->maxDescent;
++                    mMetrics->internalLeading =
++                        mMetrics->maxHeight - mMetrics->emHeight;
++                    gfxFloat lineHeight =
++                        ROUND((ascent - descent + lineGap) * mFUnitsConvFactor);
++                    lineHeight = std::max(lineHeight, mMetrics->maxHeight);
++                    mMetrics->externalLeading =
++                        lineHeight - mMetrics->maxHeight;
++                }
++            }
++        }
++
+         // Cache the width of a single space.
+         SIZE size;
+         GetTextExtentPoint32W(dc.GetDC(), L" ", 1, &size);
+         mMetrics->spaceWidth = ROUND(size.cx);
+ 
+         // Cache the width of digit zero.
+         // XXX MSDN (http://msdn.microsoft.com/en-us/library/ms534223.aspx)
+         // does not say what the failure modes for GetTextExtentPoint32 are -
+diff --git a/layout/reftests/fonts/mark-generate.py b/layout/reftests/fonts/mark-generate.py
+--- a/layout/reftests/fonts/mark-generate.py
++++ b/layout/reftests/fonts/mark-generate.py
+@@ -105,8 +105,49 @@ f.os2_typoascent = 800
+ f.os2_typodescent_add = False
+ f.os2_typodescent = -200
+ f.os2_use_typo_metrics = True
+ f.os2_typolinegap = lineheight - (f.os2_typoascent - f.os2_typodescent)
+ # glyph height is 800 (hhea ascender - descender)
+ f.hhea_linegap = lineheight - 800
+ 
+ f.generate("markA-lineheight" + str(lineheight) + ".ttf")
++
++# Fonts with known typo-height = f.os2_typoascent + f.os2_typoascent and
++# line-height = winascent + windescent = f.hhea_ascent + f.hhea_descent,
++# such that typo-height is much smaller than line-height.
++f = fontforge.font()
++typoHeight = 2700
++lineheight = 6000
++n = "MarkA-lineheight" + str(lineheight) + "-typoHeight" + str(typoHeight)
++f.fontname = n
++f.familyname = n
++f.fullname = n
++f.copyright = "Copyright (c) 2008-2015 Mozilla Corporation"
++
++g = f.createChar(ord(" "), "space")
++g.width = 1000
++g = f.createChar(ord("A"), "A")
++g.importOutlines("mark-glyph.svg")
++g.width = 1500
++
++f.os2_typoascent_add = False
++f.os2_typoascent = 800
++f.os2_typodescent_add = False
++f.os2_typodescent = -200
++f.os2_typolinegap = typoHeight - (f.os2_typoascent - f.os2_typodescent)
++
++f.hhea_ascent = lineheight / 2
++f.hhea_ascent_add = False
++f.hhea_descent = lineheight / 2
++f.hhea_descent_add = False
++f.hhea_linegap = 0
++
++f.os2_winascent = lineheight / 2
++f.os2_winascent_add = False
++f.os2_windescent = lineheight / 2
++f.os2_windescent_add = False
++
++f.os2_use_typo_metrics = True
++f.generate("markA-lineheight" + str(lineheight) +
++           "-typoheight" + str(typoHeight) + ".otf")
++f.generate("markA-lineheight" + str(lineheight) +
++           "-typoheight" + str(typoHeight) + ".ttf")
+diff --git a/layout/reftests/fonts/markA-lineheight6000-typoheight2700.otf b/layout/reftests/fonts/markA-lineheight6000-typoheight2700.otf
+new file mode 100644
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..13b7b3e917d159454067d6c52c26973504ad4859
+GIT binary patch
+literal 2080
+zc%0Q$O=uKJ6#lAvx)YNjKa%W5Y@yH*6*IACb`ygvNQh}9I3#EYDg$eqG?^ij>9N!5
+zL`8&MmatLKn+HKbFM<eO{6Pm4Z{o$X9-?^gAn1xZoftB{uIY@~UBSqTu+?4lzE|(3
+zUe)V*-8V4MhZ>xK4Bl-R-0r!515hsjY|t<U67HTe*MKSyfY!HbQ#|r+B_mk_@%x6x
+z%p4BNw*cj5n(Iwj=5W=U6&Fc%g?dMdCK_XnX9+*29!ZV4`P!Qp2CAEg509Do9OQn2
+zteOTjYmQlauZK?&p9AFkIeXkK{ed`%PLP~~`KrL_9pk%xt^eg6YULL+gGWb4f2z>o
+z(m5qB-66Ib63UHiYH!lYP@ed#k{6y9HyP*`BSN8P>@*ZW`crs0S*C0nF-HC*D00Q>
+zpI$)c$k8S9Qm1;UyyAim`QX70>TtDUxe>bq%&-Oz11w<`YYniBt?WU7Ls%p246uR*
+z>1=>in*WP5S!fw?gTl(k3<iD=u!Jpm9bg&9S#N+tFr=CQE8x<h0IM{A8Qrjv!vq|p
+zF@h9a+QWJbVFS@Pbb2}w6)1*wnoE%W5z@`jV-oM%JLJJ1O|niC$^zYXZo)~Aq+Gs!
+zXakSydS^7Q$J%+qK9bI4Ox|rfIomPav`xwhvUD(tE?Ox=9<s0~5~~tXhloQbsY{Xi
+zYi(a7jbpQrB4IkCUC~TBYo#oI=?-1jqwYk`-Y(eqW}TG&ga0phHpI?dK^?NS#0j>M
+zC8x~rZ?wy@FFzMi(HAlU!_K;f?TlDF-lp>{d<myPTCw(MyU5J<&B7pAIv5YW7A`Df
+z;;hPh#GvJj)3?EOJ=R7J`1cL3TrWh|f*ZKazcqpn(f#mmWQcgluLh-(s9i)$PfPbc
+z)eNS7u7Lc#eMw%aaR1*HRMXOLex3h!V^omA7>g_=GgP1%HhT5&Rx(eMyj8N-5_+{x
+zQ}Q$YiiXGa8qlC&x>3WA8r!-YvTx9eJ~&@dk(Ln25<eq`)sSg#Yxm4IP8GbK0xJ}X
+zcMEdi2QT7Xo{Ol3xx>v~Px0<tPgPyr`*p?SEAg_XX>Zb-Z1yIL$+=1O0}aiyEyd(~
+zOBriQQ!%N{zEtaGk2Pt^f#$>KXZokqsc=m(NpCnD94)m+`)~IOy67Lu-cnj#h`;6V
+EN4GP5qyPW_
+
+diff --git a/layout/reftests/fonts/markA-lineheight6000-typoheight2700.ttf b/layout/reftests/fonts/markA-lineheight6000-typoheight2700.ttf
+new file mode 100644
+index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..0f84bb8b8c3a250a03f3bf7f4e6c59a6ce1fdd52
+GIT binary patch
+literal 1992
+zc%02uOK2NM82)B<S4wL4A#flqE{w3D&O^#dMve&%t#J^+ARO9Y(q5Xaype=utynLq
+zl#o(rdI@Q1Zo%}{TnZ(@CX_&PY7Pk{hXi`ep^u9%g%+GsnyTN-t`$=XE;NM9@@u~T
+z_02!?&#oW<yoirs;aItRyb`^8X%$F+L+kL|I|quR4`2Hk5GSagtS)(Ne3<&4`d!Lw
+z^>n0=m0iHvO}}09mfO7^nUKCheMha?J+&jhGDrUy^^0}iTS#Af^(*2Bl!-bGnL=iT
+zTtn1H>q}8*@Eks+euMf@GpKqv4*IQO>Vr#Or;S-0rhk&UYI#fkd*2RzM*nrnt#+^+
+z^*#q{O?T+u54|_a+`WC-_g|iRhyiPz7TiC(INqPLy)T`Pys7JjL_C-?aASZqIJ!<a
+z9mBMBIL6{&Q16yQnk;R53wdL)?O((fjDWmg*e}Mj_z49eb%JB{+5X86_CsOXQoYI4
+zmAI147{jF?L=#z)TH(&uO{EJ|twe^C_#@PW(QW7+q&N#MPIh(*@!b2hck4+FBK4#o
+zU1|SRwp43jn_+Jk@Z1k`udz3I$~*<0x7aIJxcM~ls{#k6*3ve9E3T%T2UBa7B*dzv
+z&5ky&rBmY1sWqYP<C$#cjq%J#R_t8AeOs<PK9!Xx^f4|Zw@-5pkiV4O)t3#i@%V^!
+z{?T=3NNn7>^Vg5DnCf1_)qa!q@y5qkU<7v)Eb+S7pI{4biXReeV?@54U<a?r%Lz`=
+z{)fIT_D*W^CQD<%y`N98#3B5iU<)6K*#z4t%NG*tK*`eyPSO4~W)Pr_E<!X=Lmd%s
+z-59Fa!?_5T&m?jN6;PtB!uT_cZSwJ`>->-m`qyK2gQx|}1nq9vsMRAiR^6kDt~;44
+zx`mRe1ZNt}rl)3tupNY6)Cd?{VP=R$Omn3s8CvjJiQlhi!qnl?8?jQo*3m8AA`Tia
+zDqgraoohB)e%;qgPq?m|i@NRLs8NdtT?YLR{%x4cX6KQaL+1MC1oO;P?2LL!yNtPX
+zFLFjUJA-o2ipoJ)^HnkLszd5OoCc!`rCiB$=Gk^(o|z$*liQ+9X2G0QyhqIY;WF=r
+ta@|6n1nSwAxA|4=eZs_l8;*IOCEuh`jrg^W|6@4rfAHO`nYa9p{S6dcI@SOH
+
+diff --git a/layout/reftests/text/lineheight-metrics-2-ref.html b/layout/reftests/text/lineheight-metrics-2-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/text/lineheight-metrics-2-ref.html
+@@ -0,0 +1,17 @@
++<title>Testcase, bug 947650 and 598900</title>
++<style>
++html { background: white; }
++body {
++   padding: 1px;
++   background: blue;
++   width: 100px;
++   font-size: 0px; /* remove the effect of the strut ascent and descent */
++}
++div {
++   background: aqua;
++   height: 27px;
++}
++</style>
++<body>
++<div></div>
++</body>
+diff --git a/layout/reftests/text/lineheight-metrics-2a.html b/layout/reftests/text/lineheight-metrics-2a.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/text/lineheight-metrics-2a.html
+@@ -0,0 +1,29 @@
++<title>Testcase, bug 947650 and 598900</title>
++<style>
++html { background: white; }
++@font-face {
++   font-family: "MarkA-lineheight6000-typoheight2700";
++   src: url(../fonts/markA-lineheight6000-typoheight2700.otf);
++}
++body {
++   padding: 1px;
++   background: blue;
++   width: 100px;
++   height: 27px;
++   font-size: 0px; /* remove the effect of the strut ascent and descent */
++}
++div {
++   background: aqua;
++}
++span {
++  /* Choose 10px so that all the metrics are integers and we avoid rounding
++     issues. See lineheight-metrics-1.html for a test with non-integer values.
++   */
++   color: transparent;
++   font-family: MarkA-lineheight6000-typoheight2700;
++   font-size: 10px;
++}
++</style>
++<body>
++<div><span>A</span></div>
++</body>
+diff --git a/layout/reftests/text/lineheight-metrics-2b.html b/layout/reftests/text/lineheight-metrics-2b.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/text/lineheight-metrics-2b.html
+@@ -0,0 +1,29 @@
++<title>Testcase, bug 947650 and 598900</title>
++<style>
++html { background: white; }
++@font-face {
++   font-family: "MarkA-lineheight6000-typoheight2700";
++   src: url(../fonts/markA-lineheight6000-typoheight2700.ttf);
++}
++body {
++   padding: 1px;
++   background: blue;
++   width: 100px;
++   height: 27px;
++   font-size: 0px; /* remove the effect of the strut ascent and descent */
++}
++div {
++   background: aqua;
++}
++span {
++  /* Choose 10px so that all the metrics are integers and we avoid rounding
++     issues. See lineheight-metrics-1.html for a test with non-integer values.
++   */
++   color: transparent;
++   font-family: MarkA-lineheight6000-typoheight2700;
++   font-size: 10px;
++}
++</style>
++<body>
++<div><span>A</span></div>
++</body>
+diff --git a/layout/reftests/text/reftest.list b/layout/reftests/text/reftest.list
+--- a/layout/reftests/text/reftest.list
++++ b/layout/reftests/text/reftest.list
+@@ -19,17 +19,19 @@ random-if(!cocoaWidget) == font-size-adj
+ == justification-cjk-extension.html justification-cjk-extension-ref.html
+ == justification-space-diacritic.html justification-space-diacritic-ref.html
+ HTTP(..) load ligature-with-space-1.html
+ == line-editing-1a.html line-editing-1-ref.html
+ == line-editing-1b.html line-editing-1-ref.html
+ == line-editing-1c.html line-editing-1-ref.html
+ == line-editing-1d.html line-editing-1-ref.html
+ == line-editing-1e.html line-editing-1-ref.html
+-fails-if(cocoaWidget||winWidget) HTTP(..) == lineheight-metrics-1.html lineheight-metrics-1-ref.html # bug 657864
++fails-if(cocoaWidget) HTTP(..) == lineheight-metrics-1.html lineheight-metrics-1-ref.html # bug 657864
++HTTP(..) == lineheight-metrics-2a.html lineheight-metrics-2-ref.html
++HTTP(..) == lineheight-metrics-2b.html lineheight-metrics-2-ref.html
+ == lineheight-percentage-1.html lineheight-percentage-1-ref.html
+ skip-if(B2G||Mulet) == long-1.html long-ref.html # Initial mulet triage: parity with B2G/B2G Desktop
+ fuzzy-if(Android,255,42) == pre-line-1.html pre-line-1-ref.html
+ == pre-line-2.html pre-line-2-ref.html
+ == pre-line-3.html pre-line-3-ref.html
+ == pre-line-4.html pre-line-4-ref.html
+ == pre-space-1.html pre-space-1-ref.html
+ == soft-hyphens-1a.html soft-hyphens-1-ref.html
