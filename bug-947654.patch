@@ -1,12 +1,12 @@
 # HG changeset patch
-# Parent 7723b15ea695e321e6acda04beef9bc98728dd13
+# Parent cb33535b93f2cc8905104449e1a5e242ca86420f
 # User Frédéric Wang <fred.wang@free.fr>
-Bug 947654 - Use font.*.x-math font preferences for MathML. r=karl
+Bug 947654 - Use font.*.x-math font preferences for MathML. r=karl, r=heycam
 
 diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
 --- a/dom/base/nsGkAtomList.h
 +++ b/dom/base/nsGkAtomList.h
-@@ -2115,16 +2115,19 @@ GK_ATOM(x_symbol, "x-symbol")
+@@ -2116,16 +2116,19 @@ GK_ATOM(x_symbol, "x-symbol")
  // additional languages that have special case transformations
  GK_ATOM(az, "az")
  GK_ATOM(ba, "ba")
@@ -29,7 +29,17 @@ diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
 diff --git a/intl/locale/langGroups.properties b/intl/locale/langGroups.properties
 --- a/intl/locale/langGroups.properties
 +++ b/intl/locale/langGroups.properties
-@@ -218,8 +218,9 @@ x-geor=x-geor
+@@ -209,16 +209,17 @@ x-cyrillic=x-cyrillic
+ # zh-CN
+ # ko
+ # zh-TW
+ x-tamil=x-tamil
+ x-devanagari=x-devanagari
+ x-unicode=x-unicode
+ x-armn=x-armn
+ x-geor=x-geor
++x-math=x-math
+ # These self-mappings are not necessary unless somebody use them to specify
  # lang in (X)HTML/XML documents, which they shouldn't. (see bug 256257)
  #x-beng=x-beng
  #x-cans=x-cans
@@ -37,8 +47,6 @@ diff --git a/intl/locale/langGroups.properties b/intl/locale/langGroups.properti
  #x-guru=x-guru
  #x-gujr=x-gujr
  #x-khmr=x-khmr
- #x-mlym=x-mlym
-+x-math=x-math
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
@@ -75,7 +83,7 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1656,17 +1656,17 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1656,17 +1656,19 @@ nsMathMLChar::StretchInternal(nsPresCont
    if (!done) { // normal case
      // Use the css font-family but add preferred fallback fonts.
      font = mStyleContext->StyleFont()->mFont;
@@ -86,6 +94,8 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
      nsAutoTArray<nsString, 10> mathFallbacks;
 -    gfxFontUtils::GetPrefsFontList("font.mathfont-family", mathFallbacks);
 +    gfxFontUtils::GetPrefsFontList("font.name.serif.x-math", mathFallbacks);
++    gfxFontUtils::AppendPrefsFontList("font.name-list.serif.x-math",
++                                      mathFallbacks);
      InsertMathFallbacks(font.fontlist, mathFallbacks);
  
  
@@ -107,7 +117,7 @@ new file mode 100644
 +  <body style="font: 20px monospace;">
 +
 +    <math style="font-family: serif; font-size: 40px;">
-+      <mtext>x-math language</mtext>
++      <mn>x-math language</mn>
 +    </math>
 +
 +  </body>
@@ -126,7 +136,7 @@ new file mode 100644
 +
 +    <!-- font.minimum-size.x-math set to 40 -->
 +    <math>
-+      <mtext>x-math language</mtext>
++      <mn>x-math language</mn>
 +    </math>
 +
 +  </body>
@@ -134,44 +144,25 @@ new file mode 100644
 diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftest.list
 --- a/layout/reftests/mathml/reftest.list
 +++ b/layout/reftests/mathml/reftest.list
-@@ -76,17 +76,17 @@ skip-if(B2G||Mulet) == quotes-1.xhtml qu
- != stretchy-mfenced-3b.html stretchy-mfenced-3-ref.html
- == stretchy-mfenced-4a.html stretchy-mfenced-4-ref.html
- == stretchy-mfenced-4b.html stretchy-mfenced-4-ref.html
- == stretchy-mover-1a.html stretchy-mover-1-ref.html
- == stretchy-mover-1b.html stretchy-mover-1-ref.html
- fails == stretchy-mover-2a.html stretchy-mover-2-ref.html
- != stretchy-mover-2b.html stretchy-mover-2-ref.html
- == stretchy-mover-3.html stretchy-mover-3-ref.html
--== stretchy-largeop-1.html stretchy-largeop-1-ref.html
-+random-if(gtk2Widget) == stretchy-largeop-1.html stretchy-largeop-1-ref.html
- == table-width-1.xhtml table-width-1-ref.xhtml
- == table-width-2.html table-width-2-ref.html
- == table-width-3.html table-width-3-ref.html
- == table-width-4.html table-width-4-ref.html
- == underbar-width-1.xhtml underbar-width-1-ref.xhtml
- == mathml-type-supported.xhtml mathml-type-supported-ref.xml
- == mtable-align-negative-rownumber.html mtable-align-negative-rownumber-ref.html
- != embellished-op-1-1.html embellished-op-1-1-ref.html
-@@ -105,17 +105,17 @@ fails == stretchy-mover-2a.html stretchy
- != embellished-op-3-5.html embellished-op-3-5-ref.html
- == embellished-op-4-1.html embellished-op-4-1-ref.html
- == embellished-op-4-2.html embellished-op-4-2-ref.html
- == embellished-op-4-3.html embellished-op-4-3-ref.html
- == embellished-op-5-1.html embellished-op-5-ref.html
- == embellished-op-5-2.html embellished-op-5-ref.html
- random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == semantics-1.xhtml semantics-1-ref.xhtml # Windows versions with Cambria Math
- == semantics-2.html semantics-2-ref.html
--== semantics-3.html semantics-3-ref.html
-+random-if(gtk2Widget) == semantics-3.html semantics-3-ref.html
- == semantics-4.html semantics-4-ref.html
- != mathcolor-1.xml mathcolor-1-ref.xml
- != mathcolor-2.xml mathcolor-2-ref.xml
- != mathcolor-3.xml mathcolor-3-ref.xml
- == mathcolor-4.xml mathcolor-4-ref.xml
- != mathbackground-1.xml mathbackground-1-ref.xml
- != mathbackground-2.xml mathbackground-2-ref.xml
- != mathbackground-3.xml mathbackground-3-ref.xml
+@@ -34,17 +34,17 @@ skip-if((B2G&&browserIsRemote)||Mulet) r
+ == mfenced-5b.xhtml mfenced-5-ref.xhtml
+ == mfenced-5c.xhtml mfenced-5-ref.xhtml
+ == mfenced-5d.xhtml mfenced-5-ref.xhtml
+ == mfenced-6.html mfenced-6-ref.html
+ == mfenced-7.html mfenced-7-ref.html
+ != mfenced-8.html mfenced-8-ref.html
+ == mfenced-9.html mfenced-9-ref.html
+ fails-if(/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfenced-10.html mfenced-10-ref.html # Windows versions without Cambria Math, see bug 670592
+-fails-if(winWidget&&d2d) == mfenced-11.html mfenced-11-ref.html
++== mfenced-11.html mfenced-11-ref.html
+ skip-if(Mulet) == mfenced-12.html mfenced-12-ref.html # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
+ == mi-mathvariant-1.xhtml mi-mathvariant-1-ref.xhtml
+ == mi-mathvariant-2.xhtml mi-mathvariant-2-ref.xhtml
+ != mi-mathvariant-3.html mi-mathvariant-3-ref.html
+ != non-spacing-accent-1.xhtml non-spacing-accent-1-ref.xhtml
+ == overbar-width-1.xhtml overbar-width-1-ref.xhtml
+ skip-if(B2G||Mulet) == quotes-1.xhtml quotes-1-ref.xhtml # Initial mulet triage: parity with B2G/B2G Desktop
+ != stretchy-underbar-1.xhtml stretchy-underbar-1-ref.xhtml
 @@ -134,19 +134,19 @@ random-if(winWidget&&!/^Windows\x20NT\x2
  == mspace-1.html mspace-1-ref.html
  == mpadded-1.html mpadded-1-ref.html
@@ -184,9 +175,9 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
 -fails-if(B2G||Mulet) == mpadded-7.html mpadded-7-ref.html # B2G: slight character width variation # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
 -fails-if(B2G) == mpadded-8.html mpadded-8-ref.html # B2G: slight character width variation
 -fails-if(B2G) == mpadded-9.html mpadded-9-ref.html # B2G: slight character width variation
-+random-if(B2G||Mulet) == mpadded-7.html mpadded-7-ref.html # B2G: slight character width variation # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
-+random-if(B2G) == mpadded-8.html mpadded-8-ref.html # B2G: slight character width variation
-+random-if(B2G) == mpadded-9.html mpadded-9-ref.html # B2G: slight character width variation
++fails-if(Mulet) == mpadded-7.html mpadded-7-ref.html # MULET: Bug 1144079: Re-enable Mulet mochitests and reftests taskcluster-specific disables
++== mpadded-8.html mpadded-8-ref.html
++== mpadded-9.html mpadded-9-ref.html
  == math-display.html math-display-ref.html
  == scriptlevel-1.html scriptlevel-1-ref.html
  == scriptlevel-movablelimits-1.html scriptlevel-movablelimits-1-ref.html
@@ -205,7 +196,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == scriptshift-1.xhtml scriptshift-1-ref.xhtml
  == number-size-1.xhtml number-size-1-ref.xhtml
 -random-if((B2G&&browserIsRemote)||Mulet) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics # Initial mulet triage: parity with B2G/B2G Desktop
-+random-if((B2G&&browserIsRemote)||Mulet||/^Windows\x20NT\x205\.1/.test(http.oscpu)) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics # Initial mulet triage: parity with B2G/B2G Desktop
++random-if((B2G&&browserIsRemote)||Mulet) fails-if(winWidget&&/^Windows\x20NT\x205\.1/.test(http.oscpu)) == multiscripts-1.html multiscripts-1-ref.html # B2G - slight height variation from font metrics # Initial mulet triage: parity with B2G/B2G Desktop
  == mathml-mmultiscript-base.html mathml-mmultiscript-base-ref.html
  == mathml-mmultiscript-mprescript.html mathml-mmultiscript-mprescript-ref.html
  != menclose-1a.html menclose-1-ref.html
@@ -214,26 +205,7 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  != menclose-1d.html menclose-1-ref.html
  != menclose-1e.html menclose-1-ref.html
  != menclose-1f.html menclose-1-ref.html
-@@ -284,17 +284,17 @@ fails-if(B2G||Android||/^Windows\x20NT\x
- == mathvariant-1d.html mathvariant-1d-ref.html
- fails-if(B2G||Android||/^Windows\x20NT\x205\.1/.test(http.oscpu)||OSX) == mathvariant-2.html mathvariant-2-ref.html # Bugs 1010678, 1010679
- == mathvariant-3.html mathvariant-3-ref.html
- == mathvariant-4.html mathvariant-4-ref.html
- == mathvariant-5.html mathvariant-5-ref.html
- == dtls-1.html dtls-1-ref.html
- == dtls-2.html dtls-2-ref.html
- == dtls-3.html dtls-3-ref.html
--== ssty-1.html ssty-1-ref.html
-+random-if(!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == ssty-1.html ssty-1-ref.html
- == ssty-2.html ssty-2-ref.html
- == ssty-3.html ssty-3-ref.html
- == ssty-4.html ssty-4-ref.html
- == mathscript-1.html mathscript-1-ref.html
- == mathscript-2.html mathscript-2-ref.html
- == mo-accent-dynamic.html mo-accent-dynamic-ref.html
- == mo-movablelimits-dynamic.html mo-movablelimits-dynamic-ref.html
- == munderover-accent-dynamic.html munderover-accent-dynamic-ref.html
-@@ -340,25 +340,26 @@ fails-if(B2G||Android||/^Windows\x20NT\x
+@@ -340,25 +340,26 @@ fails-if(B2G||Mulet||Android||/^Windows\
  == mfrac-A-2.html mfrac-A-2-ref.html
  == mfrac-A-3.html mfrac-A-3-ref.html
  == mfrac-A-4.html mfrac-A-4-ref.html
@@ -244,20 +216,20 @@ diff --git a/layout/reftests/mathml/reftest.list b/layout/reftests/mathml/reftes
  == mfrac-B-1.html mfrac-B-1-ref.html
 -random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-2.html mfrac-B-2-3-ref.html
 -random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-B-3.html mfrac-B-2-3-ref.html
-+random-if(winWidget) == mfrac-B-2.html mfrac-B-2-3-ref.html
-+random-if(winWidget) == mfrac-B-3.html mfrac-B-2-3-ref.html
++fails-if(winWidget) == mfrac-B-2.html mfrac-B-2-3-ref.html
++fails-if(winWidget) == mfrac-B-3.html mfrac-B-2-3-ref.html
  == mfrac-B-4.html mfrac-B-4-5-ref.html
  == mfrac-B-5.html mfrac-B-4-5-ref.html
  == mfrac-B-6.html mfrac-B-6-7-ref.html
  == mfrac-B-7.html mfrac-B-6-7-ref.html
  fuzzy-if(OSX,1,100) == mfrac-C-1.html mfrac-C-1-ref.html
 -random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-C-2.html mfrac-C-2-ref.html
-+random-if(winWidget) == mfrac-C-2.html mfrac-C-2-ref.html
++fails-if(winWidget) == mfrac-C-2.html mfrac-C-2-ref.html
  == mfrac-C-3.html mfrac-C-3-ref.html
  == mfrac-C-4.html mfrac-C-4-ref.html
  fuzzy-if(OSX,1,100) == mfrac-D-1.html mfrac-D-1-ref.html
 -random-if(winWidget&&!/^Windows\x20NT\x205\.1/.test(http.oscpu)) == mfrac-D-2.html mfrac-D-2-ref.html
-+random-if(winWidget) == mfrac-D-2.html mfrac-D-2-ref.html
++fails-if(winWidget) == mfrac-D-2.html mfrac-D-2-ref.html
  == mfrac-D-3.html mfrac-D-3-ref.html
  == mfrac-D-4.html mfrac-D-4-ref.html
  == mfrac-E-1.html mfrac-E-1-ref.html
@@ -291,10 +263,32 @@ diff --git a/layout/style/nsHTMLStyleSheet.cpp b/layout/style/nsHTMLStyleSheet.c
  {
    if (aData->mElement->IsHTMLElement(nsGkAtoms::a) &&
        nsCSSRuleProcessor::IsLink(aData->mElement) &&
+diff --git a/layout/style/nsHTMLStyleSheet.h b/layout/style/nsHTMLStyleSheet.h
+--- a/layout/style/nsHTMLStyleSheet.h
++++ b/layout/style/nsHTMLStyleSheet.h
+@@ -127,16 +127,18 @@ private:
+ 
+     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override;
+   };
+ 
+ public: // for mLangRuleTable structures only
+ 
+   // Rule to handle xml:lang attributes, of which we have exactly one
+   // per language string, maintained in mLangRuleTable.
++  // We also create one extra rule for the "x-math" language string, used on
++  // <math> elements.
+   class LangRule final : public nsIStyleRule {
+   private:
+     ~LangRule() {}
+   public:
+     explicit LangRule(const nsSubstring& aLang) : mLang(aLang) {}
+ 
+     NS_DECL_ISUPPORTS
+ 
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
-@@ -1810,17 +1810,19 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1839,17 +1839,20 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -304,8 +298,9 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("intl.hyphenation-alias.nn-*", "nn");
  
 -pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Sans");
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, serif");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, sans-serif");
++pref("font.name.serif.x-math", "Latin Modern Math");
++pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Standard Symbols L, serif");
++pref("font.name.sans-serif.x-math", "sans-serif");
 +pref("font.name.monospace.x-math", "monospace");
  
  // Some CJK fonts have bad underline offset, their CJK character glyphs are overlapped (or adjoined)  to its underline.
@@ -315,7 +310,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  #ifdef MOZ_B2G
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
-@@ -2595,16 +2597,23 @@ pref("font.minimum-size.zh-HK", 0);
+@@ -2624,16 +2627,20 @@ pref("font.minimum-size.zh-HK", 0);
  pref("font.size.variable.zh-HK", 16);
  pref("font.size.fixed.zh-HK", 16);
  
@@ -326,10 +321,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  
 +// mathml.css sets font-size to "inherit" and font-family to "serif" so only
 +// font.name.*.x-math and font.minimum-size.x-math are really relevant.
-+pref("font.default.x-math", "serif");
 +pref("font.minimum-size.x-math", 0);
-+pref("font.size.variable.x-math", 16);
-+pref("font.size.fixed.x-math", 13);
 +
  /*
   * A value greater than zero enables font size inflation for
@@ -339,7 +331,8 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
   * text fit in *the width of the device*.
   *
   * When both this pref and the next are set, the larger inflation is
-@@ -2918,17 +2927,21 @@ pref("font.name.monospace.x-tibt", "Tibe
+@@ -2946,18 +2953,22 @@ pref("font.name.sans-serif.x-tibt", "Tib
+ pref("font.name.monospace.x-tibt", "Tibetan Machine Uni");
  pref("font.name-list.serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.sans-serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.monospace.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
@@ -347,11 +340,11 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.minimum-size.th", 10);
  
  pref("font.default.x-devanagari", "sans-serif");
++pref("font.name.serif.x-math", "Latin Modern Math");
  // We have special support for Monotype Symbol on Windows.
 -pref("font.mathfont-family", "MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Sans, Cambria Math");
-+// Cambria is put before Cambria Math, to workaround bug 598900.
-+pref("font.name.serif.x-math", "Cambria, Cambria Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Asana Math, Symbol, DejaVu Serif, Times New Roman");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, Arial");
++pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times New Roman");
++pref("font.name.sans-serif.x-math", "Arial");
 +pref("font.name.monospace.x-math", "Courier New");
 +pref("font.name.cursive.x-math", "Comic Sans MS");
  
@@ -362,7 +355,8 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -3317,17 +3330,21 @@ pref("font.name-list.monospace.zh-HK", "
+@@ -3373,18 +3384,23 @@ pref("font.name-list.sans-serif.zh-HK", 
+ pref("font.name-list.monospace.zh-HK", "Courier,Heiti TC,LiHei Pro");
  
  // XP_MACOSX changes to default font sizes
  pref("font.minimum-size.th", 10);
@@ -370,10 +364,11 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.size.variable.zh-HK", 15);
  pref("font.size.variable.zh-TW", 15);
  
++pref("font.name.serif.x-math", "Latin Modern Math");
  // Apple's Symbol is Unicode so use it
 -pref("font.mathfont-family", "Latin Modern Math, XITS Math, STIX Math, Cambria Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Sans");
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Symbol, DejaVu Serif, Times");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, Helvetica");
++pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times");
++pref("font.name.sans-serif.x-math", "Helvetica");
 +pref("font.name.monospace.x-math", "Courier");
 +pref("font.name.cursive.x-math", "Apple Chancery");
 +pref("font.name.fantasy.x-math", "Papyrus");
@@ -385,7 +380,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic ProN,Hiragino Mincho ProN,STSong");
-@@ -3659,16 +3676,20 @@ pref("font.name.sans-serif.zh-HK", "Fira
+@@ -3728,16 +3744,21 @@ pref("font.name.sans-serif.zh-HK", "Fira
  pref("font.name.monospace.zh-HK", "Fira Mono");
  pref("font.name-list.sans-serif.zh-HK", "Fira Sans,Droid Sans Fallback");
  
@@ -394,8 +389,9 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.name.monospace.zh-TW", "Fira Mono");
  pref("font.name-list.sans-serif.zh-TW", "Fira Sans,Droid Sans Fallback");
  
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, Charis SIL Compact");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, Fira Sans");
++pref("font.name.serif.x-math", "Latin Modern Math");
++pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
++pref("font.name.sans-serif.x-math", "Fira Sans");
 +pref("font.name.monospace.x-math", "Fira Mono");
 +
  #elif defined(ANDROID)
@@ -406,7 +402,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.name.serif.el", "Droid Serif"); // not Charis SIL Compact, only has a few Greek chars
  pref("font.name.sans-serif.el", "Clear Sans");
  pref("font.name.monospace.el", "Droid Sans Mono");
-@@ -3732,16 +3753,20 @@ pref("font.name-list.monospace.zh-HK", "
+@@ -3801,16 +3822,21 @@ pref("font.name-list.monospace.zh-HK", "
  
  pref("font.name.serif.zh-TW", "Charis SIL Compact");
  pref("font.name.sans-serif.zh-TW", "Clear Sans");
@@ -415,8 +411,9 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.name-list.sans-serif.zh-TW", "Roboto, Droid Sans, Noto Sans TC, Noto Sans SC, Droid Sans Fallback");
  pref("font.name-list.monospace.zh-TW", "Droid Sans Fallback");
  
-+pref("font.name.serif.x-math", "Latin Modern Math, XITS Math, STIX Math, Asana Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Termes Math, Neo Euler, Lucida Bright Math, MathJax_Main, STIXNonUnicode, STIXSizeOneSym, STIXGeneral, Standard Symbols L, DejaVu Serif, Charis SIL Compact");
-+pref("font.name.sans-serif.x-math", "DejaVu Sans, Clear Sans");
++pref("font.name.serif.x-math", "Latin Modern Math");
++pref("font.name-list.serif.x-math", "Latin Modern Math, XITS Math, Cambria Math, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, MathJax_Main, STIXGeneral, DejaVu Serif, DejaVu Sans, Charis SIL Compact");
++pref("font.name.sans-serif.x-math", "Clear Sans");
 +pref("font.name.monospace.x-math", "Droid Sans Mono");
 +
  #endif
