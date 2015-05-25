@@ -1,7 +1,8 @@
 # HG changeset patch
-# Parent cb33535b93f2cc8905104449e1a5e242ca86420f
+# Parent b6623a27fa647437a630dfc548d684b2a2de22c1
 # User Frédéric Wang <fred.wang@free.fr>
 Bug 947654 - Use font.*.x-math font preferences for MathML. r=karl, r=heycam
+This also rearranges the list of default fonts and changes the preferred font to Latin Modern Math on all platforms.
 
 diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
 --- a/dom/base/nsGkAtomList.h
@@ -83,7 +84,8 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
 --- a/layout/mathml/nsMathMLChar.cpp
 +++ b/layout/mathml/nsMathMLChar.cpp
-@@ -1656,17 +1656,19 @@ nsMathMLChar::StretchInternal(nsPresCont
+@@ -1655,18 +1655,20 @@ nsMathMLChar::StretchInternal(nsPresCont
+ 
    if (!done) { // normal case
      // Use the css font-family but add preferred fallback fonts.
      font = mStyleContext->StyleFont()->mFont;
@@ -91,8 +93,9 @@ diff --git a/layout/mathml/nsMathMLChar.cpp b/layout/mathml/nsMathMLChar.cpp
  
      // really shouldn't be doing things this way but for now
      // insert fallbacks into the list
-     nsAutoTArray<nsString, 10> mathFallbacks;
+-    nsAutoTArray<nsString, 10> mathFallbacks;
 -    gfxFontUtils::GetPrefsFontList("font.mathfont-family", mathFallbacks);
++    nsAutoTArray<nsString, 16> mathFallbacks;
 +    gfxFontUtils::GetPrefsFontList("font.name.serif.x-math", mathFallbacks);
 +    gfxFontUtils::AppendPrefsFontList("font.name-list.serif.x-math",
 +                                      mathFallbacks);
@@ -288,7 +291,7 @@ diff --git a/layout/style/nsHTMLStyleSheet.h b/layout/style/nsHTMLStyleSheet.h
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
-@@ -1839,17 +1839,20 @@ pref("intl.hyphenation-alias.bs-*", "sh"
+@@ -1838,17 +1838,20 @@ pref("intl.hyphenation-alias.bs-*", "sh"
  
  // Norwegian has two forms, Bokmål and Nynorsk, with "no" as a macrolanguage encompassing both.
  // For "no", we'll alias to "nb" (Bokmål) as that is the more widely used written form.
@@ -310,7 +313,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  #ifdef MOZ_B2G
  // Whitelist of fonts that ship with B2G that do not include space lookups in
  // default features. This allows us to skip analyzing the GSUB/GPOS tables
-@@ -2624,16 +2627,20 @@ pref("font.minimum-size.zh-HK", 0);
+@@ -2623,16 +2626,20 @@ pref("font.minimum-size.zh-HK", 0);
  pref("font.size.variable.zh-HK", 16);
  pref("font.size.fixed.zh-HK", 16);
  
@@ -331,7 +334,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
   * text fit in *the width of the device*.
   *
   * When both this pref and the next are set, the larger inflation is
-@@ -2946,18 +2953,22 @@ pref("font.name.sans-serif.x-tibt", "Tib
+@@ -2945,18 +2952,22 @@ pref("font.name.sans-serif.x-tibt", "Tib
  pref("font.name.monospace.x-tibt", "Tibetan Machine Uni");
  pref("font.name-list.serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
  pref("font.name-list.sans-serif.x-tibt", "Tibetan Machine Uni, Jomolhari, Microsoft Himalaya");
@@ -355,7 +358,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  
  // use cleartype rendering for all fonts always (win xp only)
  pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-@@ -3373,18 +3384,23 @@ pref("font.name-list.sans-serif.zh-HK", 
+@@ -3372,18 +3383,23 @@ pref("font.name-list.sans-serif.zh-HK", 
  pref("font.name-list.monospace.zh-HK", "Courier,Heiti TC,LiHei Pro");
  
  // XP_MACOSX changes to default font sizes
@@ -380,7 +383,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  // optimization hint for fonts with localized names to be read in at startup, otherwise read in at lookup miss
  // names are canonical family names (typically English names)
  pref("font.preload-names-list", "Hiragino Kaku Gothic ProN,Hiragino Mincho ProN,STSong");
-@@ -3728,16 +3744,21 @@ pref("font.name.sans-serif.zh-HK", "Fira
+@@ -3727,16 +3743,21 @@ pref("font.name.sans-serif.zh-HK", "Fira
  pref("font.name.monospace.zh-HK", "Fira Mono");
  pref("font.name-list.sans-serif.zh-HK", "Fira Sans,Droid Sans Fallback");
  
@@ -402,7 +405,7 @@ diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
  pref("font.name.serif.el", "Droid Serif"); // not Charis SIL Compact, only has a few Greek chars
  pref("font.name.sans-serif.el", "Clear Sans");
  pref("font.name.monospace.el", "Droid Sans Mono");
-@@ -3801,16 +3822,21 @@ pref("font.name-list.monospace.zh-HK", "
+@@ -3800,16 +3821,21 @@ pref("font.name-list.monospace.zh-HK", "
  
  pref("font.name.serif.zh-TW", "Charis SIL Compact");
  pref("font.name.sans-serif.zh-TW", "Clear Sans");
