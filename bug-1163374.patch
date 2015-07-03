@@ -1,0 +1,732 @@
+# HG changeset patch
+# Parent 94113a311603080b9ea17571cb34c7d0112e45a2
+# User Frédéric Wang <fred.wang@free.fr>
+# Parent  6c74966e969ac78bc074820c083d6a7c941daa4a
+Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
+
+diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
+--- a/accessible/jsat/OutputGenerator.jsm
++++ b/accessible/jsat/OutputGenerator.jsm
+@@ -187,16 +187,29 @@ let OutputGenerator = {
+       return;
+     }
+     aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'unshift' : 'push']({
+       string: landmarkName
+     });
+   },
+ 
+   /**
++   * Adds a math role to the output if available.
++   * @param {Array} aOutput Output array.
++   * @param {nsIAccessible} aAccessible current accessible object.
++   */
++  _addMathRole: function _addMathRole(aOutput, aAccessible) {
++    let mathRole = Utils.getMathRole(aAccessible);
++    if (!mathRole) {
++      return;
++    }
++    this._addRole(aOutput, mathRole);
++  },
++
++  /**
+    * Adds an entry type attribute to the description if available.
+    * @param {Array} aOutput Output array.
+    * @param {nsIAccessible} aAccessible current accessible object.
+    * @param {String} aRoleStr aAccessible's role string.
+    */
+   _addType: function _addType(aOutput, aAccessible, aRoleStr) {
+     if (aRoleStr !== 'entry') {
+       return;
+@@ -295,23 +308,41 @@ let OutputGenerator = {
+     'definition': NAME_FROM_SUBTREE_RULE,
+     'key': NAME_FROM_SUBTREE_RULE,
+     'image map': INCLUDE_DESC,
+     'option': INCLUDE_DESC,
+     'listbox': INCLUDE_DESC,
+     'definitionlist': INCLUDE_DESC | INCLUDE_NAME,
+     'dialog': INCLUDE_DESC | INCLUDE_NAME,
+     'chrome window': IGNORE_EXPLICIT_NAME,
+-    'app root': IGNORE_EXPLICIT_NAME },
++    'app root': IGNORE_EXPLICIT_NAME,
++    'mathml table': INCLUDE_DESC | INCLUDE_NAME,
++    'mathml labeled row': NAME_FROM_SUBTREE_RULE,
++    'mathml table row': NAME_FROM_SUBTREE_RULE,
++    'mathml cell': INCLUDE_DESC | INCLUDE_NAME,
++    'mathml fraction': INCLUDE_DESC,
++    'mathml square root': INCLUDE_DESC,
++    'mathml root': INCLUDE_DESC,
++    'mathml enclosed': INCLUDE_DESC,
++    'mathml sub': INCLUDE_DESC,
++    'mathml sup': INCLUDE_DESC,
++    'mathml sub sup': INCLUDE_DESC,
++    'mathml under': INCLUDE_DESC,
++    'mathml over': INCLUDE_DESC,
++    'mathml under over': INCLUDE_DESC,
++    'mathml multiscripts': INCLUDE_DESC },
+ 
+   objectOutputFunctions: {
+     _generateBaseOutput:
+       function _generateBaseOutput(aAccessible, aRoleStr, aState, aFlags) {
+         let output = [];
+ 
++        // Add the math 'role' implied by the parent before the actual role.
++        this._addMathRole(output, aAccessible);
++
+         if (aFlags & INCLUDE_DESC) {
+           this._addState(output, aState, aRoleStr);
+           this._addType(output, aAccessible, aRoleStr);
+           this._addRole(output, aRoleStr);
+         }
+ 
+         if (aFlags & INCLUDE_VALUE && aAccessible.value.trim()) {
+           output[this.outputOrder === OUTPUT_DESC_FIRST ? 'push' : 'unshift'](
+@@ -388,16 +419,86 @@ let OutputGenerator = {
+     },
+ 
+     gridcell: function gridcell(aAccessible, aRoleStr, aState, aFlags) {
+       let output = [];
+       this._addState(output, aState);
+       this._addName(output, aAccessible, aFlags);
+       this._addLandmark(output, aAccessible);
+       return output;
++    },
++
++    // Use the same output function for all MathML scripted elements.
++    mathmlmultiscripts: function mathmlmultiscripts(aAccessible) {
++        let output = [];
++        this._addMathRole(output, aAccessible);
++        this._addRole(output, 'mathmlscripted');
++        return output;
++    },
++    mathmlsub: function mathmlsub() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++    mathmlsup: function mathmlsup() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++    mathmlsubsup: function mathmlsubsup() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++    mathmlunder: function mathmlunder() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++    mathmlover: function mathmlover() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++    mathmlunderover: function mathmlunderover() {
++      return this.objectOutputFunctions.
++                  mathmlmultiscripts.apply(this, arguments);
++    },
++
++    // Use the table output functions for MathML tabular elements.
++    mathmltable: function mathmltable() {
++      return this.objectOutputFunctions.table.apply(this, arguments);
++    },
++    mathmlcell: function mathmlcell() {
++      return this.objectOutputFunctions.cell.apply(this, arguments);
++    },
++
++    mathmlfraction: function mathmlfraction(aAccessible, aRoleStr) {
++      let output = [];
++      this._addMathRole(output, aAccessible);
++      // From a semantic point of view, the only important point is to
++      // distinguish between fractions that have a bar and those that do not.
++      // Per the MathML 3 spec, the latter happens iff the linethickness
++      // attribute is of the form [zero-float][optional-unit].
++      let roleStr = aRoleStr;
++      let linethickness = Utils.getAttributes(aAccessible)['linethickness'];
++      if (linethickness) {
++        let numberMatch = linethickness.match(/^(?:\d|\.)+/);
++        if (numberMatch && !parseFloat(numberMatch[0])) {
++          roleStr += 'withoutbar';
++        }
++      }
++      this._addRole(output, roleStr);
++      return output;
++    },
++
++    mathmlenclosed: function mathmlenclosed(aAccessible, aRoleStr) {
++      let output = [];
++      this._addMathRole(output, aAccessible);
++      this._addRole(output, aRoleStr);
++      let notations = Utils.getAttributes(aAccessible)['notation'] || 'longdiv';
++      notations.split(' ').forEach(function(aNotation) {
++        output.push({string: this._getOutputName("notation" + aNotation)});
++      }, this);
++      return output;
+     }
+   }
+ };
+ 
+ /**
+  * Generates speech utterances from objects, actions and state changes.
+  * An utterance is an array of speech data.
+  *
+diff --git a/accessible/jsat/TraversalRules.jsm b/accessible/jsat/TraversalRules.jsm
+--- a/accessible/jsat/TraversalRules.jsm
++++ b/accessible/jsat/TraversalRules.jsm
+@@ -293,17 +293,17 @@ this.TraversalRules = { // jshint ignore
+   RadioButton: new BaseTraversalRule(
+     [Roles.RADIOBUTTON,
+      Roles.RADIO_MENU_ITEM]),
+ 
+   Separator: new BaseTraversalRule(
+     [Roles.SEPARATOR]),
+ 
+   Table: new BaseTraversalRule(
+-    [Roles.TABLE]),
++    [Roles.TABLE, Roles.MATHML_TABLE]),
+ 
+   Checkbox: new BaseTraversalRule(
+     [Roles.CHECKBUTTON,
+      Roles.CHECK_MENU_ITEM,
+      Roles.SWITCH /* A type of checkbox that represents on/off values */]),
+ 
+   _shouldSkipImage: function _shouldSkipImage(aAccessible) {
+     if (gSkipEmptyImages.value && aAccessible.name === '') {
+diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
+--- a/accessible/jsat/Utils.jsm
++++ b/accessible/jsat/Utils.jsm
+@@ -410,31 +410,51 @@ this.Utils = { // jshint ignore:line
+     for (let value of values) {
+       if (attrSet.has(value)) {
+         return value;
+       }
+     }
+   },
+ 
+   getLandmarkName: function getLandmarkName(aAccessible) {
+-    const landmarks = [
++    return this.matchRoles(aAccessible, [
+       'banner',
+       'complementary',
+       'contentinfo',
+       'main',
+       'navigation',
+       'search'
+-    ];
++    ]);
++  },
++
++  getMathRole: function getMathRole(aAccessible) {
++    return this.matchRoles(aAccessible, [
++      'close-fence',
++      'denominator',
++      'numerator',
++      'open-fence',
++      'overscript',
++      'presubscript',
++      'presuperscript',
++      'root-index',
++      'separator',
++      'subscript',
++      'superscript',
++      'underscript'
++    ]);
++  },
++
++  matchRoles: function matchRoles(aAccessible, aRoles) {
+     let roles = this.getAttributes(aAccessible)['xml-roles'];
+     if (!roles) {
+       return;
+     }
+ 
+-    // Looking up a role that would match a landmark.
+-    return this.matchAttributeValue(roles, landmarks);
++    // Looking up a role that would match any in the provided roles.
++    return this.matchAttributeValue(roles, aRoles);
+   },
+ 
+   getEmbeddedControl: function getEmbeddedControl(aLabel) {
+     if (aLabel) {
+       let relation = aLabel.getRelationByType(Relations.LABEL_FOR);
+       for (let i = 0; i < relation.targetsCount; i++) {
+         let target = relation.getTarget(i);
+         if (target.parent === aLabel) {
+@@ -879,28 +899,29 @@ PivotContext.prototype = {
+       return this._cells.get(domNode);
+     }
+ 
+     let cellInfo = {};
+     let getAccessibleCell = function getAccessibleCell(aAccessible) {
+       if (!aAccessible) {
+         return null;
+       }
+-      if ([Roles.CELL, Roles.COLUMNHEADER, Roles.ROWHEADER].indexOf(
++      if ([Roles.CELL, Roles.COLUMNHEADER, Roles.ROWHEADER,
++           Roles.MATHML_CELL].indexOf(
+         aAccessible.role) < 0) {
+           return null;
+       }
+       try {
+         return aAccessible.QueryInterface(Ci.nsIAccessibleTableCell);
+       } catch (x) {
+         Logger.logException(x);
+         return null;
+       }
+     };
+-    let getHeaders = function* getHeaders(aHeaderCells) {
++    let getHeaders = function getHeaders(aHeaderCells) {
+       let enumerator = aHeaderCells.enumerate();
+       while (enumerator.hasMoreElements()) {
+         yield enumerator.getNext().QueryInterface(Ci.nsIAccessible).name;
+       }
+     };
+ 
+     cellInfo.current = getAccessibleCell(aAccessible);
+ 
+@@ -945,17 +966,19 @@ PivotContext.prototype = {
+ 
+     cellInfo.columnHeaders = [];
+     if (cellInfo.columnChanged && cellInfo.current.role !==
+       Roles.COLUMNHEADER) {
+       cellInfo.columnHeaders = [headers for (headers of getHeaders( // jshint ignore:line
+         cellInfo.current.columnHeaderCells))];
+     }
+     cellInfo.rowHeaders = [];
+-    if (cellInfo.rowChanged && cellInfo.current.role === Roles.CELL) {
++    if (cellInfo.rowChanged &&
++        (cellInfo.current.role === Roles.CELL ||
++         cellInfo.current.role === Roles.MATHML_CELL)) {
+       cellInfo.rowHeaders = [headers for (headers of getHeaders( // jshint ignore:line
+         cellInfo.current.rowHeaderCells))];
+     }
+ 
+     this._cells.set(domNode, cellInfo);
+     return cellInfo;
+   },
+ 
+diff --git a/accessible/tests/mochitest/jsat/a11y.ini b/accessible/tests/mochitest/jsat/a11y.ini
+--- a/accessible/tests/mochitest/jsat/a11y.ini
++++ b/accessible/tests/mochitest/jsat/a11y.ini
+@@ -13,13 +13,14 @@ support-files =
+ skip-if = buildapp == 'mulet'
+ [test_content_text.html]
+ skip-if = buildapp == 'mulet'
+ [test_explicit_names.html]
+ [test_gesture_tracker.html]
+ [test_hints.html]
+ [test_landmarks.html]
+ [test_live_regions.html]
++[test_mathml.html]
+ [test_output.html]
+ [test_quicknav_modes.html]
+ [test_tables.html]
+ [test_pointer_relay.html]
+ [test_traversal.html]
+diff --git a/accessible/tests/mochitest/jsat/test_mathml.html b/accessible/tests/mochitest/jsat/test_mathml.html
+new file mode 100644
+--- /dev/null
++++ b/accessible/tests/mochitest/jsat/test_mathml.html
+@@ -0,0 +1,305 @@
++<html>
++<head>
++  <title>[AccessFu] MathML Accessibility Support</title>
++
++  <link rel="stylesheet" type="text/css"
++        href="chrome://mochikit/content/tests/SimpleTest/test.css" />
++  <script type="application/javascript"
++          src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
++  <script type="application/javascript"
++          src="../common.js"></script>
++  <script type="application/javascript"
++          src="output.js"></script>
++  <script type="application/javascript">
++
++    function doTest() {
++      // Test the following accOrElmOrID.
++      var tests = [{
++          accOrElmOrID: "math-1",
++          expectedUtterance: [
++            [{"string":"open-fence"},"(","x",{"string":"separator"},",","y",{"string":"close-fence"},")"],
++            ["(",{"string":"open-fence"},"x",",",{"string":"separator"},"y",")",{"string":"close-fence"}]
++          ],
++          expectedBraille: [
++            [{"string":"open-fenceAbbr"},"(","x",{"string":"separatorAbbr"},",","y",{"string":"close-fenceAbbr"},")"],
++            ["(",{"string":"open-fenceAbbr"},"x",",",{"string":"separatorAbbr"},"y",")",{"string":"close-fenceAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mfrac-1",
++          expectedUtterance: [
++            [{"string":"mathmlfraction"},{"string":"numerator"},"a",{"string":"denominator"},"b"],
++            ["a",{"string":"numerator"},"b",{"string":"denominator"},{"string":"mathmlfraction"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlfractionAbbr"},{"string":"numeratorAbbr"},"a",{"string":"denominatorAbbr"},"b"],
++            ["a",{"string":"numeratorAbbr"},"b",{"string":"denominatorAbbr"},{"string":"mathmlfractionAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mfrac-2",
++          expectedUtterance: [
++            [{"string":"mathmlfractionwithoutbar"},{"string":"numerator"},"a",{"string":"denominator"},"b"],
++            ["a",{"string":"numerator"},"b",{"string":"denominator"},{"string":"mathmlfractionwithoutbar"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlfractionwithoutbarAbbr"},{"string":"numeratorAbbr"},"a",{"string":"denominatorAbbr"},"b"],
++            ["a",{"string":"numeratorAbbr"},"b",{"string":"denominatorAbbr"},{"string":"mathmlfractionwithoutbarAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "msub-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b"],
++            ["a","b",{"string":"subscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b"],
++            ["a","b",{"string":"subscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "msup-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"superscript"},"b"],
++            ["a","b",{"string":"superscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"superscriptAbbr"},"b"],
++            ["a","b",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "msubsup-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c"],
++            ["a","b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c"],
++            ["a","b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mmultiscripts-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c",{"string":"subscript"},{"string":"superscript"},"d",{"string":"presubscript"},"e",{"string":"presuperscript"},{"string":"presubscript"},"f",{"string":"presuperscript"},"g"],
++            ["a","b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"subscript"},"d",{"string":"superscript"},"e",{"string":"presubscript"},{"string":"presuperscript"},"f",{"string":"presubscript"},"g",{"string":"presuperscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c",{"string":"subscriptAbbr"},{"string":"superscriptAbbr"},"d",{"string":"presubscriptAbbr"},"e",{"string":"presuperscriptAbbr"},{"string":"presubscriptAbbr"},"f",{"string":"presuperscriptAbbr"},"g"],
++            ["a","b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"subscriptAbbr"},"d",{"string":"superscriptAbbr"},"e",{"string":"presubscriptAbbr"},{"string":"presuperscriptAbbr"},"f",{"string":"presubscriptAbbr"},"g",{"string":"presuperscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "munder-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"underscript"},"b"],
++            ["a","b",{"string":"underscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"underscriptAbbr"},"b"],
++            ["a","b",{"string":"underscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mover-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"overscript"},"b"],
++            ["a","b",{"string":"overscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"overscriptAbbr"},"b"],
++            ["a","b",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "munderover-1",
++          expectedUtterance: [
++            [{"string":"mathmlscripted"},"a",{"string":"underscript"},"b",{"string":"overscript"},"c"],
++            ["a","b",{"string":"underscript"},"c",{"string":"overscript"},{"string":"mathmlscripted"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlscriptedAbbr"},"a",{"string":"underscriptAbbr"},"b",{"string":"overscriptAbbr"},"c"],
++            ["a","b",{"string":"underscriptAbbr"},"c",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mroot-1",
++          expectedUtterance: [
++            [{"string":"mathmlroot"},"a",{"string":"root-index"},"b"],
++            ["a","b",{"string":"root-index"},{"string":"mathmlroot"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlrootAbbr"},"a",{"string":"root-indexAbbr"},"b"],
++            ["a","b",{"string":"root-indexAbbr"},{"string":"mathmlrootAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "mtable-1",
++          expectedUtterance: [
++            [{"string":"mathmltable"},{"string":"tblColumnInfo","count":3},{"string":"tblRowInfo","count":2},{"string":"columnInfo","args":[1]},{"string":"rowInfo","args":[1]},"a",{"string":"columnInfo","args":[2]},{"string":"rowInfo","args":[1]},"b",{"string":"columnInfo","args":[3]},{"string":"rowInfo","args":[1]},"c",{"string":"columnInfo","args":[1]},{"string":"rowInfo","args":[2]},"d",{"string":"columnInfo","args":[2]},{"string":"rowInfo","args":[2]},"e",{"string":"columnInfo","args":[3]},{"string":"rowInfo","args":[2]},"f"],
++            ["a",{"string":"columnInfo","args":[1]},{"string":"rowInfo","args":[1]},"b",{"string":"columnInfo","args":[2]},{"string":"rowInfo","args":[1]},"c",{"string":"columnInfo","args":[3]},{"string":"rowInfo","args":[1]},"d",{"string":"columnInfo","args":[1]},{"string":"rowInfo","args":[2]},"e",{"string":"columnInfo","args":[2]},{"string":"rowInfo","args":[2]},"f",{"string":"columnInfo","args":[3]},{"string":"rowInfo","args":[2]},{"string":"mathmltable"},{"string":"tblColumnInfo","count":3},{"string":"tblRowInfo","count":2}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmltableAbbr"},{"string":"tblColumnInfoAbbr","count":3},{"string":"tblRowInfoAbbr","count":2},{"string":"cellInfoAbbr","args":[1,1]},"a",{"string":"cellInfoAbbr","args":[2,1]},"b",{"string":"cellInfoAbbr","args":[3,1]},"c",{"string":"cellInfoAbbr","args":[1,2]},"d",{"string":"cellInfoAbbr","args":[2,2]},"e",{"string":"cellInfoAbbr","args":[3,2]},"f"],
++            ["a",{"string":"cellInfoAbbr","args":[1,1]},"b",{"string":"cellInfoAbbr","args":[2,1]},"c",{"string":"cellInfoAbbr","args":[3,1]},"d",{"string":"cellInfoAbbr","args":[1,2]},"e",{"string":"cellInfoAbbr","args":[2,2]},"f",{"string":"cellInfoAbbr","args":[3,2]},{"string":"mathmltableAbbr"},{"string":"tblColumnInfoAbbr","count":3},{"string":"tblRowInfoAbbr","count":2}]
++          ]
++      }, {
++          accOrElmOrID: "menclose-1",
++          expectedUtterance: [
++            [{"string":"mathmlenclosed"},{"string":"notationlongdiv"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notationlongdiv"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlenclosedAbbr"},{"string":"notationlongdivAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationlongdivAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "menclose-2",
++          expectedUtterance: [
++            [{"string":"mathmlenclosed"},{"string":"notationcircle"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notationcircle"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlenclosedAbbr"},{"string":"notationcircleAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationcircleAbbr"}]
++          ]
++        }, {
++          accOrElmOrID: "menclose-3",
++          expectedUtterance: [
++            [{"string":"mathmlenclosed"},{"string":"notationleft"},{"string":"notationtop"},{"string":"notationbottom"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notationleft"},{"string":"notationtop"},{"string":"notationbottom"}]
++          ],
++          expectedBraille: [
++            [{"string":"mathmlenclosedAbbr"},{"string":"notationleftAbbr"},{"string":"notationtopAbbr"},{"string":"notationbottomAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationleftAbbr"},{"string":"notationtopAbbr"},{"string":"notationbottomAbbr"}]
++          ]
++        }];
++
++      // Test all possible utterance order preference values.
++      tests.forEach(function run(test) {
++        var outputOrderValues = [0, 1];
++        outputOrderValues.forEach(function testOutputOrder(outputOrder) {
++          SpecialPowers.setIntPref(PREF_UTTERANCE_ORDER, outputOrder);
++          testOutput(test.expectedUtterance[outputOrder], test.accOrElmOrID,
++            test.oldAccOrElmOrID, 1);
++          testOutput(test.expectedBraille[outputOrder], test.accOrElmOrID,
++            test.oldAccOrElmOrID, 0);
++        });
++      });
++
++      // If there was an original utterance order preference, revert to it.
++      SpecialPowers.clearUserPref(PREF_UTTERANCE_ORDER);
++      SimpleTest.finish();
++    }
++
++    SimpleTest.waitForExplicitFinish();
++    addA11yLoadEvent(doTest);
++  </script>
++</head>
++<body>
++  <div id="root">
++    <a target="_blank"
++       href="https://bugzilla.mozilla.org/show_bug.cgi?id=1163374"
++       title="[AccessFu] MathML Accessibility Support">
++      Mozilla Bug 1163374
++    </a>
++    <p id="display"></p>
++    <div id="content" style="display: none"></div>
++    <pre id="test"></pre>
++
++    <math id="math-1"><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo></math>
++
++    <math>
++      <mfrac id="mfrac-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </mfrac>
++    </math>
++
++    <math>
++      <mfrac id="mfrac-2" linethickness="0px">
++        <mi>a</mi>
++        <mi>b</mi>
++      </mfrac>
++    </math>
++
++    <math>
++      <msub id="msub-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </msub>
++    </math>
++    <math>
++      <msup id="msup-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </msup>
++    </math>
++    <math>
++      <msubsup id="msubsup-1">
++        <mi>a</mi>
++        <mi>b</mi>
++        <mi>c</mi>
++      </msubsup>
++    </math>
++    <math>
++      <mmultiscripts id="mmultiscripts-1">
++        <mi>a</mi>
++        <mi>b</mi>
++        <mi>c</mi>
++        <none/>
++        <mi>d</mi>
++        <mprescripts/>
++        <mi>e</mi>
++        <none/>
++        <mi>f</mi>
++        <mi>g</mi>
++      </mmultiscripts>
++    </math>
++
++    <math>
++      <munder id="munder-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </munder>
++    </math>
++    <math>
++      <mover id="mover-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </mover>
++    </math>
++    <math>
++      <munderover id="munderover-1">
++        <mi>a</mi>
++        <mi>b</mi>
++        <mi>c</mi>
++      </munderover>
++    </math>
++
++    <math>
++      <mroot id="mroot-1">
++        <mi>a</mi>
++        <mi>b</mi>
++      </mroot>
++    </math>
++
++    <math>
++      <mtable id="mtable-1">
++        <mtr>
++          <mtd><mi>a</mi></mtd>
++          <mtd><mi>b</mi></mtd>
++          <mtd><mi>c</mi></mtd>
++        </mtr>
++        <mtr>
++          <mtd><mi>d</mi></mtd>
++          <mtd><mi>e</mi></mtd>
++          <mtd><mi>f</mi></mtd>
++        </mtr>
++      </mtable>
++    </math>
++
++    <math>
++      <menclose id="menclose-1"><mi>a</mi></menclose>
++    </math>
++    <math>
++      <menclose id="menclose-2" notation="circle"><mi>a</mi></menclose>
++    </math>
++    <math>
++      <menclose id="menclose-3" notation="left top bottom"><mi>a</mi></menclose>
++    </math>
++
++  </div>
++</body>
++</html>
+diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/locales/en-US/chrome/accessibility/AccessFu.properties
+--- a/dom/locales/en-US/chrome/accessibility/AccessFu.properties
++++ b/dom/locales/en-US/chrome/accessibility/AccessFu.properties
+@@ -83,16 +83,97 @@ textInputType_date   =       date
+ textInputType_email  =       e-mail
+ textInputType_search =       search
+ textInputType_tel    =       telephone
+ textInputType_url    =       URL
+ 
+ # More sophisticated object descriptions
+ headingLevel   =       heading level %S
+ 
++# MathML expressions
++mathmltable              = math table
++mathmlcell               = cell
++mathmlenclosed           = enclosed
++mathmlfraction           = fraction
++mathmlfractionwithoutbar = fraction without bar
++mathmlroot               = root
++mathmlscripted           = scripted
++mathmlsquareroot         = square root
++
++close-fence          = closing fence
++denominator          = denominator
++numerator            = numerator
++open-fence           = opening fence
++overscript           = overscript
++presubscript         = presubscript
++presuperscript       = presuperscript
++root-index           = root index
++separator            = separator
++subscript            = subscript
++superscript          = superscript
++underscript          = underscript
++
++notationlongdiv            = long division
++notationactuarial          = actuarial
++notationphasorangle        = phasor angle
++notationradical            = radical
++notationbox                = box
++notationroundedbox         = rounded box
++notationcircle             = circle
++notationleft               = left
++notationright              = right
++notationtop                = top
++notationbottom             = bottom
++notationupdiagonalstrike   = up diagonal strike
++notationdowndiagonalstrike = down diagonal strike
++notationverticalstrike     = vertical strike
++notationhorizontalstrike   = horizontal strike
++notationupdiagonalarrow    = up diagonal arrow
++notationmadruwb            = madruwb
++
++mathmlenclosedAbbr           = enclosed
++mathmltableAbbr              = tbl
++mathmlcellAbbr               = cell
++mathmlfractionAbbr           = frac
++mathmlfractionwithoutbarAbbr = frac no bar
++mathmlrootAbbr               = root
++mathmlscriptedAbbr           = scripted
++mathmlsquarerootAbbr         = sqrt
++
++close-fenceAbbr      = close
++denominatorAbbr      = den
++numeratorAbbr        = num
++open-fenceAbbr       = open
++overscriptAbbr       = over
++presubscriptAbbr     = presub
++presuperscriptAbbr   = presup
++root-indexAbbr       = index
++separatorAbbr        = sep
++subscriptAbbr        = sub
++superscriptAbbr      = sup
++underscriptAbbr      = under
++
++notationlongdivAbbr            = longdiv
++notationactuarialAbbr          = actuarial
++notationphasorangleAbbr        = phasang
++notationradicalAbbr            = rad
++notationboxAbbr                = box
++notationroundedboxAbbr         = rndbox
++notationcircleAbbr             = circ
++notationleftAbbr               = lft
++notationrightAbbr              = rght
++notationtopAbbr                = top
++notationbottomAbbr             = bot
++notationupdiagonalstrikeAbbr   = updiagstrike
++notationdowndiagonalstrikeAbbr = dwndiagstrike
++notationverticalstrikeAbbr     = vstrike
++notationhorizontalstrikeAbbr   = hstrike
++notationupdiagonalarrow        = updiagarrow
++notationmadruwb                = madruwb
++
+ # more sophisticated list announcement
+ listStart      =       First item
+ listEnd        =       Last item
+ # LOCALIZATION NOTE (listItemsCount): Semi-colon list of plural forms.
+ # See: http://developer.mozilla.org/en/docs/Localization_and_Plurals
+ listItemsCount =       1 item;#1 items
+ 
+ # LOCALIZATION NOTE: # %1$S is the position of the item n the set.
