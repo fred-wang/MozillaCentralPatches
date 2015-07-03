@@ -1,6 +1,7 @@
 # HG changeset patch
 # Parent b1c7b59e1d7c0fc86144e888c187e4c0879273e3
 # User Frédéric Wang <fred.wang@free.fr>
+# Parent  eb224290bd12090ec12dd89adc7d157d3bd3e96d
 Bug 1177765 - Add xmlroles for MathML. r=surkov
 
 diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/HyperTextAccessible.cpp
@@ -186,18 +187,22 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
  
    // 'formatting' attribute is deprecated, 'display' attribute should be
    // instead.
-@@ -974,16 +1120,19 @@ HyperTextAccessible::NativeAttributes()
+@@ -971,18 +1117,21 @@ HyperTextAccessible::NativeAttributes()
+     int32_t lineNumber = CaretLineNumber();
+     if (lineNumber >= 1) {
+       nsAutoString strLineNumber;
        strLineNumber.AppendInt(lineNumber);
        nsAccUtils::SetAccAttr(attributes, nsGkAtoms::lineNumber, strLineNumber);
      }
    }
  
-   if (HasOwnContent())
+-  if (HasOwnContent())
++  if (HasOwnContent()) {
      GetAccService()->MarkupAttributes(mContent, attributes);
- 
-+  if (mContent->IsMathMLElement())
++    if (mContent->IsMathMLElement())
 +      SetMathMLXMLRoles(attributes);
-+
++  }
+ 
    return attributes.forget();
  }
  
@@ -205,7 +210,6 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
  HyperTextAccessible::LandmarkRole() const
  {
    if (!HasOwnContent())
-     return nullptr;
 diff --git a/accessible/generic/HyperTextAccessible.h b/accessible/generic/HyperTextAccessible.h
 --- a/accessible/generic/HyperTextAccessible.h
 +++ b/accessible/generic/HyperTextAccessible.h
@@ -235,7 +239,7 @@ diff --git a/accessible/generic/HyperTextAccessible.h b/accessible/generic/Hyper
 diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
 --- a/dom/base/nsGkAtomList.h
 +++ b/dom/base/nsGkAtomList.h
-@@ -2334,16 +2334,29 @@ GK_ATOM(textUnderlineStyle, "text-underl
+@@ -2339,16 +2339,29 @@ GK_ATOM(textUnderlineStyle, "text-underl
  GK_ATOM(timer, "timer")
  GK_ATOM(toolbarname, "toolbarname")
  GK_ATOM(toolbarseparator, "toolbarseparator")
