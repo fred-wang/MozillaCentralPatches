@@ -1,6 +1,7 @@
 # HG changeset patch
 # Parent 748bf3b236bff56de3af8ba315bbd528e758f130
 # User Frédéric Wang <fred.wang@free.fr>
+# Parent  382af788632a9078887365a27cf84aaa34f4861d
 Add tests for MathML xmlroles. b=1177765, r=surkov
 
 diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessible/tests/mochitest/attributes/test_xml-roles.html
@@ -20,7 +21,7 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
  
    <script type="application/javascript"
            src="../common.js"></script>
-@@ -31,16 +31,61 @@
+@@ -31,16 +31,70 @@
        testAttrs("section", {"xml-roles" : "region"}, true);
        testAttrs("main", {"xml-roles" : "main"}, true); // // ARIA override
        testAttrs("form", {"xml-roles" : "form"}, true);
@@ -74,6 +75,15 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
 +
 +      testAttrs("root-index-1", {"xml-roles" : "root-index"}, true);
 +
++      testAttrs("base-1", {"xml-roles" : "base"}, true);
++      testAttrs("base-2", {"xml-roles" : "base"}, true);
++      testAttrs("base-3", {"xml-roles" : "base"}, true);
++      testAttrs("base-4", {"xml-roles" : "base"}, true);
++      testAttrs("base-5", {"xml-roles" : "base"}, true);
++      testAttrs("base-6", {"xml-roles" : "base"}, true);
++      testAttrs("base-7", {"xml-roles" : "base"}, true);
++      testAttrs("base-8", {"xml-roles" : "base"}, true);
++
        SimpleTest.finish();
      }
  
@@ -82,7 +92,7 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
    </script>
  </head>
  <body>
-@@ -104,10 +149,92 @@
+@@ -104,10 +158,92 @@
    <aside id="aside">by the way I am an aside</aside>
    <section id="section">a section</section>
    <article id="main" role="main">a main area</article>
@@ -112,26 +122,26 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
 +  <!-- subscript, superscript, presubscript, presuperscript -->
 +  <math>
 +    <msub>
-+      <mi>a</mi>
++      <mi id="base-1">a</mi>
 +      <mi id="sub-1">b</mi>
 +    </msub>
 +  </math>
 +  <math>
 +    <msup>
-+      <mi>a</mi>
++      <mi id="base-2">a</mi>
 +      <mi id="sup-1">b</mi>
 +    </msup>
 +  </math>
 +  <math>
 +    <msubsup>
-+      <mi>a</mi>
++      <mi id="base-3">a</mi>
 +      <mi id="sub-2">b</mi>
 +      <mi id="sup-2">c</mi>
 +    </msubsup>
 +  </math>
 +  <math>
 +    <mmultiscripts>
-+      <mi>a</mi>
++      <mi id="base-4">a</mi>
 +      <mi id="sub-3">b</mi>
 +      <mi id="sup-3">c</mi>
 +      <none/>
@@ -147,19 +157,19 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
 +  <!-- underscript, overscript -->
 +  <math>
 +    <munder>
-+      <mi>a</mi>
++      <mi id="base-5">a</mi>
 +      <mi id="under-1">b</mi>
 +    </munder>
 +  </math>
 +  <math>
 +    <mover>
-+      <mi>a</mi>
++      <mi id="base-6">a</mi>
 +      <mi id="over-1">b</mi>
 +    </mover>
 +  </math>
 +  <math>
 +    <munderover>
-+      <mi>a</mi>
++      <mi id="base-7">a</mi>
 +      <mi id="under-2">b</mi>
 +      <mi id="over-2">c</mi>
 +    </munderover>
@@ -168,7 +178,7 @@ diff --git a/accessible/tests/mochitest/attributes/test_xml-roles.html b/accessi
 +  <!-- root-index -->
 +  <math>
 +    <mroot>
-+      <mi>a</mi>
++      <mi id="base-8">a</mi>
 +      <mi id="root-index-1">b</mi>
 +    </mroot>
 +  </math>

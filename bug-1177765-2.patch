@@ -25,7 +25,7 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
  #include "mozilla/MathAlgorithms.h"
  #include "gfxSkipChars.h"
  #include <algorithm>
-@@ -947,16 +948,161 @@ HyperTextAccessible::GetLevelInternal()
+@@ -947,16 +948,155 @@ HyperTextAccessible::GetLevelInternal()
    if (mContent->IsHTMLElement(nsGkAtoms::h5))
      return 5;
    if (mContent->IsHTMLElement(nsGkAtoms::h6))
@@ -80,54 +80,43 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
 +                             nsGkAtoms::denominator);
 +      break;
 +    case roles::MATHML_ROOT:
-+      if (IndexInParent() == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::root_index);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             IndexInParent() == 0 ? nsGkAtoms::base :
++                             nsGkAtoms::root_index);
 +      break;
 +    case roles::MATHML_SUB:
-+      if (IndexInParent() == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::subscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             IndexInParent() == 0 ? nsGkAtoms::base :
++                             nsGkAtoms::subscript);
 +      break;
 +    case roles::MATHML_SUP:
-+      if (IndexInParent() == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::superscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             IndexInParent() == 0 ? nsGkAtoms::base :
++                             nsGkAtoms::superscript);
 +      break;
 +    case roles::MATHML_SUB_SUP: {
 +      int32_t index = IndexInParent();
-+      if (index == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::subscript);
-+      } else if (index == 2) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::superscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             index == 0 ? nsGkAtoms::base :
++                             (index == 1 ? nsGkAtoms::subscript : 
++                              nsGkAtoms::superscript));
 +    } break;
 +    case roles::MATHML_UNDER:
-+      if (IndexInParent() == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::underscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             IndexInParent() == 0 ? nsGkAtoms::base :
++                             nsGkAtoms::underscript);
 +      break;
 +    case roles::MATHML_OVER:
-+      if (IndexInParent() == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::overscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             IndexInParent() == 0 ? nsGkAtoms::base :
++                             nsGkAtoms::overscript);
 +      break;
 +    case roles::MATHML_UNDER_OVER: {
 +      int32_t index = IndexInParent();
-+      if (index == 1) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::underscript);
-+      } else if (index == 2) {
-+        nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                               nsGkAtoms::overscript);
-+      }
++      nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                             index == 0 ? nsGkAtoms::base :
++                             (index == 1 ? nsGkAtoms::underscript : 
++                              nsGkAtoms::overscript));
 +    } break;
 +    case roles::MATHML_MULTISCRIPTS: {
 +      // Get the <multiscripts> base.
@@ -141,38 +130,43 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
 +        }
 +      }
 +      if (baseFound) {
-+        // Browse the list of scripts to find us and determine our type.
-+        nsIContent* script = GetContent();
-+        bool postscript = true;
-+        bool subscript = true;
-+        for (child = child->GetNextSibling(); child;
-+             child = child->GetNextSibling()) {
-+          if (!child->IsMathMLElement())
-+            continue;
-+          if (child->IsMathMLElement(nsGkAtoms::mprescripts_)) {
-+            postscript = false;
-+            subscript = true;
-+            continue;
-+          }
-+          if (child == script) {
-+            if (postscript) {
-+              nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                                     subscript ?
-+                                     nsGkAtoms::subscript :
-+                                     nsGkAtoms::superscript);
-+            } else {
-+              nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
-+                                     subscript ?
-+                                     nsGkAtoms::presubscript :
-+                                     nsGkAtoms::presuperscript);
++        nsIContent* content = GetContent();
++        if (child == content) {
++          // We are the base.
++          nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                                 nsGkAtoms::base);
++        } else {
++          // Browse the list of scripts to find us and determine our type.
++          bool postscript = true;
++          bool subscript = true;
++          for (child = child->GetNextSibling(); child;
++               child = child->GetNextSibling()) {
++            if (!child->IsMathMLElement())
++              continue;
++            if (child->IsMathMLElement(nsGkAtoms::mprescripts_)) {
++              postscript = false;
++              subscript = true;
++              continue;
 +            }
-+            break;
++            if (child == content) {
++              if (postscript) {
++                nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                                       subscript ?
++                                       nsGkAtoms::subscript :
++                                       nsGkAtoms::superscript);
++              } else {
++                nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
++                                       subscript ?
++                                       nsGkAtoms::presubscript :
++                                       nsGkAtoms::presuperscript);
++              }
++              break;
++            }
++            subscript = !subscript;
 +          }
-+          subscript = !subscript;
 +        }
 +      }
-+      break;
-+    }
++    } break;
 +    default:
 +      break;
 +    }
@@ -187,7 +181,7 @@ diff --git a/accessible/generic/HyperTextAccessible.cpp b/accessible/generic/Hyp
  
    // 'formatting' attribute is deprecated, 'display' attribute should be
    // instead.
-@@ -971,18 +1117,21 @@ HyperTextAccessible::NativeAttributes()
+@@ -971,18 +1111,21 @@ HyperTextAccessible::NativeAttributes()
      int32_t lineNumber = CaretLineNumber();
      if (lineNumber >= 1) {
        nsAutoString strLineNumber;

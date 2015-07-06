@@ -1,7 +1,7 @@
 # HG changeset patch
-# Parent 94113a311603080b9ea17571cb34c7d0112e45a2
+# Parent 8cf89f20b768d8d88ccaa4cd4e41fc829993351f
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent  6c74966e969ac78bc074820c083d6a7c941daa4a
+# Parent  31a8c4dbfe8298696b13d5fd0cb366c2d02c2ebd
 Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
 
 diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
@@ -170,25 +170,26 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 diff --git a/accessible/jsat/TraversalRules.jsm b/accessible/jsat/TraversalRules.jsm
 --- a/accessible/jsat/TraversalRules.jsm
 +++ b/accessible/jsat/TraversalRules.jsm
-@@ -293,17 +293,17 @@ this.TraversalRules = { // jshint ignore
-   RadioButton: new BaseTraversalRule(
-     [Roles.RADIOBUTTON,
-      Roles.RADIO_MENU_ITEM]),
+@@ -97,17 +97,18 @@ var gSimpleTraversalRoles =
+    Roles.SLIDER,
+    Roles.SPINBUTTON,
+    Roles.OPTION,
+    Roles.LISTITEM,
+    Roles.GRID_CELL,
+    Roles.COLUMNHEADER,
+    Roles.ROWHEADER,
+    Roles.STATUSBAR,
+-   Roles.SWITCH];
++   Roles.SWITCH,
++   Roles.MATHML_MATH];
  
-   Separator: new BaseTraversalRule(
-     [Roles.SEPARATOR]),
- 
-   Table: new BaseTraversalRule(
--    [Roles.TABLE]),
-+    [Roles.TABLE, Roles.MATHML_TABLE]),
- 
-   Checkbox: new BaseTraversalRule(
-     [Roles.CHECKBUTTON,
-      Roles.CHECK_MENU_ITEM,
-      Roles.SWITCH /* A type of checkbox that represents on/off values */]),
- 
-   _shouldSkipImage: function _shouldSkipImage(aAccessible) {
-     if (gSkipEmptyImages.value && aAccessible.name === '') {
+ var gSimpleMatchFunc = function gSimpleMatchFunc(aAccessible) {
+   // An object is simple, if it either has a single child lineage,
+   // or has a flat subtree.
+   function isSingleLineage(acc) {
+     for (let child = acc; child; child = child.firstChild) {
+       if (Utils.visibleChildCount(child) > 1) {
+         return false;
 diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
 --- a/accessible/jsat/Utils.jsm
 +++ b/accessible/jsat/Utils.jsm
@@ -215,6 +216,7 @@ diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
 +
 +  getMathRole: function getMathRole(aAccessible) {
 +    return this.matchRoles(aAccessible, [
++      'base',
 +      'close-fence',
 +      'denominator',
 +      'numerator',
@@ -223,7 +225,6 @@ diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
 +      'presubscript',
 +      'presuperscript',
 +      'root-index',
-+      'separator',
 +      'subscript',
 +      'superscript',
 +      'underscript'
@@ -313,16 +314,36 @@ diff --git a/accessible/tests/mochitest/jsat/a11y.ini b/accessible/tests/mochite
  [test_hints.html]
  [test_landmarks.html]
  [test_live_regions.html]
-+[test_mathml.html]
++[test_output_mathml.html]
  [test_output.html]
  [test_quicknav_modes.html]
  [test_tables.html]
  [test_pointer_relay.html]
  [test_traversal.html]
-diff --git a/accessible/tests/mochitest/jsat/test_mathml.html b/accessible/tests/mochitest/jsat/test_mathml.html
+diff --git a/accessible/tests/mochitest/jsat/doc_traversal.html b/accessible/tests/mochitest/jsat/doc_traversal.html
+--- a/accessible/tests/mochitest/jsat/doc_traversal.html
++++ b/accessible/tests/mochitest/jsat/doc_traversal.html
+@@ -140,10 +140,16 @@
+         <td>Messy Stuff</td>
+       </tr>
+     </tbody>
+   </table>
+   <div id="statusbar-1" role="status">Last sync:<span>2 days ago</span></div>
+   <div aria-label="Last sync: 30min ago" id="statusbar-2" role="status"></div>
+ 
+   <span id="switch-1" role="switch" aria-checked="false" aria-label="Light switch"></span>
++  <p>This is a MathML formula <math id="math-1" display="block">
++    <mfrac>
++      <mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow>
++      <msqrt><mn>3</mn><mo>/</mo><mn>4</mn></msqrt>
++    </mfrac>
++  </math> with some text after.</p>
+ </body>
+ </html>
+diff --git a/accessible/tests/mochitest/jsat/test_output_mathml.html b/accessible/tests/mochitest/jsat/test_output_mathml.html
 new file mode 100644
 --- /dev/null
-+++ b/accessible/tests/mochitest/jsat/test_mathml.html
++++ b/accessible/tests/mochitest/jsat/test_output_mathml.html
 @@ -0,0 +1,305 @@
 +<html>
 +<head>
@@ -343,12 +364,12 @@ new file mode 100644
 +      var tests = [{
 +          accOrElmOrID: "math-1",
 +          expectedUtterance: [
-+            [{"string":"open-fence"},"(","x",{"string":"separator"},",","y",{"string":"close-fence"},")"],
-+            ["(",{"string":"open-fence"},"x",",",{"string":"separator"},"y",")",{"string":"close-fence"}]
++            [{"string":"open-fence"},"(","x",",","y",{"string":"close-fence"},")"],
++            ["(",{"string":"open-fence"},"x",",","y",")",{"string":"close-fence"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"open-fenceAbbr"},"(","x",{"string":"separatorAbbr"},",","y",{"string":"close-fenceAbbr"},")"],
-+            ["(",{"string":"open-fenceAbbr"},"x",",",{"string":"separatorAbbr"},"y",")",{"string":"close-fenceAbbr"}]
++            [{"string":"open-fenceAbbr"},"(","x",",","y",{"string":"close-fenceAbbr"},")"],
++            ["(",{"string":"open-fenceAbbr"},"x",",","y",")",{"string":"close-fenceAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "mfrac-1",
@@ -373,82 +394,82 @@ new file mode 100644
 +        }, {
 +          accOrElmOrID: "msub-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b"],
-+            ["a","b",{"string":"subscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"subscript"},"b"],
++            ["a",{"string":"base"},"b",{"string":"subscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b"],
-+            ["a","b",{"string":"subscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"subscriptAbbr"},"b"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"subscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "msup-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"superscript"},"b"],
-+            ["a","b",{"string":"superscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"superscript"},"b"],
++            ["a",{"string":"base"},"b",{"string":"superscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"superscriptAbbr"},"b"],
-+            ["a","b",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"superscriptAbbr"},"b"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "msubsup-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c"],
-+            ["a","b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c"],
++            ["a",{"string":"base"},"b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c"],
-+            ["a","b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "mmultiscripts-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c",{"string":"subscript"},{"string":"superscript"},"d",{"string":"presubscript"},"e",{"string":"presuperscript"},{"string":"presubscript"},"f",{"string":"presuperscript"},"g"],
-+            ["a","b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"subscript"},"d",{"string":"superscript"},"e",{"string":"presubscript"},{"string":"presuperscript"},"f",{"string":"presubscript"},"g",{"string":"presuperscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c",{"string":"subscript"},{"string":"superscript"},"d",{"string":"presubscript"},"e",{"string":"presuperscript"},{"string":"presubscript"},"f",{"string":"presuperscript"},"g"],
++            ["a",{"string":"base"},"b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"subscript"},"d",{"string":"superscript"},"e",{"string":"presubscript"},{"string":"presuperscript"},"f",{"string":"presubscript"},"g",{"string":"presuperscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c",{"string":"subscriptAbbr"},{"string":"superscriptAbbr"},"d",{"string":"presubscriptAbbr"},"e",{"string":"presuperscriptAbbr"},{"string":"presubscriptAbbr"},"f",{"string":"presuperscriptAbbr"},"g"],
-+            ["a","b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"subscriptAbbr"},"d",{"string":"superscriptAbbr"},"e",{"string":"presubscriptAbbr"},{"string":"presuperscriptAbbr"},"f",{"string":"presubscriptAbbr"},"g",{"string":"presuperscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c",{"string":"subscriptAbbr"},{"string":"superscriptAbbr"},"d",{"string":"presubscriptAbbr"},"e",{"string":"presuperscriptAbbr"},{"string":"presubscriptAbbr"},"f",{"string":"presuperscriptAbbr"},"g"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"subscriptAbbr"},"d",{"string":"superscriptAbbr"},"e",{"string":"presubscriptAbbr"},{"string":"presuperscriptAbbr"},"f",{"string":"presubscriptAbbr"},"g",{"string":"presuperscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "munder-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"underscript"},"b"],
-+            ["a","b",{"string":"underscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"underscript"},"b"],
++            ["a",{"string":"base"},"b",{"string":"underscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"underscriptAbbr"},"b"],
-+            ["a","b",{"string":"underscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"underscriptAbbr"},"b"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"underscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "mover-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"overscript"},"b"],
-+            ["a","b",{"string":"overscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"overscript"},"b"],
++            ["a",{"string":"base"},"b",{"string":"overscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"overscriptAbbr"},"b"],
-+            ["a","b",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"overscriptAbbr"},"b"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "munderover-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},"a",{"string":"underscript"},"b",{"string":"overscript"},"c"],
-+            ["a","b",{"string":"underscript"},"c",{"string":"overscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"underscript"},"b",{"string":"overscript"},"c"],
++            ["a",{"string":"base"},"b",{"string":"underscript"},"c",{"string":"overscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},"a",{"string":"underscriptAbbr"},"b",{"string":"overscriptAbbr"},"c"],
-+            ["a","b",{"string":"underscriptAbbr"},"c",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"underscriptAbbr"},"b",{"string":"overscriptAbbr"},"c"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"underscriptAbbr"},"c",{"string":"overscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "mroot-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlroot"},"a",{"string":"root-index"},"b"],
-+            ["a","b",{"string":"root-index"},{"string":"mathmlroot"}]
++            [{"string":"mathmlroot"},{"string":"base"},"a",{"string":"root-index"},"b"],
++            ["a",{"string":"base"},"b",{"string":"root-index"},{"string":"mathmlroot"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlrootAbbr"},"a",{"string":"root-indexAbbr"},"b"],
-+            ["a","b",{"string":"root-indexAbbr"},{"string":"mathmlrootAbbr"}]
++            [{"string":"mathmlrootAbbr"},{"string":"baseAbbr"},"a",{"string":"root-indexAbbr"},"b"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"root-indexAbbr"},{"string":"mathmlrootAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "mtable-1",
@@ -629,19 +650,41 @@ new file mode 100644
 +  </div>
 +</body>
 +</html>
+diff --git a/accessible/tests/mochitest/jsat/test_traversal.html b/accessible/tests/mochitest/jsat/test_traversal.html
+--- a/accessible/tests/mochitest/jsat/test_traversal.html
++++ b/accessible/tests/mochitest/jsat/test_traversal.html
+@@ -119,17 +119,18 @@
+                               'checkbox-1-5', ' LeLisp', '• JavaScript',
+                               'heading-5', 'image-2', 'image-3',
+                               'Not actually an image', 'link-1', 'anchor-1',
+                               'link-2', 'anchor-2', 'link-3', '3', '1', '4',
+                               '1', 'Sunday', 'M', 'Week 1', '3', '4', '7', '2',
+                               '5 8', 'gridcell4', 'Just an innocuous separator',
+                               'Dirty Words', 'Meaning', 'Mud', 'Wet Dirt',
+                               'Dirt', 'Messy Stuff', 'statusbar-1', 'statusbar-2',
+-                              'switch-1']);
++                              'switch-1', 'This is a MathML formula ', 'math-1',
++                              'with some text after.']);
+ 
+       gQueue.invoke();
+     }
+ 
+     SimpleTest.waitForExplicitFinish();
+     addLoadEvent(function () {
+       /* We open a new browser because we need to test with a top-level content
+          document. */
 diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/locales/en-US/chrome/accessibility/AccessFu.properties
 --- a/dom/locales/en-US/chrome/accessibility/AccessFu.properties
 +++ b/dom/locales/en-US/chrome/accessibility/AccessFu.properties
-@@ -83,16 +83,97 @@ textInputType_date   =       date
- textInputType_email  =       e-mail
- textInputType_search =       search
- textInputType_tel    =       telephone
- textInputType_url    =       URL
+@@ -70,19 +70,41 @@ listbox        =       list box
+ flatequation   =       flat equation
+ gridcell       =       gridcell
+ note           =       note
+ figure         =       figure
+ definitionlist =       definition list
+ term           =       term
+ definition     =       definition
  
- # More sophisticated object descriptions
- headingLevel   =       heading level %S
- 
-+# MathML expressions
 +mathmltable              = math table
 +mathmlcell               = cell
 +mathmlenclosed           = enclosed
@@ -651,19 +694,41 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
 +mathmlscripted           = scripted
 +mathmlsquareroot         = square root
 +
-+close-fence          = closing fence
-+denominator          = denominator
-+numerator            = numerator
-+open-fence           = opening fence
-+overscript           = overscript
-+presubscript         = presubscript
-+presuperscript       = presuperscript
-+root-index           = root index
-+separator            = separator
-+subscript            = subscript
-+superscript          = superscript
-+underscript          = underscript
+ # More sophisticated roles which are not actual numeric roles
+ textarea       =       text area
+ 
++base           =       base
++close-fence    =       closing fence
++denominator    =       denominator
++numerator      =       numerator
++open-fence     =       opening fence
++overscript     =       overscript
++presubscript   =       presubscript
++presuperscript =       presuperscript
++root-index     =       root index
++subscript      =       subscript
++superscript    =       superscript
++underscript    =       underscript
 +
+ # Text input types
+ textInputType_date   =       date
+ textInputType_email  =       e-mail
+ textInputType_search =       search
+ textInputType_tel    =       telephone
+ textInputType_url    =       URL
+ 
+ # More sophisticated object descriptions
+@@ -186,16 +208,36 @@ quicknav_ListItem    = List items
+ quicknav_Link        = Links
+ quicknav_List        = Lists
+ quicknav_PageTab     = Page tabs
+ quicknav_RadioButton = Radio buttons
+ quicknav_Separator   = Separators
+ quicknav_Table       = Tables
+ quicknav_Checkbox    = Check boxes
+ 
++# MathML menclose notations.
++# See developer.mozilla.org/docs/Web/MathML/Element/menclose#attr-notation
 +notationlongdiv            = long division
 +notationactuarial          = actuarial
 +notationphasorangle        = phasor angle
@@ -682,6 +747,24 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
 +notationupdiagonalarrow    = up diagonal arrow
 +notationmadruwb            = madruwb
 +
+ # Shortened role names for braille
+ menubarAbbr        =       menu bar
+ scrollbarAbbr      =       scroll bar
+ gripAbbr           =       grip
+ alertAbbr          =       alert
+ menupopupAbbr      =       menu popup
+ documentAbbr       =       document
+ paneAbbr           =       pane
+@@ -269,8 +311,48 @@ tblColumnInfoAbbr = #1c;#1c
+ # See: http://developer.mozilla.org/en/docs/Localization_and_Plurals
+ tblRowInfoAbbr = #1r;#1r
+ cellInfoAbbr = c%Sr%S
+ 
+ stateCheckedAbbr = (x)
+ stateUncheckedAbbr = ( )
+ statePressedAbbr = (x)
+ stateUnpressedAbbr = ( )
++
 +mathmlenclosedAbbr           = enclosed
 +mathmltableAbbr              = tbl
 +mathmlcellAbbr               = cell
@@ -691,18 +774,18 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
 +mathmlscriptedAbbr           = scripted
 +mathmlsquarerootAbbr         = sqrt
 +
-+close-fenceAbbr      = close
-+denominatorAbbr      = den
-+numeratorAbbr        = num
-+open-fenceAbbr       = open
-+overscriptAbbr       = over
-+presubscriptAbbr     = presub
-+presuperscriptAbbr   = presup
-+root-indexAbbr       = index
-+separatorAbbr        = sep
-+subscriptAbbr        = sub
-+superscriptAbbr      = sup
-+underscriptAbbr      = under
++baseAbbr           = base
++close-fenceAbbr    = close
++denominatorAbbr    = den
++numeratorAbbr      = num
++open-fenceAbbr     = open
++overscriptAbbr     = over
++presubscriptAbbr   = presub
++presuperscriptAbbr = presup
++root-indexAbbr     = index
++subscriptAbbr      = sub
++superscriptAbbr    = sup
++underscriptAbbr    = under
 +
 +notationlongdivAbbr            = longdiv
 +notationactuarialAbbr          = actuarial
@@ -719,14 +802,5 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
 +notationdowndiagonalstrikeAbbr = dwndiagstrike
 +notationverticalstrikeAbbr     = vstrike
 +notationhorizontalstrikeAbbr   = hstrike
-+notationupdiagonalarrow        = updiagarrow
-+notationmadruwb                = madruwb
-+
- # more sophisticated list announcement
- listStart      =       First item
- listEnd        =       Last item
- # LOCALIZATION NOTE (listItemsCount): Semi-colon list of plural forms.
- # See: http://developer.mozilla.org/en/docs/Localization_and_Plurals
- listItemsCount =       1 item;#1 items
- 
- # LOCALIZATION NOTE: # %1$S is the position of the item n the set.
++notationupdiagonalarrowAbbr    = updiagarrow
++notationmadruwbAbbr            = madruwb
