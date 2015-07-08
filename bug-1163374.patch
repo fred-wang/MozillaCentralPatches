@@ -1,13 +1,13 @@
 # HG changeset patch
 # Parent 8cf89f20b768d8d88ccaa4cd4e41fc829993351f
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent  31a8c4dbfe8298696b13d5fd0cb366c2d02c2ebd
+# Parent  45244b7672d514554a9a639a2d67a6cb0fe4ded4
 Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
 
 diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
 --- a/accessible/jsat/OutputGenerator.jsm
 +++ b/accessible/jsat/OutputGenerator.jsm
-@@ -187,16 +187,29 @@ let OutputGenerator = {
+@@ -187,16 +187,42 @@ let OutputGenerator = {
        return;
      }
      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'unshift' : 'push']({
@@ -29,6 +29,19 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +  },
 +
 +  /**
++   * Adds MathML menclose notations to the output.
++   * @param {Array} aOutput Output array.
++   * @param {nsIAccessible} aAccessible current accessible object.
++   */
++  _addMencloseNotations: function _addMencloseNotations(aOutput, aAccessible) {
++        
++    let notations = Utils.getAttributes(aAccessible)['notation'] || 'longdiv';
++    notations.split(' ').forEach(function(aNotation) {
++      aOutput.push({string: this._getOutputName('notation-' + aNotation)});
++    }, this);
++  },
++    
++  /**
     * Adds an entry type attribute to the description if available.
     * @param {Array} aOutput Output array.
     * @param {nsIAccessible} aAccessible current accessible object.
@@ -37,7 +50,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
    _addType: function _addType(aOutput, aAccessible, aRoleStr) {
      if (aRoleStr !== 'entry') {
        return;
-@@ -295,23 +308,41 @@ let OutputGenerator = {
+@@ -295,27 +321,57 @@ let OutputGenerator = {
      'definition': NAME_FROM_SUBTREE_RULE,
      'key': NAME_FROM_SUBTREE_RULE,
      'image map': INCLUDE_DESC,
@@ -69,18 +82,53 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        function _generateBaseOutput(aAccessible, aRoleStr, aState, aFlags) {
          let output = [];
  
-+        // Add the math 'role' implied by the parent before the actual role.
-+        this._addMathRole(output, aAccessible);
++        this._addMathRole(output, aAccessible, aRoleStr);
 +
          if (aFlags & INCLUDE_DESC) {
            this._addState(output, aState, aRoleStr);
            this._addType(output, aAccessible, aRoleStr);
-           this._addRole(output, aRoleStr);
+-          this._addRole(output, aRoleStr);
++          switch(aAccessible.role) {
++            case Roles.MATHML_SUB:
++            case Roles.MATHML_SUP:
++            case Roles.MATHML_SUB_SUP:
++            case Roles.MATHML_UNDER:
++            case Roles.MATHML_OVER:
++            case Roles.MATHML_UNDER_OVER:
++            case Roles.MATHML_MULTISCRIPTS:
++              // For scripted elements, use the same string "mathmlscripted".
++              this._addRole(output, "mathmlscripted");
++              break;
++          default:
++              this._addRole(output, aRoleStr);
++          }
          }
  
          if (aFlags & INCLUDE_VALUE && aAccessible.value.trim()) {
            output[this.outputOrder === OUTPUT_DESC_FIRST ? 'push' : 'unshift'](
-@@ -388,16 +419,86 @@ let OutputGenerator = {
+             aAccessible.value);
+         }
+ 
+         this._addName(output, aAccessible, aFlags);
+@@ -368,16 +424,17 @@ let OutputGenerator = {
+         Logger.logException(x);
+         return output;
+       } finally {
+         // Check if it's a layout table, and bail out if true.
+         // We don't want to speak any table information for layout tables.
+         if (table.isProbablyForLayout()) {
+           return output;
+         }
++        this._addMathRole(output, aAccessible, aRoleStr)
+         this._addRole(output, aRoleStr);
+         output.push.call(output, {
+           string: this._getOutputName('tblColumnInfo'),
+           count: table.columnCount
+         }, {
+           string: this._getOutputName('tblRowInfo'),
+           count: table.rowCount
+         });
+@@ -388,16 +445,49 @@ let OutputGenerator = {
      },
  
      gridcell: function gridcell(aAccessible, aRoleStr, aState, aFlags) {
@@ -91,49 +139,17 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        return output;
 +    },
 +
-+    // Use the same output function for all MathML scripted elements.
-+    mathmlmultiscripts: function mathmlmultiscripts(aAccessible) {
-+        let output = [];
-+        this._addMathRole(output, aAccessible);
-+        this._addRole(output, 'mathmlscripted');
-+        return output;
-+    },
-+    mathmlsub: function mathmlsub() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+    mathmlsup: function mathmlsup() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+    mathmlsubsup: function mathmlsubsup() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+    mathmlunder: function mathmlunder() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+    mathmlover: function mathmlover() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+    mathmlunderover: function mathmlunderover() {
-+      return this.objectOutputFunctions.
-+                  mathmlmultiscripts.apply(this, arguments);
-+    },
-+
 +    // Use the table output functions for MathML tabular elements.
-+    mathmltable: function mathmltable() {
++    mathmltable: function mathmltable(aAccessible, aRoleStr, aState, aFlags) {
 +      return this.objectOutputFunctions.table.apply(this, arguments);
 +    },
++
 +    mathmlcell: function mathmlcell() {
 +      return this.objectOutputFunctions.cell.apply(this, arguments);
 +    },
 +
-+    mathmlfraction: function mathmlfraction(aAccessible, aRoleStr) {
-+      let output = [];
-+      this._addMathRole(output, aAccessible);
++    mathmlfraction: function mathmlfraction(aAccessible, aRoleStr, aState,
++                                            aFlags, aContext) {
 +      // From a semantic point of view, the only important point is to
 +      // distinguish between fractions that have a bar and those that do not.
 +      // Per the MathML 3 spec, the latter happens iff the linethickness
@@ -146,18 +162,13 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +          roleStr += 'withoutbar';
 +        }
 +      }
-+      this._addRole(output, roleStr);
-+      return output;
++      return this.objectOutputFunctions.defaultFunc.apply(this, [aAccessible, roleStr, aState, aFlags, aContext]);
 +    },
 +
-+    mathmlenclosed: function mathmlenclosed(aAccessible, aRoleStr) {
-+      let output = [];
-+      this._addMathRole(output, aAccessible);
-+      this._addRole(output, aRoleStr);
-+      let notations = Utils.getAttributes(aAccessible)['notation'] || 'longdiv';
-+      notations.split(' ').forEach(function(aNotation) {
-+        output.push({string: this._getOutputName("notation" + aNotation)});
-+      }, this);
++    mathmlenclosed: function mathmlenclosed(aAccessible, aRoleStr, aState,
++                                            aFlags, aContext) {
++      let output = this.objectOutputFunctions.defaultFunc.apply(this, [aAccessible, aRoleStr, aState, aFlags, aContext]);
++      this._addMencloseNotations(output, aAccessible);
 +      return output;
      }
    }
@@ -249,7 +260,7 @@ diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
        for (let i = 0; i < relation.targetsCount; i++) {
          let target = relation.getTarget(i);
          if (target.parent === aLabel) {
-@@ -879,28 +899,29 @@ PivotContext.prototype = {
+@@ -879,18 +899,22 @@ PivotContext.prototype = {
        return this._cells.get(domNode);
      }
  
@@ -259,9 +270,13 @@ diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
          return null;
        }
 -      if ([Roles.CELL, Roles.COLUMNHEADER, Roles.ROWHEADER].indexOf(
-+      if ([Roles.CELL, Roles.COLUMNHEADER, Roles.ROWHEADER,
-+           Roles.MATHML_CELL].indexOf(
-         aAccessible.role) < 0) {
+-        aAccessible.role) < 0) {
++      if ([
++            Roles.CELL,
++            Roles.COLUMNHEADER,
++            Roles.ROWHEADER,
++            Roles.MATHML_CELL
++          ].indexOf(aAccessible.role) < 0) {
            return null;
        }
        try {
@@ -270,18 +285,7 @@ diff --git a/accessible/jsat/Utils.jsm b/accessible/jsat/Utils.jsm
          Logger.logException(x);
          return null;
        }
-     };
--    let getHeaders = function* getHeaders(aHeaderCells) {
-+    let getHeaders = function getHeaders(aHeaderCells) {
-       let enumerator = aHeaderCells.enumerate();
-       while (enumerator.hasMoreElements()) {
-         yield enumerator.getNext().QueryInterface(Ci.nsIAccessible).name;
-       }
-     };
- 
-     cellInfo.current = getAccessibleCell(aAccessible);
- 
-@@ -945,17 +966,19 @@ PivotContext.prototype = {
+@@ -945,17 +969,19 @@ PivotContext.prototype = {
  
      cellInfo.columnHeaders = [];
      if (cellInfo.columnChanged && cellInfo.current.role !==
@@ -484,32 +488,32 @@ new file mode 100644
 +      }, {
 +          accOrElmOrID: "menclose-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlenclosed"},{"string":"notationlongdiv"},"a"],
-+            ["a",{"string":"mathmlenclosed"},{"string":"notationlongdiv"}]
++            [{"string":"mathmlenclosed"},{"string":"notation-longdiv"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notation-longdiv"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlenclosedAbbr"},{"string":"notationlongdivAbbr"},"a"],
-+            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationlongdivAbbr"}]
++            [{"string":"mathmlenclosedAbbr"},{"string":"notation-longdivAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notation-longdivAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "menclose-2",
 +          expectedUtterance: [
-+            [{"string":"mathmlenclosed"},{"string":"notationcircle"},"a"],
-+            ["a",{"string":"mathmlenclosed"},{"string":"notationcircle"}]
++            [{"string":"mathmlenclosed"},{"string":"notation-circle"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notation-circle"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlenclosedAbbr"},{"string":"notationcircleAbbr"},"a"],
-+            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationcircleAbbr"}]
++            [{"string":"mathmlenclosedAbbr"},{"string":"notation-circleAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notation-circleAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "menclose-3",
 +          expectedUtterance: [
-+            [{"string":"mathmlenclosed"},{"string":"notationleft"},{"string":"notationtop"},{"string":"notationbottom"},"a"],
-+            ["a",{"string":"mathmlenclosed"},{"string":"notationleft"},{"string":"notationtop"},{"string":"notationbottom"}]
++            [{"string":"mathmlenclosed"},{"string":"notation-left"},{"string":"notation-top"},{"string":"notation-bottom"},"a"],
++            ["a",{"string":"mathmlenclosed"},{"string":"notation-left"},{"string":"notation-top"},{"string":"notation-bottom"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlenclosedAbbr"},{"string":"notationleftAbbr"},{"string":"notationtopAbbr"},{"string":"notationbottomAbbr"},"a"],
-+            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notationleftAbbr"},{"string":"notationtopAbbr"},{"string":"notationbottomAbbr"}]
++            [{"string":"mathmlenclosedAbbr"},{"string":"notation-leftAbbr"},{"string":"notation-topAbbr"},{"string":"notation-bottomAbbr"},"a"],
++            ["a",{"string":"mathmlenclosedAbbr"},{"string":"notation-leftAbbr"},{"string":"notation-topAbbr"},{"string":"notation-bottomAbbr"}]
 +          ]
 +        }];
 +
@@ -729,23 +733,23 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
  
 +# MathML menclose notations.
 +# See developer.mozilla.org/docs/Web/MathML/Element/menclose#attr-notation
-+notationlongdiv            = long division
-+notationactuarial          = actuarial
-+notationphasorangle        = phasor angle
-+notationradical            = radical
-+notationbox                = box
-+notationroundedbox         = rounded box
-+notationcircle             = circle
-+notationleft               = left
-+notationright              = right
-+notationtop                = top
-+notationbottom             = bottom
-+notationupdiagonalstrike   = up diagonal strike
-+notationdowndiagonalstrike = down diagonal strike
-+notationverticalstrike     = vertical strike
-+notationhorizontalstrike   = horizontal strike
-+notationupdiagonalarrow    = up diagonal arrow
-+notationmadruwb            = madruwb
++notation-longdiv            = long division
++notation-actuarial          = actuarial
++notation-phasorangle        = phasor angle
++notation-radical            = radical
++notation-box                = box
++notation-roundedbox         = rounded box
++notation-circle             = circle
++notation-left               = left
++notation-right              = right
++notation-top                = top
++notation-bottom             = bottom
++notation-updiagonalstrike   = up diagonal strike
++notation-downdiagonalstrike = down diagonal strike
++notation-verticalstrike     = vertical strike
++notation-horizontalstrike   = horizontal strike
++notation-updiagonalarrow    = up diagonal arrow
++notation-madruwb            = madruwb
 +
  # Shortened role names for braille
  menubarAbbr        =       menu bar
@@ -787,20 +791,20 @@ diff --git a/dom/locales/en-US/chrome/accessibility/AccessFu.properties b/dom/lo
 +superscriptAbbr    = sup
 +underscriptAbbr    = under
 +
-+notationlongdivAbbr            = longdiv
-+notationactuarialAbbr          = actuarial
-+notationphasorangleAbbr        = phasang
-+notationradicalAbbr            = rad
-+notationboxAbbr                = box
-+notationroundedboxAbbr         = rndbox
-+notationcircleAbbr             = circ
-+notationleftAbbr               = lft
-+notationrightAbbr              = rght
-+notationtopAbbr                = top
-+notationbottomAbbr             = bot
-+notationupdiagonalstrikeAbbr   = updiagstrike
-+notationdowndiagonalstrikeAbbr = dwndiagstrike
-+notationverticalstrikeAbbr     = vstrike
-+notationhorizontalstrikeAbbr   = hstrike
-+notationupdiagonalarrowAbbr    = updiagarrow
-+notationmadruwbAbbr            = madruwb
++notation-longdivAbbr            = longdiv
++notation-actuarialAbbr          = act
++notation-phasorangleAbbr        = phasang
++notation-radicalAbbr            = rad
++notation-boxAbbr                = box
++notation-roundedboxAbbr         = rndbox
++notation-circleAbbr             = circ
++notation-leftAbbr               = lft
++notation-rightAbbr              = rght
++notation-topAbbr                = top
++notation-bottomAbbr             = bot
++notation-updiagonalstrikeAbbr   = updiagstrike
++notation-downdiagonalstrikeAbbr = dwndiagstrike
++notation-verticalstrikeAbbr     = vstrike
++notation-horizontalstrikeAbbr   = hstrike
++notation-updiagonalarrowAbbr    = updiagarrow
++notation-madruwbAbbr            = madruwb
