@@ -50,8 +50,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
    _addType: function _addType(aOutput, aAccessible, aRoleStr) {
      if (aRoleStr !== 'entry') {
        return;
-@@ -295,27 +321,57 @@ let OutputGenerator = {
-     'definition': NAME_FROM_SUBTREE_RULE,
+@@ -296,27 +322,58 @@ let OutputGenerator = {
      'key': NAME_FROM_SUBTREE_RULE,
      'image map': INCLUDE_DESC,
      'option': INCLUDE_DESC,
@@ -59,7 +58,9 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
      'definitionlist': INCLUDE_DESC | INCLUDE_NAME,
      'dialog': INCLUDE_DESC | INCLUDE_NAME,
      'chrome window': IGNORE_EXPLICIT_NAME,
--    'app root': IGNORE_EXPLICIT_NAME },
+     'app root': IGNORE_EXPLICIT_NAME,
+-    'statusbar': NAME_FROM_SUBTREE_RULE },
++    'statusbar': NAME_FROM_SUBTREE_RULE,
 +    'app root': IGNORE_EXPLICIT_NAME,
 +    'mathml table': INCLUDE_DESC | INCLUDE_NAME,
 +    'mathml labeled row': NAME_FROM_SUBTREE_RULE,
