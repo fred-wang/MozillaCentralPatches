@@ -1,24 +1,13 @@
 # HG changeset patch
 # Parent 8cf89f20b768d8d88ccaa4cd4e41fc829993351f
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent  45244b7672d514554a9a639a2d67a6cb0fe4ded4
+# Parent  26ef1b88ead4a26081e2e02dbb5ca87907069194
 Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
 
 diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
 --- a/accessible/jsat/OutputGenerator.jsm
 +++ b/accessible/jsat/OutputGenerator.jsm
-@@ -1,8 +1,10 @@
-+/*-*- Mode: Javascript; indent-tabs-mode: nil; js-indent-level: 2 -*- */
-+/* vim: set ts=2 sts=2 et sw=2 tw=80: */
- /* This Source Code Form is subject to the terms of the Mozilla Public
-  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
-  * You can obtain one at http://mozilla.org/MPL/2.0/. */
- 
- /* global Components, XPCOMUtils, Utils, PrefCache, States, Roles, Logger */
- /* exported UtteranceGenerator, BrailleGenerator */
- 
- 'use strict';
-@@ -187,16 +189,112 @@ let OutputGenerator = {
+@@ -187,16 +187,112 @@ let OutputGenerator = {
        return;
      }
      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'unshift' : 'push']({
@@ -33,10 +22,10 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +   * @param {String} aRoleStr aAccessible's role string.
 +   * @return true iff aAccessible is a MathML accessible.
 +   */
-+  _addMathRoles: function _getMathRoles(aOutput, aAccessible, aRoleStr) {
++  _addMathRoles: function _addMathRoles(aOutput, aAccessible, aRoleStr) {
 +    // First, determine whether this is actually a MathML accessible and, if so,
 +    // the actual role to use (e.g. mathmlfraction).
-+    let roleStr = aRoleStr;
++    var roleStr = aRoleStr;
 +    switch(aAccessible.role) {
 +      case Roles.MATHML_CELL:
 +      case Roles.MATHML_ENCLOSED:
@@ -102,10 +91,10 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +    // (e.g. numerator for the first child of a mathmlfraction).
 +    let mathRole = Utils.getMathRole(aAccessible);
 +    if (mathRole) {
-+      this._addRole(output, mathRole);
++      aOutput.push({string: this._getOutputName(mathRole)});
 +    }
 +    if (roleStr) {
-+      this._addRole(output, roleStr);
++      aOutput.push({string: this._getOutputName(roleStr)});
 +    }
 +    return true;
 +  },
@@ -131,7 +120,26 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
    _addType: function _addType(aOutput, aAccessible, aRoleStr) {
      if (aRoleStr !== 'entry') {
        return;
-@@ -296,27 +296,52 @@ let OutputGenerator = {
+@@ -207,17 +303,17 @@ let OutputGenerator = {
+     if (!typeName || typeName === 'text') {
+       return;
+     }
+     aOutput.push({string: 'textInputType_' + typeName});
+   },
+ 
+   _addState: function _addState(aOutput, aState, aRoleStr) {}, // jshint ignore:line
+ 
+-  _addRole: function _addRole(aOutput, aRoleStr) {}, // jshint ignore:line
++  _addRole: function _addRole(aOutput, aAccessible, aRoleStr) {}, // jshint ignore:line
+ 
+   get outputOrder() {
+     if (!this._utteranceOrder) {
+       this._utteranceOrder = new PrefCache('accessibility.accessfu.utterance');
+     }
+     return typeof this._utteranceOrder.value === 'number' ?
+       this._utteranceOrder.value : this.defaultOutputOrder;
+   },
+@@ -296,27 +392,50 @@ let OutputGenerator = {
      'key': NAME_FROM_SUBTREE_RULE,
      'image map': INCLUDE_DESC,
      'option': INCLUDE_DESC,
@@ -175,9 +183,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
            this._addState(output, aState, aRoleStr);
            this._addType(output, aAccessible, aRoleStr);
 -          this._addRole(output, aRoleStr);
-+          if (!this._addMathRoles(output, aAccessible, aRoleStr)) {
-+            this._addRole(output, aRoleStr);
-+          }
++          this._addRole(output, aAccessible, aRoleStr);
          }
  
          if (aFlags & INCLUDE_VALUE && aAccessible.value.trim()) {
@@ -186,7 +192,26 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
          }
  
          this._addName(output, aAccessible, aFlags);
-@@ -368,17 +491,19 @@ let OutputGenerator = {
+@@ -343,17 +462,17 @@ let OutputGenerator = {
+     },
+ 
+     pagetab: function pagetab(aAccessible, aRoleStr, aState, aFlags) {
+       let itemno = {};
+       let itemof = {};
+       aAccessible.groupPosition({}, itemof, itemno);
+       let output = [];
+       this._addState(output, aState);
+-      this._addRole(output, aRoleStr);
++      this._addRole(output, aAccessible, aRoleStr);
+       output.push({
+         string: 'objItemOfN',
+         args: [itemno.value, itemof.value]
+       });
+ 
+       this._addName(output, aAccessible, aFlags);
+       this._addLandmark(output, aAccessible);
+ 
+@@ -369,17 +488,17 @@ let OutputGenerator = {
          Logger.logException(x);
          return output;
        } finally {
@@ -196,9 +221,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
            return output;
          }
 -        this._addRole(output, aRoleStr);
-+        if (!this._addMathRoles(output, aAccessible, aRoleStr)) {
-+          this._addRole(output, aRoleStr);
-+        }
++        this._addRole(output, aAccessible, aRoleStr);
          output.push.call(output, {
            string: this._getOutputName('tblColumnInfo'),
            count: table.columnCount
@@ -207,7 +230,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
            count: table.rowCount
          });
          this._addName(output, aAccessible, aFlags);
-@@ -388,16 +513,33 @@ let OutputGenerator = {
+@@ -389,16 +508,33 @@ let OutputGenerator = {
      },
  
      gridcell: function gridcell(aAccessible, aRoleStr, aState, aFlags) {
@@ -241,6 +264,71 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
   * Generates speech utterances from objects, actions and state changes.
   * An utterance is an array of speech data.
   *
+@@ -592,18 +728,20 @@ this.UtteranceGenerator = {  // jshint i
+       return this.objectOutputFunctions.defaultFunc.apply(this, arguments);
+     }
+   },
+ 
+   _getContextStart: function _getContextStart(aContext) {
+     return aContext.newAncestry;
+   },
+ 
+-  _addRole: function _addRole(aOutput, aRoleStr) {
+-    aOutput.push({string: this._getOutputName(aRoleStr)});
++  _addRole: function _addRole(aOutput, aAccessible, aRoleStr) {
++    if (!this._addMathRoles(aOutput, aAccessible, aRoleStr)) {
++      aOutput.push({string: this._getOutputName(aRoleStr)});
++    }
+   },
+ 
+   _addState: function _addState(aOutput, aState, aRoleStr) {
+ 
+     if (aState.contains(States.UNAVAILABLE)) {
+       aOutput.push({string: 'stateUnavailable'});
+     }
+ 
+@@ -652,17 +790,17 @@ this.UtteranceGenerator = {  // jshint i
+     if (aState.contains(States.SELECTED)) {
+       aOutput.push({string: 'stateSelected'});
+     }
+   },
+ 
+   _getListUtterance:
+     function _getListUtterance(aAccessible, aRoleStr, aFlags, aItemCount) {
+       let utterance = [];
+-      this._addRole(utterance, aRoleStr);
++      this._addRole(utterance, aAccessible, aRoleStr);
+       utterance.push({
+         string: this._getOutputName('listItemsCount'),
+         count: aItemCount
+       });
+ 
+       this._addName(utterance, aAccessible, aFlags);
+       this._addLandmark(utterance, aAccessible);
+ 
+@@ -800,18 +938,20 @@ this.BrailleGenerator = {  // jshint ign
+ 
+     return [];
+   },
+ 
+   _getOutputName: function _getOutputName(aName) {
+     return OutputGenerator._getOutputName(aName) + 'Abbr';
+   },
+ 
+-  _addRole: function _addRole(aBraille, aRoleStr) {
+-    aBraille.push({string: this._getOutputName(aRoleStr)});
++  _addRole: function _addRole(aBraille, aAccessible, aRoleStr) {
++    if (!this._addMathRoles(aBraille, aAccessible, aRoleStr)) {
++      aBraille.push({string: this._getOutputName(aRoleStr)});
++    }
+   },
+ 
+   _addState: function _addState(aBraille, aState, aRoleStr) {
+     if (aState.contains(States.CHECKABLE)) {
+       aBraille.push({
+         string: aState.contains(States.CHECKED) ?
+           this._getOutputName('stateChecked') :
+           this._getOutputName('stateUnchecked')
 diff --git a/accessible/jsat/TraversalRules.jsm b/accessible/jsat/TraversalRules.jsm
 --- a/accessible/jsat/TraversalRules.jsm
 +++ b/accessible/jsat/TraversalRules.jsm
@@ -491,12 +579,12 @@ new file mode 100644
 +        }, {
 +          accOrElmOrID: "mmultiscripts-1",
 +          expectedUtterance: [
-+            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c",{"string":"subscript"},{"string":"superscript"},"d",{"string":"presubscript"},"e",{"string":"presuperscript"},{"string":"presubscript"},"f",{"string":"presuperscript"},"g"],
-+            ["a",{"string":"base"},"b",{"string":"subscript"},"c",{"string":"superscript"},{"string":"subscript"},"d",{"string":"superscript"},"e",{"string":"presubscript"},{"string":"presuperscript"},"f",{"string":"presubscript"},"g",{"string":"presuperscript"},{"string":"mathmlscripted"}]
++            [{"string":"mathmlscripted"},{"string":"base"},"a",{"string":"subscript"},"b",{"string":"superscript"},"c",{"string":"superscript"},"d",{"string":"presubscript"},"e",{"string":"presubscript"},"f",{"string":"presuperscript"},"g"],
++            ["a",{"string":"base"},"b",{"string":"subscript"},"c",{"string":"superscript"},"d",{"string":"superscript"},"e",{"string":"presubscript"},"f",{"string":"presubscript"},"g",{"string":"presuperscript"},{"string":"mathmlscripted"}]
 +          ],
 +          expectedBraille: [
-+            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c",{"string":"subscriptAbbr"},{"string":"superscriptAbbr"},"d",{"string":"presubscriptAbbr"},"e",{"string":"presuperscriptAbbr"},{"string":"presubscriptAbbr"},"f",{"string":"presuperscriptAbbr"},"g"],
-+            ["a",{"string":"baseAbbr"},"b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},{"string":"subscriptAbbr"},"d",{"string":"superscriptAbbr"},"e",{"string":"presubscriptAbbr"},{"string":"presuperscriptAbbr"},"f",{"string":"presubscriptAbbr"},"g",{"string":"presuperscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
++            [{"string":"mathmlscriptedAbbr"},{"string":"baseAbbr"},"a",{"string":"subscriptAbbr"},"b",{"string":"superscriptAbbr"},"c",{"string":"superscriptAbbr"},"d",{"string":"presubscriptAbbr"},"e",{"string":"presubscriptAbbr"},"f",{"string":"presuperscriptAbbr"},"g"],
++            ["a",{"string":"baseAbbr"},"b",{"string":"subscriptAbbr"},"c",{"string":"superscriptAbbr"},"d",{"string":"superscriptAbbr"},"e",{"string":"presubscriptAbbr"},"f",{"string":"presubscriptAbbr"},"g",{"string":"presuperscriptAbbr"},{"string":"mathmlscriptedAbbr"}]
 +          ]
 +        }, {
 +          accOrElmOrID: "munder-1",
