@@ -7,7 +7,7 @@ Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
 diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
 --- a/accessible/jsat/OutputGenerator.jsm
 +++ b/accessible/jsat/OutputGenerator.jsm
-@@ -187,16 +187,91 @@ let OutputGenerator = {
+@@ -187,16 +187,92 @@ let OutputGenerator = {
        return;
      }
      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'unshift' : 'push']({
@@ -23,7 +23,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +   */
 +  _addMathRoles: function _addMathRoles(aOutput, aAccessible, aRoleStr) {
 +    // First, determine the actual role to use (e.g. mathmlfraction).
-+    var roleStr = aRoleStr;
++    let roleStr = aRoleStr;
 +    switch(aAccessible.role) {
 +      case Roles.MATHML_CELL:
 +      case Roles.MATHML_ENCLOSED:
@@ -50,7 +50,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +        // Per the MathML 3 spec, the latter happens iff the linethickness
 +        // attribute is of the form [zero-float][optional-unit]. In that case,
 +        // we use the string 'mathmlfractionwithoutbar'.
-+        let linethickness = Utils.getAttributes(aAccessible)['linethickness'];
++        let linethickness = Utils.getAttributes(aAccessible).linethickness;
 +        if (linethickness) {
 +            let numberMatch = linethickness.match(/^(?:\d|\.)+/);
 +            if (numberMatch && !parseFloat(numberMatch[0])) {
@@ -83,11 +83,12 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +   * @param {nsIAccessible} aAccessible current accessible object.
 +   */
 +  _addMencloseNotations: function _addMencloseNotations(aOutput, aAccessible) {
-+    let notations = Utils.getAttributes(aAccessible)['notation'] || 'longdiv';
-+    notations.split(' ').forEach(function(aNotation) {
-+      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'push' : 'unshift']
-+        ({string: this._getOutputName('notation-' + aNotation)});
-+    }, this);
++    let notations = Utils.getAttributes(aAccessible).notation || 'longdiv';
++    aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'push' : 'unshift'].apply(
++      aOutput, [for (notation of notations.split(' '))
++        {string: this._getOutputName('notation-' + notation)}
++      ]
++    );
 +  },
 +
 +  /**
@@ -99,7 +100,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
    _addType: function _addType(aOutput, aAccessible, aRoleStr) {
      if (aRoleStr !== 'entry') {
        return;
-@@ -207,17 +282,17 @@ let OutputGenerator = {
+@@ -207,17 +283,17 @@ let OutputGenerator = {
      if (!typeName || typeName === 'text') {
        return;
      }
@@ -118,7 +119,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
      return typeof this._utteranceOrder.value === 'number' ?
        this._utteranceOrder.value : this.defaultOutputOrder;
    },
-@@ -296,27 +371,87 @@ let OutputGenerator = {
+@@ -296,27 +372,87 @@ let OutputGenerator = {
      'key': NAME_FROM_SUBTREE_RULE,
      'image map': INCLUDE_DESC,
      'option': INCLUDE_DESC,
@@ -208,7 +209,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
          }
  
          this._addName(output, aAccessible, aFlags);
-@@ -343,17 +478,17 @@ let OutputGenerator = {
+@@ -343,17 +479,17 @@ let OutputGenerator = {
      },
  
      pagetab: function pagetab(aAccessible, aRoleStr, aState, aFlags) {
@@ -227,7 +228,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        this._addName(output, aAccessible, aFlags);
        this._addLandmark(output, aAccessible);
  
-@@ -369,17 +504,17 @@ let OutputGenerator = {
+@@ -369,17 +505,17 @@ let OutputGenerator = {
          Logger.logException(x);
          return output;
        } finally {
@@ -246,7 +247,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
            count: table.rowCount
          });
          this._addName(output, aAccessible, aFlags);
-@@ -389,16 +524,33 @@ let OutputGenerator = {
+@@ -389,16 +525,33 @@ let OutputGenerator = {
      },
  
      gridcell: function gridcell(aAccessible, aRoleStr, aState, aFlags) {
@@ -258,7 +259,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +    },
 +
 +    // Use the table output functions for MathML tabular elements.
-+    mathmltable: function mathmltable(aAccessible, aRoleStr, aState, aFlags) {
++    mathmltable: function mathmltable() {
 +      return this.objectOutputFunctions.table.apply(this, arguments);
 +    },
 +
@@ -280,7 +281,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
   * Generates speech utterances from objects, actions and state changes.
   * An utterance is an array of speech data.
   *
-@@ -592,18 +744,22 @@ this.UtteranceGenerator = {  // jshint i
+@@ -592,18 +745,22 @@ this.UtteranceGenerator = {  // jshint i
        return this.objectOutputFunctions.defaultFunc.apply(this, arguments);
      }
    },
@@ -305,7 +306,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        aOutput.push({string: 'stateUnavailable'});
      }
  
-@@ -652,17 +808,17 @@ this.UtteranceGenerator = {  // jshint i
+@@ -652,17 +809,17 @@ this.UtteranceGenerator = {  // jshint i
      if (aState.contains(States.SELECTED)) {
        aOutput.push({string: 'stateSelected'});
      }
@@ -324,7 +325,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        this._addName(utterance, aAccessible, aFlags);
        this._addLandmark(utterance, aAccessible);
  
-@@ -800,18 +956,22 @@ this.BrailleGenerator = {  // jshint ign
+@@ -800,18 +957,22 @@ this.BrailleGenerator = {  // jshint ign
  
      return [];
    },
@@ -680,11 +681,11 @@ new file mode 100644
 +          accOrElmOrID: "menclose-3",
 +          expectedUtterance: [
 +            [{"string":"mathmlenclosed"},{"string":"notation-left"},{"string":"notation-top"},{"string":"notation-bottom"},"a"],
-+            ["a",{"string":"notation-bottom"},{"string":"notation-top"},{"string":"notation-left"},{"string":"mathmlenclosed"}]
++            ["a",{"string":"notation-left"},{"string":"notation-top"},{"string":"notation-bottom"},{"string":"mathmlenclosed"}]
 +          ],
 +          expectedBraille: [
 +            [{"string":"mathmlenclosedAbbr"},{"string":"notation-leftAbbr"},{"string":"notation-topAbbr"},{"string":"notation-bottomAbbr"},"a"],
-+            ["a",{"string":"notation-bottomAbbr"},{"string":"notation-topAbbr"},{"string":"notation-leftAbbr"},{"string":"mathmlenclosedAbbr"}]
++            ["a",{"string":"notation-leftAbbr"},{"string":"notation-topAbbr"},{"string":"notation-bottomAbbr"},{"string":"mathmlenclosedAbbr"}]
 +          ]
 +        }];
 +
