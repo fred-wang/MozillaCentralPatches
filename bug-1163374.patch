@@ -7,7 +7,7 @@ Bug 1163374 - Basic MathML Accessibility support in AccessFu. r=yzen
 diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerator.jsm
 --- a/accessible/jsat/OutputGenerator.jsm
 +++ b/accessible/jsat/OutputGenerator.jsm
-@@ -187,16 +187,115 @@ let OutputGenerator = {
+@@ -187,16 +187,91 @@ let OutputGenerator = {
        return;
      }
      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'unshift' : 'push']({
@@ -20,11 +20,9 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +   * @param {Array} aOutput Output array.
 +   * @param {nsIAccessible} aAccessible current accessible object.
 +   * @param {String} aRoleStr aAccessible's role string.
-+   * @return true iff aAccessible is a MathML accessible.
 +   */
 +  _addMathRoles: function _addMathRoles(aOutput, aAccessible, aRoleStr) {
-+    // First, determine whether this is actually a MathML accessible and, if so,
-+    // the actual role to use (e.g. mathmlfraction).
++    // First, determine the actual role to use (e.g. mathmlfraction).
 +    var roleStr = aRoleStr;
 +    switch(aAccessible.role) {
 +      case Roles.MATHML_CELL:
@@ -34,7 +32,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +      case Roles.MATHML_SQUARE_ROOT:
 +      case Roles.MATHML_TABLE:
 +      case Roles.MATHML_TABLE_ROW:
-+        // By default, just use aRoleStr.
++        // Use the default role string.
 +        break;
 +      case Roles.MATHML_MULTISCRIPTS:
 +      case Roles.MATHML_OVER:
@@ -60,31 +58,10 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +            }
 +        }
 +        break;
-+      case Roles.MATHML_MATH:
-+      case Roles.MATHML_IDENTIFIER:
-+      case Roles.MATHML_NUMBER:
-+      case Roles.MATHML_OPERATOR:
-+      case Roles.MATHML_STRING_LITERAL:
-+      case Roles.MATHML_TEXT:
-+      case Roles.MATHML_GLYPH:
-+      case Roles.MATHML_ROW:
-+      case Roles.MATHML_FENCED:
-+      case Roles.MATHML_STYLE:
-+      case Roles.MATHML_ACTION:
-+      case Roles.MATHML_ERROR:
-+      case Roles.MATHML_STACK:
-+      case Roles.MATHML_LONG_DIVISION:
-+      case Roles.MATHML_STACK_GROUP:
-+      case Roles.MATHML_STACK_ROW:
-+      case Roles.MATHML_STACK_CARRIES:
-+      case Roles.MATHML_STACK_CARRY:
-+      case Roles.MATHML_STACK_LINE:
-+        // Do not output the actual role for these accessibles.
++      default:
++        // Otherwise, do not output the actual role.
 +        roleStr = null;
 +        break;
-+      default:
-+        // This is not a MathML accessible.
-+        return false;
 +    }
 +
 +    // Get the math role based on the position in the parent accessible
@@ -98,7 +75,6 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +      aOutput[this.outputOrder === OUTPUT_DESC_FIRST ? 'push' : 'unshift']
 +        ({string: this._getOutputName(roleStr)});
 +    }
-+    return true;
 +  },
 +
 +  /**
@@ -123,7 +99,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
    _addType: function _addType(aOutput, aAccessible, aRoleStr) {
      if (aRoleStr !== 'entry') {
        return;
-@@ -207,17 +306,17 @@ let OutputGenerator = {
+@@ -207,17 +282,17 @@ let OutputGenerator = {
      if (!typeName || typeName === 'text') {
        return;
      }
@@ -142,7 +118,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
      return typeof this._utteranceOrder.value === 'number' ?
        this._utteranceOrder.value : this.defaultOutputOrder;
    },
-@@ -296,27 +395,50 @@ let OutputGenerator = {
+@@ -296,27 +371,87 @@ let OutputGenerator = {
      'key': NAME_FROM_SUBTREE_RULE,
      'image map': INCLUDE_DESC,
      'option': INCLUDE_DESC,
@@ -176,6 +152,43 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 +    'mathml row': INCLUDE_DESC,
 +    'mathml style': INCLUDE_DESC,
 +    'mathml error': INCLUDE_DESC },
++
++  mathmlRolesSet: new Set([
++    Roles.MATHML_MATH,
++    Roles.MATHML_IDENTIFIER,
++    Roles.MATHML_NUMBER,
++    Roles.MATHML_OPERATOR,
++    Roles.MATHML_TEXT,
++    Roles.MATHML_STRING_LITERAL,
++    Roles.MATHML_GLYPH,
++    Roles.MATHML_ROW,
++    Roles.MATHML_FRACTION,
++    Roles.MATHML_SQUARE_ROOT,
++    Roles.MATHML_ROOT,
++    Roles.MATHML_FENCED,
++    Roles.MATHML_ENCLOSED,
++    Roles.MATHML_STYLE,
++    Roles.MATHML_SUB,
++    Roles.MATHML_SUP,
++    Roles.MATHML_SUB_SUP,
++    Roles.MATHML_UNDER,
++    Roles.MATHML_OVER,
++    Roles.MATHML_UNDER_OVER,
++    Roles.MATHML_MULTISCRIPTS,
++    Roles.MATHML_TABLE,
++    Roles.LABELED_ROW,
++    Roles.MATHML_TABLE_ROW,
++    Roles.MATHML_CELL,
++    Roles.MATHML_ACTION,
++    Roles.MATHML_ERROR,
++    Roles.MATHML_STACK,
++    Roles.MATHML_LONG_DIVISION,
++    Roles.MATHML_STACK_GROUP,
++    Roles.MATHML_STACK_ROW,
++    Roles.MATHML_STACK_CARRIES,
++    Roles.MATHML_STACK_CARRY,
++    Roles.MATHML_STACK_LINE
++  ]),
  
    objectOutputFunctions: {
      _generateBaseOutput:
@@ -195,7 +208,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
          }
  
          this._addName(output, aAccessible, aFlags);
-@@ -343,17 +465,17 @@ let OutputGenerator = {
+@@ -343,17 +478,17 @@ let OutputGenerator = {
      },
  
      pagetab: function pagetab(aAccessible, aRoleStr, aState, aFlags) {
@@ -214,7 +227,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        this._addName(output, aAccessible, aFlags);
        this._addLandmark(output, aAccessible);
  
-@@ -369,17 +491,17 @@ let OutputGenerator = {
+@@ -369,17 +504,17 @@ let OutputGenerator = {
          Logger.logException(x);
          return output;
        } finally {
@@ -233,7 +246,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
            count: table.rowCount
          });
          this._addName(output, aAccessible, aFlags);
-@@ -389,16 +511,33 @@ let OutputGenerator = {
+@@ -389,16 +524,33 @@ let OutputGenerator = {
      },
  
      gridcell: function gridcell(aAccessible, aRoleStr, aState, aFlags) {
@@ -267,7 +280,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
   * Generates speech utterances from objects, actions and state changes.
   * An utterance is an array of speech data.
   *
-@@ -592,18 +731,20 @@ this.UtteranceGenerator = {  // jshint i
+@@ -592,18 +744,22 @@ this.UtteranceGenerator = {  // jshint i
        return this.objectOutputFunctions.defaultFunc.apply(this, arguments);
      }
    },
@@ -279,7 +292,9 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 -  _addRole: function _addRole(aOutput, aRoleStr) {
 -    aOutput.push({string: this._getOutputName(aRoleStr)});
 +  _addRole: function _addRole(aOutput, aAccessible, aRoleStr) {
-+    if (!this._addMathRoles(aOutput, aAccessible, aRoleStr)) {
++    if (this.mathmlRolesSet.has(aAccessible.role)) {
++      this._addMathRoles(aOutput, aAccessible, aRoleStr);
++    } else {
 +      aOutput.push({string: this._getOutputName(aRoleStr)});
 +    }
    },
@@ -290,7 +305,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        aOutput.push({string: 'stateUnavailable'});
      }
  
-@@ -652,17 +793,17 @@ this.UtteranceGenerator = {  // jshint i
+@@ -652,17 +808,17 @@ this.UtteranceGenerator = {  // jshint i
      if (aState.contains(States.SELECTED)) {
        aOutput.push({string: 'stateSelected'});
      }
@@ -309,7 +324,7 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
        this._addName(utterance, aAccessible, aFlags);
        this._addLandmark(utterance, aAccessible);
  
-@@ -800,18 +941,20 @@ this.BrailleGenerator = {  // jshint ign
+@@ -800,18 +956,22 @@ this.BrailleGenerator = {  // jshint ign
  
      return [];
    },
@@ -321,7 +336,9 @@ diff --git a/accessible/jsat/OutputGenerator.jsm b/accessible/jsat/OutputGenerat
 -  _addRole: function _addRole(aBraille, aRoleStr) {
 -    aBraille.push({string: this._getOutputName(aRoleStr)});
 +  _addRole: function _addRole(aBraille, aAccessible, aRoleStr) {
-+    if (!this._addMathRoles(aBraille, aAccessible, aRoleStr)) {
++    if (this.mathmlRolesSet.has(aAccessible.role)) {
++      this._addMathRoles(aBraille, aAccessible, aRoleStr);
++    } else {
 +      aBraille.push({string: this._getOutputName(aRoleStr)});
 +    }
    },
