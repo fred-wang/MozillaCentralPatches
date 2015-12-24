@@ -6,15 +6,15 @@ Bug 969906 - Implement maction@tooltip using XBL. r=karlt
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -348,8 +348,17 @@ mtable[displaystyle="true"] { -moz-math-
-    The mscarries element sets displaystyle to "false", and increments
-    scriptlevel by 1, so the children are typically displayed in a smaller font.
-    XXXfredw: This element is not implemented yet. See bug 534967.
- mscarries {
-   -moz-script-level: +1;
-   -moz-math-display: inline;
+@@ -331,8 +328,26 @@ mscarries {
+ /* "The mphantom element renders invisibly, but with the same size and other
+    dimensions, including baseline position, that its contents would have if
+    they were rendered normally.".
+    Also, we do not expose the <mphantom> element to the accessible tree
+    (see bug 1108378). */
+ mphantom {
+     visibility: hidden;
  }
- */
 +
 +/* Implement the tooltip actiontype using XBL and CSS. The toggle and
 +   statusline actiontypes are handled in nsMathMLmactionFrame.cpp. */
@@ -24,7 +24,6 @@ diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 +maction[actiontype="tooltip"] > * + * {
 +  display: none;
 +}
-\ No newline at end of file
 diff --git a/layout/style/moz.build b/layout/style/moz.build
 --- a/layout/style/moz.build
 +++ b/layout/style/moz.build
@@ -57,7 +56,7 @@ new file mode 100644
 +# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 +
 +toolkit.jar:
-+%   content xbl-maction %content/xbl-maction/
++%   content xbl-maction %content/xbl-maction/ contentaccessible=yes
 +    content/xbl-maction/xbl-maction.xml
 +    content/xbl-maction/xbl-maction.css
 diff --git a/layout/style/xbl-maction/moz.build b/layout/style/xbl-maction/moz.build
