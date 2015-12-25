@@ -6,7 +6,7 @@ Bug 969906 - Implement maction@tooltip using XBL. r=karlt
 diff --git a/layout/mathml/mathml.css b/layout/mathml/mathml.css
 --- a/layout/mathml/mathml.css
 +++ b/layout/mathml/mathml.css
-@@ -331,8 +328,26 @@ mscarries {
+@@ -331,8 +331,17 @@ mscarries {
  /* "The mphantom element renders invisibly, but with the same size and other
     dimensions, including baseline position, that its contents would have if
     they were rendered normally.".
