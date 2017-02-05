@@ -40,12 +40,12 @@ diff --git a/layout/style/moz.build b/layout/style/moz.build
 +DIRS += ['xbl-marquee', 'xbl-maction']
  TEST_DIRS += ['test']
  
- XPIDL_SOURCES += [
-     'nsICSSUnprefixingService.idl',
- ]
- 
- XPIDL_MODULE = 'layout_base'
- 
+ EXPORTS += [
+     '!nsStyleStructList.h',
+     'AnimationCommon.h',
+     'CounterStyleManager.h',
+     'nsAnimationManager.h',
+     'nsComputedDOMStylePropertyList.h',
 diff --git a/layout/style/xbl-maction/jar.mn b/layout/style/xbl-maction/jar.mn
 new file mode 100644
 --- /dev/null
